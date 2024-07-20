@@ -1,0 +1,7 @@
+<launch>
+    <arg name="uav_id" default="1"/>
+    <arg name="uav_name" default="uav"/>
+    <group ns="uav$(arg uav_id)">
+        <node pkg="sunray_uav_control" type="terminal_control_node" name="terminal_control_node" output="screen"></node>
+    </group>
+</launch>

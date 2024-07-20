@@ -1,0 +1,44 @@
+<launch>
+	<arg name="uav_id" default="1"/>
+    <arg name="sim_mode" default="true"/>
+    <arg name="flag_printf" default="true"/>
+    <!-- 如果是matlab配置为ATT_CTRL_MODE，则此处要设置为True-->
+    <arg name="control/enable_external_control" default="true"/> 
+    <arg name="launch_prefix" default="" />
+    <arg name="external_source" default="2" />
+    <arg name="uav_name" default="uav" />
+    <arg name="Takeoff_height" default="1" />
+    <arg name="Disarm_height" default="0.2" />
+    <arg name="Land_spee" default="0.2" />
+    <arg name="x_min" default="-2.5" />
+    <arg name="x_max" default="2.5" />
+    <arg name="y_min" default="-2.5" />
+    <arg name="y_max" default="2.5" />
+    <arg name="z_min" default="-0.1" />
+    <arg name="z_max" default="2" />
+    
+    <!-- 启动uav_control_main -->
+	<node pkg="sunray_uav_control" type="sunray_control_node" name="uav_control_main_$(arg uav_id)" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+        <param name="sim_mode" value="$(arg sim_mode)" />
+		<param name="flag_printf" value="$(arg flag_printf)" />
+		<param name="external_source" value="2" />
+		<param name="uav_control/Takeoff_height" value="$(arg Takeoff_height)" />
+		<param name="uav_control/Disarm_height" value="$(arg Disarm_height)" />
+		<param name="uav_control/Land_spee" value="$(arg Land_spee)" />
+		<param name="geo_fence/x_min" value="$(arg x_min)" />
+		<param name="geo_fence/x_max" value="$(arg x_max)" />
+		<param name="geo_fence/y_min" value="$(arg y_min)" />
+		<param name="geo_fence/y_max" value="$(arg y_max)" />
+		<param name="geo_fence/z_min" value="$(arg z_min)" />
+		<param name="geo_fence/z_max" value="$(arg z_max)" />
+	</node>
+
+    <!-- 启动虚拟摇杆驱动 -->
+    <arg name="joy_enable" default="false"/>
+    <group if="$(arg joy_enable)">
+        <node pkg="sunray_uav_control" type="joy_node" name="joy_node" output="screen">
+        </node>
+    </group>
+</launch>
+

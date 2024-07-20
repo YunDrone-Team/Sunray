@@ -1,0 +1,8 @@
+<launch>
+	<!-- controller -->
+	<rosparam file="$(find sunray_uav_control)/launch/controller_param.yaml" ns="controller"/>
+	<node pkg="sunray_uav_control" type="tracking_control_node" name="tracking_control_node" />
+
+	<rosparam file="$(find sunray_uav_control)/launch/flight_base.yaml" ns="autonomous_flight"/>
+	<node pkg="sunray_uav_control" type="trajectory_builder_node" name="trajectory_builder_node" output="screen" />
+</launch>

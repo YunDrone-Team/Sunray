@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="mini_tank_four_arm">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.01598667897624 0.000147008575525668 0.0957541419310673"
+        rpy="0 0 0" />
+      <mass
+        value="1.05585365694867" />
+      <inertia
+        ixx="0.00123343315974781"
+        ixy="2.80686852261695E-07"
+        ixz="1.14852326373069E-05"
+        iyy="0.00220062738335676"
+        iyz="1.12878803084497E-07"
+        izz="0.00234975457947281" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="left_front_wheel_link">
+    <inertial>
+      <origin
+        xyz="2.17612039499215E-12 -0.0147157525718985 6.01000499367288E-12"
+        rpy="0 0 0" />
+      <mass
+        value="0.00757338713760487" />
+      <inertia
+        ixx="4.87592692120797E-07"
+        ixy="1.13577543759295E-16"
+        ixz="9.11137543487979E-17"
+        iyy="8.69446279802771E-07"
+        iyz="3.1283603562396E-16"
+        izz="4.87592692120812E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/left_front_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/left_front_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_front_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0.12941 0.12321 0.048"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_front_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="right_front_wheel_link">
+    <inertial>
+      <origin
+        xyz="-9.15933995315754E-16 0.014715752593523 1.58206781009085E-15"
+        rpy="0 0 0" />
+      <mass
+        value="0.0075733871445572" />
+      <inertia
+        ixx="4.87592692482772E-07"
+        ixy="-3.70017782229256E-19"
+        ixz="-9.80131482697509E-20"
+        iyy="8.69446279907346E-07"
+        iyz="-3.69675356951374E-19"
+        izz="4.87592692482787E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/right_front_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/right_front_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_front_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0.12941 -0.12351 0.048"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_front_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="link1">
+    <inertial>
+      <origin
+        xyz="3.07899608587014E-11 -0.0187068878492791 0.0525000000000006"
+        rpy="0 0 0" />
+      <mass
+        value="0.0182961255655803" />
+      <inertia
+        ixx="1.62397575138127E-05"
+        ixy="1.42718819995985E-14"
+        ixz="-4.21991543598324E-20"
+        iyy="7.5685703746991E-06"
+        iyz="5.60375202739483E-20"
+        izz="1.0513268753275E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint1"
+    type="revolute">
+    <origin
+      xyz="0.059695 0.027694 0.12736"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="link1" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link2">
+    <inertial>
+      <origin
+        xyz="-0.00116494663061859 -0.0234423567065693 0.0206973068371076"
+        rpy="0 0 0" />
+      <mass
+        value="0.0488195362560605" />
+      <inertia
+        ixx="1.97462867848902E-05"
+        ixy="1.45081792770558E-07"
+        ixz="-1.29484660794759E-07"
+        iyy="1.15881140581961E-05"
+        iyz="1.52071961678638E-07"
+        izz="1.21275429251274E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint2"
+    type="revolute">
+    <origin
+      xyz="0 0.002 0.105"
+      rpy="0 0 0" />
+    <parent
+      link="link1" />
+    <child
+      link="link2" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link3">
+    <inertial>
+      <origin
+        xyz="0.00940216062502201 -0.0267624782127051 0.0320491502909292"
+        rpy="0 0 0" />
+      <mass
+        value="0.0777888357357803" />
+      <inertia
+        ixx="1.88070584235848E-05"
+        ixy="1.43436455751243E-07"
+        ixz="-7.14454397085249E-11"
+        iyy="1.29763203112763E-05"
+        iyz="1.41803375211264E-07"
+        izz="1.69080830467788E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint3"
+    type="revolute">
+    <origin
+      xyz="0.001 0.0005 0.0975"
+      rpy="0 0 0" />
+    <parent
+      link="link2" />
+    <child
+      link="link3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link4">
+    <inertial>
+      <origin
+        xyz="-0.000264929412336183 -0.00369362330436658 0.00436132757394109"
+        rpy="0 0 0" />
+      <mass
+        value="0.00297108566800576" />
+      <inertia
+        ixx="4.07485385419218E-07"
+        ixy="-4.98245009283038E-21"
+        ixz="4.17191935510902E-21"
+        iyy="2.05767246894321E-07"
+        iyz="1.40876829989058E-07"
+        izz="2.13065038138546E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link4.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link4.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint4"
+    type="revolute">
+    <origin
+      xyz="-0.004 -0.0402 0.054"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link4" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link5">
+    <inertial>
+      <origin
+        xyz="0.010816355453101 -0.00658804624480052 0.0193552201368049"
+        rpy="0 0 0" />
+      <mass
+        value="0.0110869938441037" />
+      <inertia
+        ixx="2.52356347882987E-06"
+        ixy="-3.99343151236693E-14"
+        ixz="-3.44198274271351E-13"
+        iyy="2.2663856796056E-06"
+        iyz="-3.12207718593028E-07"
+        izz="7.09396223567123E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link5.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link5.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint5"
+    type="revolute">
+    <origin
+      xyz="-0.007 -0.024099 0.025382"
+      rpy="0 0 0" />
+    <parent
+      link="link4" />
+    <child
+      link="link5" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link6">
+    <inertial>
+      <origin
+        xyz="0.00349999999999815 0.00564731558519026 0.00640801185701667"
+        rpy="0 0 0" />
+      <mass
+        value="0.00197604548440531" />
+      <inertia
+        ixx="3.99845023290322E-07"
+        ixy="-2.762951580363E-21"
+        ixz="-8.11599808222321E-21"
+        iyy="1.9536816845978E-07"
+        iyz="-1.51745831304802E-07"
+        izz="2.07440923057151E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link6.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link6.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint6"
+    type="revolute">
+    <origin
+      xyz="-0.0085 -0.0152 0.054"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link6" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link7">
+    <inertial>
+      <origin
+        xyz="0.0108163558187043 0.00614995361370808 0.0192779548859955"
+        rpy="0 0 0" />
+      <mass
+        value="0.0110869919561475" />
+      <inertia
+        ixx="2.52356011937647E-06"
+        ixy="6.32729754079218E-14"
+        ixz="-4.47080038448808E-13"
+        iyy="2.2663957421519E-06"
+        iyz="3.12169913809415E-07"
+        izz="7.09382731891096E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link7.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link7.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint7"
+    type="revolute">
+    <origin
+      xyz="-0.0025 0.024471 0.025023"
+      rpy="0 0 0" />
+    <parent
+      link="link6" />
+    <child
+      link="link7" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link8">
+    <inertial>
+      <origin
+        xyz="0.00749999999999946 -0.0127747670306946 0.0120023151330463"
+        rpy="0 0 0" />
+      <mass
+        value="0.00108778506953502" />
+      <inertia
+        ixx="1.71922619588054E-07"
+        ixy="-2.58751012250443E-21"
+        ixz="2.67651162902619E-21"
+        iyy="9.1079407242854E-08"
+        iyz="8.29113514522138E-08"
+        izz="8.24748899495029E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link8.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link8.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint8"
+    type="revolute">
+    <origin
+      xyz="-0.007 -0.060403 0.046647"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link8" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link9">
+    <inertial>
+      <origin
+        xyz="0.00750000000000043 0.012950649501957 0.0118123207260397"
+        rpy="0 0 0" />
+      <mass
+        value="0.00108778506953505" />
+      <inertia
+        ixx="1.71922619588064E-07"
+        ixy="-2.71263429248356E-21"
+        ixz="-2.68262642230299E-21"
+        iyy="8.86285716063858E-08"
+        iyz="-8.30022521497667E-08"
+        izz="8.49257255859805E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link9.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_tank_four_arm/meshes/link9.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint9"
+    type="revolute">
+    <origin
+      xyz="-0.007 0.0050034 0.046647"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link9" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

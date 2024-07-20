@@ -1,0 +1,52 @@
+<launch>
+  <!-- 开启机器人底层相关节点  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch" >
+    <arg name="odom_frame_id"   value="odom"/>
+  </include>
+  <!-- 开启摄像头 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_camera.launch" />
+  <!-- 固定odom_combined于map，连接tf树 -->
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_map" args="0 0 0 0 0 0  map odom_combined 100" />
+
+  <!-- rtabmap -->
+  <group ns="rtabmap">
+    <!-- 订阅RGB、depth图片同步后发布rgb_d数据  -->
+    <node pkg="nodelet" type="nodelet" name="rgbd_sync" args="standalone rtabmap_ros/rgbd_sync" output="screen">
+      <remap from="rgb/image"       to="/camera/rgb/image_raw"/>
+      <remap from="depth/image"     to="/camera/depth/image"/>
+      <remap from="rgb/camera_info" to="/camera/rgb/camera_info"/>
+      <remap from="rgbd_image"      to="rgbd_image"/> <!-- output -->
+      <remap from="rtabmap/get_map_data" to="get_map_data"/>
+      
+      <!-- Should be true for not synchronized camera topics 
+          (e.g., false for kinectv2, zed, realsense, true for xtion, kinect360)-->
+      <param name="approx_sync"       value="true"/> 
+    </node>
+
+    <!-- rtabmap节点，订阅rgbd图，输出地图 -->
+    <!-- 参数delete_db_on_start使3D地图数据包在程序开始前被删除 -->
+    <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="--delete_db_on_start">
+          <param name="frame_id" type="string" value="base_footprint"/>
+
+          <!-- 不订阅RGB、depth图片，订阅rgb_d数据  -->
+          <param name="subscribe_depth" type="bool" value="false"/>
+          <param name="subscribe_rgb" type="bool" value="false"/>
+          <param name="subscribe_rgbd" type="bool" value="true"/>
+
+          <!-- 订阅odom数据用于定位，rgbd用于生成地图数据包 -->
+          <remap from="odom" to="/odom"/>
+          <remap from="rgbd_image" to="rgbd_image"/>
+
+          <param name="queue_size" type="int" value="10"/>
+
+          <!-- RTAB-Map's parameters -->
+          <param name="RGBD/AngularUpdate"        type="string" value="0.01"/>
+          <param name="RGBD/LinearUpdate"         type="string" value="0.01"/>
+          <param name="RGBD/OptimizeFromGraphEnd" type="string" value="false"/>
+
+          <param name="RGBD/NeighborLinkRefining" type="string" value="false"/>
+          <param name="RGBD/ProximityBySpace"     type="string" value="false"/>
+    </node>
+  </group>
+
+</launch>

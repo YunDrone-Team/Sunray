@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>vrpn_client_ros</name>
+  <version>0.2.2</version>
+  <description>ROS client nodes for the <a href="https://github.com/vrpn/vrpn/wiki">VRPN</a> library, compatible with VICON, OptiTrack, and other <a href="https://github.com/vrpn/vrpn/wiki/Supported-hardware-devices">hardware interfaces</a>.</description>
+
+  <author email="paul@bovbel.com">Paul Bovbel</author>
+  <maintainer email="paul@bovbel.com">Paul Bovbel</maintainer>
+
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>geometry_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>tf2_ros</depend>
+  <depend>vrpn</depend>
+
+  <test_depend>roslaunch</test_depend>
+  <test_depend>roslint</test_depend>
+
+  <export>
+  </export>
+</package>

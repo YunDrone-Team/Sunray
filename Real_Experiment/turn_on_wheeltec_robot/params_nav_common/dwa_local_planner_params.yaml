@@ -1,0 +1,50 @@
+#DWAPlanner官方介绍：http://wiki.ros.org/dwa_local_planner
+
+#局部路径规划器DWAPlannerROS命名空间
+DWAPlannerROS:
+  #机器人参数设置
+  max_vel_x: 0.45         #x方向最大线速度绝对值，单位：m/s
+  min_vel_x: 0            #x方向最小线速度绝对值，负数代表可后退，单位：m/s
+  max_vel_y: 0.0          #y方向最大线速度绝对值，单位：m/s。非全向移动机器人为0    
+  min_vel_y: 0.0          #y方向最小线速度绝对值，单位：m/s。非全向移动机器人为0   
+  max_vel_trans: 0.5      #机器人最大移动速度的绝对值，单位为：m/s
+  min_vel_trans: 0.1      #机器人最小移动速度的绝对值，单位为：m/s
+  trans_stopped_vel: 0.1  #机器人被认属于“停止”状态时的平移速度。如果机器人的速度低于该值，则认为机器人已停止。单位为 m/s
+  max_vel_theta: 0.7      #机器人的最大旋转角速度的绝对值，单位：rad/s 
+  min_vel_theta: 0.3      #机器人的最小旋转角速度的绝对值，单位为：rad/s 
+  theta_stopped_vel : 0.4 #机器人被认属于“停止”状态时的旋转速度。单位为：rad/s  
+  acc_lim_x: 0.5          #机器人在x方向的极限加速度，单位：m/s^2
+  acc_lim_theta: 3.5      #机器人的极限旋转加速度，单位为：m/s^2
+  acc_lim_y: 0.0          #机器人在y方向的极限加速度，单位：m/s^2。非全向移动机器人为0   
+
+  #目标点误差允许值
+  xy_goal_tolerance: 0.2   #机器人到达目标点时附近时的弧度偏差允许量，在该偏差内认为已经到达目标点单位为：m
+  yaw_goal_tolerance: 0.15 #机器人到达目标点时附近时的弧度偏差允许量，在该偏差内认为已经到达目标点，单位为：rad
+  latch_xy_goal_tolerance: false #设置为true时表示：如果到达容错距离内,机器人就会原地旋转；即使转动是会跑出容错距离外。
+
+  #前向模拟参数
+  sim_time: 1.8      #前向模拟轨迹的时间，单位为：s
+  vx_samples: 6      #x方向速度空间的采样点数
+  vy_samples: 0      #y方向速度空间采样点数.。差分驱动机器人y方向永远只有1个值（0.0）
+  vtheta_samples: 20 #旋转方向的速度空间采样点数
+
+  #轨迹评分参数
+  path_distance_bias: 32.0     #控制器与给定路径接近程度的权重
+  goal_distance_bias: 24.0      #控制器与局部目标点的接近程度的权重，也用于速度控制
+  occdist_scale: 0.5            #控制器躲避障碍物的程度
+  forward_point_distance: 0.325 #以机器人为中心，额外放置一个计分点的距离
+  stop_time_buffer: 0.1         #机器人在碰撞发生前必须拥有的最少时间量。该时间内所采用的轨迹仍视为有效。即：为防止碰撞,机器人必须提前停止的时间长度
+  scaling_speed: 0.25           #开始缩放机器人足迹时的速度的绝对值，单位为m/s。
+  max_scaling_factor: 0.2       #最大缩放因子。max_scaling_factor为上式的值的大小。
+
+  #预防振动参数
+  oscillation_reset_dist: 0.05  #当机器人在运动，但是运动幅度不大于多少时，认为机器人处于振荡状态，单位：m
+  oscillation_reset_angle: 0.05 #当机器人在运动，但是运动幅度不大于多少时，认为机器人处于振荡状态，单位：rad
+
+  #调试参数
+  publish_traj_pc : true     #将规划的轨迹在rviz上进行可视化
+  publish_cost_grid_pc: true #将代价值进行可视化显示
+  global_frame_id: map       #全局参考坐标系
+
+  #是否将走过的路径从路径规划中清除
+  prune_plan: true

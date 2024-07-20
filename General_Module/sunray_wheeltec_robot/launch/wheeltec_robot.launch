@@ -1,0 +1,31 @@
+<launch>
+	<arg name="ugv_id" default="1"/>
+	<arg name="max_vel" default="0.5" />
+	<arg name="x_min" default="-100.0"/>
+	<arg name="x_max" default="100.0"/>
+	<arg name="y_min" default="-100.0"/>
+	<arg name="y_max" default="100.0"/>
+
+	<!-- 开启 底层单片机控制节点 -->
+	<node pkg="turn_on_wheeltec_robot" type="wheeltec_robot_node" name="wheeltec_driver_node" output="screen">
+		<remap from="/imu"               to="/ugv$(arg ugv_id)/imu"/>
+		<remap from="/odom"              to="/ugv$(arg ugv_id)/odom"/>
+		<remap from="/cmd_vel"           to="/ugv$(arg ugv_id)/cmd_vel"/>
+		<remap from="/PowerVoltage"      to="/ugv$(arg ugv_id)/PowerVoltage"/>
+		<param name="usart_port_name"    type="string" value="/dev/ttyACM0"/>  
+		<param name="serial_baud_rate"   type="int"    value="115200"/>
+	</node>
+
+	<node pkg="sunray_wheeltec_robot" type="wheeltec_control_node" name="wheeltec_control_node" output="screen">
+		<param name="ugv_name" value="ugv"/>
+		<param name="ugv_id" value="$(arg ugv_id)"/>
+		<param name="k_p" value="1.0" />
+		<param name="k_yaw" value="1.0" />
+		<param name="max_vel" value="$(arg max_vel)" />
+		<param name="flag_printf" value="true" />
+		<param name="geo_fence/x_min" value="$(arg x_min)"/>
+		<param name="geo_fence/x_max" value="$(arg x_max)"/>
+		<param name="geo_fence/y_min" value="$(arg y_min)"/>
+		<param name="geo_fence/y_max" value="$(arg y_max)"/>
+	</node>
+</launch>

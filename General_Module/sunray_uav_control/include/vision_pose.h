@@ -1,0 +1,416 @@
+#ifndef VISION_POSE_H
+#define VISION_POSE_H
+
+// 头文件
+#include <ros/ros.h>
+#include <iostream>
+#include <bitset>
+#include <Eigen/Eigen>
+
+#include "tf2_ros/transform_broadcaster.h"  //发布动态坐标关系
+#include "math_utils.h"
+#include "printf_utils.h"
+#include "ros_msg_utils.h"
+
+using namespace std;
+
+// 宏定义
+#define TRA_WINDOW 40                // 发布轨迹长度
+#define MOCAP_TIMEOUT 0.35                 
+#define GAZEBO_TIMEOUT 0.1                    
+#define T265_TIMEOUT 0.3
+#define UWB_TIMEOUT 0.1
+#define GPS_TIMEOUT 1.0
+#define VINS_TIMEOUT 0.35
+#define VIOBOT_TIMEOUT 0.35
+
+class VISION_POSE
+{
+    public:
+        // 构造函数
+        VISION_POSE(){};
+        // 初始化函数
+        void init(ros::NodeHandle& nh);
+        // 打印debug信息函数
+        void printf_debug_info();
+        void check_timeout();
+
+        // 外部定位消息
+        sunray_msgs::ExternalOdom external_odom;
+
+        // vision_pose消息
+        geometry_msgs::PoseStamped vision_pose;
+
+        sunray_msgs::UAVState uav_state;
+
+
+    private:
+        string node_name;               // 节点名称
+        string uav_name{""};            // 无人机名称
+        int uav_id;                     // 无人机编号
+
+        // 基本变量
+        int external_source;            // 外部定位数据来源
+        bool vision_pose_error{false};  // 外部定位数据是否异常
+
+        // 从外部定位中获取的位姿，坐标系：NED坐标系
+        Eigen::Vector3d pos_from_external;
+        Eigen::Vector3d vel_from_external;
+        Eigen::Vector3d att_from_external;
+        geometry_msgs::Quaternion q_from_external;
+
+        // 从飞控中获取的位姿，坐标系：NED坐标系
+        Eigen::Vector3d pos_from_autopilot;
+        Eigen::Vector3d vel_from_autopilot;
+        Eigen::Vector3d att_from_autopilot;
+
+        // 误差
+        Eigen::Vector3d pos_error;
+        double yaw_error;
+        Eigen::Vector3d vel_error;
+        Eigen::Vector3d att_error;
+
+        nav_msgs::Odometry viobot_raw;
+        
+        int odom_state,last_odom_state{9};
+        
+        ros::Time get_mocap_stamp{0};
+        ros::Time get_gazebo_stamp{0};
+        ros::Time get_viobot_stamp{0};
+        ros::Time get_vins_stamp{0};
+
+        // 订阅话题
+        ros::Subscriber mocap_pos_sub;             // 通过vrpn从动捕系统获取定位信息
+        ros::Subscriber mocap_vel_sub;              // 通过vrpn从动捕系统获取定位信息
+        ros::Subscriber sim_pose_sub;               // 通过gazebo仿真插件获取真值
+        ros::Subscriber viobot_sub;                 // 通过VIOBOT获取定位信息
+        ros::Subscriber gazebo_sub;                 // gazebo仿真
+        ros::Subscriber vins_sub;                   // 通过VINS算法获取定位信息
+        ros::Subscriber px4_position_sub;           // 从PX4订阅的本地位置信息
+        ros::Subscriber px4_velocity_sub;
+        ros::Subscriber px4_attitude_sub;           // 从PX4订阅的姿态信息
+        ros::Subscriber px4_state_sub;
+        ros::Subscriber px4_battery_sub;
+        // 发布话题
+        ros::Publisher vision_pose_pub;             // 将vision_pose消息发布至PX4
+        ros::Publisher uav_state_pub;               // 
+        // 定时器
+        ros::Timer timer_px4_vision_pub;            // 定时发布vision_pose消息
+
+        void mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
+        void mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
+        void gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void viobot_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void vins_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void local_position_ned_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
+        void local_vel_ned_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
+        void attitude_cb(const sensor_msgs::Imu::ConstPtr &msg);
+        void stateCallback(const mavros_msgs::State::ConstPtr& msg);
+        void batteryCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
+        void timercb_pub_vision_pose(const ros::TimerEvent &e);
+};
+
+void VISION_POSE::init(ros::NodeHandle& nh)
+{
+    // 【参数】无人机编号
+    nh.param<int>("uav_id", uav_id, 1);
+    // 【参数】无人机名称
+    nh.param<string>("uav_name", uav_name, "uav");
+    uav_name = uav_name + std::to_string(uav_id);
+    node_name = ros::this_node::getName();
+    // 【参数】外部定位数据来源
+    nh.param<int>("external_source", external_source, sunray_msgs::ExternalOdom::GAZEBO);
+
+    string topic_name = "/" + uav_name;
+    // 【订阅】无人机模式 - 飞控
+    px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_name + "/mavros/state", 1,  &VISION_POSE::stateCallback, this);
+    // 【订阅】无人机电池状态 - 飞控
+    px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_name + "/mavros/battery", 1,  &VISION_POSE::batteryCallback, this);
+    // 【订阅】无人机当前位置（对比用） - 飞控
+    px4_position_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_name + "/mavros/local_position/pose", 1, &VISION_POSE::local_position_ned_cb, this);
+    // 【订阅】无人机当前速度 坐标系:ENU系 (PX4 -> sunray_matlab)
+    px4_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_name + "/mavros/local_position/velocity_local", 1, &VISION_POSE::local_vel_ned_cb, this);
+    // 【订阅】无人机当前欧拉角（对比用） - 飞控
+    px4_attitude_sub = nh.subscribe<sensor_msgs::Imu>(topic_name + "/mavros/imu/data", 1, &VISION_POSE::attitude_cb, this);
+
+    // 根据设定的定位来源订阅不同的定位数据
+    if (external_source == sunray_msgs::ExternalOdom::MOCAP)
+    {
+        // 【订阅】mocap pose
+        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_name + "/pose", 1, &VISION_POSE::mocap_pos_cb, this);
+        // 【订阅】mocap Twist
+        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_name + "/twist", 1, &VISION_POSE::mocap_vel_cb, this);
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::VINS)
+    {
+        // 【订阅】VINS估计位置
+        vins_sub = nh.subscribe<nav_msgs::Odometry>("/vins_estimator/imu_propagate", 1, &VISION_POSE::vins_cb, this);
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::VIOBOT)
+    {
+        // 【订阅】VIOBOT估计位置
+        viobot_sub = nh.subscribe<nav_msgs::Odometry>("/pr_loop/odometry_rect", 1, &VISION_POSE::viobot_cb, this);
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::GAZEBO)
+    {
+        // 【订阅】gazebo仿真真值
+        gazebo_sub = nh.subscribe<nav_msgs::Odometry>(topic_name + "/sunray/gazebo_pose", 1, &VISION_POSE::gazebo_cb, this);
+    }
+    else
+    {
+        cout << RED << node_name << ": wrong external_source param, no external location information input!" << TAIL << endl;
+    }
+    // 【发布】无人机位置和偏航角，传输至PX4_EKF2模块用于位置姿态估计 坐标系 ENU系
+    vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(topic_name + "/mavros/vision_pose/pose", 1);
+    // 【发布】无人机综合状态信息
+    uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_name + "/sunray/uav_state", 1);
+    // 【定时器】使用外部定位设备时，需要定时发送vision信息至飞控,并保证一定频率
+    timer_px4_vision_pub = nh.createTimer(ros::Duration(0.02), &VISION_POSE::timercb_pub_vision_pose, this);
+
+    // 初始化
+    uav_state.header.frame_id = uav_name;
+    uav_state.header.stamp = ros::Time::now();
+    uav_state.uav_id = uav_id;
+    uav_state.connected = false;
+    uav_state.armed = false;
+    uav_state.mode = "";
+    uav_state.location_source = external_source;
+    uav_state.odom_valid = false;
+    uav_state.position = {0};
+    uav_state.velocity = {0};
+    uav_state.attitude = {0};
+    uav_state.attitude_q.x = 0;
+    uav_state.attitude_q.y = 0;
+    uav_state.attitude_q.z = 0;
+    uav_state.attitude_q.w = 1;
+    uav_state.attitude_rate = {0};
+    uav_state.battery_state = 0;
+    uav_state.battery_percetage = 0;
+
+    cout << GREEN << node_name << " init! " << TAIL << endl;
+}
+
+void VISION_POSE::printf_debug_info()
+{
+    cout << BLUE << ">>>>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] VISION_POSE <<<<<<<<<<<<<<<<<<<<<<" << TAIL << endl;
+    cout << BLUE << "uav_name : " << uav_name <<  TAIL << endl;
+    //固定的浮点显示
+    cout.setf(ios::fixed);
+    // setprecision(n) 设显示小数精度为n位
+    cout << setprecision(2);
+    //左对齐
+    cout.setf(ios::left);
+    // 强制显示小数点
+    cout.setf(ios::showpoint);
+    // 强制显示符号
+    cout.setf(ios::showpos);    
+
+    // 打印外部输入的原始数据
+    switch (external_source)
+    {
+    case sunray_msgs::ExternalOdom::MOCAP:
+        cout << GREEN << "External Odom: [ MOCAP ] " << TAIL << endl;
+        cout << GREEN << "MOCAP_pos [X Y Z] : " << pos_from_external[0] << " [ m ] " << pos_from_external[1] << " [ m ] " << pos_from_external[2] << " [ m ] " << TAIL << endl;
+        break;
+    case sunray_msgs::ExternalOdom::VIOBOT:
+        cout << BLUE << "External Odom: [ VIOBOT ] " << TAIL << endl;
+        cout << GREEN << "Pos [X Y Z] : " << viobot_raw.pose.pose.position.x << " [ m ] " << viobot_raw.pose.pose.position.y << " [ m ] " << viobot_raw.pose.pose.position.z << " [ m ] " << TAIL << endl;
+        cout << GREEN << "Vel [X Y Z] : " << viobot_raw.twist.twist.linear.x << " [m/s] " << viobot_raw.twist.twist.linear.y << " [m/s] " << viobot_raw.twist.twist.linear.z << " [m/s] " << TAIL << endl;
+        break;
+    case sunray_msgs::ExternalOdom::GAZEBO:
+        cout << GREEN << "External Odom: [ GAZEBO ] " << TAIL << endl;
+        cout << GREEN << "GAZEBO_pos [X Y Z] : " << pos_from_external[0] << " [ m ] " << pos_from_external[1] << " [ m ] " << pos_from_external[2] << " [ m ] " << TAIL << endl;
+        break;
+    case sunray_msgs::ExternalOdom::VINS:
+        cout << GREEN << "External Odom: [ VINS ] " << TAIL << endl;
+        break;
+    }
+
+    // 打印发布的Vision Pose数据
+    cout << BLUE << "Pose Send to Autopilot [NED]: " << TAIL << endl;
+    cout << GREEN << "Pos [X Y Z] : " << pos_from_external[0] << " [ m ] " << pos_from_external[1] << " [ m ] " << pos_from_external[2] << " [ m ] " << TAIL << endl;
+    cout << GREEN << "Vel [X Y Z] : " << vel_from_external[0] << " [m/s] " << vel_from_external[1] << " [m/s] " << vel_from_external[2] << " [m/s] " << TAIL << endl;
+    cout << GREEN << "Att [R P Y] : " << att_from_external[0] * 180 / M_PI << " [deg] " << att_from_external[1] * 180 / M_PI << " [deg] " << att_from_external[2] * 180 / M_PI << " [deg] " << TAIL << endl;
+
+    // 打印飞控回传的数据
+    cout << BLUE << "Pose from Autopilot [NED]: " << TAIL << endl;
+    cout << GREEN << "Pos [X Y Z] : " << pos_from_autopilot[0] << " [ m ] " << pos_from_autopilot[1] << " [ m ] " << pos_from_autopilot[2] << " [ m ] " << TAIL << endl;
+    cout << GREEN << "Vel [X Y Z] : " << vel_from_autopilot[0] << " [m/s] " << vel_from_autopilot[1] << " [m/s] " << vel_from_autopilot[2] << " [m/s] " << TAIL << endl;
+    cout << GREEN << "Att [R P Y] : " << att_from_autopilot[0] * 180 / M_PI << " [deg] " << att_from_autopilot[1] * 180 / M_PI << " [deg] " << att_from_autopilot[2] * 180 / M_PI << " [deg] " << TAIL << endl;
+
+    // 打印计算得到的差值
+    cout << BLUE << "Pose Error [NED]: " << TAIL << endl;
+    cout << GREEN << "Pos [X Y Z] : " << pos_error[0] << " [ m ] " << pos_error[1] << " [ m ] " << pos_error[2] << " [ m ] " << TAIL << endl;
+    cout << GREEN << "Vel [X Y Z] : " << vel_error[0] << " [m/s] " << vel_error[1] << " [m/s] " << vel_error[2] << " [m/s] " << TAIL << endl;
+    cout << GREEN << "Att [R P Y] : " << att_error[0] * 180 / M_PI << " [deg] " << att_error[1] * 180 / M_PI << " [deg] " << att_error[2] * 180 / M_PI << " [deg] " << TAIL << endl;
+
+}
+
+void VISION_POSE::local_position_ned_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+    pos_from_autopilot = Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
+}
+void VISION_POSE::local_vel_ned_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
+{
+    vel_from_autopilot = Eigen::Vector3d(msg->twist.linear.x, msg->twist.linear.y, msg->twist.linear.z);
+}
+void VISION_POSE::attitude_cb(const sensor_msgs::Imu::ConstPtr &msg)
+{
+    tf2::Quaternion quaternion;
+    tf2::fromMsg(msg->orientation, quaternion);
+
+    // 转换为欧拉角
+    tf2::Matrix3x3 mat(quaternion);
+    double roll, pitch, yaw;
+    mat.getRPY(roll, pitch, yaw);
+
+    att_from_autopilot = Eigen::Vector3d(roll, pitch, yaw);
+}
+
+void VISION_POSE::timercb_pub_vision_pose(const ros::TimerEvent &e)
+{
+    vision_pose.header.stamp = ros::Time::now();
+    vision_pose.pose.position.x = pos_from_external[0];
+    vision_pose.pose.position.y = pos_from_external[1];
+    vision_pose.pose.position.z = pos_from_external[2];
+    vision_pose.pose.orientation = q_from_external;
+    vision_pose_pub.publish(vision_pose);
+    
+    uav_state.uav_id = uav_id;
+    uav_state.odom_valid = true;
+    uav_state.header.stamp = ros::Time::now();
+    uav_state.position[0] = vision_pose.pose.position.x;
+    uav_state.position[1] = vision_pose.pose.position.y;
+    uav_state.position[2] = vision_pose.pose.position.z;
+    uav_state.velocity[0] = vel_from_external[0];
+    uav_state.velocity[1] = vel_from_external[1];
+    uav_state.velocity[2] = vel_from_external[2];
+    uav_state.attitude_q = q_from_external;
+    uav_state_pub.publish(uav_state);
+
+    // 位置误差
+    pos_error = pos_from_external - pos_from_autopilot;
+    // // 速度误差
+    vel_error = vel_from_external - vel_from_autopilot;
+    // // 偏航角误差
+    yaw_error = att_from_external[2] - att_from_autopilot[2];
+    // // 姿态角误差
+    att_error = att_from_external - att_from_autopilot;
+}
+
+void VISION_POSE::check_timeout()
+{
+    if (external_source == sunray_msgs::ExternalOdom::MOCAP)
+    {
+        if((ros::Time::now() - get_mocap_stamp).toSec()>MOCAP_TIMEOUT){
+            cout << RED << "Odom Timeut: [ MOCAP ] " << TAIL << endl;
+        }
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::VINS)
+    {
+        if((ros::Time::now() - get_vins_stamp).toSec()>VINS_TIMEOUT){
+            cout << RED << "Odom Timeut: [ VINS ] " << TAIL << endl;
+        }
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::VIOBOT)
+    {
+        if((ros::Time::now() - get_viobot_stamp).toSec()>VIOBOT_TIMEOUT){
+            cout << RED << "Odom Timeut: [ VIOBOT ] " << TAIL << endl;
+        }
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::GAZEBO)
+    {
+        if((ros::Time::now() - get_gazebo_stamp).toSec()>GAZEBO_TIMEOUT){
+            cout << RED << "Odom Timeut: [ GAZEBO ] " << TAIL << endl;
+        }
+    }
+}
+
+void VISION_POSE::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+    get_mocap_stamp = ros::Time::now(); // 记录时间戳，防止超时
+    tf2::Quaternion quaternion;
+    tf2::fromMsg(msg->pose.orientation, quaternion);
+    double roll, pitch, yaw;
+    tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
+    pos_from_external = Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
+    att_from_external = Eigen::Vector3d(roll, pitch, yaw);
+    q_from_external = msg->pose.orientation;
+}
+
+void VISION_POSE::mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
+{
+    vel_from_external = Eigen::Vector3d(msg->twist.linear.x, msg->twist.linear.y, msg->twist.linear.z);
+}
+
+void VISION_POSE::vins_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    pos_from_external = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+    get_vins_stamp = ros::Time::now(); // 记录时间戳，防止超时
+}
+
+void VISION_POSE::gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    get_gazebo_stamp = ros::Time::now(); // 记录时间戳，防止超时
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
+    double roll, pitch, yaw;
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+    pos_from_external = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+    vel_from_external = Eigen::Vector3d(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+    att_from_external = Eigen::Vector3d(roll, pitch, yaw);
+    q_from_external = msg->pose.pose.orientation;
+}
+
+void VISION_POSE::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    get_viobot_stamp = ros::Time::now(); // 记录时间戳，防止超时
+    // 读取VIOBOT原始数据
+    viobot_raw = *msg;
+
+    // 坐标转换
+    // VIOBOT坐标系定义为：算法初始化时，左目相机位置为原点；X轴沿着左目相机朝向设备前方，Y轴朝左，Z轴朝上；
+
+    // 位置
+    vision_pose.pose.position.x = viobot_raw.pose.pose.position.x;
+    vision_pose.pose.position.y = -viobot_raw.pose.pose.position.y;
+    vision_pose.pose.position.z = -viobot_raw.pose.pose.position.z;
+    // 速度
+    pos_from_external = Eigen::Vector3d(viobot_raw.pose.pose.position.x, -viobot_raw.pose.pose.position.y, -viobot_raw.pose.pose.position.z);
+    vel_from_external = Eigen::Vector3d(viobot_raw.twist.twist.linear.x, -viobot_raw.twist.twist.linear.y, -viobot_raw.twist.twist.linear.z);
+    // // 姿态
+    // // VIOBOT四元数转欧拉角（VIOBOT系）
+    // Eigen::Quaterniond q_viobot = Eigen::Quaterniond(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z);
+    // Eigen::Vector3d euler_viobot = quaternion_to_euler(q_viobot);
+    // // 欧拉角方向变化（VIOBOT系 -> 飞控系）
+    // vision_pose.attitude[0] = euler_viobot[0];
+    // vision_pose.attitude[1] = -euler_viobot[1];
+    // vision_pose.attitude[2] = -euler_viobot[2];
+    // // 欧拉角转四元数（飞控系）
+    // Eigen::Vector3d euler_ned;
+    // euler_ned[0] = vision_pose.attitude[0];
+    // euler_ned[1] = vision_pose.attitude[1];
+    // euler_ned[2] = vision_pose.attitude[2];
+    // Eigen::Quaterniond q_vision_pose = quaternion_from_rpy(euler_ned);
+    // vision_pose.attitude_q.x = q_vision_pose.x();
+    // vision_pose.attitude_q.y = q_vision_pose.y();
+    // vision_pose.attitude_q.z = q_vision_pose.z();
+    // vision_pose.attitude_q.w = q_vision_pose.w();
+}
+
+void VISION_POSE::stateCallback(const mavros_msgs::State::ConstPtr& msg)
+{
+    uav_state.connected = true;
+    uav_state.mode = msg->mode.c_str();
+    uav_state.armed = msg->armed;
+}
+
+// 回调函数：处理电量消息
+void VISION_POSE::batteryCallback(const sensor_msgs::BatteryState::ConstPtr& msg)
+{
+    uav_state.battery_state = msg->percentage * 100;
+}
+
+
+
+#endif

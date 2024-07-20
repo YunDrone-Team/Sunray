@@ -1,0 +1,3 @@
+<launch>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sunray_viobot)/launch/viobot.rviz" required="true" />
+</launch>

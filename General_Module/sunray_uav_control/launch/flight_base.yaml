@@ -1,0 +1,5 @@
+takeoff_height: 1.0 # m
+circle_radius: 2 # m
+time_to_max_radius: 20 #s
+velocity: 1.5 #m/s
+yaw_control: false

@@ -1,0 +1,33 @@
+# Controller Tunning Guide
+# 1. Get the correct hover throttle (most important)
+# 2. Start with P control for both position and velocity. Start with smaller value (increase no more than 20%)
+# 3. If z direction position has steady-state error, give a little p_i.
+# 4. I don't think it is necessary to use position d and velocity i and d.
+#
+
+# body
+body_rate_control: false # all parameters
+attitude_control: false # PID and hover thrust
+acceleration_control: true # only PID matters
+position_control: true # only PID matters
+
+# Position PID
+
+position_p: [1.5, 1.5, 1.5]
+position_i: [0.0, 0.0, 0.1]
+position_d: [0.0, 0.0, 0.0]
+
+# Velocity
+velocity_p: [1.0, 1.0, 1.0]
+velocity_i: [0.0, 0.0, 0.0]
+velocity_d: [0.0, 0.0, 0.0]
+
+# Body rate control 
+attitude_control_tau: 0.3 # (this will not be used if attitude control is true)
+hover_thrust: 0.75 # this need to be very accurate for a good control (most important)
+
+# display message
+verbose: false
+
+uav_name: "uav"
+uav_id: 1
