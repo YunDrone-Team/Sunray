@@ -1,0 +1,42 @@
+material sunray_world_1
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture world1.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}
+material sunray_world_2
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture world2.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}
+material sunray_world_3
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture prometheus_logo_square3.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}

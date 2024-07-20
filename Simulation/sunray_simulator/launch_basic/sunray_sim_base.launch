@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<!-- 环境变量 -->
+<!-- export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/sunray_matlab/sunray_simulator/models -->
+
+<launch>
+    <!-- MAVROS posix SITL environment launch script -->
+    <!-- vehicle model and world -->
+    <arg name="est" default="ekf2"/>
+    <arg name="vehicle" default="sunray"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty.world"/>
+    
+    <!-- px4 1.14之后用 -->
+    <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" />
+
+    <!-- px4 1.14之前用 -->
+    <!-- <env name="PX4_SIM_MODEL" value="$(arg vehicle)" />
+    <env name="PX4_ESTIMATOR" value="$(arg est)" /> -->
+
+
+    <!-- 
+        ID: 用于标识不同设备或实例的唯一标识符。
+        udp_port_remote: 用于udp通信的远程端口号，通常用于与飞控通信。
+        udp_port_local: 用于udp通信的本地端口号，通常用于与飞控通信。
+        fcu_url: 定义飞控单元的统一资源定位符（URL），包括udp端口和主机地址等信息。
+        x, y, z: 三维空间中的位置坐标，通常用于设置起始位置。
+        R, P, Y: 机体姿态（滚转、俯仰、偏航）的初始角度。
+        mavlink_udp_port: MAVLink通信所使用的UDP端口号。
+        mavlink_tcp_port: MAVLink通信所使用的TCP端口号。
+        gst_udp_port: GStreamer（流媒体处理软件）所使用的UDP端口号。
+        video_uri: 视频流的URI地址。
+        mavlink_cam_udp_port: MAVLink相机通信所使用的UDP端口号。 
+    -->
+
+    <!-- MAVROS and vehicle configs -->
+    <arg name="ID" default="1"/>
+    <arg name="udp_port_remote" value="$(eval 14540 + arg('ID'))"/>
+	<arg name="udp_port_local" value="$(eval 14580 + arg('ID'))"/>
+    <arg name="fcu_url" default="udp://:$(arg udp_port_remote)@localhost:$(arg udp_port_local)"/>
+
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="R" default="0"/>
+    <arg name="P" default="0"/>
+    <arg name="Y" default="0"/>
+
+    <arg name="mavlink_udp_port" value="$(eval 14560 + arg('ID'))"/>
+    <arg name="mavlink_tcp_port" value="$(eval 4560 + arg('ID'))"/>
+    <arg name="gst_udp_port" value="$(eval 5600 + arg('ID'))"/>
+    <arg name="video_uri" value="$(eval 5600 + arg('ID'))"/>
+    <arg name="mavlink_cam_udp_port" value="$(eval 14530 + arg('ID'))"/>
+
+    <arg name="mavlink_id" value="$(eval 1 + arg('ID'))" />
+    
+    <arg name="interactive" default="true"/>
+    <arg name="cmd" default="$(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=$(arg mavlink_udp_port) 
+                                --mavlink_tcp_port=$(arg mavlink_tcp_port) --gst_udp_port=$(arg gst_udp_port) --video_uri=$(arg video_uri) 
+                                --mavlink_cam_udp_port=$(arg mavlink_cam_udp_port) $(find sunray_simulator)/models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find sunray_simulator)"/>
+    <param command="$(arg cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
+    <arg unless="$(arg interactive)" name="px4_command_arg1" value=""/>
+    <arg     if="$(arg interactive)" name="px4_command_arg1" value="-d"/>
+    <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen" args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) $(arg px4_command_arg1)">
+    </node>
+    <node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
+
+    <!-- MAVROS -->
+    <include file="$(find mavros)/launch/px4.launch">
+        <arg name="fcu_url" value="$(arg fcu_url)"/>
+        <arg name="gcs_url" value=""/>
+        <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+        <arg name="tgt_component" value="1"/>
+    </include>
+
+
+</launch>

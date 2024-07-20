@@ -1,0 +1,21 @@
+#代价地图官方介绍：http://wiki.ros.org/costmap_2d
+#膨胀层官方介绍：http://wiki.ros.org/costmap_2d/hydro/inflation
+
+###机器人外形设置参数，直接影响代价地图
+#圆形机器人的外形设置，直接设置其外形半径
+#robot_radius: 0.4
+#多边形机器人的外形设置，设置机器人外形各顶点相对机器人旋转中心的坐标
+#坐标系正方向为，X：前进为正，Y：向左为正，坐标点=[x, y]
+#这里依次设置的是机器人的右下角、左下角、左上角、右上角的顶点坐标
+footprint: [[-0.135, -0.111], [-0.135, 0.111],[0.135,0.111],[0.135, -0.111]]
+###机器人外形设置参数，直接影响代价地图
+
+#设置膨胀层参数
+#根据obstacle_layer、static_layer和footprint生成代价地图
+inflation_layer:
+  #是否开启膨胀层
+  enabled: true 
+  #代价地图数值随与障碍物距离下降的比值，越大会导致路径规划越靠近障碍物
+  cost_scaling_factor: 15
+  #机器人膨胀半径，影响路径规划，单位：m
+  inflation_radius: 0.25  

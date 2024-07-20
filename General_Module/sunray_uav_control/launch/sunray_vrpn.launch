@@ -1,0 +1,28 @@
+<launch>
+
+  <arg name="server" default="192.168.31.163"/>
+  <arg name="uav_id" default="1"/>
+
+
+  <node pkg="vrpn_client_ros" type="vrpn_client_node" name="vrpn_client_node_$(arg uav_id)" output="screen">
+    <rosparam subst_value="true">
+      server: $(arg server)
+      port: 3883
+
+      update_frequency: 100.0
+      frame_id: world
+
+      # Use the VRPN server's time, or the client's ROS time.
+      use_server_time: false
+      broadcast_tf: true
+
+      # Must either specify refresh frequency > 0.0, or a list of trackers to create
+      refresh_tracker_frequency: 1.0
+      trackers:
+      - uav1
+      - uav2
+      - uav3
+    </rosparam>
+  </node>
+
+</launch>

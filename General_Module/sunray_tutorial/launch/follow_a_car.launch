@@ -1,0 +1,16 @@
+<launch>
+	<arg name="uav_id" default="1"/>
+    <arg name="sim_mode" default="false"/>
+    <arg name="flag_printf" default="true"/>
+    <arg name="uav_name" default="uav" />
+    <arg name="target_tpoic_name" default="/vrpn_client_node/target/pose" />
+    
+	<node pkg="sunray_tutorial" type="follow_a_car" name="follow_a_car_$(arg uav_id)" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+        <param name="sim_mode" value="$(arg sim_mode)" />
+		<param name="flag_printf" value="$(arg flag_printf)" />
+		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
+	</node>
+</launch>
+

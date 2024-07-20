@@ -1,0 +1,16 @@
+## parameter
+
+uav_name: "uav"
+uav_id: 1
+
+px4_or_fmt: "px4"
+use_udp: false
+uart_name: "/dev/ttyUSB0"
+baudrate: 921600
+udp_ip: "127.0.0.1"
+rx_port: 14540
+tx_port: 14541
+flag_printf: true
+
+control:
+  uav_name: "TEST"

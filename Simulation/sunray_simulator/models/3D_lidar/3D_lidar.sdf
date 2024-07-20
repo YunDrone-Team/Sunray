@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="3D_lidar">
+    <link name="laser_link">\
+        <inertial>
+        <mass>0.001</mass> <!--质量-->
+         <!--惯性标签，定义模型当前link的惯性矩，是一个对称正定3x3矩阵-->
+        <inertia>
+          <ixx>4.15e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.407e-6</iyy>
+          <iyz>0</iyz>
+          <izz>2.407e-6</izz>
+        </inertia>
+        </inertial>
+        <visual name="lidar_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.05</radius>
+              <length>0.05</length>
+            </cylinder>
+          </geometry>
+        </visual>
+      <sensor type='ray' name='3Dlidar'>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>520</samples>
+                <resolution>1</resolution>
+                <min_angle>-3.1415926535897931</min_angle>
+                <max_angle>3.1415926535897931</max_angle>
+              </horizontal>
+              <vertical>
+                <!-- 16线 -->
+                <samples>16</samples>
+                <min_angle>-0.2617993877991494365</min_angle>
+                <max_angle>0.2617993877991494365</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.4</min>
+              <max>100</max>
+              <resolution>0.001</resolution>
+            </range>
+          </ray>
+          <plugin name='3D_laser' filename='libgazebo_ros_velodyne_laser.so'>
+            <topicName>/velodyne_points</topicName>
+            <frameName>velodyne</frameName>
+            <organize_cloud>0</organize_cloud>
+            <min_range>0.4</min_range>
+            <max_range>20</max_range>
+            <gaussianNoise>0.001</gaussianNoise>
+          </plugin>
+          <always_on>1</always_on>
+          <update_rate>20</update_rate>
+          <visualize>false</visualize>
+        </sensor>
+    </link>
+  </model>
+</sdf>
