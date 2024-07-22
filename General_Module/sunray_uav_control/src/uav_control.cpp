@@ -81,6 +81,7 @@ void UAVControl::init(ros::NodeHandle& nh)
 
     quick_land = false;
     set_landing_des = false;
+    check_off = false;
 
     cout << GREEN << node_name << " init! " << TAIL << endl;
 }
@@ -139,8 +140,9 @@ void UAVControl::mainloop()
         }
 
         // 检查是否满足维持在RC_POS_CONTROL的条件，不满足则自动退出
-        if (uav_state.mode != "OFFBOARD")
+        if (uav_state.mode != "OFFBOARD" && check_off)
         {
+            check_off = false;
             // 进入RC_POS_CONTROL，需启动OFFBOARD模式
             mavros_msgs::PositionTarget pos_setpoint;
             pos_setpoint.header.stamp = ros::Time::now();
@@ -157,6 +159,9 @@ void UAVControl::mainloop()
             pos_setpoint.velocity.y = 0.0;
             pos_setpoint.velocity.z = 0.0;
             setpoint_raw_local_pub.publish(pos_setpoint);
+            // 只会在第一次进入offboard 并置于hover模式 确保不会错误有预设点 且遥控拥有最高权限
+            set_hover_pose_with_odom();
+            control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             set_px4_mode_func("OFFBOARD");
         }
     }
@@ -683,6 +688,7 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
         }
         // 切换至RC_POS_CONTROL
         control_mode = Control_Mode::RC_CONTROL;
+        check_off = true;
         // 初始化默认的UAVCommand
         control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
         // 进入RC_POS_CONTROL，需设置初始悬停点
@@ -699,6 +705,7 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
         rc_input.enter_command_control = false;
         // 切换至COMMAND_CONTROL
         control_mode = Control_Mode::CMD_CONTROL;
+        check_off = true;
         // 初始化默认的UAVCommand
         control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
         cout << GREEN << node_name << " Switch to CMD_CONTROL" << TAIL << endl;
@@ -727,6 +734,7 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
         {
             cout << GREEN << node_name << " Switch to CMD_CONTROL by uav_setup cmd" << TAIL << endl;
             control_mode = Control_Mode::CMD_CONTROL;
+            check_off = true;
         }
     }
 }

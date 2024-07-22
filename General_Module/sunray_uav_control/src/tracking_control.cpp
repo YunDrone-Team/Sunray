@@ -63,107 +63,6 @@ void trackingController::initParam()
 		cout << "[trackingController]: Position control is set to: " << this->posControl_ << endl;
 	}
 
-	// P for Position
-	std::vector<double> pPosTemp;
-	if (not this->nh_.getParam("controller/position_p", pPosTemp))
-	{
-		this->pPos_(0) = 1.0;
-		this->pPos_(1) = 1.0;
-		this->pPos_(2) = 1.0;
-		cout << "[trackingController]: No position p param. Use default: [1.0, 1.0, 1.0]." << endl;
-	}
-	else
-	{
-		this->pPos_(0) = pPosTemp[0];
-		this->pPos_(1) = pPosTemp[1];
-		this->pPos_(2) = pPosTemp[2];
-		cout << "[trackingController]: Position p is set to: " << "[" << this->pPos_(0) << ", " << this->pPos_(1) << ", " << this->pPos_(2) << "]." << endl;
-	}
-
-	// I for Position
-	std::vector<double> iPosTemp;
-	if (not this->nh_.getParam("controller/position_i", iPosTemp))
-	{
-		this->iPos_(0) = 0.0;
-		this->iPos_(1) = 0.0;
-		this->iPos_(2) = 0.0;
-		cout << "[trackingController]: No position i param. Use default: [0.0, 0.0, 0.0]." << endl;
-	}
-	else
-	{
-		this->iPos_(0) = iPosTemp[0];
-		this->iPos_(1) = iPosTemp[1];
-		this->iPos_(2) = iPosTemp[2];
-		cout << "[trackingController]: Position i is set to: " << "[" << this->iPos_(0) << ", " << this->iPos_(1) << ", " << this->iPos_(2) << "]." << endl;
-	}
-
-	// D for Position
-	std::vector<double> dPosTemp;
-	if (not this->nh_.getParam("controller/position_d", dPosTemp))
-	{
-		this->dPos_(0) = 0.0;
-		this->dPos_(1) = 0.0;
-		this->dPos_(2) = 0.0;
-		cout << "[trackingController]: No position d param. Use default: [0.0, 0.0, 0.0]." << endl;
-	}
-	else
-	{
-		this->dPos_(0) = dPosTemp[0];
-		this->dPos_(1) = dPosTemp[1];
-		this->dPos_(2) = dPosTemp[2];
-		cout << "[trackingController]: Position d is set to: " << "[" << this->dPos_(0) << ", " << this->dPos_(1) << ", " << this->dPos_(2) << "]." << endl;
-	}
-
-	// P for Velocity
-	std::vector<double> pVelTemp;
-	if (not this->nh_.getParam("controller/velocity_p", pVelTemp))
-	{
-		this->pVel_(0) = 1.0;
-		this->pVel_(1) = 1.0;
-		this->pVel_(2) = 1.0;
-		cout << "[trackingController]: No velocity p param. Use default: [1.0, 1.0, 1.0]." << endl;
-	}
-	else
-	{
-		this->pVel_(0) = pVelTemp[0];
-		this->pVel_(1) = pVelTemp[1];
-		this->pVel_(2) = pVelTemp[2];
-		cout << "[trackingController]: Velocity p is set to:" << "[" << this->pVel_(0) << ", " << this->pVel_(1) << ", " << this->pVel_(2) << "]." << endl;
-	}
-
-	// I for Velocity
-	std::vector<double> iVelTemp;
-	if (not this->nh_.getParam("controller/velocity_i", iVelTemp))
-	{
-		this->iVel_(0) = 0.0;
-		this->iVel_(1) = 0.0;
-		this->iVel_(2) = 0.0;
-		cout << "[trackingController]: No velocity p param. Use default: [0.0, 0.0, 0.0]." << endl;
-	}
-	else
-	{
-		this->iVel_(0) = iVelTemp[0];
-		this->iVel_(1) = iVelTemp[1];
-		this->iVel_(2) = iVelTemp[2];
-		cout << "[trackingController]: Velocity i is set to:" << "[" << this->iVel_(0) << ", " << this->iVel_(1) << ", " << this->iVel_(2) << "]." << endl;
-	}
-
-	// D for Velocity
-	std::vector<double> dVelTemp;
-	if (not this->nh_.getParam("controller/velocity_d", dVelTemp))
-	{
-		this->dVel_(0) = 0.0;
-		this->dVel_(1) = 0.0;
-		this->dVel_(2) = 0.0;
-		cout << "[trackingController]: No velocity p param. Use default: [0.0, 0.0, 0.0]." << endl;
-	}
-	else
-	{
-		this->dVel_(0) = dVelTemp[0];
-		this->dVel_(1) = dVelTemp[1];
-		this->dVel_(2) = dVelTemp[2];
-		cout << "[trackingController]: Velocity d is set to:" << "[" << this->dVel_(0) << ", " << this->dVel_(1) << ", " << this->dVel_(2) << "]." << endl;
-	}
 }
 
 void trackingController::registerPub()
@@ -179,21 +78,6 @@ void trackingController::registerPub()
 
 	// vel comman publisher
 	this->velCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_name + "/mavros/setpoint_raw/local", 100);
-
-	// current pose visualization publisher
-	this->poseVisPub_ = this->nh_.advertise<geometry_msgs::PoseStamped>("/tracking_controller/robot_pose", 1);
-
-	// trajectory history visualization publisher
-	this->histTrajVisPub_ = this->nh_.advertise<nav_msgs::Path>("/tracking_controller/trajectory_history", 1);
-
-	// target pose visualization publisher
-	this->targetVisPub_ = this->nh_.advertise<geometry_msgs::PoseStamped>("/tracking_controller/target_pose", 1);
-
-	// target trajectory history publisher
-	this->targetHistTrajVisPub_ = this->nh_.advertise<nav_msgs::Path>("/tracking_controller/target_trajectory_history", 1);
-
-	// velocity and acceleration visualization publisher
-	this->velAndAccVisPub_ = this->nh_.advertise<visualization_msgs::Marker>("/tracking_controller/vel_and_acc_info", 1);
 }
 
 void trackingController::registerCallback()
@@ -209,14 +93,6 @@ void trackingController::registerCallback()
 
 	// controller publisher timer
 	this->cmdTimer_ = this->nh_.createTimer(ros::Duration(0.01), &trackingController::cmdCB, this);
-
-	if (not this->accControl_)
-	{
-		// auto thrust esimator timer
-		this->thrustEstimatorTimer_ = this->nh_.createTimer(ros::Duration(0.01), &trackingController::thrustEstimateCB, this);
-	}
-	// visualization timer
-	this->visTimer_ = this->nh_.createTimer(ros::Duration(0.033), &trackingController::visCB, this);
 }
 
 void trackingController::odomCB(const nav_msgs::OdometryConstPtr &odom)
