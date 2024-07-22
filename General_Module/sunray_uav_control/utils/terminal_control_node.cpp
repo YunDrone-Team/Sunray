@@ -61,8 +61,8 @@ public:
     TrajectoryPublisher(ros::NodeHandle &nh_) {
         
         pub_trajectory_ = nh_.createTimer(ros::Duration(0.1), &TrajectoryPublisher::pub_trajectory_cb, this);
-        setup_pub_ = nh_.advertise<sunray_msgs::UAVSetup>("sunray/setup",1);
-        cmd_pub_ = nh_.advertise<sunray_msgs::UAVControlCMD>("sunray/uav_control_cmd",1);
+        setup_pub_ = nh_.advertise<sunray_msgs::UAVSetup>("/uav1/sunray/setup",1);
+        cmd_pub_ = nh_.advertise<sunray_msgs::UAVControlCMD>("/uav1/sunray/uav_control_cmd",1);
         cicle_.ci_init(1, 0, 0, 1, 0.5);
     }
 
