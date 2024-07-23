@@ -533,7 +533,7 @@ void UAVControl::get_desired_state_from_cmd()
 
 void UAVControl::printf_debug_info()
 {
-    cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] State  <<<<<<<<<<<<<<<<<<" << TAIL << endl;
+    cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] State    <<<<<<<<<<<<<<<<<<" << TAIL << endl;
 
     //固定的浮点显示
     cout.setf(ios::fixed);
@@ -547,6 +547,7 @@ void UAVControl::printf_debug_info()
     cout.setf(ios::showpos);
 
     printf_uav_state();
+    cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] Control  <<<<<<<<<<<<<<<<<<" << TAIL << endl;
 
     switch (control_mode)
     {
@@ -585,7 +586,7 @@ void UAVControl::printf_debug_info()
 
         case sunray_msgs::UAVControlCMD::Hover:
             cout << GREEN << "Command: [ Hover ] " << TAIL << endl;
-            cout << GREEN << "Hover_Pos [X Y Z] : " << Hover_position[0] << " [ m ] " << Hover_position[1] << " [ m ] " << Hover_position[2] << " [ m ] " << TAIL << endl;
+            cout << GREEN << "Hover_Pos  [X Y Z] : " << Hover_position[0] << " [ m ] " << Hover_position[1] << " [ m ] " << Hover_position[2] << " [ m ] " << TAIL << endl;
             break;
 
         case sunray_msgs::UAVControlCMD::Land:
@@ -686,26 +687,26 @@ void UAVControl::printf_uav_state()
     switch (uav_state.location_source)
     {
     case sunray_msgs::ExternalOdom::MOCAP:
-        cout << GREEN << "External Odom: [ MOCAP ], ";
+        cout << GREEN << "External Odom: [ MOCAP ] ";
         break;
     case sunray_msgs::ExternalOdom::VIOBOT:
-        cout << GREEN << "External Odom: [ VIOBOT ], ";
+        cout << GREEN << "External Odom: [ VIOBOT ] ";
         break;
     case sunray_msgs::ExternalOdom::GAZEBO:
-        cout << GREEN << "External Odom: [ GAZEBO ], ";
+        cout << GREEN << "External Odom: [ GAZEBO ] ";
         break;
     case sunray_msgs::ExternalOdom::VINS:
-        cout << GREEN << "External Odom: [ VINS ], ";
+        cout << GREEN << "External Odom: [ VINS ] ";
         break;
     }
 
     if (uav_state.odom_valid)
     {
-        cout << GREEN << "   Odom Status : [ Valid ] " << TAIL << endl;
+        cout << GREEN << " Odom Status : [ Valid ] " << TAIL << endl;
     }
     else
     {
-        cout << RED   << "   Odom Status : [ Invalid ] " << TAIL << endl;
+        cout << RED   << " Odom Status : [ Invalid ] " << TAIL << endl;
     }
 
     cout << GREEN << "UAV_pos [X Y Z] : " << uav_state.position[0] << " [ m ] " << uav_state.position[1] << " [ m ] " << uav_state.position[2] << " [ m ] " << TAIL << endl;
@@ -713,7 +714,7 @@ void UAVControl::printf_uav_state()
     cout << GREEN << "UAV_att [R P Y] : " << uav_state.attitude[0] * 180 / M_PI << " [deg] " << uav_state.attitude[1] * 180 / M_PI << " [deg] " << uav_state.attitude[2] * 180 / M_PI << " [deg] " << TAIL << endl;
 
     cout << GREEN << "Battery Voltage : " << uav_state.battery_state << " [V] "
-         << "  Battery Percent : " << uav_state.battery_percetage << TAIL << endl;
+         << " Battery Percent : " << uav_state.battery_percetage << " [%] "<< TAIL << endl;
 }
 
 
