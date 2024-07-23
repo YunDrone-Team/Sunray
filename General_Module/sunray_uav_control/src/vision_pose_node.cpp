@@ -36,16 +36,16 @@ int main(int argc, char **argv)
     {
         // 回调函数
         ros::spinOnce();
-        rate.sleep();
 
         // 定时状态打印
         time_now = ros::Time::now();
         if ((time_now - time_last).toSec() > 1.0 /* 秒 */ && flag_printf)
         {
             vision_pose.printf_debug_info();
-            vision_pose.check_timeout();
             time_last = time_now;
         }
+
+        rate.sleep();
     }
 
     return 0;

@@ -23,10 +23,6 @@ int main(int argc, char **argv)
     nh.param<bool>("sim_mode", sim_mode, true);
     nh.param<bool>("flag_printf", flag_printf, true);
 
-    // 外部定位数据
-    // VISION_POSE vision_pose;
-    // vision_pose.init(nh);
-
     // 控制器
     UAVControl uav_control;
     uav_control.init(nh);
@@ -46,6 +42,15 @@ int main(int argc, char **argv)
         // 主循环函数
         uav_control.mainloop();
 
+        // 定时状态打印
+        time_now = ros::Time::now();
+        if ((time_now - time_last).toSec() > 1.0 /* 秒 */ && flag_printf)
+        {
+            uav_control.printf_debug_info();
+            time_last = time_now;
+        }
+
+        // 休眠
         rate.sleep();
     }
 

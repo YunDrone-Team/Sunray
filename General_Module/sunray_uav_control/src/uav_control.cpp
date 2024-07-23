@@ -27,14 +27,14 @@ void UAVControl::init(ros::NodeHandle& nh)
     printf_param();
 
     string topic_prefix = "/" + uav_name;
-    // 【订阅】从其他节点订阅外部控制指令
-    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1, &UAVControl::control_cmd_cb, this);
-    // 【订阅】订阅无人机状态 -- from vision_pose
+    // 【订阅】无人机状态 -- vision_pose -> 本节点
     uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, &UAVControl::uav_state_cb, this);
-    // 【订阅】无人机设置指令
+    // 【订阅】外部控制指令 -- 外部节点 -> 本节点
+    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1, &UAVControl::control_cmd_cb, this);
+    // 【订阅】无人机设置指令 -- 外部节点 -> 本节点
     uav_setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1, &UAVControl::uav_setup_cb, this);
 
-    //【订阅】PX4遥控器数据
+    //【订阅】飞控遥控器数据 -- 飞控 -> 本节点 
     string rc_topic_name;
     if (sim_mode)
     {
@@ -46,19 +46,19 @@ void UAVControl::init(ros::NodeHandle& nh)
     }
     px4_rc_sub = nh.subscribe<mavros_msgs::RCIn>(rc_topic_name, 1, &UAVControl::px4_rc_cb, this);
 
-    // 【发布】本地位置控制指令，包括期望位置、速度、加速度等接口 坐标系:ENU系
+    // 【发布】本地位置控制指令，包括期望位置、速度、加速度等接口 坐标系:ENU系 -- 本节点->飞控
     setpoint_raw_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
-    // 【发布】姿态控制指令，包括期望姿态等接口
+    // 【发布】姿态控制指令，包括期望姿态等接口 -- 本节点->飞控
     setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
-    // 【发布】全局位置控制指令，包括期望经纬度等接口 坐标系:WGS84坐标系
+    // 【发布】全局位置控制指令，包括期望经纬度等接口 坐标系:WGS84坐标系 -- 本节点->飞控
     setpoint_raw_global_pub = nh.advertise<sunray_msgs::GlobalPositionSetpoint>(topic_prefix + "/mavros/setpoint_raw/global", 1);
-    // 【服务】解锁/上锁
+    // 【服务】解锁/上锁 -- 本节点->飞控
     px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_prefix + "/mavros/cmd/arming");
-    // 【服务】修改系统模式
+    // 【服务】修改系统模式 -- 本节点->飞控
     px4_set_mode_client = nh.serviceClient<mavros_msgs::SetMode>(topic_prefix + "/mavros/set_mode");
-    // 【服务】紧急上锁服务(KILL)
+    // 【服务】紧急上锁服务(KILL) -- 本节点->飞控
     px4_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
-    // 【服务】重启PX4飞控
+    // 【服务】重启PX4飞控 -- 本节点->飞控
     px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
     
     // 状态初始化
@@ -115,7 +115,6 @@ int UAVControl::safety_check()
 
 void UAVControl::mainloop()
 {
-    // cout << "control_mode: "<< control_mode << endl;
     // 安全检查
     if (control_mode == Control_Mode::RC_CONTROL || control_mode == Control_Mode::CMD_CONTROL)
     {
@@ -182,6 +181,8 @@ void UAVControl::mainloop()
         desired_state.vel << 0.0, 0.0, 0.0;
         desired_state.acc << 0.0, 0.0, 0.0;
         desired_state.yaw = Hover_yaw;
+        // RC_CONTROL控制模式下，使用位置指令控制接口
+        send_local_pos_setpoint(desired_state.pos, desired_state.yaw, false);
         break;
 
     case Control_Mode::CMD_CONTROL:
@@ -224,18 +225,8 @@ void UAVControl::mainloop()
             control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             set_landing_des = false;
         }
+        // LAND_CONTROL控制模式下，使用位置+速度的控制接口
         send_pos_vel_xyz_setpoint(pos_des, vel_des, yaw_des);
-    }
-
-    // INIT下，Sunray不发布任何控制指令，直接返回
-    if (control_mode == Control_Mode::INIT)
-    {
-        return;
-    }
-    if (control_mode == Control_Mode::RC_CONTROL)
-    {
-        send_local_pos_setpoint(desired_state.pos, desired_state.yaw, false);
-        return;
     }
 }
 
@@ -457,7 +448,6 @@ void UAVControl::get_desired_state_from_cmd()
         }
         case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY:
         {
-            // todo
             if (control_cmd.cmd_id > last_control_cmd.cmd_id)
             {
                 float d_vel_body[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
@@ -488,7 +478,6 @@ void UAVControl::get_desired_state_from_cmd()
         }
         case sunray_msgs::UAVControlCMD::TRAJECTORY:
         {
-            // todo
             for (int i = 0; i < 3; i++)
             {
                 desired_state.pos[i] = control_cmd.desired_pos[i];
@@ -533,6 +522,132 @@ void UAVControl::get_desired_state_from_cmd()
     last_control_cmd = control_cmd;
 }
 
+void UAVControl::printf_debug_info()
+{
+    cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] Control  <<<<<<<<<<<<<<<<<<" << TAIL << endl;
+
+    //固定的浮点显示
+    cout.setf(ios::fixed);
+    // setprecision(n) 设显示小数精度为n位
+    cout << setprecision(2);
+    //左对齐
+    cout.setf(ios::left);
+    // 强制显示小数点
+    cout.setf(ios::showpoint);
+    // 强制显示符号
+    cout.setf(ios::showpos);
+
+    switch (control_mode)
+    {
+    case Control_Mode::INIT:
+        cout << GREEN << "Control_Mode: [ INIT ] " << TAIL << endl;
+        break;
+
+    case Control_Mode::RC_CONTROL:
+        cout << GREEN << "Control_Mode: [ RC_CONTROL ] " << TAIL << endl;
+        cout << GREEN << "Hover_Pos [X Y Z] : " << Hover_position[0] << " [ m ] " << Hover_position[1] << " [ m ] " << Hover_position[2] << " [ m ] " << TAIL << endl;
+        break;
+
+    case Control_Mode::CMD_CONTROL:
+        cout << GREEN << "Control_Mode: [ CMD_CONTROL ] " << TAIL << endl;
+        break;
+    case Control_Mode::LAND_CONTROL:
+        if (quick_land)
+        {
+            cout << GREEN << "Control_Mode: [ LAND_CONTROL ] - quick land mode " << TAIL << endl;
+        }
+        else
+        {
+            cout << GREEN << "Control_Mode: [ LAND_CONTROL ] " << TAIL << endl;
+        }
+        break;
+    }
+
+    // 打印 CMD_CONTROL控制模式下 指令信息
+    if (control_mode == Control_Mode::CMD_CONTROL)
+    {
+        switch (control_cmd.cmd)
+        {
+        case sunray_msgs::UAVControlCMD::Takeoff:
+            cout << GREEN << "Command: [ Takeoff ] " << TAIL << endl;
+            break;
+
+        case sunray_msgs::UAVControlCMD::Hover:
+            cout << GREEN << "Command: [ Hover ] " << TAIL << endl;
+            cout << GREEN << "Hover_Pos [X Y Z] : " << Hover_position[0] << " [ m ] " << Hover_position[1] << " [ m ] " << Hover_position[2] << " [ m ] " << TAIL << endl;
+            break;
+
+        case sunray_msgs::UAVControlCMD::Land:
+            cout << GREEN << "Command: [ Land ] " << TAIL << endl;
+            break;
+
+        case sunray_msgs::UAVControlCMD::XYZ_POS:
+            cout << GREEN << "Command: [ Move in XYZ_POS ] " << TAIL << endl;
+            cout << GREEN << "Pos_ref [X Y Z] : " << control_cmd.desired_pos[0] << " [ m ] " << control_cmd.desired_pos[1] << " [ m ] " << control_cmd.desired_pos[2] << " [ m ] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS:
+            cout << GREEN << "Command: [ Move in XY_VEL_Z_POS ] " << TAIL << endl;
+            cout << GREEN << "Pos_ref [    Z] : " << control_cmd.desired_pos[2] << " [ m ] " << TAIL << endl;
+            cout << GREEN << "Vel_ref [X Y  ] : " << control_cmd.desired_vel[0] << " [m/s] " << control_cmd.desired_vel[1] << " [m/s] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::XYZ_VEL:
+            cout << GREEN << "Command: [ Move in XYZ_VEL ] " << TAIL << endl;
+            cout << GREEN << "Vel_ref [X Y Z] : " << control_cmd.desired_vel[0] << " [m/s] " << control_cmd.desired_vel[1] << " [m/s] " << control_cmd.desired_vel[2] << " [m/s] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::XYZ_POS_BODY:
+            cout << GREEN << "Command: [ Move in XYZ_POS_BODY ] " << TAIL << endl;
+            cout << GREEN << "Pos_ref [X Y Z] : " << control_cmd.desired_pos[0] << " [ m ] " << control_cmd.desired_pos[1] << " [ m ] " << control_cmd.desired_pos[2] << " [ m ] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::XYZ_VEL_BODY:
+            cout << GREEN << "Command: [ Move in XYZ_VEL_BODY ] " << TAIL << endl;
+            cout << GREEN << "Vel_ref [X Y Z] : " << control_cmd.desired_vel[0] << " [m/s] " << control_cmd.desired_vel[1] << " [m/s] " << control_cmd.desired_vel[2] << " [m/s] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY:
+            cout << GREEN << "Command: [ Move in XY_VEL_Z_POS_BODY ] " << TAIL << endl;
+            cout << GREEN << "Pos_ref [    Z] : " << control_cmd.desired_pos[2] << " [ m ] " << TAIL << endl;
+            cout << GREEN << "Vel_ref [X Y  ] : " << control_cmd.desired_vel[0] << " [m/s] " << control_cmd.desired_vel[1] << " [m/s] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::TRAJECTORY:
+            cout << GREEN << "Command: [ Move in TRAJECTORY ] " << TAIL << endl;
+            cout << GREEN << "Pos_ref [X Y Z] : " << control_cmd.desired_pos[0] << " [ m ] " << control_cmd.desired_pos[1] << " [ m ] " << control_cmd.desired_pos[2] << " [ m ] " << TAIL << endl;
+            cout << GREEN << "Vel_ref [X Y Z] : " << control_cmd.desired_vel[0] << " [m/s] " << control_cmd.desired_vel[1] << " [m/s] " << control_cmd.desired_vel[2] << " [m/s] " << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::XYZ_ATT:
+            cout << YELLOW << node_name << " Send control cmd from EXTERNAL_CONTROLLER, be careful! " << TAIL << endl;
+            cout << GREEN << "Command: [ Move in XYZ_ATT ] " << TAIL << endl;
+            cout << GREEN << "Att_ref [X Y Z] : " << control_cmd.desired_att[0] * 180 / M_PI << " [deg] " << control_cmd.desired_att[1] * 180 / M_PI << " [deg] " << control_cmd.desired_att[2] * 180 / M_PI << " [deg] " << TAIL << endl;
+            cout << GREEN << "Thrust_ref[0-1] : " << control_cmd.desired_thrust << TAIL << endl;
+            break;
+        case sunray_msgs::UAVControlCMD::LAT_LON_ALT:
+            cout << GREEN << "Command: [ Move in LAT_LON_ALT ] " << TAIL << endl;
+            cout << GREEN << "LAT : " << control_cmd.latitude << " LON :  " << control_cmd.longitude << " ALT : " << control_cmd.altitude << TAIL << endl;
+            cout << GREEN << "Yaw_ref : " << control_cmd.desired_yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+            break;
+        default:
+            cout << GREEN << "Command: [ Unknown Mode ]. " << TAIL << endl;
+            break;
+        }
+    }
+
+    // 打印PX4回传信息用于验证
+    cout << GREEN << "Pos_target [X Y Z] : " << px4_pos_target[0] << " [ m ] " << px4_pos_target[1] << " [ m ] " << px4_pos_target[2] << " [ m ] " << TAIL << endl;
+    cout << GREEN << "Vel_target [X Y Z] : " << px4_vel_target[0] << " [m/s] " << px4_vel_target[1] << " [m/s] " << px4_vel_target[2] << " [m/s] " << TAIL << endl;
+    cout << GREEN << "Yaw_target         : " << px4_att_target[2] * 180 / M_PI << " [deg] " << TAIL << endl;
+    cout << GREEN << "Thr_target [ 0-1 ] : " << px4_thrust_target << TAIL << endl;
+    if (control_cmd.cmd == sunray_msgs::UAVControlCMD::XYZ_ATT)
+    {
+        cout << GREEN << "Att_target [X Y Z] : " << px4_att_target[0] * 180 / M_PI << " [deg] " << px4_att_target[1] * 180 / M_PI << " [deg] " << px4_att_target[2] * 180 / M_PI << " [deg] " << TAIL << endl;
+        cout << GREEN << "Thr_target [ 0-1 ] : " << px4_thrust_target << TAIL << endl;
+    }
+}
+
 
 void UAVControl::control_cmd_cb(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
@@ -562,15 +677,15 @@ void UAVControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 
     uav_yaw = geometry_utils::get_yaw_from_quaternion(uav_quat);
 
-    // 将无人机解锁位置设定为起飞点
+    // 在无人机解锁时，将无人机解锁位置设定为起飞点
     if (uav_state.armed && !uav_state_last.armed)
     {
         Takeoff_position[0] = uav_pos[0];
         Takeoff_position[1] = uav_pos[1];
         Takeoff_position[2] = uav_pos[2];
         Takeoff_yaw = uav_yaw;
-        cout << GREEN << "Set Takeoff_position [X Y Z] : " << Takeoff_position[0] << " [ m ] " << Takeoff_position[1] << " [ m ] " << Takeoff_position[2] << " [ m ] " << TAIL << endl;
-        cout << GREEN << "Set Takeoff_yaw : " << Takeoff_yaw/3.1415926*180 << " [ deg ] " << TAIL << endl;
+        cout << BLUE << "Set Takeoff_position [X Y Z] : " << Takeoff_position[0] << " [ m ] " << Takeoff_position[1] << " [ m ] " << Takeoff_position[2] << " [ m ] " << TAIL << endl;
+        cout << BLUE << "Set Takeoff_yaw : " << Takeoff_yaw/3.1415926*180 << " [ deg ] " << TAIL << endl;
     }
 
     uav_state_last = uav_state;
@@ -639,7 +754,7 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
         {
             rc_input.enter_init = false;
             control_mode = Control_Mode::INIT;
-            cout << GREEN << node_name << " Switch to INIT" << TAIL << endl;
+            cout << BLUE << node_name << " Switch to INIT" << TAIL << endl;
         }
 
         if (rc_input.enter_rc_pos_control)
@@ -659,7 +774,7 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
             control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             // 进入RC_POS_CONTROL，需设置初始悬停点
             set_hover_pose_with_odom();
-            cout << GREEN << node_name << " Switch to RC_CONTROL" << TAIL << endl;
+            cout << BLUE << node_name << " Switch to RC_CONTROL" << TAIL << endl;
             return;
         }
 
@@ -990,7 +1105,6 @@ void UAVControl::reboot_PX4()
     this->text_info.MessageType = sunray_msgs::TextInfo::WARN;
     this->text_info.Message = "Reboot PX4!";
 }
-
 
 // 打印参数
 void UAVControl::printf_param()
