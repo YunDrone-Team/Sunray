@@ -16,4 +16,12 @@
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="external_source" value="$(arg external_source)" />
     </node>
+
+    <!-- Rviz config -->
+    <arg name="rviz_enable" default="true"/>
+    <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>
+	<!-- 启动Rviz-->
+	<group if="$(arg rviz_enable)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(arg rivz_config)"/>
+    </group>
 </launch>
