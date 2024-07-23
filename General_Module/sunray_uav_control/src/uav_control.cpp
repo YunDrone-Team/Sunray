@@ -52,6 +52,9 @@ void UAVControl::init(ros::NodeHandle& nh)
     setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
     // 【发布】全局位置控制指令，包括期望经纬度等接口 坐标系:WGS84坐标系 -- 本节点->飞控
     setpoint_raw_global_pub = nh.advertise<sunray_msgs::GlobalPositionSetpoint>(topic_prefix + "/mavros/setpoint_raw/global", 1);
+    // 【发布】无人机状态+cmd 
+    uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state_cmd", 1);
+
     // 【服务】解锁/上锁 -- 本节点->飞控
     px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_prefix + "/mavros/cmd/arming");
     // 【服务】修改系统模式 -- 本节点->飞控
@@ -251,9 +254,15 @@ void UAVControl::get_desired_state_from_rc()
     double max_vel_z = 1.3;
     double max_vel_yaw = 1.5;
 
+    float body_xy[2], enu_xy[2];
+    body_xy[0] = rc_input.ch[1] * max_vel_xy * delta_t;
+    body_xy[1] = -rc_input.ch[0] * max_vel_xy * delta_t;
+
+    rotation_yaw(Hover_yaw, body_xy, enu_xy);
+
     // 悬停位置 = 前一个悬停位置 + 遥控器数值[-1,1] * 0.01(如果主程序中设定是100Hz的话)
-    Hover_position(0) += rc_input.ch[1] * max_vel_xy * delta_t;
-    Hover_position(1) += -rc_input.ch[0] * max_vel_xy * delta_t;
+    Hover_position(0) += enu_xy[0];
+    Hover_position(1) += enu_xy[1];
     Hover_position(2) += rc_input.ch[2] * max_vel_z * delta_t;
     Hover_yaw += -rc_input.ch[3] * max_vel_yaw * delta_t;
     // 因为这是一个积分系统，所以即使停杆了，无人机也还会继续移动一段距离
@@ -689,6 +698,9 @@ void UAVControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
     }
 
     uav_state_last = uav_state;
+
+    uav_state.control_mode = control_mode;
+    uav_state_pub.publish(uav_state);
 }
 
 void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)

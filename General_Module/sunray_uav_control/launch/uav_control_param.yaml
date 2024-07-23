@@ -1,6 +1,6 @@
 ## parameter for uav_control
 uav_name: "uav"
-sim_mode: false
+sim_mode: true
 flag_printf: true
 
 uav_control:
