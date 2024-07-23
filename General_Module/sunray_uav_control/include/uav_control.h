@@ -182,5 +182,6 @@ class UAVControl
         void printf_param();
         void set_hover_pose_with_odom();
         void set_hover_pose_with_rc();
+        void printf_uav_state();
 };
 #endif
