@@ -330,6 +330,9 @@ void VISION_POSE::timercb_pub_vision_pose(const ros::TimerEvent &e)
     uav_state.velocity[0] = uav_pose_external.vel[0];
     uav_state.velocity[1] = uav_pose_external.vel[1];
     uav_state.velocity[2] = uav_pose_external.vel[2];
+    uav_state.attitude[0] = uav_pose_external.att[0];
+    uav_state.attitude[1] = uav_pose_external.att[1];
+    uav_state.attitude[2] = uav_pose_external.att[2];
     uav_state.attitude_q = uav_pose_external.q;
     uav_state_pub.publish(uav_state);
 
@@ -520,7 +523,8 @@ void VISION_POSE::px4_state_cb(const mavros_msgs::State::ConstPtr& msg)
 
 void VISION_POSE::px4_battery_cb(const sensor_msgs::BatteryState::ConstPtr& msg)
 {
-    uav_state.battery_state = msg->percentage * 100;
+    uav_state.battery_state = msg->voltage;
+    uav_state.battery_percetage = msg->percentage * 100;
 }
 
 void VISION_POSE::local_position_ned_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
