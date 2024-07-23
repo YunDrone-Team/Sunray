@@ -43,6 +43,8 @@ class VISION_POSE
         geometry_msgs::PoseStamped vision_pose;
         // 无人机状态信息
         sunray_msgs::UAVState uav_state;
+        // 无人机轨迹容器,用于rviz显示
+        std::vector<geometry_msgs::PoseStamped> uav_pos_vector;    
 
         struct uav_pose
         {
@@ -80,8 +82,12 @@ class VISION_POSE
         // 发布话题
         ros::Publisher vision_pose_pub;             // 将vision_pose消息发布至PX4
         ros::Publisher uav_state_pub;               // 
+        ros::Publisher uav_odom_pub;               // 
+        ros::Publisher uav_trajectory_pub;  
+        ros::Publisher uav_mesh_pub;  
         // 定时器
         ros::Timer timer_px4_vision_pub;            // 定时发布vision_pose消息
+        ros::Timer timer_rviz_pub;            // 定时发布rviz显示消息
 
         // 回调函数
         void px4_state_cb(const mavros_msgs::State::ConstPtr& msg);
@@ -95,6 +101,7 @@ class VISION_POSE
         void local_vel_ned_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
         void attitude_cb(const sensor_msgs::Imu::ConstPtr &msg);
         void timercb_pub_vision_pose(const ros::TimerEvent &e);
+        void timercb_rviz(const ros::TimerEvent &e);
         bool check_timeout();
 };
 
@@ -152,8 +159,19 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/vision_pose/pose", 1);
     // 【发布】无人机综合状态信息 - 本节点 -> 其他控制&任务节点
     uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1);
+    // 【发布】无人机里程计,主要用于RVIZ显示
+    uav_odom_pub = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/sunray/uav_odom", 1);
+    // 【发布】无人机运动轨迹,主要用于RVIZ显示
+    uav_trajectory_pub = nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/uav_trajectory", 1);
+    // 【发布】无人机位置(带图标),用于RVIZ显示
+    uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray/uav_mesh", 1);
+
+
     // 【定时器】使用外部定位设备时，需要定时发送vision信息至飞控,并保证一定频率 - 本节点 -> 飞控
     timer_px4_vision_pub = nh.createTimer(ros::Duration(0.02), &VISION_POSE::timercb_pub_vision_pose, this);
+
+    // 【定时器】定时发布 rviz显示,保证1Hz以上
+    timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &VISION_POSE::timercb_rviz, this);
 
     // 初始化
     uav_state.header.frame_id = uav_name;
@@ -176,6 +194,119 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     uav_state.battery_percetage = 0;
 
     cout << GREEN << node_name << " init! " << TAIL << endl;
+}
+
+void VISION_POSE::timercb_rviz(const ros::TimerEvent &e)
+{
+    if(!uav_state.odom_valid)
+    {
+        return;
+    }
+    nav_msgs::Odometry uav_odom;
+    // 发布无人机当前odometry(有些节点需要Odometry这个数据类型)
+    uav_odom.header.stamp = ros::Time::now();
+    uav_odom.header.frame_id = "world";
+    uav_odom.child_frame_id = "base_link";
+    uav_odom.pose.pose.position.x = uav_state.position[0];
+    uav_odom.pose.pose.position.y = uav_state.position[1];
+    uav_odom.pose.pose.position.z = uav_state.position[2];
+    // 导航算法规定 高度不能小于0
+    if (uav_odom.pose.pose.position.z <= 0)
+    {
+        uav_odom.pose.pose.position.z = 0.01;
+    }
+    uav_odom.pose.pose.orientation = uav_state.attitude_q;
+    uav_odom.twist.twist.linear.x = uav_state.velocity[0];
+    uav_odom.twist.twist.linear.y = uav_state.velocity[1];
+    uav_odom.twist.twist.linear.z = uav_state.velocity[2];
+    uav_odom_pub.publish(uav_odom);
+
+
+    // 发布无人机运动轨迹，用于rviz显示
+    geometry_msgs::PoseStamped uav_pos;
+    uav_pos.header.stamp = ros::Time::now();
+    uav_pos.header.frame_id = "world";
+    uav_pos.pose.position.x = uav_state.position[0];
+    uav_pos.pose.position.y = uav_state.position[1];
+    uav_pos.pose.position.z = uav_state.position[2];
+    uav_pos.pose.orientation = uav_state.attitude_q;
+    uav_pos_vector.insert(uav_pos_vector.begin(), uav_pos);
+    if (uav_pos_vector.size() > TRA_WINDOW)
+    {
+        uav_pos_vector.pop_back();
+    }
+    nav_msgs::Path uav_trajectory;
+    uav_trajectory.header.stamp = ros::Time::now();
+    uav_trajectory.header.frame_id = "world";
+    uav_trajectory.poses = uav_pos_vector;
+    uav_trajectory_pub.publish(uav_trajectory);
+
+    // 发布无人机marker
+    visualization_msgs::Marker meshROS;
+    meshROS.header.frame_id = "world";
+    meshROS.header.stamp = ros::Time::now();
+    meshROS.ns = "mesh";
+    meshROS.id = 0;
+    meshROS.type = visualization_msgs::Marker::MESH_RESOURCE;
+    meshROS.action = visualization_msgs::Marker::ADD;
+    meshROS.pose.position.x = uav_state.position[0];
+    meshROS.pose.position.y = uav_state.position[1];
+    meshROS.pose.position.z = uav_state.position[2];
+    meshROS.pose.orientation.w = uav_state.attitude_q.w;
+    meshROS.pose.orientation.x = uav_state.attitude_q.x;
+    meshROS.pose.orientation.y = uav_state.attitude_q.y;
+    meshROS.pose.orientation.z = uav_state.attitude_q.z;
+    meshROS.scale.x = 1.0;
+    meshROS.scale.y = 1.0;
+    meshROS.scale.z = 1.0;
+    meshROS.color.a = 1.0;
+    meshROS.color.r = 1.0;
+    meshROS.color.g = 0.0;
+    meshROS.color.b = 0.0;
+    meshROS.mesh_use_embedded_materials = false;
+    meshROS.mesh_resource = std::string("package://prometheus_uav_control/meshes/hummingbird.mesh");
+    uav_mesh_pub.publish(meshROS);
+
+    // 发布TF用于RVIZ显示（用于lidar）
+    static tf2_ros::TransformBroadcaster broadcaster;
+    geometry_msgs::TransformStamped tfs;
+    //  |----头设置
+    tfs.header.frame_id = "world";       //相对于世界坐标系
+    tfs.header.stamp = ros::Time::now(); //时间戳
+    //  |----坐标系 ID
+    tfs.child_frame_id = uav_name + "/lidar_link"; //子坐标系，无人机的坐标系
+    // tfs.child_frame_id = "/lidar_link"; //子坐标系，无人机的坐标系
+    //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
+    tfs.transform.translation.x = uav_state.position[0];
+    tfs.transform.translation.y = uav_state.position[1];
+    tfs.transform.translation.z = uav_state.position[2];
+    //  |--------- 四元数设置
+    tfs.transform.rotation = uav_state.attitude_q;
+    //  |--------- 广播器发布数据
+    broadcaster.sendTransform(tfs);
+
+    //q_orig  是原姿态转换的tf的四元数
+    //q_rot   旋转四元数
+    //q_new   旋转后的姿态四元数
+    tf2::Quaternion q_orig, q_rot, q_new;
+
+    // commanded_pose.pose.orientation  这个比如说 是 订阅的别的节点的topic 是一个  姿态的 msg 四元数
+    //通过tf2::convert()  转换成 tf 的四元数
+    tf2::convert(tfs.transform.rotation , q_orig);
+
+    // 设置 绕 x 轴 旋转180度
+    double r=-1.57, p=0, y=-1.57;  
+    q_rot.setRPY(r, p, y);//求得 tf 的旋转四元数
+
+    q_new = q_orig*q_rot;  // 通过 姿态的四元数 乘以旋转的四元数 即为 旋转 后的  四元数
+    q_new.normalize(); // 归一化
+
+    //  将 旋转后的 tf 四元数 转换 为 msg 四元数
+    tf2::convert(q_new, tfs.transform.rotation);
+    tfs.child_frame_id = uav_name + "/camera_link"; //子坐标系，无人机的坐标系
+    //  |--------- 广播器发布数据
+    broadcaster.sendTransform(tfs);
+
 }
 
 void VISION_POSE::timercb_pub_vision_pose(const ros::TimerEvent &e)
