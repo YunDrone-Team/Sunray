@@ -264,7 +264,7 @@ void VISION_POSE::timercb_rviz(const ros::TimerEvent &e)
     meshROS.color.g = 0.0;
     meshROS.color.b = 0.0;
     meshROS.mesh_use_embedded_materials = false;
-    meshROS.mesh_resource = std::string("package://prometheus_uav_control/meshes/hummingbird.mesh");
+    meshROS.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
     uav_mesh_pub.publish(meshROS);
 
     // 发布TF用于RVIZ显示（用于lidar）
@@ -385,7 +385,7 @@ void VISION_POSE::printf_debug_info()
     cout << BLUE << "Pose from Autopilot [NED]: " << TAIL << endl;
     cout << GREEN << "Pos [X Y Z] : " << uav_pose_px4.pos[0] << " [ m ] " << uav_pose_px4.pos[1] << " [ m ] " << uav_pose_px4.pos[2] << " [ m ] " << TAIL << endl;
     cout << GREEN << "Vel [X Y Z] : " << uav_pose_px4.vel[0] << " [m/s] " << uav_pose_px4.vel[1] << " [m/s] " << uav_pose_px4.vel[2] << " [m/s] " << TAIL << endl;
-    cout << GREEN << "Att [R P Y] : " << uav_pose_px4.att[0] * 180 / M_PI << " [deg] " << uav_pose_px4.att[1] * 180 / M_PI << " [deg] " << uav_pose_px4.att * 180 / M_PI << " [deg] " << TAIL << endl;
+    cout << GREEN << "Att [R P Y] : " << uav_pose_px4.att[0] * 180 / M_PI << " [deg] " << uav_pose_px4.att[1] * 180 / M_PI << " [deg] " << uav_pose_px4.att[2] * 180 / M_PI << " [deg] " << TAIL << endl;
 
     // 打印计算得到的差值
     cout << BLUE << "Pose Error [NED]: " << TAIL << endl;

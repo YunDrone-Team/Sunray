@@ -19,7 +19,7 @@ float32[3] attitude_rate            ## [rad/s]
 float32 battery_state               ## [V]
 float32 battery_percetage           ## [0-1]
 
-
+uint8 control_mode
 
 
     

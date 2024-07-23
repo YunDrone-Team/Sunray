@@ -41,9 +41,9 @@ include_directories(
 # add_dependencies(set_model_state_example prometheus_gazebo_gencpp)
 # target_link_libraries(set_model_state_example ${catkin_LIBRARIES})
 
-add_executable(trajectory_bezier_node src/trajectory_bezier_node.cpp)
-add_dependencies(trajectory_bezier_node sunray_control_gencpp)
-target_link_libraries(trajectory_bezier_node ${catkin_LIBRARIES})
+# add_executable(trajectory_bezier_node src/trajectory_bezier_node.cpp)
+# add_dependencies(trajectory_bezier_node sunray_control_gencpp)
+# target_link_libraries(trajectory_bezier_node ${catkin_LIBRARIES})
 
 add_executable(transform_pointcloud src/tf_pointcloud.cpp)
 add_dependencies(transform_pointcloud ${catkin_EXPORTED_TARGETS})

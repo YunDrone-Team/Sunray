@@ -17,7 +17,7 @@ using namespace std;
 #define TRA_WINDOW 2000
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
-std_msgs::Int32 uav_control_state;
+sunray_msgs::UAVState uav_control_state;
 std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
 
 // 如果要使用地面站PrometheusGround控制，需要将此值改为true，否则改为false
@@ -29,7 +29,7 @@ void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
     uav_state = *msg;
 }
 
-void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
+void uav_control_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_control_state = *msg;
 }
@@ -49,10 +49,10 @@ int main(int argc, char **argv)
     string uav_name = "/uav" + std::to_string(uav_id);
 
     //【订阅】状态信息
-    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/state", 1, uav_state_cb);
+    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1, uav_state_cb);
 
     //【订阅】无人机控制信息
-    ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(uav_name + "/sunray/control_state", 1, uav_control_state_cb);
+    ros::Subscriber uav_contorl_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state_cmd", 1, uav_control_state_cb);
 
     //【发布】UAVCommand
     // ros::Publisher ref_trajectory_pub = nh.advertise<sunray_msgs::Path>(uav_name + "/sunray/reference_trajectory", 10);
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        if (uav_control_state.data != 2)
+        if (uav_control_state.control_mode != 2)
         {
             cout << YELLOW << "Please switch to COMMAND_CONTROL mode first" << TAIL << endl;
         }

@@ -148,6 +148,7 @@ class UAVControl
         ros::Publisher setpoint_raw_attitude_pub;
         ros::Publisher setpoint_raw_global_pub;
         ros::Publisher control_mode_pub;
+        ros::Publisher uav_state_pub;
         // 服务
         ros::ServiceClient px4_arming_client;
         ros::ServiceClient px4_set_mode_client;
