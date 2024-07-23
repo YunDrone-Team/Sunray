@@ -1,3 +1,9 @@
+//
+#include <iostream>
+#include <bitset>
+// Eigen
+#include <Eigen/Eigen>
+
 // ROS话题消息头文件
 
 // sunray_msgs
@@ -54,3 +60,4 @@
 #include <visualization_msgs/Marker.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_datatypes.h>
+#include "tf2_ros/transform_broadcaster.h"  //发布动态坐标关系

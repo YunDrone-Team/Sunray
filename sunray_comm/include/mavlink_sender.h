@@ -113,7 +113,7 @@ void MavlinkSender::init(ros::NodeHandle& nh, Generic_Port *port)
     nh.param<string>("uav_name", uav_name, "none");
     nh.param<int>("uav_id", uav_id, 0);
 
-    string topic_name = "/"  + uav_name + std::to_string(uav_id);
+    string topic_prefix = "/"  + uav_name + std::to_string(uav_id);
 
     this->port = port;
 
@@ -128,28 +128,28 @@ void MavlinkSender::init(ros::NodeHandle& nh, Generic_Port *port)
 
 
     // 【发布】无人机当前状态 - HEARTBEAT #0
-    heartbeat_pub = nh.advertise<sunray_msgs::Heartbeat>(topic_name + "/sunray/heartbeat", 1);
+    heartbeat_pub = nh.advertise<sunray_msgs::Heartbeat>(topic_prefix + "/sunray/heartbeat", 1);
 
     // 【服务】解锁/上锁 - COMMAND_LONG ( #76 )
-    arming_srv = nh.advertiseService(topic_name + "/sunray/arm_cmd", &MavlinkSender::arming_cb, this);
+    arming_srv = nh.advertiseService(topic_prefix + "/sunray/arm_cmd", &MavlinkSender::arming_cb, this);
 
     // 【订阅】解锁/上锁 - 封装为：COMMAND_LONG ( #76 )
-    arming_cmd_sub = nh.subscribe<std_msgs::Bool>(topic_name + "/sunray/arm_cmd", 1, &MavlinkSender::arming_cmd_cb, this);
+    arming_cmd_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/arm_cmd", 1, &MavlinkSender::arming_cmd_cb, this);
     // 【订阅】修改系统模式 - 封装为：COMMAND_LONG ( #76 )
-    set_mode_cmd_sub = nh.subscribe<sunray_msgs::SetMode>(topic_name + "/sunray/set_mode_cmd", 1, &MavlinkSender::set_mode_cmd_cb, this);
+    set_mode_cmd_sub = nh.subscribe<sunray_msgs::SetMode>(topic_prefix + "/sunray/set_mode_cmd", 1, &MavlinkSender::set_mode_cmd_cb, this);
     // 【订阅】紧急上锁服务(KILL) - 封装为：COMMAND_LONG ( #76 )
-    emergency_kill_cmd_sub = nh.subscribe<std_msgs::Bool>(topic_name + "/sunray/emergency_kill_cmd", 1, &MavlinkSender::emergency_kill_cmd_cb, this);
+    emergency_kill_cmd_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/emergency_kill_cmd", 1, &MavlinkSender::emergency_kill_cmd_cb, this);
     // 【订阅】重启PX4飞控 - 封装为：COMMAND_LONG ( #76 )
-    reboot_cmd_sub = nh.subscribe<std_msgs::Bool>(topic_name + "/sunray/reboot_cmd", 1, &MavlinkSender::reboot_cmd_cb, this);
+    reboot_cmd_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/reboot_cmd", 1, &MavlinkSender::reboot_cmd_cb, this);
 
     // 【订阅】姿态期望值 - 封装为：SET_ATTITUDE_TARGET ( #82 )
-    setpoint_raw_attitude_sub = nh.subscribe<sunray_msgs::AttitudeSetpoint>(topic_name + "/sunray/setpoint_raw/attitude", 1, &MavlinkSender::setpoint_raw_attitude_cb, this);
+    setpoint_raw_attitude_sub = nh.subscribe<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/sunray/setpoint_raw/attitude", 1, &MavlinkSender::setpoint_raw_attitude_cb, this);
     // 【订阅】位置/速度/加速度期望值 - SET_POSITION_TARGET_LOCAL_NED ( #84 )
-    setpoint_raw_local_sub = nh.subscribe<sunray_msgs::LocalPositionSetpoint>(topic_name + "/sunray/setpoint_raw/local", 1, &MavlinkSender::setpoint_raw_local_cb, this);
+    setpoint_raw_local_sub = nh.subscribe<sunray_msgs::LocalPositionSetpoint>(topic_prefix + "/sunray/setpoint_raw/local", 1, &MavlinkSender::setpoint_raw_local_cb, this);
     // 【订阅】经纬度以及高度位置 - 封装为：SET_POSITION_TARGET_GLOBAL_INT ( #86 )
-    setpoint_raw_global_sub = nh.subscribe<sunray_msgs::GlobalPositionSetpoint>(topic_name + "/sunray/setpoint_raw/global", 1, &MavlinkSender::setpoint_raw_global_cb, this);
+    setpoint_raw_global_sub = nh.subscribe<sunray_msgs::GlobalPositionSetpoint>(topic_prefix + "/sunray/setpoint_raw/global", 1, &MavlinkSender::setpoint_raw_global_cb, this);
     // 【订阅】视觉估计的位置 - 封装为：VISION_POSITION_ESTIMATE #102
-    vision_pose_sub = nh.subscribe<sunray_msgs::VisionPositionEstimate>(topic_name + "/sunray/vision_position_estimate", 100, &MavlinkSender::vision_pose_cb, this);
+    vision_pose_sub = nh.subscribe<sunray_msgs::VisionPositionEstimate>(topic_prefix + "/sunray/vision_position_estimate", 100, &MavlinkSender::vision_pose_cb, this);
 
 }
 

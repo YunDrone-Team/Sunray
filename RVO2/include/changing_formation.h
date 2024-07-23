@@ -33,7 +33,7 @@ private:
     RVO::RVOSimulator *simulator;
     std::vector<RVO::Vector2> goals;
 
-    std::string topic_name;               // 节点名称
+    std::string topic_prefix;               // 节点名称
     std::string uav_name{""};            // 无人机名称
     int uav_id;                     // 无人机编号
 

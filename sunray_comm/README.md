@@ -94,5 +94,5 @@ roslaunch sunray_comm sunray_comm_px4.launch
 ## 测试VISION_POSE话题融合效果
 roslaunch sunray_comm sunray_comm_fmt.launch
 
-roslaunch sunray_control vision_pose_test.launch
+roslaunch sunray_control vision_pose.launch
 ```

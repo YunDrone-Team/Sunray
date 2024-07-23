@@ -46,15 +46,15 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "fake_topic_pub");
     ros::NodeHandle nh("~");
 
-    string topic_name = "/uav1";
+    string topic_prefix = "/uav1";
 
     ros::Timer timer1 = nh.createTimer(ros::Duration(0.1), timer1_cb);
     ros::Timer timer2 = nh.createTimer(ros::Duration(0.01), timer2_cb);  
 
 
-    setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_name + "/sunray/setpoint_raw/attitude", 1);
+    setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/sunray/setpoint_raw/attitude", 1);
 
-    vision_pose_pub = nh.advertise<nav_msgs::Odometry>(topic_name + "/sunray/vision_odom", 1);
+    vision_pose_pub = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/sunray/vision_odom", 1);
 
 
     while (ros::ok())

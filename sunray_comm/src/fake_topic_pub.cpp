@@ -36,9 +36,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "fake_topic_pub");
     ros::NodeHandle nh("~");
 
-    string topic_name = "/uav1";
+    string topic_prefix = "/uav1";
 
-    ros::Publisher setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_name + "/sunray/setpoint_raw/attitude", 10);
+    ros::Publisher setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/sunray/setpoint_raw/attitude", 10);
 
     int CMD = 0;
     

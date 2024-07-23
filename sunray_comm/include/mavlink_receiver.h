@@ -155,7 +155,7 @@ void MavlinkReceiver::init(ros::NodeHandle& nh, Generic_Port *port)
     nh.param<int>("uav_id", uav_id, 0);
     nh.param<string>("px4_or_fmt", px4_or_fmt, "px4");
 
-    string topic_name = "/"  + uav_name + std::to_string(uav_id);
+    string topic_prefix = "/"  + uav_name + std::to_string(uav_id);
 
     this->port = port;
 
@@ -163,31 +163,31 @@ void MavlinkReceiver::init(ros::NodeHandle& nh, Generic_Port *port)
     component_id = 1; // component id
 
     // 【发布】无人机当前状态 - HEARTBEAT #0
-    heartbeat_pub = nh.advertise<sunray_msgs::Heartbeat>(topic_name + "/sunray/heartbeat", 1);
+    heartbeat_pub = nh.advertise<sunray_msgs::Heartbeat>(topic_prefix + "/sunray/heartbeat", 1);
     // 【发布】无人机电池状态 - SYS_STATUS #1
-    sys_status_pub = nh.advertise<sunray_msgs::SysStatus>(topic_name + "/sunray/sys_status", 1);
+    sys_status_pub = nh.advertise<sunray_msgs::SysStatus>(topic_prefix + "/sunray/sys_status", 1);
     // 【发布】GPS状态 - GPS_RAW_INT #24
-    gps_raw_init_pub = nh.advertise<geometry_msgs::Point>(topic_name + "/sunray/gps_raw_init", 10);
+    gps_raw_init_pub = nh.advertise<geometry_msgs::Point>(topic_prefix + "/sunray/gps_raw_init", 10);
     // 【发布】无人机当前欧拉角 - ATTITUDE #30 (2选1都可)
-    attitude_pub = nh.advertise<sunray_msgs::Attitude>(topic_name + "/sunray/attitude", 1);
+    attitude_pub = nh.advertise<sunray_msgs::Attitude>(topic_prefix + "/sunray/attitude", 1);
     // 【发布】无人机当前欧拉角 - ATTITUDE_QUATERNION #31 (2选1都可)
-    attitude_quaterion_pub = nh.advertise<sunray_msgs::AttitudeQuaternion>(topic_name + "/sunray/attitude_quaterion", 1);
+    attitude_quaterion_pub = nh.advertise<sunray_msgs::AttitudeQuaternion>(topic_prefix + "/sunray/attitude_quaterion", 1);
     // 【发布】无人机当前位置 - LOCAL_POSITION_NED #32
-    local_position_ned_pub = nh.advertise<sunray_msgs::LocalPositionNED>(topic_name + "/sunray/local_position_ned", 1);
+    local_position_ned_pub = nh.advertise<sunray_msgs::LocalPositionNED>(topic_prefix + "/sunray/local_position_ned", 1);
     // 【发布】无人机当前经纬度 - GLOBAL_POSITION_INT #33
-    global_position_init_pub = nh.advertise<geometry_msgs::Point>(topic_name + "/sunray/global_position_init", 1);
+    global_position_init_pub = nh.advertise<geometry_msgs::Point>(topic_prefix + "/sunray/global_position_init", 1);
     //【发布】遥控器信息 - RC_CHANNELS_RAW #35 or RC_CHANNELS #65
-    rc_channels_raw_pub = nh.advertise<geometry_msgs::Point>(topic_name + "/sunray/rc_channels_raw", 1);    
+    rc_channels_raw_pub = nh.advertise<geometry_msgs::Point>(topic_prefix + "/sunray/rc_channels_raw", 1);    
     //【发布】遥控器信息 - RC_CHANNELS_RAW #35 or RC_CHANNELS #65
-    rc_channels_pub = nh.advertise<sunray_msgs::RCChannels>(topic_name + "/sunray/rc_channels", 1);  
+    rc_channels_pub = nh.advertise<sunray_msgs::RCChannels>(topic_prefix + "/sunray/rc_channels", 1);  
     //【发布】无人机的姿态设定值 - ATTITUDE_TARGET #83
-    attitude_target_pub = nh.advertise<sunray_msgs::AttitudeTarget>(topic_name + "/sunray/attitude_target", 1);
+    attitude_target_pub = nh.advertise<sunray_msgs::AttitudeTarget>(topic_prefix + "/sunray/attitude_target", 1);
     //【发布】无人机的位置/速度/加速度设定值 - POSITION_TARGET_LOCAL_NED #85 
-    position_target_pub = nh.advertise<sunray_msgs::PositionTargetLocalNED>(topic_name + "/sunray/position_target", 1);
+    position_target_pub = nh.advertise<sunray_msgs::PositionTargetLocalNED>(topic_prefix + "/sunray/position_target", 1);
     // 【发布】无人机原始imu信息 - HIGHRES_IMU #105
-    highres_imu_pub = nh.advertise<sensor_msgs::Imu>(topic_name + "/sunray/highres_imu_ned", 1);
+    highres_imu_pub = nh.advertise<sensor_msgs::Imu>(topic_prefix + "/sunray/highres_imu_ned", 1);
     // 【发布】无人机定高雷达数据 - DISTANCE_SENSOR #132
-    distance_sensor_pub = nh.advertise<sensor_msgs::Range>(topic_name + "/sunray/distance_sensor", 1);
+    distance_sensor_pub = nh.advertise<sensor_msgs::Range>(topic_prefix + "/sunray/distance_sensor", 1);
 
 }
 

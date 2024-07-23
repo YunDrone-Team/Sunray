@@ -6,7 +6,7 @@ void VIOBOT::init(ros::NodeHandle& nh, bool if_pritf)
     // nh.param<string>("uav_name", uav_name, "none");
     // nh.param<int>("uav_id", uav_id, 0);
 
-    // string topic_name = "/"  + uav_name + std::to_string(uav_id);
+    // string topic_prefix = "/"  + uav_name + std::to_string(uav_id);
 
     // 【发布】vio state
     viobot_state_pub = nh.advertise<sunray_msgs::ViobotState>("/viobot/viobot_state", 2);

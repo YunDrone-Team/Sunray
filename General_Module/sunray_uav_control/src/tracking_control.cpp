@@ -18,7 +18,7 @@ void trackingController::initParam()
 {
 	this->nh_.param<int>("uav_id", uav_id, 1);
     this->nh_.param<string>("uav_name", uav_name, "uav");
-	topic_name = "/" + uav_name + std::to_string(uav_id);
+	topic_prefix = "/" + uav_name + std::to_string(uav_id);
 	// body rate control
 	if (not this->nh_.getParam("controller/body_rate_control", this->bodyRateControl_))
 	{
@@ -68,25 +68,25 @@ void trackingController::initParam()
 void trackingController::registerPub()
 {	
 	// command publisher
-	this->cmdPub_ = this->nh_.advertise<mavros_msgs::AttitudeTarget>(topic_name + "/mavros/setpoint_raw/attitude", 100);
+	this->cmdPub_ = this->nh_.advertise<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/attitude", 100);
 
 	// acc comman publisher
-	this->accCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_name + "/mavros/setpoint_raw/local", 100);
+	this->accCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 100);
 
 	// pos comman publisher
-	this->posCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_name + "/mavros/setpoint_raw/local", 100);
+	this->posCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 100);
 
 	// vel comman publisher
-	this->velCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_name + "/mavros/setpoint_raw/local", 100);
+	this->velCmdPub_ = this->nh_.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 100);
 }
 
 void trackingController::registerCallback()
 {
 	// odom subscriber
-	this->odomSub_ = this->nh_.subscribe(topic_name + "/mavros/local_position/odom", 1, &trackingController::odomCB, this);
+	this->odomSub_ = this->nh_.subscribe(topic_prefix + "/mavros/local_position/odom", 1, &trackingController::odomCB, this);
 
 	// imu subscriber
-	this->imuSub_ = this->nh_.subscribe(topic_name + "/mavros/imu/data", 1, &trackingController::imuCB, this);
+	this->imuSub_ = this->nh_.subscribe(topic_prefix + "/mavros/imu/data", 1, &trackingController::imuCB, this);
 
 	// target setpoint subscriber
 	this->targetSub_ = this->nh_.subscribe("/sunray/trajectory/target_state", 1, &trackingController::targetCB, this);

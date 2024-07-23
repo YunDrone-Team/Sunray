@@ -26,40 +26,40 @@ void UAVControl::init(ros::NodeHandle& nh)
     // 【函数】打印参数
     printf_param();
 
-    string topic_name = "/" + uav_name;
+    string topic_prefix = "/" + uav_name;
     // 【订阅】从其他节点订阅外部控制指令
-    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_name + "/sunray/uav_control_cmd", 1, &UAVControl::control_cmd_cb, this);
+    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1, &UAVControl::control_cmd_cb, this);
     // 【订阅】订阅无人机状态 -- from vision_pose
-    uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_name + "/sunray/uav_state", 1, &UAVControl::uav_state_cb, this);
+    uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, &UAVControl::uav_state_cb, this);
     // 【订阅】无人机设置指令
-    uav_setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_name + "/sunray/setup", 1, &UAVControl::uav_setup_cb, this);
+    uav_setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1, &UAVControl::uav_setup_cb, this);
 
     //【订阅】PX4遥控器数据
     string rc_topic_name;
     if (sim_mode)
     {
-        rc_topic_name = topic_name + "/sunray/fake_rc_in";
+        rc_topic_name = topic_prefix + "/sunray/fake_rc_in";
     }
     else
     {
-        rc_topic_name = topic_name + "/mavros/rc/in";
+        rc_topic_name = topic_prefix + "/mavros/rc/in";
     }
     px4_rc_sub = nh.subscribe<mavros_msgs::RCIn>(rc_topic_name, 1, &UAVControl::px4_rc_cb, this);
 
     // 【发布】本地位置控制指令，包括期望位置、速度、加速度等接口 坐标系:ENU系
-    setpoint_raw_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_name + "/mavros/setpoint_raw/local", 1);
+    setpoint_raw_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
     // 【发布】姿态控制指令，包括期望姿态等接口
-    setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_name + "/mavros/setpoint_raw/attitude", 1);
+    setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
     // 【发布】全局位置控制指令，包括期望经纬度等接口 坐标系:WGS84坐标系
-    setpoint_raw_global_pub = nh.advertise<sunray_msgs::GlobalPositionSetpoint>(topic_name + "/mavros/setpoint_raw/global", 1);
+    setpoint_raw_global_pub = nh.advertise<sunray_msgs::GlobalPositionSetpoint>(topic_prefix + "/mavros/setpoint_raw/global", 1);
     // 【服务】解锁/上锁
-    px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_name + "/mavros/cmd/arming");
+    px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_prefix + "/mavros/cmd/arming");
     // 【服务】修改系统模式
-    px4_set_mode_client = nh.serviceClient<mavros_msgs::SetMode>(topic_name + "/mavros/set_mode");
+    px4_set_mode_client = nh.serviceClient<mavros_msgs::SetMode>(topic_prefix + "/mavros/set_mode");
     // 【服务】紧急上锁服务(KILL)
-    px4_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_name + "/mavros/cmd/command");
+    px4_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
     // 【服务】重启PX4飞控
-    px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_name + "/mavros/cmd/command");
+    px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
     
     // 状态初始化
     control_mode = Control_Mode::INIT;
@@ -736,33 +736,6 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
             control_mode = Control_Mode::CMD_CONTROL;
             check_off = true;
         }
-    }
-}
-
-int UAVControl::check_failsafe()
-{
-    // 一般不会出现，除非发送了重启飞控指令，或者飞控连接线物理断裂
-    if (!uav_state.connected)
-    {
-        cout << RED << uav_name << ":----> Failsafe: Waiting for PX4 connection！" << TAIL << endl;
-        return -1;
-    }
-
-    if (uav_state.position[0] < uav_geo_fence.x_min || uav_state.position[0] > uav_geo_fence.x_max ||
-        uav_state.position[1] < uav_geo_fence.y_min || uav_state.position[1] > uav_geo_fence.y_max ||
-        uav_state.position[2] < uav_geo_fence.z_min || uav_state.position[2] > uav_geo_fence.z_max)
-    {
-        cout << RED << uav_name << ":----> Failsafe: Out of the geo fence, swtich to land control mode！" << TAIL << endl;
-        return 1;
-    }
-    else if (!uav_state.odom_valid)
-    {
-        cout << RED << uav_name << ":----> Failsafe: Odom invalid, swtich to land control mode!" << TAIL << endl;
-        return 2;
-    }
-    else
-    {
-        return 0;
     }
 }
 

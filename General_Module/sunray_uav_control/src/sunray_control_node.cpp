@@ -6,13 +6,13 @@
 
 void mySigintHandler(int sig)
 {
-    ROS_INFO("[control_node] exit...");
+    ROS_INFO("[sunray_control_node] exit...");
     ros::shutdown();
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "control_node");
+    ros::init(argc, argv, "sunray_control_node");
     ros::NodeHandle nh("~");
     ros::Rate rate(100.0);
 
