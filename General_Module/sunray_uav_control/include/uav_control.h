@@ -22,6 +22,8 @@ class UAVControl
         void init(ros::NodeHandle& nh);
         // 主循环函数
         void mainloop();
+        // debug打印
+        void printf_debug_info();
 
         // 基本变量
         // 是否仿真模式

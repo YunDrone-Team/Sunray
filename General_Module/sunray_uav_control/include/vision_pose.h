@@ -29,9 +29,6 @@ class VISION_POSE
         void init(ros::NodeHandle& nh);
         // 打印debug信息函数
         void printf_debug_info();
-        void check_timeout();
-
-
 
     private:
         // 节点名称
@@ -98,7 +95,7 @@ class VISION_POSE
         void local_vel_ned_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
         void attitude_cb(const sensor_msgs::Imu::ConstPtr &msg);
         void timercb_pub_vision_pose(const ros::TimerEvent &e);
-
+        bool check_timeout();
 };
 
 void VISION_POSE::init(ros::NodeHandle& nh)
@@ -183,6 +180,9 @@ void VISION_POSE::init(ros::NodeHandle& nh)
 
 void VISION_POSE::timercb_pub_vision_pose(const ros::TimerEvent &e)
 {
+    bool odom_valid;
+    odom_valid = check_timeout();
+
     vision_pose.header.stamp = ros::Time::now();
     vision_pose.pose.position.x = uav_pose_external.pos[0];
     vision_pose.pose.position.y = uav_pose_external.pos[1];
@@ -191,7 +191,7 @@ void VISION_POSE::timercb_pub_vision_pose(const ros::TimerEvent &e)
     vision_pose_pub.publish(vision_pose);
     
     uav_state.uav_id = uav_id;
-    uav_state.odom_valid = true;
+    uav_state.odom_valid = odom_valid;
     uav_state.header.stamp = ros::Time::now();
     uav_state.position[0] = vision_pose.pose.position.x;
     uav_state.position[1] = vision_pose.pose.position.y;
@@ -264,33 +264,37 @@ void VISION_POSE::printf_debug_info()
 
 }
 
-
-void VISION_POSE::check_timeout()
+bool VISION_POSE::check_timeout()
 {
     if (external_source == sunray_msgs::ExternalOdom::MOCAP)
     {
         if((ros::Time::now() - uav_pose_external.get_time).toSec()>MOCAP_TIMEOUT){
             cout << RED << "Odom Timeut: [ MOCAP ] " << TAIL << endl;
+            return false;
         }
     }
     else if (external_source == sunray_msgs::ExternalOdom::VINS)
     {
         if((ros::Time::now() - uav_pose_external.get_time).toSec()>VINS_TIMEOUT){
             cout << RED << "Odom Timeut: [ VINS ] " << TAIL << endl;
+            return false;
         }
     }
     else if (external_source == sunray_msgs::ExternalOdom::VIOBOT)
     {
         if((ros::Time::now() - uav_pose_external.get_time).toSec()>VIOBOT_TIMEOUT){
             cout << RED << "Odom Timeut: [ VIOBOT ] " << TAIL << endl;
+            return false;
         }
     }
     else if (external_source == sunray_msgs::ExternalOdom::GAZEBO)
     {
         if((ros::Time::now() - uav_pose_external.get_time).toSec()>GAZEBO_TIMEOUT){
             cout << RED << "Odom Timeut: [ GAZEBO ] " << TAIL << endl;
+            return false;
         }
     }
+    return true;
 }
 
 void VISION_POSE::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
