@@ -10,11 +10,10 @@
         <arg name="uav_id" value="$(arg uav_id)"/>
     </include>
 
-    <group ns="uav1">
-        <node pkg="sunray_uav_control" type="vision_pose_test" name="vision_pose_test" output="screen">
-            <param name="flag_printf" value="$(arg flag_printf)" />
-            <param name="uav_id" value="$(arg uav_id)" />
-            <param name="external_source" value="$(arg external_source)" />
-        </node>
-    </group>
+    <!-- 启动 vision_pose_node -->
+    <node pkg="sunray_uav_control" type="vision_pose_node" name="vision_pose_node_$(arg uav_id)" output="screen">
+        <param name="flag_printf" value="$(arg flag_printf)" />
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="external_source" value="$(arg external_source)" />
+    </node>
 </launch>

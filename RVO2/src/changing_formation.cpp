@@ -8,10 +8,10 @@ changingFormation::changingFormation(const ros::NodeHandle &nh)
     simulator = new RVO::RVOSimulator();
     nh_.param<int>("uav_id", uav_id, 1);
     nh_.param<string>("uav_name", uav_name, "uav");
-    topic_name = "/" + uav_name + std::to_string(uav_id);
-    odomSub_ = nh_.subscribe(topic_name + "/mavros/local_position/odom", 1, &changingFormation::odomCB, this);
-    mocapSub_ = nh_.subscribe("/vrpn_client_node_" + std::to_string(uav_id) + topic_name + "/pose", 1, &changingFormation::mocapCB, this);
-    gazeboSub_ = nh_.subscribe(topic_name + "/mavros/local_position/odom", 1, &changingFormation::odomCB, this);
+    topic_prefix = "/" + uav_name + std::to_string(uav_id);
+    odomSub_ = nh_.subscribe(topic_prefix + "/mavros/local_position/odom", 1, &changingFormation::odomCB, this);
+    mocapSub_ = nh_.subscribe("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/pose", 1, &changingFormation::mocapCB, this);
+    gazeboSub_ = nh_.subscribe(topic_prefix + "/mavros/local_position/odom", 1, &changingFormation::odomCB, this);
 }
 
 void changingFormation::odomCB(const nav_msgs::OdometryConstPtr &odom)

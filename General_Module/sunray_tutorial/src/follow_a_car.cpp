@@ -52,20 +52,20 @@ int main(int argc, char **argv)
     nh.param<string>("target_tpoic_name", target_tpoic_name, "/vrpn_client_node/target/pose");
 
 
-    string topic_name = "/" + uav_name;
+    string topic_prefix = "/" + uav_name;
     // 【订阅】无人机状态 -- from vision_pose
-    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_name + "/sunray/uav_state", 1, uav_state_cb);
+    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, uav_state_cb);
     //【订阅】无人机控制信息
-    ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(topic_name + "/sunray/control_state", 1, uav_control_state_cb);
+    ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(topic_prefix + "/sunray/control_state", 1, uav_control_state_cb);
     // 【订阅】目标点位置
     ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/" + uav_name + "/pose", 1, target_pos_cb);
     // 【订阅】任务结束
-    ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_name + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
+    ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
     
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
-    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_name + "/sunray/uav_control_cmd", 1);
+    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
-    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_name + "/sunray/setup", 1);
+    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();

@@ -105,20 +105,20 @@ void WheeltecRobot::init(ros::NodeHandle& nh, bool if_pritf)
     nh.param("max_vel", max_vel, 2.0f);
     nh.param("mesh_resource", mesh_resource, std::string("package://sunray_wheeltec_robot/meshes/car.dae"));
 
-    string topic_name = "/"  + ugv_name + std::to_string(ugv_id);
+    string topic_prefix = "/"  + ugv_name + std::to_string(ugv_id);
 
     // 【订阅】无人车控制指令
-    ugv_control_cmd_sub = nh.subscribe<sunray_msgs::UGVControlCMD>(topic_name + "/sunray/ugv_control_cmd", 2, &WheeltecRobot::ugv_control_cmd_cb, this);
+    ugv_control_cmd_sub = nh.subscribe<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray/ugv_control_cmd", 2, &WheeltecRobot::ugv_control_cmd_cb, this);
     // 【订阅】VIOBOT state
     viobot_state_sub = nh.subscribe<sunray_msgs::ViobotState>("/viobot/viobot_state", 1, &WheeltecRobot::viobot_state_cb, this);
     // 【订阅】电池状态(无人车底板电压)
-    battery_sub = nh.subscribe<std_msgs::Float32>(topic_name + "/PowerVoltage", 1, &WheeltecRobot::battery_cb, this);
+    battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/PowerVoltage", 1, &WheeltecRobot::battery_cb, this);
     // 【发布】底层控制指令
-    cmd_pub = nh.advertise<geometry_msgs::Twist>(topic_name + "/cmd_vel", 10);
+    cmd_pub = nh.advertise<geometry_msgs::Twist>(topic_prefix + "/cmd_vel", 10);
     // 【发布】mesh，用于RVIZ显示
-    ugv_mesh_pub =  nh.advertise<visualization_msgs::Marker>(topic_name + "/sunray/ugv_mesh", 1);
+    ugv_mesh_pub =  nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray/ugv_mesh", 1);
     // 【发布】无人机移动轨迹，用于RVIZ显示
-    trajectory_pub = nh.advertise<nav_msgs::Path>(topic_name + "/sunray/ugv_trajectory", 10);
+    trajectory_pub = nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/ugv_trajectory", 10);
     
     // 【定时器】定时打印
     debug_timer = nh.createTimer(ros::Duration(2.0), &WheeltecRobot::debug_timer_cb, this);
@@ -423,7 +423,7 @@ void WheeltecRobot::timercb_rviz(const ros::TimerEvent &e)
     // tfs.header.frame_id = "world";  //相对于世界坐标系
     // tfs.header.stamp = ros::Time::now();  //时间戳
     // //  |----坐标系 ID
-    // tfs.child_frame_id = topic_name + "/lidar_link";  //子坐标系，无人车的坐标系
+    // tfs.child_frame_id = topic_prefix + "/lidar_link";  //子坐标系，无人车的坐标系
     // //  |----坐标系相对信息设置  偏移量  无人车相对于世界坐标系的坐标
     // tfs.transform.translation.x = ugv_pos[0];
     // tfs.transform.translation.y = ugv_pos[1];

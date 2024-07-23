@@ -1,18 +1,17 @@
 #include <ros/ros.h>
 #include <signal.h>
 
-#include "uav_control.h"
 #include "vision_pose.h"
 
 void mySigintHandler(int sig)
 {
-    ROS_INFO("[vision_pose_test] exit...");
+    ROS_INFO("[vision_pose_node] exit...");
     ros::shutdown();
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "vision_pose_test");
+    ros::init(argc, argv, "vision_pose_node");
     ros::NodeHandle nh("~");
     ros::Rate rate(100.0);
 
