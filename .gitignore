@@ -2,7 +2,7 @@
 *.d
 *.mp4
 *.avi
-*.png
+#.png
 *.jpg
 *.svj
 .catkin_workspace

@@ -17,10 +17,10 @@
         </inertia>
       </inertial>
       <collision name='base_link_inertia_collision'>
-        <pose>0 0 0.07 0 0 0</pose>
+        <pose>0 0 0.1 0 0 0</pose>
         <geometry>
           <box>
-						<size>0.20 0.20 0.12</size>
+						<size>0.22 0.22 0.40</size>
           </box>
         </geometry>
         <surface>
@@ -36,10 +36,10 @@
         </surface>
       </collision>
       <visual name='base_link_inertia_visual'>
-        <pose>0 0 0.12 3.14 0 0</pose>
+        <pose>0 0 0.2 0 0 -1.57</pose>
         <geometry>
           <mesh>
-            <scale>0.0035 0.0035 0.0035</scale>
+            <scale>0.086 0.086 0.086</scale>
             <uri>model://sunray/meshes/sunray.stl</uri>
           </mesh>
         </geometry>
@@ -88,7 +88,7 @@
       </axis>
     </joint>
     <link name='rotor_0'>
-			<pose>0.188132 -0.188132 0.035 0 0 0</pose>
+			<pose>0.206 -0.206 0.13 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -122,7 +122,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <scale>0.003 0.003 0.003</scale>
+            <scale>0.0032 0.0032 0.0032</scale>
             <uri>model://sunray/meshes/sunray_cw.stl</uri>
           </mesh>
         </geometry>
@@ -154,7 +154,7 @@
       </axis>
     </joint>
     <link name='rotor_1'>
-			<pose>-0.188132 0.188132 0.035 0 0 0</pose>
+			<pose>-0.206 0.206 0.13 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -188,7 +188,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <scale>0.003 0.003 0.003</scale>
+            <scale>0.0032 0.0032 0.0032</scale>
             <uri>model://sunray/meshes/sunray_cw.stl</uri>
           </mesh>
         </geometry>
@@ -220,7 +220,7 @@
       </axis>
     </joint>
     <link name='rotor_2'>
-			<pose>0.188132 0.188132 0.035 0 0 0</pose>
+			<pose>0.206 0.206 0.13 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -254,7 +254,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <scale>0.003 0.003 0.003</scale>
+            <scale>0.0032 0.0032 0.0032</scale>
             <uri>model://sunray/meshes/sunray_cw.stl</uri>
           </mesh>
         </geometry>
@@ -286,7 +286,7 @@
       </axis>
     </joint>
     <link name='rotor_3'>
-			<pose>-0.188132 -0.188132 0.035 0 0 0</pose>
+			<pose>-0.206 -0.206 0.13 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -320,7 +320,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <scale>0.003 0.003 0.003</scale>
+            <scale>0.0032 0.0032 0.0032</scale>
             <uri>model://sunray/meshes/sunray_cw.stl</uri>
           </mesh>
         </geometry>

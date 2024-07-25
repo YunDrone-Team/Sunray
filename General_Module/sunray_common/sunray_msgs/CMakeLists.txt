@@ -43,6 +43,7 @@ add_message_files(
   UGVControlCMD.msg
   ViobotState.msg
   Target.msg
+  OrcaCmd.msg
 )
 
 add_service_files(

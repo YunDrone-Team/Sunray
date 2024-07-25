@@ -54,6 +54,26 @@ add_executable(follow_a_car src/follow_a_car.cpp)
 add_dependencies(follow_a_car sunray_tutorial_gencpp)
 target_link_libraries(follow_a_car ${catkin_LIBRARIES})
 
+add_executable(takeoff_hover_land src/takeoff_hover_land.cpp)
+add_dependencies(takeoff_hover_land sunray_tutorial_gencpp)
+target_link_libraries(takeoff_hover_land ${catkin_LIBRARIES})
+
+add_executable(block src/block.cpp)
+add_dependencies(block sunray_tutorial_gencpp)
+target_link_libraries(block ${catkin_LIBRARIES})
+
+add_executable(circle_z_pos src/circle_z_pos.cpp)
+add_dependencies(circle_z_pos sunray_tutorial_gencpp)
+target_link_libraries(circle_z_pos ${catkin_LIBRARIES})
+
+add_executable(circle_vel src/circle_vel.cpp)
+add_dependencies(circle_vel sunray_tutorial_gencpp)
+target_link_libraries(circle_vel ${catkin_LIBRARIES})
+
+add_executable(hexagon src/hexagon.cpp)
+add_dependencies(hexagon sunray_tutorial_gencpp)
+target_link_libraries(hexagon ${catkin_LIBRARIES})
+
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
