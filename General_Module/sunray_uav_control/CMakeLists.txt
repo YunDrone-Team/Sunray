@@ -69,18 +69,6 @@ add_executable(uav_control_mode_pub utils/uav_control_mode_pub.cpp)
 add_dependencies(uav_control_mode_pub sunray_control_gencpp)
 target_link_libraries(uav_control_mode_pub ${catkin_LIBRARIES})
 
-add_library(trajectory_builder src/trajectory_builder.cpp)
-add_executable(trajectory_builder_node src/trajectory_builder_node.cpp)
-add_dependencies(trajectory_builder_node sunray_control_gencpp)
-target_link_libraries(trajectory_builder_node ${catkin_LIBRARIES})
-target_link_libraries(trajectory_builder_node trajectory_builder)
-
-add_library(tracking_control src/tracking_control.cpp)
-add_executable(tracking_control_node src/tracking_control_node.cpp)
-add_dependencies(tracking_control_node sunray_control_gencpp)
-target_link_libraries(tracking_control_node ${catkin_LIBRARIES})
-target_link_libraries(tracking_control_node tracking_control)
-
 add_executable(terminal_control_node utils/terminal_control_node.cpp)
 add_dependencies(terminal_control_node sunray_control_gencpp)
 target_link_libraries(terminal_control_node ${catkin_LIBRARIES})

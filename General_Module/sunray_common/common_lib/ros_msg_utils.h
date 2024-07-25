@@ -23,6 +23,7 @@
 #include <sunray_msgs/LocalPositionSetpoint.h>
 #include <sunray_msgs/VisionPositionEstimate.h>
 #include <sunray_msgs/Target.h>
+#include <sunray_msgs/OrcaCmd.h>
 
 // std_msgs
 #include <std_msgs/Float64.h>

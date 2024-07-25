@@ -450,18 +450,31 @@ void VISION_POSE::mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
 
 void VISION_POSE::vins_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
-    uav_pose_external.pos = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
-    // Rotate the pose by 90 degrees 
-    nav_msgs::Odometry rotated_msg;
-    tf2::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
-    tf2::Quaternion rotation(0, 0, 1, M_PI/2); // 90 degrees 
-    q = q * rotation;
-    rotated_msg.pose.pose.orientation.x = q.x();
-    rotated_msg.pose.pose.orientation.y = q.y();
-    rotated_msg.pose.pose.orientation.z = q.z();
-    rotated_msg.pose.pose.orientation.w = q.w();
-    uav_pose_external.q = rotated_msg.pose.pose.orientation;
     uav_pose_external.get_time = ros::Time::now(); // 记录时间戳，防止超时
+    geometry_msgs::Pose pose = msg->pose.pose;
+
+    // Convert the pose from RFU to FLU coordinate system
+    tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+    // Swap y and z axes to convert from RFU to FLU
+    double temp = pose.position.y;
+    pose.position.y = -pose.position.x;
+    pose.position.x = temp;
+
+    // Update the orientation accordingly
+    roll = roll + M_PI/2;
+    q.setRPY(pitch, -roll, yaw);
+    pose.orientation.x = q.x();
+    pose.orientation.y = q.y();
+    pose.orientation.z = q.z();
+    pose.orientation.w = q.w();
+
+    uav_pose_external.pos = Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z);
+    uav_pose_external.q = pose.orientation;
+    uav_pose_external.att = Eigen::Vector3d(pitch, -roll, yaw);
 }
 
 void VISION_POSE::gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg)

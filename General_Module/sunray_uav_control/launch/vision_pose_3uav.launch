@@ -1,0 +1,36 @@
+<launch>
+	<arg name="uav_id_1" default="1"/>
+	<arg name="uav_id_2" default="2"/>
+	<arg name="uav_id_3" default="3"/>
+    <arg name="flag_printf" default="true"/>
+    <arg name="external_source" default="2"/>
+	<arg name="server" default="192.168.31.163"/>
+
+    <!-- 启动 vrpn_client_ros -->
+    <include file="$(find sunray_px4)/launch/sunray_vrpn.launch" if="$(eval external_source == 0)">
+        <arg name="server" value="$(arg server)"/>
+        <!-- <arg name="uav_id" value="$(arg uav_id)"/> -->
+    </include>
+
+    <group ns="uav1">
+        <node pkg="sunray_uav_control" type="vision_pose_test" name="vision_pose_test" output="screen">
+            <param name="flag_printf" value="$(arg flag_printf)" />
+            <param name="uav_id" value="$(arg uav_id_1)" />
+            <param name="external_source" value="$(arg external_source)" />
+        </node>
+    </group>
+    <group ns="uav2">
+        <node pkg="sunray_uav_control" type="vision_pose_test" name="vision_pose_test" output="screen">
+            <param name="flag_printf" value="$(arg flag_printf)" />
+            <param name="uav_id" value="$(arg uav_id_2)" />
+            <param name="external_source" value="$(arg external_source)" />
+        </node>
+    </group>
+    <group ns="uav3">
+        <node pkg="sunray_uav_control" type="vision_pose_test" name="vision_pose_test" output="screen">
+            <param name="flag_printf" value="$(arg flag_printf)" />
+            <param name="uav_id" value="$(arg uav_id_3)" />
+            <param name="external_source" value="$(arg external_source)" />
+        </node>
+    </group>
+</launch>
