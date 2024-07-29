@@ -123,7 +123,7 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 1,  &VISION_POSE::px4_battery_cb, this);
     // 【订阅】无人机当前位置（对比用） - 飞控 -> 本节点
     px4_position_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 1, &VISION_POSE::local_position_ned_cb, this);
-    // 【订阅】无人机当前速度 坐标系:ENU系 (PX4 -> sunray_matlab)
+    // 【订阅】无人机当前速度 坐标系:ENU系 (PX4 -> 本节点)
     px4_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 1, &VISION_POSE::local_vel_ned_cb, this);
     // 【订阅】无人机当前欧拉角（对比用） - 飞控 -> 本节点
     px4_attitude_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1, &VISION_POSE::attitude_cb, this);

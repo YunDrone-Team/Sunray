@@ -439,7 +439,7 @@ void UAVControl::get_desired_state_from_cmd()
                 rotation_yaw(uav_yaw, d_vel_body, d_vel_enu);
                 desired_state.vel[0] = d_vel_enu[0];
                 desired_state.vel[1] = d_vel_enu[1];
-                desired_state.vel[2] = d_vel_enu[2];
+                desired_state.vel[2] = control_cmd.desired_vel[2];
                 desired_state.pos << 0.0, 0.0, 0.0;
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
@@ -449,11 +449,11 @@ void UAVControl::get_desired_state_from_cmd()
             if(control_cmd.enable_yawRate){
                 desired_state.yaw_rate = control_cmd.desired_yaw;
                 desired_state.yaw = 0.0;
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
+                send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
                 desired_state.yaw_rate = 0.0;
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
+                send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
         }
@@ -477,11 +477,12 @@ void UAVControl::get_desired_state_from_cmd()
             if(control_cmd.enable_yawRate){
                 desired_state.yaw_rate = control_cmd.desired_yaw;
                 desired_state.yaw = 0.0;
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
+                send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
+                desired_state.yaw = control_cmd.desired_yaw;
                 desired_state.yaw_rate = 0.0;
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
+                send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
         }

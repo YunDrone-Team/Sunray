@@ -27,7 +27,7 @@
 
     <arg name="odometry_topic" value="$(arg odom_topic)"/>
     <!-- sensor pose: transform of camera frame in the world frame -->
-    <arg name="sensor_pose_topic" value="/uav1/mavros/local_position/pose"/>
+    <arg name="sensor_pose_topic" value="nouse1"/>
     <!-- depth topic: depth image, 640x480 by default -->
     <!-- cloud topic: point cloud measurement  -->
     <!-- subscribe ONLY TO ONE of the two topics -->
