@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="vehicle" default="sunray"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/move_car.world"/>
+
+    <!-- gazebo configs -->
+    <arg name="gui" default="true"/>
+    <arg name="debug" default="false"/>
+    <arg name="verbose" default="false"/>
+    <arg name="paused" default="false"/>
+    <!-- Gazebo sim -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <!-- <arg name="use_sim_time" value="false"/> -->
+    </include>
+
+    <arg name="uav_id" value="1"/>
+    <arg name="x" value="1"/>
+    <arg name="y" value="1"/>
+
+    <!-- UAV1 -->
+    <group ns="uav$(arg uav_id)">
+        <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
+            <arg name="ID" value="$(arg uav_id)" />
+            <arg name="vehicle" value="$(arg vehicle)"/>
+        </include>
+    </group>
+</launch>

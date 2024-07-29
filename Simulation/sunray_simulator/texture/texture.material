@@ -40,3 +40,17 @@ material sunray_world_3
    }
  }
 }
+material tag_0
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture tag36h11_0.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}

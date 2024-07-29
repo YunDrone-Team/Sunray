@@ -42,7 +42,7 @@ add_message_files(
   SetMode.msg
   UGVControlCMD.msg
   ViobotState.msg
-  Target.msg
+  PositionCommand.msg
   OrcaCmd.msg
 )
 

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<!-- <?xml version="1.0"?> -->
 <sdf version="1.6">
   <model name="sunray_with_3dlidar">
     <include>
@@ -6,7 +6,7 @@
     </include>
     <include>
       <uri>model://3D_lidar</uri>
-      <pose>0 0 0.15 0 0 0</pose>
+      <pose>0 0 0.39 0 0 0</pose>
     </include>
     <joint name="3Dlidar_joint" type="fixed">
       <child>3D_lidar::laser_link</child>

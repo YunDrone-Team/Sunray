@@ -40,9 +40,29 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
     current_pose = *msg;
 }
 
+// 全局变量存储无人机和车的坐标和朝向
+double x_1, y_1, z_1, yaw_1, x_2, y_2, z_2, yaw_2;
+
+
+// 回调函数，用于获取目标一的位置和朝向
+void uavOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+    x_1 = msg->pose.pose.position.x;
+    y_1 = msg->pose.pose.position.y;
+    z_1 = msg->pose.pose.position.z;
+    yaw_1 = tf::getYaw(msg->pose.pose.orientation);
+}
+
+// 回调函数，用于获取目标二的位置和朝向
+void carOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+    x_2 = msg->pose.pose.position.x;
+    y_2 = msg->pose.pose.position.y;
+    z_2 = msg->pose.pose.position.z;
+    yaw_2 = tf::getYaw(msg->pose.pose.orientation);
+}
+
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "circle_vel");
+    ros::init(argc, argv, "vel_body_follow_car");
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
@@ -80,7 +100,12 @@ int main(int argc, char **argv)
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
-    ros::Subscriber pose_sub = nh.subscribe("/uav1/mavros/local_position/pose", 10, pose_cb);
+    ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
+
+    // 订阅无人机和车的Odometry消息
+    ros::Subscriber uav_odom_sub = nh.subscribe(topic_prefix + "/sunray/gazebo_pose", 10, uavOdomCallback);
+    ros::Subscriber car_odom_sub = nh.subscribe("/tag_odom", 10, carOdomCallback);
+
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
     uav_cmd.cmd_id = 0;
@@ -145,112 +170,62 @@ int main(int argc, char **argv)
     cout<<"hover"<<endl;
     uav_cmd.cmd = 2;
     control_cmd_pub.publish(uav_cmd);
-    ros::Duration(5).sleep();
+    ros::Duration(3).sleep();
 
-    // Define the circle's center and radius
-    double center_x = 0;
-    double center_y = 0;
-    double radius = 2;
-
-    // Define the number of points on the circle
-    int num_points = 50;
     // Define the proportional gain and maximum velocity
-    double k_p = 1.0; // proportional gain
-    double max_vel = 1.0; // maximum velocity (m/s)
-
+    double k_p = 1.5; // proportional gain
+    double yaw_k_p = 0.01; // proportional gain
+    double max_vel = 1.5; // maximum velocity (m/s)
+    double max_yaw = 2; // maximum velocity (m/s)
+    double yaw = 0;
     geometry_msgs::PoseStamped pose;
 
-    for (int i = 0; i < num_points; i++) {
-        double theta = i * 2 * M_PI / num_points;
-        pose.pose.position.x = center_x + radius * cos(theta);
-        pose.pose.position.y = center_y + radius * sin(theta);
-        pose.pose.position.z = 1; // fixed altitude
-
-        // Send setpoints until the drone reaches the target point
-        while(ros::ok()) {
-            if(stop_flag){
+    // Send setpoints until the drone reaches the target point
+    while(ros::ok()) {
+        if(stop_flag){
                 cout<<"land"<<endl;
                 uav_cmd.cmd = 3;
                 uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
                 control_cmd_pub.publish(uav_cmd);
                 break;
             }
-            // Calculate the distance to the target position
-            double dx = pose.pose.position.x - current_pose.pose.position.x;
-            double dy = pose.pose.position.y - current_pose.pose.position.y;
-            double dz = pose.pose.position.z - current_pose.pose.position.z;
+        // 计算相对位置
+        double x_rel = x_2 - x_1;
+        double y_rel = y_2 - y_1;
+        double z_rel = 1-(z_1 - z_2);
+        double yaw_rel = yaw_2 - yaw_1;
 
-            // Calculate the desired velocity using a proportional controller
-            double vx = k_p * dx;
-            double vy = k_p * dy;
-            double vz = k_p * dz;
+        // 将相对位姿转换为机体系
+        double x_rel_ = x_rel * cos(yaw_1) + y_rel * sin(yaw_1);
+        double y_rel_ = -x_rel * sin(yaw_1) + y_rel * cos(yaw_1);
 
-            // Limit the velocities to a maximum value
-            vx = min(max(vx, -max_vel), max_vel);
-            vy = min(max(vy, -max_vel), max_vel);
-
-            uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL;
-            uav_cmd.desired_vel[0] = vx;
-            uav_cmd.desired_vel[1] = vy;
-            uav_cmd.desired_vel[2] = vz;
-            uav_cmd.desired_pos[0] = 0.0;
-            uav_cmd.desired_pos[1] = 0.0;
-            uav_cmd.desired_pos[2] = 0.0;
-            uav_cmd.desired_yaw = 0;
-            uav_cmd.enable_yawRate = 0;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-            control_cmd_pub.publish(uav_cmd);
-
-            // Check if the drone has reached the target point
-            if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.2 &&
-                fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.2 ) {
-                break;
-            }
-
-            ros::spinOnce();
-            ros::Duration(0.1).sleep();
-        }
-        
-    }
-
-    pose.pose.position.x = 0;
-    pose.pose.position.y = 0;
-    pose.pose.position.z = 1;
-    while(ros::ok()) {
-        // Calculate the distance to the target position
-        double dx = pose.pose.position.x - current_pose.pose.position.x;
-        double dy = pose.pose.position.y - current_pose.pose.position.y;
-
-        // Calculate the desired velocity using a proportional controller
-        double vx = k_p * dx;
-        double vy = k_p * dy;
-
+        double vx = k_p * x_rel_;
+        double vy = k_p * y_rel_;
+        // yaw = 0.0;
+        // if(vx< 0.1 && vy<0.1){
+            yaw = yaw_k_p * yaw_rel  / M_PI * 180.0;
+        // }
         // Limit the velocities to a maximum value
         vx = min(max(vx, -max_vel), max_vel);
         vy = min(max(vy, -max_vel), max_vel);
+        yaw = min(max(yaw, -max_yaw), max_yaw);
 
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY;
         uav_cmd.desired_vel[0] = vx;
         uav_cmd.desired_vel[1] = vy;
         uav_cmd.desired_vel[2] = 0.0;
         uav_cmd.desired_pos[0] = 0.0;
         uav_cmd.desired_pos[1] = 0.0;
-        uav_cmd.desired_pos[2] = 1;
-        uav_cmd.desired_yaw = 0;
-        uav_cmd.enable_yawRate = 0;
+        uav_cmd.desired_pos[2] = z_rel;
+        // uav_cmd.desired_yaw = yaw_rel;
+        uav_cmd.desired_yaw = yaw;
+        uav_cmd.enable_yawRate = 0.0;
         uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
         control_cmd_pub.publish(uav_cmd);
 
-        // Check if the drone has reached the target point
-        if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.2 &&
-            fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.2 ) {
-            break;
-        }
-
         ros::spinOnce();
-        rate.sleep();
+        ros::Duration(0.1).sleep();
     }
 
     // 降落

@@ -1,7 +1,4 @@
 <?xml version="1.0"?>
-<!-- 环境变量 -->
-<!-- export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/sunray_matlab/sunray_simulator/models -->
-
 <launch>
     <!-- MAVROS posix SITL environment launch script -->
     <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->

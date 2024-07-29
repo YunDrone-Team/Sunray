@@ -10,7 +10,6 @@
 #include <pcl_ros/transforms.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
-#include <quadrotor_msgs/PositionCommand.h>
 #include "ros_msg_utils.h"
 
 class PointCloudTransformer {
@@ -72,7 +71,7 @@ public:
         ros::spin();
     }
 
-    void position_command_cb(const quadrotor_msgs::PositionCommand::ConstPtr& msg) {
+    void position_command_cb(const sunray_msgs::PositionCommand::ConstPtr& msg) {
         double x = msg->position.x;
         double y = msg->position.y;
         double z = msg->position.z;

@@ -58,9 +58,9 @@ add_executable(takeoff_hover_land src/takeoff_hover_land.cpp)
 add_dependencies(takeoff_hover_land sunray_tutorial_gencpp)
 target_link_libraries(takeoff_hover_land ${catkin_LIBRARIES})
 
-add_executable(block src/block.cpp)
-add_dependencies(block sunray_tutorial_gencpp)
-target_link_libraries(block ${catkin_LIBRARIES})
+add_executable(block_pos src/block_pos.cpp)
+add_dependencies(block_pos sunray_tutorial_gencpp)
+target_link_libraries(block_pos ${catkin_LIBRARIES})
 
 add_executable(circle_z_pos src/circle_z_pos.cpp)
 add_dependencies(circle_z_pos sunray_tutorial_gencpp)
@@ -70,9 +70,22 @@ add_executable(circle_vel src/circle_vel.cpp)
 add_dependencies(circle_vel sunray_tutorial_gencpp)
 target_link_libraries(circle_vel ${catkin_LIBRARIES})
 
-add_executable(hexagon src/hexagon.cpp)
-add_dependencies(hexagon sunray_tutorial_gencpp)
-target_link_libraries(hexagon ${catkin_LIBRARIES})
+add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
+add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
+target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
+
+add_executable(vel_body_follow_car src/vel_body_follow_car.cpp)
+add_dependencies(vel_body_follow_car sunray_tutorial_gencpp)
+target_link_libraries(vel_body_follow_car ${catkin_LIBRARIES})
+
+add_executable(vel_body_z_pos_follow_car src/vel_body_z_pos_follow_car.cpp)
+add_dependencies(vel_body_z_pos_follow_car sunray_tutorial_gencpp)
+target_link_libraries(vel_body_z_pos_follow_car ${catkin_LIBRARIES})
+
+catkin_install_python(PROGRAMS
+scripts/key_move_car.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/

@@ -1,10 +1,11 @@
-<?xml version="1.0" ?>
-<sdf version="1.5">
+<?xml version="1.0"?>
+<sdf version="1.6">
   <model name="3D_lidar">
-    <link name="laser_link">\
-        <inertial>
-        <mass>0.001</mass> <!--质量-->
-         <!--惯性标签，定义模型当前link的惯性矩，是一个对称正定3x3矩阵-->
+    <link name="laser_link">
+      <!-- 物理参数 -->
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.3</mass>
         <inertia>
           <ixx>4.15e-6</ixx>
           <ixy>0</ixy>
@@ -13,15 +14,30 @@
           <iyz>0</iyz>
           <izz>2.407e-6</izz>
         </inertia>
-        </inertial>
-        <visual name="lidar_visual">
-          <geometry>
-            <cylinder>
-              <radius>0.05</radius>
-              <length>0.05</length>
-            </cylinder>
-          </geometry>
-        </visual>
+      </inertial>
+      <!-- 显示设置 -->
+      <visual name="visual1">
+        <geometry>
+          <mesh>
+            <uri>model://3D_lidar/meshes/VLP16_base_1.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <visual name="visual2">
+        <geometry>
+          <mesh>
+            <uri>model://3D_lidar/meshes/VLP16_base_2.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <visual name="visual3">
+        <geometry>
+          <mesh>
+            <uri>model://3D_lidar/meshes/VLP16_scan.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <!-- 传感器参数设置 -->
       <sensor type='ray' name='3Dlidar'>
           <ray>
             <scan>
