@@ -7,7 +7,7 @@
 	<arg name="server" default="192.168.31.163"/>
 
     <!-- 启动 vrpn_client_ros -->
-    <include file="$(find sunray_px4)/launch/sunray_vrpn.launch" if="$(eval external_source == 0)">
+    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 0)">
         <arg name="server" value="$(arg server)"/>
         <!-- <arg name="uav_id" value="$(arg uav_id)"/> -->
     </include>
