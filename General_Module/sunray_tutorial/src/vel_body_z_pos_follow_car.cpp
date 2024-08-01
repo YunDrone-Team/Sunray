@@ -164,7 +164,7 @@ int main(int argc, char **argv)
     uav_cmd.cmd = 1;
     uav_cmd.cmd_id = 0;
     control_cmd_pub.publish(uav_cmd);
-    ros::Duration(5).sleep();
+    ros::Duration(10).sleep();
     
     // 悬停
     cout<<"hover"<<endl;

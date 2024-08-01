@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
-    // ros::Subscriber pose_sub = nh.subscribe("/uav1/mavros/local_position/pose", 10, pose_cb);
+    ros::Subscriber pose_sub = nh.subscribe("/uav1/mavros/local_position/pose", 10, pose_cb);
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
     uav_cmd.cmd_id = 0;
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
     uav_cmd.cmd = 1;
     uav_cmd.cmd_id = 0;
     control_cmd_pub.publish(uav_cmd);
-    ros::Duration(5).sleep();
+    ros::Duration(10).sleep();
     
     // 悬停
     cout<<"hover"<<endl;
@@ -150,12 +150,13 @@ int main(int argc, char **argv)
     // Define the circle's center and radius
     double center_x = 0;
     double center_y = 0;
-    double radius = 1;
+    double radius = 1.0;
 
     // Define the number of points on the circle
     int num_points = 50;
     // Define the proportional gain and maximum velocity
     double k_p = 1.0; // proportional gain
+    double z_k_p = 0.5; // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
     geometry_msgs::PoseStamped pose;
@@ -183,8 +184,7 @@ int main(int argc, char **argv)
             // Calculate the desired velocity using a proportional controller
             double vx = k_p * dx;
             double vy = k_p * dy;
-            double vz = k_p * dz;
-
+            double vz = z_k_p * dz;
             // Limit the velocities to a maximum value
             vx = min(max(vx, -max_vel), max_vel);
             vy = min(max(vy, -max_vel), max_vel);
