@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     uav_cmd.cmd = 2;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(2).sleep();
-    std::tuple<double, double, double> vertex = std::make_tuple(2,  0,  0);
+    std::tuple<double, double, double> vertex = std::make_tuple(1,  0,  0);
     int yaw;
     for(int i = 0; i < 8; ++i) {
         if(stop_flag){

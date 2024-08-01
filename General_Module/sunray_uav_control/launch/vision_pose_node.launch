@@ -1,8 +1,9 @@
 <launch>
 	<arg name="uav_id" default="1"/>
+	<arg name="uav_name" default="uav"/>
     <arg name="flag_printf" default="true"/>
-    <arg name="external_source" default="2"/>
-	<arg name="server" default="192.168.31.163"/>
+    <arg name="external_source" default="0"/>
+	<arg name="server" default="192.168.25.12"/>
 
     <!-- 启动 vrpn_client_ros -->
     <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 0)">
@@ -14,6 +15,7 @@
     <node pkg="sunray_uav_control" type="vision_pose_node" name="vision_pose_node_$(arg uav_id)" output="screen">
         <param name="flag_printf" value="$(arg flag_printf)" />
         <param name="uav_id" value="$(arg uav_id)" />
+        <param name="uav_name" value="$(arg uav_name)" />
         <param name="external_source" value="$(arg external_source)" />
     </node>
 
