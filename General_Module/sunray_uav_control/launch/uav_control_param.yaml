@@ -5,17 +5,17 @@ flag_printf: true
 
 uav_control:
   ## 起飞高度
-  Takeoff_height : 1.2
+  Takeoff_height : 0.6
   ## 降落速度
   Land_speed : 0.2
   ##　上锁高度
-  Disarm_height : 0.1
+  Disarm_height : 0.2
 
 ##　地理围栏
 geo_fence:
-  x_min: -100.0
-  x_max: 100.0
-  y_min: -100.0
-  y_max: 100.0
+  x_min: -3.0
+  x_max: 3.0
+  y_min: -3.0
+  y_max: 3.0
   z_min: -0.5
-  z_max: 100.0
+  z_max: 2.2
