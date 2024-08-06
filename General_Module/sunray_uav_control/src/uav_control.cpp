@@ -444,7 +444,6 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
                 desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
-                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
             }
             if(control_cmd.enable_yawRate){
                 desired_state.yaw_rate = control_cmd.desired_yaw;
@@ -453,6 +452,7 @@ void UAVControl::get_desired_state_from_cmd()
             }
             else{
                 desired_state.yaw_rate = 0.0;
+                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
                 send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
@@ -472,7 +472,6 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.pos[2] = uav_pos[2] + control_cmd.desired_pos[2];
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
             }
             if(control_cmd.enable_yawRate){
                 desired_state.yaw_rate = control_cmd.desired_yaw;
@@ -480,7 +479,7 @@ void UAVControl::get_desired_state_from_cmd()
                 send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw = control_cmd.desired_yaw;
+                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
                 desired_state.yaw_rate = 0.0;
                 send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }

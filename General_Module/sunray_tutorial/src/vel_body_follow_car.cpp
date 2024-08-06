@@ -13,6 +13,8 @@ sunray_msgs::UAVSetup setup;
 
 float target_yaw;
 bool stop_flag{false};
+// 全局变量存储无人机和车的坐标和朝向
+double x_1, y_1, z_1, yaw_1, x_2, y_2, z_2, yaw_2;
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
@@ -22,6 +24,7 @@ void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
 {
     uav_control_state = *msg;
 }
+
 void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     target_pose = *msg;
@@ -29,8 +32,12 @@ void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     tf2::fromMsg(msg->pose.orientation, quaternion);
     double roll, pitch, yaw;
     tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-    target_yaw = yaw;
+    x_2 = msg->pose.position.x;
+    y_2 = msg->pose.position.y;
+    z_2 = msg->pose.position.z;
+    yaw_2 = yaw;
 }
+
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
@@ -38,19 +45,12 @@ void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
     current_pose = *msg;
+    x_1 = msg->pose.position.x;
+    y_1 = msg->pose.position.y;
+    z_1 = msg->pose.position.z;
+    yaw_1 = tf::getYaw(msg->pose.orientation);
 }
 
-// 全局变量存储无人机和车的坐标和朝向
-double x_1, y_1, z_1, yaw_1, x_2, y_2, z_2, yaw_2;
-
-
-// 回调函数，用于获取目标一的位置和朝向
-void uavOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
-    x_1 = msg->pose.pose.position.x;
-    y_1 = msg->pose.pose.position.y;
-    z_1 = msg->pose.pose.position.z;
-    yaw_1 = tf::getYaw(msg->pose.pose.orientation);
-}
 
 // 回调函数，用于获取目标二的位置和朝向
 void carOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
@@ -86,11 +86,12 @@ int main(int argc, char **argv)
     //【订阅】无人机控制信息
     ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(topic_prefix + "/sunray/control_state", 1, uav_control_state_cb);
     // 【订阅】目标点位置
+    ros::Subscriber target_pos_sub;
     if(sim_mode){
-        ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/sunray/gazebo_pose", 1, target_pos_cb);
+        target_pos_sub = nh.subscribe<nav_msgs::Odometry>("/tag_odom", 10, carOdomCallback);
     }
     else{
-        ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/" + uav_name + "/pose", 1, target_pos_cb);
+        target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(target_tpoic_name, 1, target_pos_cb);
     }
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
@@ -101,10 +102,6 @@ int main(int argc, char **argv)
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
     ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
-
-    // 订阅无人机和车的Odometry消息
-    ros::Subscriber uav_odom_sub = nh.subscribe(topic_prefix + "/sunray/gazebo_pose", 10, uavOdomCallback);
-    ros::Subscriber car_odom_sub = nh.subscribe("/tag_odom", 10, carOdomCallback);
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
@@ -173,11 +170,13 @@ int main(int argc, char **argv)
     ros::Duration(3).sleep();
 
     // Define the proportional gain and maximum velocity
-    double k_p = 1.5; // proportional gain
-    double yaw_k_p = 0.01; // proportional gain
-    double max_vel = 1.5; // maximum velocity (m/s)
-    double max_yaw = 2; // maximum velocity (m/s)
+    double k_p = 1.0; // proportional gain
+    double yaw_k_p = 0.02; // proportional gain
+    double max_vel = 1.0; // maximum velocity (m/s)
+    double max_yaw = 3; // maximum velocity (m/s)
     double yaw = 0;
+    double hight = 0.8;
+
     geometry_msgs::PoseStamped pose;
 
     // Send setpoints until the drone reaches the target point
@@ -203,15 +202,12 @@ int main(int argc, char **argv)
         double vy = k_p * y_rel_;
         double vz = k_p * z_rel;
         yaw = 0.0;
-        if(vx< 0.1 && vy<0.1){
-            yaw = yaw_k_p * yaw_rel  / M_PI * 180.0;
-        }
+        yaw = yaw_k_p * yaw_rel  / M_PI * 180.0;
         // Limit the velocities to a maximum value
         vx = min(max(vx, -max_vel), max_vel);
         vy = min(max(vy, -max_vel), max_vel);
         vz = min(max(vz, -max_vel), max_vel);
         yaw = min(max(yaw, -max_yaw), max_yaw);
-
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
         uav_cmd.desired_vel[0] = vx;
@@ -220,9 +216,7 @@ int main(int argc, char **argv)
         uav_cmd.desired_pos[0] = 0.0;
         uav_cmd.desired_pos[1] = 0.0;
         uav_cmd.desired_pos[2] = 0.0;
-        // uav_cmd.desired_yaw = yaw_rel;
         uav_cmd.desired_yaw = yaw;
-        uav_cmd.enable_yawRate = 0.0;
         uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
         control_cmd_pub.publish(uav_cmd);
 

@@ -237,13 +237,13 @@ int main(int argc, char **argv)
         vz = min(max(vz, -max_vel), max_vel);
         
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL;
         uav_cmd.desired_vel[0] = vx;
         uav_cmd.desired_vel[1] = vy;
-        uav_cmd.desired_vel[2] = 0.0;
+        uav_cmd.desired_vel[2] = vz;
         uav_cmd.desired_pos[0] = 0.0;
         uav_cmd.desired_pos[1] = 0.0;
-        uav_cmd.desired_pos[2] = 1;
+        uav_cmd.desired_pos[2] = 0.0;
         uav_cmd.desired_yaw = 0;
         uav_cmd.enable_yawRate = 0;
         uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
