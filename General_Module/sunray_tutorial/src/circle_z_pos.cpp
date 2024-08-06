@@ -156,8 +156,10 @@ int main(int argc, char **argv)
     // Define the number of points on the circle
     int num_points = 50;
     // Define the proportional gain and maximum velocity
-    double k_p = 1.5; // proportional gain
+    double k_p = 1; // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
+
+    double hight = 0.6;
 
     geometry_msgs::PoseStamped pose;
 
@@ -165,7 +167,7 @@ int main(int argc, char **argv)
         double theta = i * 2 * M_PI / num_points;
         pose.pose.position.x = center_x + radius * cos(theta);
         pose.pose.position.y = center_y + radius * sin(theta);
-        pose.pose.position.z = 1; // fixed altitude
+        pose.pose.position.z = hight; // fixed altitude
 
         // Send setpoints until the drone reaches the target point
         while(ros::ok()) {
@@ -195,7 +197,7 @@ int main(int argc, char **argv)
             uav_cmd.desired_vel[2] = 0.0;
             uav_cmd.desired_pos[0] = 0.0;
             uav_cmd.desired_pos[1] = 0.0;
-            uav_cmd.desired_pos[2] = 1;
+            uav_cmd.desired_pos[2] = hight;
             uav_cmd.desired_yaw = 0;
             uav_cmd.enable_yawRate = 0;
             uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
@@ -215,7 +217,7 @@ int main(int argc, char **argv)
 
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
-    pose.pose.position.z = 1;
+    pose.pose.position.z = hight;
     while(ros::ok()) {
         if(stop_flag){
                 cout<<"land"<<endl;
@@ -243,7 +245,7 @@ int main(int argc, char **argv)
         uav_cmd.desired_vel[2] = 0.0;
         uav_cmd.desired_pos[0] = 0.0;
         uav_cmd.desired_pos[1] = 0.0;
-        uav_cmd.desired_pos[2] = 1;
+        uav_cmd.desired_pos[2] = hight;
         uav_cmd.desired_yaw = 0;
         uav_cmd.enable_yawRate = 0;
         uav_cmd.cmd_id = uav_cmd.cmd_id + 1;

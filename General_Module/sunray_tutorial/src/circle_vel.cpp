@@ -159,13 +159,15 @@ int main(int argc, char **argv)
     double z_k_p = 0.5; // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
+    double hight = 0.6;
+
     geometry_msgs::PoseStamped pose;
 
     for (int i = 0; i < num_points; i++) {
         double theta = i * 2 * M_PI / num_points;
         pose.pose.position.x = center_x + radius * cos(theta);
         pose.pose.position.y = center_y + radius * sin(theta);
-        pose.pose.position.z = 1; // fixed altitude
+        pose.pose.position.z = hight; // fixed altitude
 
         // Send setpoints until the drone reaches the target point
         while(ros::ok()) {
@@ -188,6 +190,7 @@ int main(int argc, char **argv)
             // Limit the velocities to a maximum value
             vx = min(max(vx, -max_vel), max_vel);
             vy = min(max(vy, -max_vel), max_vel);
+            vz = min(max(vz, -max_vel), max_vel);
 
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL;
@@ -216,20 +219,23 @@ int main(int argc, char **argv)
 
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
-    pose.pose.position.z = 1;
+    pose.pose.position.z = hight;
     while(ros::ok()) {
         // Calculate the distance to the target position
         double dx = pose.pose.position.x - current_pose.pose.position.x;
         double dy = pose.pose.position.y - current_pose.pose.position.y;
+        double dz = pose.pose.position.z - current_pose.pose.position.z;
 
         // Calculate the desired velocity using a proportional controller
         double vx = k_p * dx;
         double vy = k_p * dy;
+        double vz = z_k_p * dz;
 
         // Limit the velocities to a maximum value
         vx = min(max(vx, -max_vel), max_vel);
         vy = min(max(vy, -max_vel), max_vel);
-
+        vz = min(max(vz, -max_vel), max_vel);
+        
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS;
         uav_cmd.desired_vel[0] = vx;

@@ -1,6 +1,7 @@
 <launch>
     <arg name="uav_id" default="1"/>
-    <group ns="uav$(arg uav_id)">
+    <arg name="uav_name" default="sunray"/>
+    <group ns="$(arg uav_name)$(arg uav_id)">
         <arg name="fcu_url" default="/dev/ttyACM0:921600" />
         <arg name="gcs_url" default="" />
         <arg name="tgt_system" default="1" />

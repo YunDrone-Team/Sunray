@@ -27,11 +27,11 @@
 
     <arg name="odometry_topic" value="$(arg odom_topic)"/>
     <!-- sensor pose: transform of camera frame in the world frame -->
-    <arg name="sensor_pose_topic" value="nouse1"/>
+    <arg name="sensor_pose_topic" value="/uav1/mavros/local_position/pose"/>
     <!-- depth topic: depth image, 640x480 by default -->
     <!-- cloud topic: point cloud measurement  -->
     <!-- subscribe ONLY TO ONE of the two topics -->
-    <arg name="depth_topic" value="nouse1"/>
+    <arg name="depth_topic" value="nouse2"/>
     <arg name="cloud_topic" value="/pointcloud_unified/world_frame"/>
 
     <!-- intrinsic params of the depth camera -->
@@ -41,7 +41,7 @@
     <arg name="fy" value="387.229248046875"/>
 
     <!-- maximum velocity and acceleration the drone will reach -->
-    <arg name="max_vel" value="2.0" />
+    <arg name="max_vel" value="1" />
     <arg name="max_acc" value="2.0" />
   </include>
 

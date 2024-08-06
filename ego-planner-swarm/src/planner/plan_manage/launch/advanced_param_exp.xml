@@ -85,7 +85,7 @@
     <param name="fsm/waypoint4_y" value="$(arg point4_y)" type="double"/>
     <param name="fsm/waypoint4_z" value="$(arg point4_z)" type="double"/>
 
-    <param name="grid_map/resolution"      value="0.15" /> 
+    <param name="grid_map/resolution"      value="0.18" /> 
     <param name="grid_map/map_size_x"   value="$(arg map_size_x_)" /> 
     <param name="grid_map/map_size_y"   value="$(arg map_size_y_)" /> 
     <param name="grid_map/map_size_z"   value="$(arg map_size_z_)" /> 
@@ -117,7 +117,7 @@
     <param name="grid_map/min_ray_length" value="0.3"/>
     <param name="grid_map/max_ray_length" value="5.0"/>
 
-    <param name="grid_map/visualization_truncate_height"   value="1.8"/>
+    <param name="grid_map/visualization_truncate_height"   value="5"/>
     <param name="grid_map/show_occ_time"  value="false"/>
     <param name="grid_map/pose_type"     value="2"/>  
     <param name="grid_map/frame_id"      value="world"/>

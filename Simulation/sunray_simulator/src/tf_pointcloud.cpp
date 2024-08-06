@@ -75,12 +75,13 @@ public:
         double x = msg->position.x;
         double y = msg->position.y;
         double z = msg->position.z;
+        double yaw = msg->yaw;
         cmd_.cmd = 4;
         cmd_.desired_pos[0] = x;
         cmd_.desired_pos[1] = y;
         cmd_.desired_pos[2] = z;
         cmd_.enable_yawRate = false;
-        cmd_.desired_yaw = 0;
+        cmd_.desired_yaw = yaw;
         cmd_pub_.publish(cmd_);
         }
 

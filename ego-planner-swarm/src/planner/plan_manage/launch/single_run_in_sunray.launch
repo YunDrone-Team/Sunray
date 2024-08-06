@@ -3,9 +3,9 @@
     <arg name="obj_num" value="10" />
     <arg name="drone_id" value="0"/>
 
-    <arg name="map_size_x" value="100"/>
+    <arg name="map_size_x" value="50"/>
     <arg name="map_size_y" value="50"/>
-    <arg name="map_size_z" value="10.0"/>
+    <arg name="map_size_z" value="5.5"/>
     <arg name="odom_topic" value="/uav1/sunray/gazebo_pose"/>
     
     <!-- main algorithm params -->
@@ -30,10 +30,10 @@
         <arg name="fx" value="384.39654541015625"/>
         <arg name="fy" value="384.39654541015625"/>
         <!-- maximum velocity and acceleration the drone will reach -->
-        <arg name="max_vel" value="2.5" />
+        <arg name="max_vel" value="1.5" />
         <arg name="max_acc" value="10.0" />
         <!--always set to 1.5 times grater than sensing horizen-->
-        <arg name="planning_horizon" value="6" />
+        <arg name="planning_horizon" value="4" />
         <arg name="use_distinctive_trajs" value="false" />
         <!-- 1: use 2D Nav Goal to select goal  -->
         <!-- 2: use global waypoints below  -->
