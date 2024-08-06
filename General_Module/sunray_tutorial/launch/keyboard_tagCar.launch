@@ -1,0 +1,5 @@
+<launch>
+  <!-- differential_teleop_key already has its own built in velocity smoother -->
+  <node pkg="sunray_tutorial" type="key_move_car.py" name="key_move_car"  output="screen">
+  </node>
+</launch>
