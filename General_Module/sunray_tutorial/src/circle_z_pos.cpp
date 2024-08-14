@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
-    ros::Subscriber pose_sub = nh.subscribe("/uav1/mavros/local_position/pose", 10, pose_cb);
+    ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
     uav_cmd.cmd_id = 0;

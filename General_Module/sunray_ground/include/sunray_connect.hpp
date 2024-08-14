@@ -1,3 +1,6 @@
+#ifndef sunray_connect
+#define sunray_connect
+
 #include <iostream>
 #include <string>
 #include <sys/socket.h>
@@ -6,6 +9,7 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+#include <unistd.h>
 
 class sunray_socket
 {
@@ -238,3 +242,6 @@ void sunray_socket::sendUDPMesssage(const char *message)
 {
 	sendto(udpSocket, message, strlen(message), 0, (struct sockaddr *)&udpAddr, sizeof(udpAddr));
 }
+
+
+#endif
