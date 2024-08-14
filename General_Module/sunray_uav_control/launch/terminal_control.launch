@@ -2,6 +2,9 @@
     <arg name="uav_id" default="1"/>
     <arg name="uav_name" default="uav"/>
     <group ns="uav$(arg uav_id)">
-        <node pkg="sunray_uav_control" type="uav_command_pub" name="uav_command_pub" output="screen"></node>
+        <node pkg="sunray_uav_control" type="uav_command_pub" name="uav_command_pub" output="screen">
+            <param name="uav_id" value="$(arg uav_id)"/>
+            <param name="uav_name" value="$(arg uav_name)" />
+        </node>
     </group>
 </launch>
