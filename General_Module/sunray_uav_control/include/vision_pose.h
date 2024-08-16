@@ -377,6 +377,55 @@ void VISION_POSE::printf_debug_info()
         cout << GREEN << "External Odom: [ VINS ] " << TAIL << endl;
         break;
     }
+    // 打印 无人机状态
+    if (uav_state.connected == true)
+    {
+        cout << GREEN << "PX4 Status:  [ Connected ] ";
+    }
+    else
+    {
+        cout << RED << "PX4 Status:[ Unconnected ] ";
+    }
+    //是否上锁
+    if (uav_state.armed == true)
+    {
+        cout << GREEN << "[  Armed   ] ";
+    }
+    else
+    {
+        cout << RED << "[ DisArmed ] ";
+    }
+
+    cout << "[ " << uav_state.mode << " ] " << TAIL << endl;
+
+    // 打印外部输入的原始数据
+    switch (uav_state.location_source)
+    {
+    case sunray_msgs::ExternalOdom::MOCAP:
+        cout << GREEN << "External Odom: [ MOCAP ] ";
+        break;
+    case sunray_msgs::ExternalOdom::VIOBOT:
+        cout << GREEN << "External Odom: [ VIOBOT ] ";
+        break;
+    case sunray_msgs::ExternalOdom::GAZEBO:
+        cout << GREEN << "External Odom: [ GAZEBO ] ";
+        break;
+    case sunray_msgs::ExternalOdom::VINS:
+        cout << GREEN << "External Odom: [ VINS ] ";
+        break;
+    }
+
+    if (uav_state.odom_valid)
+    {
+        cout << GREEN << " Odom Status : [ Valid ] " << TAIL << endl;
+    }
+    else
+    {
+        cout << RED   << " Odom Status : [ Invalid ] " << TAIL << endl;
+    }
+    cout << GREEN << "Battery Voltage : " << uav_state.battery_state << " [V] "
+         << " Battery Percent : " << uav_state.battery_percetage << " [%] "<< TAIL << endl;
+
 
     // 打印发布的Vision Pose数据
     cout << BLUE << "Pose Send to Autopilot [NED]: " << TAIL << endl;
