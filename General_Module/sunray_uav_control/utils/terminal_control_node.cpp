@@ -121,12 +121,15 @@ public:
                     int arming;
                     std::cout << "Please select Operation 1 arm 0 disarm" << std::endl;
                     std::cin >> arming;
-                    if (arming!= 1 && arming!= 0) {
-                        std::cout << "input error" << std::endl;
-                    } else {
+                    if (arming == 0) {
                         setup_.cmd = 0;
-                        setup_.arming = arming;
                         setup_pub_.publish(setup_);
+                    }
+                    if (arming == 1) {
+                        setup_.cmd = 1;
+                        setup_pub_.publish(setup_);
+                    } else {
+                        std::cout << "input error" << std::endl;
                     }
                     mode_ = 0;
                     break;

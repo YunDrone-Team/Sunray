@@ -25,12 +25,11 @@ int main(int argc, char **argv)
     VISION_POSE vision_pose;
     vision_pose.init(nh);
 
-    ros::Duration(1.0).sleep();
-
     ros::Time time_now = ros::Time::now();
     ros::Time time_last = ros::Time::now();
-    time_last.sec = time_last.sec - 10;
+    time_last.sec = time_last.sec + 2;          // 解决显示问题 
 
+    ros::Duration(1.0).sleep();
     // 主循环
     while (ros::ok())
     {

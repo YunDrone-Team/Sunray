@@ -18,4 +18,4 @@ geo_fence:
   y_min: -30.0
   y_max: 30.0
   z_min: -0.5
-  z_max: 5
+  z_max: 30

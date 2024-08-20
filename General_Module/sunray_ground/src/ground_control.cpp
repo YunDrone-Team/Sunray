@@ -9,40 +9,65 @@ void GroundControl::init(ros::NodeHandle &nh)
     nh.param<int>("uav_num", uav_num, 1);
 
     nh.param<string>("uav_name", uav_name, "uav");
+    nh.param<string>("tcp_ip", tcp_ip, "0.0.0.0");
+    nh.param<string>("udp_ip", udp_ip, "127.0.0.1");
+    nh.param<string>("tcp_port", tcp_port, "8969");
+    nh.param<string>("udp_port", udp_port, "8968");
+    State_Message state_msg;
+    state_msg.head = 0;
+    state_msg.length = 0;
+    state_msg.msg_id = 0;
+    state_msg.robot_id = 0;
+    state_msg.payload.time_stamp = 0;
+    state_msg.payload.uav_id = 0;
+    state_msg.payload.connected = false;
+    state_msg.payload.armed = false;
+    state_msg.payload.mode = "";
+    state_msg.payload.location_source = 0;
+    state_msg.payload.odom_valid = false;
+    state_msg.payload.position = {0, 0, 0};
+    state_msg.payload.velocity = {0, 0, 0};
+    state_msg.payload.attitude = {0, 0, 0};
+    state_msg.payload.attitude_rate = {0, 0, 0};
+    state_msg.payload.battery_state = 0;
+    state_msg.payload.battery_percentage = 0;
+    state_msg.payload.control_mode = 0;
+    state_msg.check = 0;
 
     for (int i = 1; i < uav_num + 1; i++)
     {
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(
             topic_prefix + "/sunray/uav_control_cmd", 1));
-
+        
         uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(
             topic_prefix + "/sunray/uav_state", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
 
         uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(
             topic_prefix + "/sunray/setup", 1));
 
-        // stateMessage.push_back(sunray_msgs::UAVState());
+        stateMessage.push_back(state_msg);
     }
 
     recvMsgTimer = nh.createTimer(ros::Duration(0.02), &GroundControl::recvMsgCb, this);
-    // sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
+    sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
 
-    server.m_uPort = 8969;
-    if (server.InitServer())
+    tcp_server.m_strIp = tcp_ip;
+    tcp_server.m_uPort = stoul(tcp_port);
+    if (tcp_server.InitServer())
     {
         std::cout << "TCP网络服务端初始化成功！\n";
-        server.startListening();
-        server.startWaitForClient();
+        tcp_server.startListening();
+        tcp_server.startWaitForClient();
     }
     else
     {
         std::cout << "TCP网络服务端初始化失败！\n";
     }
-    udp_server.m_strIp = "192.168.25.22";
-    udp_server.m_uPort = 8968;
-
+    udp_server.m_strIp = udp_ip;
+    udp_server.m_uPort = stoul(udp_port);
     udp_server.InitUDPClient();
+    std::cout << "UDP网络服务端初始化成功！\n";
 }
 
 void GroundControl::parseTcpMessage(char *message)
@@ -186,7 +211,7 @@ void GroundControl::parseTcpMessage(char *message)
             uint32_t time_stamp = mode_msg.payload.time_stamp;
             if (mode_msg.payload.uav_mode == MODE_TYPE_OFFBOARD)
             {
-                setup.cmd = 3;
+                setup.cmd = 4;
                 setup.control_state = "CMD_CONTROL";
                 uav_setup_pub.at(robot_id - 1).publish(setup);
             }
@@ -199,41 +224,42 @@ void GroundControl::parseTcpMessage(char *message)
         if (vehicle_msg.check == calculate_checksum_Vehicle_Message(&vehicle_msg))
         {
             uint32_t time_stamp = vehicle_msg.payload.time_stamp;
-            if (vehicle_msg.payload.type == DISARM)
+            if (vehicle_msg.payload.type == VEHICLE_DISARM)
             {
                 std::cout << "disarm" << std::endl;
                 setup.cmd = 0;
-                setup.arming = false;
                 uav_setup_pub[robot_id - 1].publish(setup);
             }
-            else if (vehicle_msg.payload.type == ARM)
+            else if (vehicle_msg.payload.type == VEHICLE_ARM)
             {
                 std::cout << "arm" << std::endl;
-                setup.cmd = 0;
-                setup.arming = true;
+                setup.cmd = 1;
                 uav_setup_pub[robot_id - 1].publish(setup);
             }
-            else if (vehicle_msg.payload.type == TAKEOFF)
+            else if (vehicle_msg.payload.type == VEHICLE_TAKEOFF)
             {
                 std::cout << "takeoff" << std::endl;
                 uav_cmd.cmd = 1;
                 uav_cmd.cmd_id = 0;
                 control_cmd_pub[robot_id - 1].publish(uav_cmd);
             }
-            else if (vehicle_msg.payload.type == LAND)
+            else if (vehicle_msg.payload.type == VEHICLE_LAND)
             {
                 std::cout << "land" << std::endl;
                 uav_cmd.cmd = 3;
                 control_cmd_pub[robot_id - 1].publish(uav_cmd);
             }
-            else if (vehicle_msg.payload.type == HOVER)
+            else if (vehicle_msg.payload.type == VEHICLE_HOVER)
             {
                 std::cout << "hover" << std::endl;
                 uav_cmd.cmd = 2;
                 control_cmd_pub[robot_id - 1].publish(uav_cmd);
             }
-            else if (vehicle_msg.payload.type == KILL)
+            else if (vehicle_msg.payload.type == VEHICLE_KILL)
             {
+                std::cout << "kill" << std::endl;
+                setup.cmd = 5;
+                uav_setup_pub[robot_id - 1].publish(setup);
             }
         }
     }
@@ -241,10 +267,10 @@ void GroundControl::parseTcpMessage(char *message)
 
 void GroundControl::recvMsgCb(const ros::TimerEvent &e)
 {
-    if (server.HasMsg())
+    if (tcp_server.HasMsg())
     {
         std::cout << "has msg" << std::endl;
-        char *msg = server.GetMsg();
+        char *msg = tcp_server.GetMsg();
         if (msg != nullptr)
         {
             parseTcpMessage(msg);
@@ -253,36 +279,51 @@ void GroundControl::recvMsgCb(const ros::TimerEvent &e)
     }
 }
 
-// void GroundControl::sendMsgCb(const ros::TimerEvent &e)
-// {
-//     for (int i = 0; i < uav_num; i++)
-//     {
-//         if ((ros::Time::now() - ros::Time::fromSec(static_cast<double>(stateMessage.at(i).payload.time_stamp))).toSec() > 3.0)
-//         {
-//             stateMessage.at(i).payload.connected = false;
-//         }
-//         char *msg =encode_State_Message(stateMessage.[i]);
-//         udp_server.SendUDPMsg(msg);
-//     }
-// }
+void GroundControl::sendMsgCb(const ros::TimerEvent &e)
+{
+    // std::cout << "send msg" << std::endl;
+    for (int i = 0; i < uav_num; i++)
+    {
+        // std::cout << "send msg to " << i << std::endl;
+        // if ((ros::Time::now() - ros::Time::fromSec(static_cast<double>(stateMessage.at(i).payload.time_stamp))).toSec() > 3.0)
+        // {
+        //     stateMessage.at(i).payload.connected = false;
+        // }
+        // char *msg = encode_State_Message(&stateMessage.at(i));
+        char *msg = pack_State_Message(stateMessage.at(i).head, stateMessage.at(i).length, stateMessage.at(i).msg_id, stateMessage.at(i).robot_id,stateMessage.at(i).check, stateMessage.at(i).payload);
+        udp_server.SendUDPMsg(msg);
+        
+    }
+}
 
 void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
 {
-    stateMessage.at(robot_id).head = 0xAD21;
-    stateMessage.at(robot_id).length = 72;
-    stateMessage.at(robot_id).msg_id = STATE_MESSAGE;
-    stateMessage.at(robot_id).robot_id = robot_id;
-    stateMessage.at(robot_id).payload.time_stamp = static_cast<uint32_t>(ros::Time::now().toSec());
-    stateMessage.at(robot_id).payload.uav_id = robot_id;
-    stateMessage.at(robot_id).payload.connected = msg->connected;
-    stateMessage.at(robot_id).payload.armed = msg->armed;
-    stateMessage.at(robot_id).payload.mode = msg->mode;
-    stateMessage.at(robot_id).payload.location_source = msg->location_source;
-    stateMessage.at(robot_id).payload.odom_valid = msg->odom_valid;
-    stateMessage.at(robot_id).payload.position = {msg->position[0], msg->position[1], msg->position[2]};
-    stateMessage.at(robot_id).payload.velocity = {msg->velocity[0], msg->velocity[1], msg->velocity[2]};
-    stateMessage.at(robot_id).payload.attitude = {msg->attitude[0], msg->attitude[1], msg->attitude[2], msg->attitude[3]};
-    stateMessage.at(robot_id).payload.battery_state = msg->battery_state;
-    stateMessage.at(robot_id).payload.battery_percentage = msg->battery_percetage;
-    stateMessage.at(robot_id).payload.control_mode = msg->control_mode;
+    int index = robot_id - 1;
+    stateMessage.at(index).head = 0xAD21;
+    stateMessage.at(index).length = 72;
+    stateMessage.at(index).msg_id = STATE_MESSAGE;
+    stateMessage.at(index).robot_id = robot_id;
+    stateMessage.at(index).payload.time_stamp = static_cast<uint32_t>(ros::Time::now().toSec());
+    stateMessage.at(index).payload.uav_id = robot_id;
+    stateMessage.at(index).payload.connected = msg->connected;
+    stateMessage.at(index).payload.armed = msg->armed;
+    std::string mode = msg->mode;
+    if (mode.length() > 15)
+    {
+        mode = mode.substr(0, 15);
+    }
+    else if (mode.length() < 15)
+    {
+        mode.append(15 - mode.length(), ' ');
+    }
+    stateMessage.at(index).payload.mode = mode;
+    stateMessage.at(index).payload.location_source = msg->location_source;
+    stateMessage.at(index).payload.odom_valid = msg->odom_valid;
+    stateMessage.at(index).payload.position = {msg->position[0], msg->position[1], msg->position[2]};
+    stateMessage.at(index).payload.velocity = {msg->velocity[0], msg->velocity[1], msg->velocity[2]};
+    stateMessage.at(index).payload.attitude = {msg->attitude[0], msg->attitude[1], msg->attitude[2]};
+    stateMessage.at(index).payload.battery_state = msg->battery_state;
+    stateMessage.at(index).payload.battery_percentage = msg->battery_percetage;
+    stateMessage.at(index).payload.control_mode = msg->control_mode;
+    stateMessage.at(index).check = calculate_checksum_State_Message(&stateMessage.at(index));
 }

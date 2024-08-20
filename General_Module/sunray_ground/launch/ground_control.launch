@@ -1,0 +1,17 @@
+<launch>
+    <arg name="uav_num" default="1" />
+    <arg name="uav_name" default="uav" />
+    <arg name="tcp_ip" default="192.168.0.29" />    <!-- 无人机IP地址 0.0.0.0 则监听所有ip-->
+    <arg name="udp_ip" default="192.168.0.15" />
+    <arg name="tcp_port" default="8969" />
+    <arg name="udp_port" default="8968" />
+
+    <node name="ground_control" pkg="sunray_ground" type="ground_control_node" output="screen">
+        <param name="uav_num" value="$(arg uav_num)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="tcp_ip" value="$(arg tcp_ip)" />
+        <param name="udp_ip" value="$(arg udp_ip)" />
+        <param name="tcp_port" value="$(arg tcp_port)" />
+        <param name="udp_port" value="$(arg udp_port)" />
+    </node>
+</launch>

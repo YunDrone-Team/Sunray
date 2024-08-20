@@ -1,10 +1,11 @@
-#ifndef sunray_msg_ground
-#define sunray_msg_ground
+#ifndef GROUND_MSG
+#define GROUND_MSG
 
 #include <cstdint>
 #include <string.h>
 #include <vector>
 #include <string>
+#include <iostream>
 /*
     move mode
 */
@@ -26,12 +27,12 @@
 /*
     Vehicle control type
 */
-#define DISARM 0
-#define ARM 1
-#define TAKEOFF 2
-#define LAND 3
-#define HOVER 4
-#define KILL 5
+#define VEHICLE_DISARM 0
+#define VEHICLE_ARM 1
+#define VEHICLE_TAKEOFF 2
+#define VEHICLE_LAND 3
+#define VEHICLE_HOVER 4
+#define VEHICLE_KILL 5
 
 /*
     MESSAGE ID

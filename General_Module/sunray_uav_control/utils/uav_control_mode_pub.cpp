@@ -75,19 +75,19 @@ int main(int argc, char **argv)
         case 0:
             cout << "set arming mode: 0 for disarm, 1 for arm" << endl;
             cin >> tmp;
-            uav_setup.cmd  = 0;
+            
             if(tmp){
-                uav_setup.arming = true;
+                uav_setup.cmd  = 1;
             }else{
-                uav_setup.arming = false;
+                uav_setup.cmd  = 0;
             }
-            cout << "arming "<< std::boolalpha << uav_setup.arming << endl;
+            cout << "arming "<< std::boolalpha << tmp << endl;
             uav_command_pub.publish(uav_setup);
             break;
         case 1:
             cout << "set px4 mode: 0 for OFFBOARD, 1 for AUTO.LAND, 2 for POSCTL, 3 for AUTO.RTL" << endl;
             cin >> tmp;
-            uav_setup.cmd  = 1;
+            uav_setup.cmd  = 2;
             if(tmp == 0){
                 uav_setup.px4_mode = "OFFBOARD";
             }else if(tmp == 1){
@@ -108,9 +108,9 @@ int main(int argc, char **argv)
         case 2:
             cout << "confirm whether to restart PX4: 0 for false, 1 for true" << endl;
             cin >> tmp;
-            uav_setup.cmd  =2;
+            uav_setup.cmd  =3;
             if(tmp){
-                uav_setup.cmd  = 2;
+                uav_setup.cmd  = 3;
             }else{
                 break;
             }
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
         case 3:
             cout << "set control mode: 0 for INIT, 1 for RC_CONTROL, 2 for HOVER_CONTROL, 3 for CMD_CONTROL, 4 for LAND_CONTROL" << endl;
             cin >> tmp;
-            uav_setup.cmd  = 3;
+            uav_setup.cmd  = 4;
             if(tmp == 0){
                 uav_setup.control_state = "INIT";
             }else if(tmp == 1){

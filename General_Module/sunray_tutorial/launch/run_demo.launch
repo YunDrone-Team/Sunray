@@ -1,6 +1,6 @@
 <launch>
 	<arg name="uav_id" default="1"/>
-    <arg name="sim_mode" default="false"/>
+    <arg name="sim_mode" default="true"/>
     <arg name="flag_printf" default="true"/>
     <arg name="uav_name" default="uav" />
     <arg name="target_tpoic_name" default="/vrpn_client_node/target/pose" />

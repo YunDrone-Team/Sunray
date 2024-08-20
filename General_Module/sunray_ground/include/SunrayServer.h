@@ -1,5 +1,5 @@
-// #ifndef SunrayServer
-// #define SunrayServer
+// #ifndef TcpServer
+// #define TcpServer
 
 #include <string>
 #include <arpa/inet.h>
@@ -10,12 +10,13 @@
 #include <queue>
 #include <mutex>
 #include <thread>
+#include <chrono>
 
-class SunrayServer
+class TcpServer
 {
 public:
-    SunrayServer(std::string strIp, unsigned int uPort);
-    virtual ~SunrayServer();
+    TcpServer(std::string strIp, unsigned int uPort);
+    virtual ~TcpServer();
 
     // 初始化网络服务端
     bool InitServer();
@@ -61,14 +62,14 @@ private:
     std::mutex m_mutex;            // 互斥锁
 };
 
-SunrayServer::SunrayServer(std::string strIp = "localhost", unsigned int uPort = 8888) : m_strIp(strIp),
+TcpServer::TcpServer(std::string strIp = "localhost", unsigned int uPort = 8888) : m_strIp(strIp),
                                                                                          m_uPort(uPort)
 {
     m_bRunning = false;
     stop_flag = false;
 }
 
-SunrayServer::~SunrayServer()
+TcpServer::~TcpServer()
 {
     if (m_clientSocket)
     {
@@ -87,7 +88,7 @@ SunrayServer::~SunrayServer()
     // 在Linux环境下，不需要调用WSACleanup()
 }
 
-bool SunrayServer::InitServer()
+bool TcpServer::InitServer()
 {
     // 1. 初始化环境
     if (socket(AF_INET, SOCK_STREAM, 0) == -1)
@@ -110,7 +111,10 @@ bool SunrayServer::InitServer()
 
     sockadd.sin_family = AF_INET;                // IPV4协议簇
     sockadd.sin_port = htons(m_uPort);           // 监听端口
-    sockadd.sin_addr.s_addr = htonl(INADDR_ANY); // 监听本机任意IP
+    if( m_strIp == "0.0.0.0")
+        sockadd.sin_addr.s_addr = htonl(INADDR_ANY); // 监听本机任意IP
+    else
+        sockadd.sin_addr.s_addr = inet_addr(m_strIp.c_str()); // 监听本机指定IP
 
     // 3. 监听套接字与IP地址及端口绑定
     if (bind(m_listenSocket, (struct sockaddr *)&sockadd, sizeof(sockadd)) == -1)
@@ -133,7 +137,7 @@ bool SunrayServer::InitServer()
     return true;
 }
 
-bool SunrayServer::WaitForClient()
+bool TcpServer::WaitForClient()
 {
     sockaddr_in addr = {
         0,
@@ -153,6 +157,7 @@ bool SunrayServer::WaitForClient()
                 close(m_clientSocket);
                 m_clientSocket = -1;
                 std::cout << "Socket accept failed!\n";
+                std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒后重试
             }
             else
             {
@@ -163,7 +168,7 @@ bool SunrayServer::WaitForClient()
     }
 }
 
-bool SunrayServer::SendMsg(const std::string &strMsg)
+bool TcpServer::SendMsg(const std::string &strMsg)
 {
     if (!m_clientSocket)
         return false;
@@ -180,7 +185,7 @@ bool SunrayServer::SendMsg(const std::string &strMsg)
     }
 }
 
-bool SunrayServer::RecvMsg()
+bool TcpServer::RecvMsg()
 {
     if (!m_clientSocket)
         return false;
@@ -203,7 +208,7 @@ bool SunrayServer::RecvMsg()
     }
 }
 
-void SunrayServer::ListenAndStoreMsg()
+void TcpServer::ListenAndStoreMsg()
 {
     const int iBufSize = 1024;
     char recvBuf[iBufSize] = {
@@ -240,14 +245,14 @@ void SunrayServer::ListenAndStoreMsg()
     }
 }
 
-void SunrayServer::startListening()
+void TcpServer::startListening()
 {
     std::cout << "开启消息监听线程" << std::endl;
-    std::thread listenThread(&SunrayServer::ListenAndStoreMsg, this);
+    std::thread listenThread(&TcpServer::ListenAndStoreMsg, this);
     listenThread.detach(); // 让线程在后台运行
 }
 
-char *SunrayServer::GetMsg()
+char *TcpServer::GetMsg()
 {
     // 加锁
     m_mutex.lock();
@@ -272,14 +277,14 @@ char *SunrayServer::GetMsg()
     }
 }
 
-void SunrayServer::startWaitForClient()
+void TcpServer::startWaitForClient()
 {
     std::cout << "开启等待客户端连接线程" << std::endl;
-    std::thread waitForClientThread(&SunrayServer::WaitForClient, this);
+    std::thread waitForClientThread(&TcpServer::WaitForClient, this);
     waitForClientThread.detach(); // 让线程在后台运行
 }
 
-bool SunrayServer::HasMsg()
+bool TcpServer::HasMsg()
 {
     bool hasMsg;
 
@@ -295,7 +300,7 @@ bool SunrayServer::HasMsg()
     return hasMsg;
 }
 
-bool SunrayServer::Stop()
+bool TcpServer::Stop()
 {
     stop_flag = true;
 }
@@ -367,9 +372,9 @@ bool UDPServer::SendUDPMsg(const char *strMsg)
     if (!m_udpSocket)
         return false;
 
-    if (sendto(m_udpSocket, strMsg, strlen(strMsg), 0, (struct sockaddr *)&m_clientAddr, m_clientAddrLen) != -1)
+    if (sendto(m_udpSocket, strMsg, 1024, 0, (struct sockaddr *)&m_clientAddr, m_clientAddrLen) != -1)
     {
-        std::cout << "发送成功:" << strMsg << "\n";
+        // std::cout << "发送成功:" << strMsg << "\n";
         return true;
     }
     else

@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include <thread>
-#include "sunray_msg_ground.h"
+#include "ground_msg.h"
 #include "SunrayServer.h"
 #include "ros_msg_utils.h"
 
@@ -18,7 +18,11 @@ public:
 private:
     uint32_t last_time_stamp;
     int uav_num;
+    string tcp_port;
+    string udp_port;
     string uav_name; 
+    string tcp_ip; 
+    string udp_ip; 
     sunray_msgs::UAVSetup setup;
     sunray_msgs::UAVState uav_state;
     sunray_msgs::UAVControlCMD uav_cmd;
@@ -32,7 +36,7 @@ private:
     ros::Timer recvMsgTimer;
     ros::Timer sendMsgTimer;
 
-    SunrayServer server;
+    TcpServer tcp_server;
     UDPServer udp_server;
 
     void recvMsgCb(const ros::TimerEvent &e);

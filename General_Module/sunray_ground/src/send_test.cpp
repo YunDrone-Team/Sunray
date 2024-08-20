@@ -1,73 +1,67 @@
-#include <boost/asio.hpp>
-#include <string>
 #include <iostream>
-// #include "ground_message.h"
-#include "sunray_msg_ground.h"
-#include "sunray_connect.hpp"
+#include <cstring>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include "ground_msg.h"
+#include <unistd.h>
 
-int main(int argc, char **argv) {
-    sunray_socket socket;
+int main() {
+    // Create a Mode_Message
+    Mode_Message mode_msg;
+    mode_msg.head = 0xADFF;
+    mode_msg.length = 15;
+    mode_msg.msg_id = 103;
+    mode_msg.robot_id = 1;
+    mode_msg.payload.time_stamp = 1234567;
+    mode_msg.payload.uav_mode = 1;
 
-    // Initialize TCP socket
-    socket.initTCPSocket("192.168.0.29", 8080);
-    socket.bindTCPSocket();
-    socket.listenTCP();
+    // 计算checksum
+    mode_msg.check = calculate_checksum_Mode_Message(&mode_msg);
 
-    // Initialize UDP socket
-    socket.initUDPSocket("192.168.0.29", 8081);
-    socket.bindUDPSocket();
-    socket.listenUDP();
+    // 打包Mode_Message
+    char* packed_msg = pack_Mode_Message(mode_msg.head, mode_msg.length, mode_msg.msg_id, mode_msg.robot_id, mode_msg.check, mode_msg.payload);
+    std::cout<<strlen(packed_msg)<<std::endl;
+    // Create a socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        std::cerr << "Failed to create socket" << std::endl;
+        return 1;
+    }
 
-    // Send a TCP message
-    socket.sendTCPMessage("Hello, TCP!");
+    // Set server address
+    sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8969); // Replace with actual port
+    if (inet_pton(AF_INET, "192.168.0.15", &(server_addr.sin_addr)) <= 0) {
+        std::cerr << "Invalid address/ Address not supported" << std::endl;
+        return 1;
+    }
 
-    // Send a UDP message
-    socket.sendUDPMesssage("Hello, UDP!");
+    // Connect to server
+    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        std::cerr << "Connection failed" << std::endl;
+        return 1;
+    }
 
-    // Receive and print TCP messages
-    std::thread receiveTCPThread([&socket]() {
-        while (true) {
-            char *message;
-            {
-                std::lock_guard<std::mutex> lock(socket.tcpMessageQueueMutex);
-                if (!socket.tcpMessageQueue.empty()) {
-                    message = socket.tcpMessageQueue.front();
-                    socket.tcpMessageQueue.pop();
-                } else {
-                    continue;
-                }
-            }
-            std::cout << "Received TCP message: " << message << std::endl;
-            // socket.sendTCPMessage("Hello, TCP!");
-            delete[] message;
-        }
-    });
+    // Send the Mode_Message
+    // char* encoded_msg = encode_Mode_Message(&mode_msg);
+    uint16_t head;
+    uint32_t length;
+    uint8_t msg_id;
+    uint8_t robot_id;
+    uint16_t check;
 
-    // Receive and print UDP messages
-    std::thread receiveUDPThread([&socket]() {
-        while (true) {
-            char *message;
-            {
-                std::lock_guard<std::mutex> lock(socket.udpMessageQueueMutex);
-                if (!socket.udpMessageQueue.empty()) {
-                    message = socket.udpMessageQueue.front();
-                    socket.udpMessageQueue.pop();
-                } else {
-                    continue;
-                }
-            }
-            std::cout << "Received UDP message: " << message << std::endl;
-            // socket.sendUDPMesssage("Hello, UDP!");
-            delete[] message;
-        }
-    });
+    extract_message_header(packed_msg, &head, &length, &msg_id, &robot_id, &check);
+    std::cout << "head: " << head << " length: " << length << " msg_id: " << static_cast<int>(msg_id) << " robot_id: " << static_cast<int>(robot_id) << " check: " << check << std::endl;
 
-    // Wait for 10 seconds
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::cout<<"len:"<<sizeof(packed_msg)<<std::endl;
+    if (send(sock, packed_msg, 1024, 0) < 0) {
+        std::cerr << "Send failed" << std::endl;
+        return 1;
+    }
 
-    // Join threads
-    receiveTCPThread.join();
-    receiveUDPThread.join();
+    // Close the socket
+    close(sock);
 
     return 0;
 }
