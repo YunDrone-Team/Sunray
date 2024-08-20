@@ -1,0 +1,70 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='camera_front'>
+    <!-- 前视相机 -->
+    <link name='Monocular_front_link'>
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>4.15e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.407e-6</iyy>
+          <iyz>0</iyz>
+          <izz>2.407e-6</izz>
+        </inertia>
+      </inertial>
+      <visual name='visual'>
+        <geometry>
+          <box>
+            <size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+      </visual>
+      <sensor name='camera' type='camera'>
+        <camera name='__default__'>
+          <!-- FOV,71度 -->
+          <horizontal_fov>1.239</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.001</stddev>
+          </noise>
+        </camera>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+        <visualize>1</visualize>
+        <plugin name='camera_plugin' filename='libgazebo_ros_camera.so'>
+            <robotNamespace>/sunray/camera</robotNamespace>
+            <alwaysOn>true</alwaysOn>
+            <imageTopicName>image_raw</imageTopicName>
+            <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+            <updateRate>30.0</updateRate>
+            <cameraName>monocular_front</cameraName>
+            <frameName>/monocular_front_link</frameName>
+            <CxPrime>320</CxPrime>
+            <Cx>320</Cx>
+            <Cy>240</Cy>
+            <hackBaseline>0</hackBaseline>
+            <focalLength>448.710659</focalLength>
+            <distortionK1>0.0</distortionK1>
+            <distortionK2>0.0</distortionK2>
+            <distortionK3>0.0</distortionK3>
+            <distortionT1>0.0</distortionT1>
+            <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+    </link>
+
+  </model>
+</sdf>

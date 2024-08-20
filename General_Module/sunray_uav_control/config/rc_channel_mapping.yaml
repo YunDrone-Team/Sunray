@@ -1,0 +1,18 @@
+# 遥控器通道映射
+
+# 1-4通道数值: roll pitch yaw thrust
+# 通道5（二段） - 解锁
+# 通道6（三段） - 切换PX4_POS_CONTROL
+# 通道6（三段） - 切换RC_POS_CONTROL
+# 通道6（三段） - 切换COMMAND_CONTROL
+# 通道7（二段） - 切换KILL
+# 通道8（二段） - 切换LAND_CONTROL
+
+# 1-4通道一般默认不需要配置 只需要映射5-9通道
+
+# 映射关系： channelN: msg->channels[num]
+
+channel_5: 
+channel_6: 
+channel_7: 
+channel_8: 

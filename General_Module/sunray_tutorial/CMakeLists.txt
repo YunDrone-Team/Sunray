@@ -82,6 +82,11 @@ add_executable(vel_body_z_pos_follow_car src/vel_body_z_pos_follow_car.cpp)
 add_dependencies(vel_body_z_pos_follow_car sunray_tutorial_gencpp)
 target_link_libraries(vel_body_z_pos_follow_car ${catkin_LIBRARIES})
 
+add_executable(auto_land src/auto_land.cpp)
+add_dependencies(auto_land sunray_tutorial_gencpp)
+target_link_libraries(auto_land ${catkin_LIBRARIES})
+
+
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

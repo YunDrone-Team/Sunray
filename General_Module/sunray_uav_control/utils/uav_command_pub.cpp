@@ -291,20 +291,27 @@ int main(int argc, char **argv)
             int arming;
             std::cout << "Please select Operation 1 arm 0 disarm" << std::endl;
             std::cin >> arming;
-            if (arming!= 1 && arming!= 0) {
-                std::cout << "input error" << std::endl;
-            } else {
-                setup.cmd = 0;
-                setup.arming = arming;
+            if (arming == 1)
+            {
+                setup.cmd = 1;
                 setup_pub.publish(setup);
+            } 
+            else if(arming == 0)
+            {
+                setup.cmd = 0;
+                setup_pub.publish(setup);
+            }
+            else {
+                std::cout << "input error" << std::endl;
             }
             break;
         }
         case 102:
         {
-            setup.cmd = 3;
+            setup.cmd = 4;
             setup.control_state = "CMD_CONTROL";
             setup_pub.publish(setup);
+            break;
         }
         case 103:
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;

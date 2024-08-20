@@ -9,7 +9,7 @@ catkin_make --source General_Module/vrpn_client_ros --build build/vrpn_client_ro
 # 编译sunray_simulator模块
 catkin_make --source Simulation/sunray_simulator --build build/sunray_simulator
 # 编译sunray_ground模块
-# catkin_make --source General_Module/sunray_ground --build build/sunray_ground
+catkin_make --source General_Module/sunray_ground --build build/sunray_ground
 # 编译sunray_tutorial模块
 catkin_make --source General_Module/sunray_tutorial --build build/sunray_tutorial
 # 编译ego-planner-swarm模块

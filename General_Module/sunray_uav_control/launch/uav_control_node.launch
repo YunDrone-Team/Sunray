@@ -4,7 +4,7 @@
     <!-- 启动 sunray_control_node -->
 	<node pkg="sunray_uav_control" type="sunray_control_node" name="uav_control_main_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
-        <rosparam command="load" file="$(find sunray_uav_control)/launch/uav_control_param.yaml" />
+        <rosparam command="load" file="$(find sunray_uav_control)/config/uav_control_param.yaml" />
 	</node>
 </launch>
 

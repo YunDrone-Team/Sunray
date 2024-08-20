@@ -235,6 +235,7 @@ void UAVControl::mainloop()
         }
         // LAND_CONTROL控制模式下，使用位置+速度的控制接口
         send_pos_vel_xyz_setpoint(pos_des, vel_des, yaw_des);
+        break;
     }
 }
 
@@ -416,7 +417,7 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.vel << 0.0, 0.0, 0.0;
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
+                
             }
             if(control_cmd.enable_yawRate){
                 desired_state.yaw_rate = control_cmd.desired_yaw;
@@ -425,6 +426,7 @@ void UAVControl::get_desired_state_from_cmd()
             }
             else{
                 desired_state.yaw_rate = 0.0;
+                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
                 send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
@@ -443,7 +445,6 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.pos << 0.0, 0.0, 0.0;
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
             }
             if(control_cmd.enable_yawRate){
                 desired_state.yaw_rate = control_cmd.desired_yaw;
@@ -452,7 +453,7 @@ void UAVControl::get_desired_state_from_cmd()
             }
             else{
                 desired_state.yaw_rate = 0.0;
-                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
                 send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
@@ -529,6 +530,7 @@ void UAVControl::get_desired_state_from_cmd()
     }
     // 记录上一时刻命令
     last_control_cmd = control_cmd;
+    last_control_cmd.header.stamp = ros::Time::now();
 }
 
 void UAVControl::printf_debug_info()
@@ -902,9 +904,13 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
 
 void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
 {
-    if (msg->cmd == sunray_msgs::UAVSetup::ARMING)
+    if (msg->cmd == sunray_msgs::UAVSetup::ARM)
     {
-        arm_disarm_func(msg->arming);
+        arm_disarm_func(true);
+    }
+    else if (msg->cmd == sunray_msgs::UAVSetup::DISARM)
+    {
+        arm_disarm_func(false);
     }
     else if (msg->cmd == sunray_msgs::UAVSetup::SET_PX4_MODE)
     {
@@ -923,6 +929,10 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
             control_mode = Control_Mode::CMD_CONTROL;
             check_off = true;
         }
+    }
+    else if (msg->cmd == sunray_msgs::UAVSetup::EMERGENCY_KILL)
+    {
+        enable_emergency_func();
     }
 }
 

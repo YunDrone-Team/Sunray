@@ -44,6 +44,8 @@ add_message_files(
   ViobotState.msg
   PositionCommand.msg
   OrcaCmd.msg
+  TargetMsg.msg
+  TargetsInFrameMsg.msg
 )
 
 add_service_files(

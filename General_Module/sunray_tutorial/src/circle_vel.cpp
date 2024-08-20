@@ -122,14 +122,13 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
     // 解锁
     cout<<"arm"<<endl;
-    setup.cmd = 0;
-    setup.arming = 1;
+    setup.cmd = 1;
     uav_setup_pub.publish(setup);
     ros::Duration(1.0).sleep();
 
     // 切换到指令控制模式
     cout<<"switch CMD_CONTROL"<<endl;
-    setup.cmd = 3;
+    setup.cmd = 4;
     setup.control_state = "CMD_CONTROL";
     uav_setup_pub.publish(setup);
     ros::Duration(1.0).sleep();

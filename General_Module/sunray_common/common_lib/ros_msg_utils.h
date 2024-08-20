@@ -24,6 +24,8 @@
 #include <sunray_msgs/VisionPositionEstimate.h>
 #include <sunray_msgs/PositionCommand.h>
 #include <sunray_msgs/OrcaCmd.h>
+#include <sunray_msgs/TargetMsg.h>
+#include <sunray_msgs/TargetsInFrameMsg.h>
 
 // std_msgs
 #include <std_msgs/Float64.h>

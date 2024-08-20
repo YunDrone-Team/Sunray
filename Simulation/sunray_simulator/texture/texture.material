@@ -54,3 +54,17 @@ material tag_0
    }
  }
 }
+material combo_tag
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture tag_40x40.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}
