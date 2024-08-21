@@ -203,10 +203,10 @@ int main(int argc, char **argv)
             {
                 if (abs(yaw_rel) > 30)
                 {
-                    max_yaw = 0.2;
+                    max_yaw = 0.5;
                 }
                 else if (abs(yaw_rel) < 10){
-                    max_yaw = 0.02;
+                    max_yaw = 0.05;
                 }
 
                 x_vel = min(max(x_rel * k_p_xy, -max_vel), max_vel);

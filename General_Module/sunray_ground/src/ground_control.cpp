@@ -54,19 +54,33 @@ void GroundControl::init(ros::NodeHandle &nh)
 
     tcp_server.m_strIp = tcp_ip;
     tcp_server.m_uPort = stoul(tcp_port);
-    if (tcp_server.InitServer())
-    {
-        std::cout << "TCP网络服务端初始化成功！\n";
-        tcp_server.startListening();
-        tcp_server.startWaitForClient();
-    }
-    else
+    while(!tcp_server.InitServer())
     {
         std::cout << "TCP网络服务端初始化失败！\n";
+        std::cout << "正在重试...";
+        ros::Duration(5).sleep();
     }
+    tcp_server.startListening();
+    tcp_server.startWaitForClient();
+    std::cout << "TCP网络服务端初始化成功！\n";
+    // if (tcp_server.InitServer())
+    // {
+    //     std::cout << "TCP网络服务端初始化成功！\n";
+    //     tcp_server.startListening();
+    //     tcp_server.startWaitForClient();
+    // }
+    // else
+    // {
+    //     std::cout << "TCP网络服务端初始化失败！\n";
+    // }
     udp_server.m_strIp = udp_ip;
     udp_server.m_uPort = stoul(udp_port);
-    udp_server.InitUDPClient();
+    while (!udp_server.InitUDPClient())
+    {
+        std::cout << "UDP网络服务端初始化失败！\n";
+        std::cout << "正在重试...";
+        ros::Duration(5).sleep();
+    }
     std::cout << "UDP网络服务端初始化成功！\n";
 }
 
