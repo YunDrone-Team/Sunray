@@ -115,19 +115,24 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     uav_name = uav_name + std::to_string(uav_id);
     // 【参数】外部定位数据来源
     nh.param<int>("external_source", external_source, sunray_msgs::ExternalOdom::GAZEBO);
-
+    bool flag_printf;
+    nh.param<bool>("flag_printf", flag_printf, false);
+    
     string topic_prefix = "/" + uav_name;
     // 【订阅】无人机模式 - 飞控 -> 本节点
     px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 1,  &VISION_POSE::px4_state_cb, this);
     // 【订阅】无人机电池状态 - 飞控 -> 本节点
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 1,  &VISION_POSE::px4_battery_cb, this);
-    // 【订阅】无人机当前位置（对比用） - 飞控 -> 本节点
-    px4_position_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 1, &VISION_POSE::local_position_ned_cb, this);
-    // 【订阅】无人机当前速度 坐标系:ENU系 (PX4 -> 本节点)
-    px4_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 1, &VISION_POSE::local_vel_ned_cb, this);
-    // 【订阅】无人机当前欧拉角（对比用） - 飞控 -> 本节点
-    px4_attitude_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1, &VISION_POSE::attitude_cb, this);
-
+    if(flag_printf)
+    {
+        // 【订阅】无人机当前位置（对比用） - 飞控 -> 本节点
+        px4_position_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 1, &VISION_POSE::local_position_ned_cb, this);
+        // 【订阅】无人机当前速度 坐标系:ENU系 (PX4 -> 本节点)
+        px4_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 1, &VISION_POSE::local_vel_ned_cb, this);
+        // 【订阅】无人机当前欧拉角（对比用） - 飞控 -> 本节点
+        px4_attitude_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1, &VISION_POSE::attitude_cb, this);
+    }
+    
     // 根据设定的定位来源订阅不同的定位数据
     if (external_source == sunray_msgs::ExternalOdom::MOCAP)
     {
@@ -189,9 +194,22 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     uav_state.attitude_q.y = 0;
     uav_state.attitude_q.z = 0;
     uav_state.attitude_q.w = 1;
+    uav_state.pos_setpoint = {0};
+    uav_state.vel_setpoint = {0};
+    uav_state.att_setpoint = {0};
     uav_state.attitude_rate = {0};
     uav_state.battery_state = 0;
     uav_state.battery_percetage = 0;
+
+    uav_pose_external.pos << 0, 0, 0;
+    uav_pose_external.vel << 0, 0, 0;
+    uav_pose_external.att << 0, 0, 0;
+
+    uav_pose_px4.pos << 999, 999, 999;
+    uav_pose_px4.vel << 999, 999, 999;
+    uav_pose_px4.att << 999, 999, 999;
+
+    
 
     cout << GREEN << node_name << " init! " << TAIL << endl;
 }
@@ -578,7 +596,7 @@ void VISION_POSE::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
 
 void VISION_POSE::px4_state_cb(const mavros_msgs::State::ConstPtr& msg)
 {
-    uav_state.connected = true;
+    uav_state.connected = msg->connected;
     uav_state.mode = msg->mode.c_str();
     uav_state.armed = msg->armed;
 }

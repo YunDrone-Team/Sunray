@@ -100,6 +100,9 @@ struct state_msg
     std::vector<float> velocity;      // [m/s]
     std::vector<float> attitude;      // [rad]
     std::vector<float> attitude_rate; // [rad/s]
+    std::vector<float> pos_setpoint;      // [m]
+    std::vector<float> vel_setpoint;      // [m/s]
+    std::vector<float> att_setpoint;      // [rad]
 
     float battery_state;      // [V]
     float battery_percentage; // [0-1]
@@ -329,9 +332,18 @@ char *pack_State_Message(uint16_t head, uint32_t length, uint8_t msg_id, uint8_t
     memcpy(buf + 70, &payload.attitude_rate[0], 4);
     memcpy(buf + 74, &payload.attitude_rate[1], 4);
     memcpy(buf + 78, &payload.attitude_rate[2], 4);
-    memcpy(buf + 82, &payload.battery_state, 4);
-    memcpy(buf + 86, &payload.battery_percentage, 4);
-    memcpy(buf + 90, &payload.control_mode, 1);
+    memcpy(buf + 82, &payload.pos_setpoint[0], 4);
+    memcpy(buf + 86, &payload.pos_setpoint[1], 4);
+    memcpy(buf + 90, &payload.pos_setpoint[2], 4);
+    memcpy(buf + 94, &payload.vel_setpoint[0], 4);
+    memcpy(buf + 98, &payload.vel_setpoint[1], 4);
+    memcpy(buf + 102, &payload.vel_setpoint[2], 4);
+    memcpy(buf + 106, &payload.att_setpoint[0], 4);
+    memcpy(buf + 110, &payload.att_setpoint[1], 4);
+    memcpy(buf + 114, &payload.att_setpoint[2], 4);
+    memcpy(buf + 118, &payload.battery_state, 4);
+    memcpy(buf + 122, &payload.battery_percentage, 4);
+    memcpy(buf + 126, &payload.control_mode, 1);
     return buf;
 }
 
@@ -362,9 +374,18 @@ char *encode_State_Message(const State_Message *msg)
     memcpy(buf + 70, &msg->payload.attitude_rate[0], 4);
     memcpy(buf + 74, &msg->payload.attitude_rate[1], 4);
     memcpy(buf + 78, &msg->payload.attitude_rate[2], 4);
-    memcpy(buf + 82, &msg->payload.battery_state, 4);
-    memcpy(buf + 86, &msg->payload.battery_percentage, 4);
-    memcpy(buf + 90, &msg->payload.control_mode, 1);
+    memcpy(buf + 82, &msg->payload.pos_setpoint[0], 4);
+    memcpy(buf + 86, &msg->payload.pos_setpoint[1], 4);
+    memcpy(buf + 90, &msg->payload.pos_setpoint[2], 4);
+    memcpy(buf + 94, &msg->payload.vel_setpoint[0], 4);
+    memcpy(buf + 98, &msg->payload.vel_setpoint[1], 4);
+    memcpy(buf + 102, &msg->payload.vel_setpoint[2], 4);
+    memcpy(buf + 106, &msg->payload.att_setpoint[0], 4);
+    memcpy(buf + 110, &msg->payload.att_setpoint[1], 4);
+    memcpy(buf + 114, &msg->payload.att_setpoint[2], 4);
+    memcpy(buf + 118, &msg->payload.battery_state, 4);
+    memcpy(buf + 122, &msg->payload.battery_percentage, 4);
+    memcpy(buf + 126, &msg->payload.control_mode, 1);
     return buf;
 }
 
@@ -454,9 +475,18 @@ void unpack_State_Message(const char* buf, State_Message* msg) {
     memcpy(&msg->payload.attitude_rate[0], buf + 70, 4);
     memcpy(&msg->payload.attitude_rate[1], buf + 74, 4);
     memcpy(&msg->payload.attitude_rate[2], buf + 78, 4);
-    memcpy(&msg->payload.battery_state, buf + 82, 4);
-    memcpy(&msg->payload.battery_percentage, buf + 86, 4);
-    memcpy(&msg->payload.control_mode, buf + 90, 1);
+    memcpy(&msg->payload.pos_setpoint[0], buf + 82, 4);
+    memcpy(&msg->payload.pos_setpoint[1], buf + 86, 4);
+    memcpy(&msg->payload.pos_setpoint[2], buf + 90, 4);
+    memcpy(&msg->payload.vel_setpoint[0], buf + 94, 4);
+    memcpy(&msg->payload.vel_setpoint[1], buf + 98, 4);
+    memcpy(&msg->payload.vel_setpoint[2], buf + 102, 4);
+    memcpy(&msg->payload.att_setpoint[0], buf + 106, 4);
+    memcpy(&msg->payload.att_setpoint[1], buf + 110, 4);
+    memcpy(&msg->payload.att_setpoint[2], buf + 114, 4);
+    memcpy(&msg->payload.battery_state, buf + 118, 4);
+    memcpy(&msg->payload.battery_percentage, buf + 122, 4);
+    memcpy(&msg->payload.control_mode, buf + 126, 1);
 }
 
 
@@ -583,6 +613,15 @@ uint16_t calculate_checksum_State_Message(const State_Message* msg) {
     checksum += *(uint32_t*)&msg->payload.attitude_rate[0];
     checksum += *(uint32_t*)&msg->payload.attitude_rate[1];
     checksum += *(uint32_t*)&msg->payload.attitude_rate[2];
+    checksum += *(uint32_t*)&msg->payload.pos_setpoint[0];
+    checksum += *(uint32_t*)&msg->payload.pos_setpoint[1];
+    checksum += *(uint32_t*)&msg->payload.pos_setpoint[2];
+    checksum += *(uint32_t*)&msg->payload.vel_setpoint[0];
+    checksum += *(uint32_t*)&msg->payload.vel_setpoint[1];
+    checksum += *(uint32_t*)&msg->payload.vel_setpoint[2];
+    checksum += *(uint32_t*)&msg->payload.att_setpoint[0];
+    checksum += *(uint32_t*)&msg->payload.att_setpoint[1];
+    checksum += *(uint32_t*)&msg->payload.att_setpoint[2];
     checksum += *(uint32_t*)&msg->payload.battery_state;
     checksum += *(uint32_t*)&msg->payload.battery_percentage;
     checksum += msg->payload.control_mode;

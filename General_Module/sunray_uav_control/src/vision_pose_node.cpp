@@ -13,13 +13,12 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "vision_pose_node");
     ros::NodeHandle nh("~");
-    ros::Rate rate(100.0);
+    ros::Rate rate(50.0);
 
     bool flag_printf;
     nh.param<bool>("flag_printf", flag_printf, false);
 
     signal(SIGINT, mySigintHandler);
-    ros::Duration(1.0).sleep();
 
     // 外部定位数据
     VISION_POSE vision_pose;
