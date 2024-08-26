@@ -82,9 +82,6 @@ void UAVControl::init(ros::NodeHandle& nh)
     desired_state.thrust = 0.0;
     desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
     
-    uav_pos.setZero();
-    uav_vel.setZero();
-    u_att.setZero();
     rc_input.init();
 
     quick_land = false;
@@ -223,6 +220,10 @@ void UAVControl::mainloop()
         {
             // 进入急停
             enable_emergency_func();
+            control_mode = Control_Mode::INIT;
+            //控制命令初始化,不初始化将影响setup接口切换command_control模式
+            control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+            set_landing_des = false;
         }
 
         // 降落结束的标志：无人机上锁
@@ -298,7 +299,7 @@ void UAVControl::get_desired_state_from_cmd()
             desired_state.vel << 0.0, 0.0, 0.0;
             desired_state.acc << 0.0, 0.0, 0.0;
             desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.yaw = 0.0;
+            desired_state.yaw = Takeoff_yaw;
             desired_state.yaw_rate = 0.0;
             desired_state.thrust = 0.0;
             desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
@@ -722,15 +723,6 @@ void UAVControl::printf_uav_state()
 void UAVControl::control_cmd_cb(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
     control_cmd = *msg;
-    // if(msg->cmd == sunray_msgs::UAVControlCMD::Takeoff){
-    //     cout<< "cmd:"<< *msg << endl;
-    //     cout<< "control_cmd:"<< control_cmd << endl;
-    //     uint8_t data = msg->cmd;
-    //     cout<< "cmd:"<< msg->cmd <<"."<< endl;
-    // }
-    // else{
-    //     cout<< "Init:"<< sunray_msgs::UAVControlCMD::Init <<"."<< endl;
-    // }
 }
 
 void UAVControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
@@ -760,7 +752,17 @@ void UAVControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 
     uav_state_last = uav_state;
 
-    uav_state.control_mode = control_mode;
+    uav_state.pos_setpoint[0] = px4_pos_target[0];
+    uav_state.pos_setpoint[1] = px4_pos_target[1];
+    uav_state.pos_setpoint[2] = px4_pos_target[2];
+    uav_state.vel_setpoint[0] = px4_vel_target[0];
+    uav_state.vel_setpoint[1] = px4_vel_target[1];
+    uav_state.vel_setpoint[2] = px4_vel_target[2];
+    uav_state.att_setpoint[0] = px4_att_target[0];
+    uav_state.att_setpoint[1] = px4_att_target[1];
+    uav_state.att_setpoint[2] = px4_att_target[2];
+
+    uav_state.control_mode = control_cmd.cmd;
     uav_state_pub.publish(uav_state);
 }
 
@@ -782,6 +784,10 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
     {
         rc_input.toggle_kill = false;
         enable_emergency_func();
+        control_mode = Control_Mode::INIT;
+        //控制命令初始化,不初始化将影响setup接口切换command_control模式
+        control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+        set_landing_des = false;
         return;
     }
 
@@ -932,6 +938,10 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
     else if (msg->cmd == sunray_msgs::UAVSetup::EMERGENCY_KILL)
     {
         enable_emergency_func();
+        control_mode = Control_Mode::INIT;
+        //控制命令初始化,不初始化将影响setup接口切换command_control模式
+        control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+        set_landing_des = false;
     }
 }
 

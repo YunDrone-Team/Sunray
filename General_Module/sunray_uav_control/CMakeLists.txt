@@ -69,9 +69,10 @@ add_executable(uav_control_mode_pub utils/uav_control_mode_pub.cpp)
 add_dependencies(uav_control_mode_pub sunray_control_gencpp)
 target_link_libraries(uav_control_mode_pub ${catkin_LIBRARIES})
 
-add_executable(terminal_control_node utils/terminal_control_node.cpp)
-add_dependencies(terminal_control_node sunray_control_gencpp)
-target_link_libraries(terminal_control_node ${catkin_LIBRARIES})
+add_executable(show_detail_node utils/show_detail.cpp)
+add_dependencies(show_detail_node sunray_control_gencpp)
+target_link_libraries(show_detail_node ${catkin_LIBRARIES})
+
 
 add_executable(joy_node utils/joy_node.cpp)
 target_link_libraries(joy_node ${catkin_LIBRARIES})

@@ -15,6 +15,10 @@ float32[3] attitude                 ## [rad]
 geometry_msgs/Quaternion attitude_q ## 四元数
 float32[3] attitude_rate            ## [rad/s]
 
+float32[3] pos_setpoint             ## [m]  位置控制目标点
+float32[3] vel_setpoint             ## [m/s]  速度控制目标
+float32[3] att_setpoint             ## [rad]  姿态控制目标
+
 ## 无人机电池状态
 float32 battery_state               ## [V]
 float32 battery_percetage           ## [0-1]

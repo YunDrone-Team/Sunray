@@ -28,6 +28,9 @@ void GroundControl::init(ros::NodeHandle &nh)
     state_msg.payload.position = {0, 0, 0};
     state_msg.payload.velocity = {0, 0, 0};
     state_msg.payload.attitude = {0, 0, 0};
+    state_msg.payload.pos_setpoint = {0, 0, 0};
+    state_msg.payload.vel_setpoint = {0, 0, 0};
+    state_msg.payload.att_setpoint = {0, 0, 0};
     state_msg.payload.attitude_rate = {0, 0, 0};
     state_msg.payload.battery_state = 0;
     state_msg.payload.battery_percentage = 0;
@@ -41,7 +44,7 @@ void GroundControl::init(ros::NodeHandle &nh)
             topic_prefix + "/sunray/uav_control_cmd", 1));
         
         uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(
-            topic_prefix + "/sunray/uav_state", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
+            topic_prefix + "/sunray/uav_state_cmd", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
 
         uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(
             topic_prefix + "/sunray/setup", 1));
@@ -336,6 +339,9 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     stateMessage.at(index).payload.position = {msg->position[0], msg->position[1], msg->position[2]};
     stateMessage.at(index).payload.velocity = {msg->velocity[0], msg->velocity[1], msg->velocity[2]};
     stateMessage.at(index).payload.attitude = {msg->attitude[0], msg->attitude[1], msg->attitude[2]};
+    stateMessage.at(index).payload.pos_setpoint = {msg->pos_setpoint[0], msg->pos_setpoint[1], msg->pos_setpoint[2]};
+    stateMessage.at(index).payload.vel_setpoint = {msg->vel_setpoint[0], msg->vel_setpoint[1], msg->vel_setpoint[2]};
+    stateMessage.at(index).payload.att_setpoint = {msg->att_setpoint[0], msg->att_setpoint[1], msg->att_setpoint[2]};
     stateMessage.at(index).payload.battery_state = msg->battery_state;
     stateMessage.at(index).payload.battery_percentage = msg->battery_percetage;
     stateMessage.at(index).payload.control_mode = msg->control_mode;
