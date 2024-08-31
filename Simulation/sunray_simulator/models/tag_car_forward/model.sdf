@@ -1,0 +1,119 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="tag_car_forward">
+
+    <include>
+      <uri>model://move_car</uri>
+    </include>
+
+    <link name='tag'>
+      <pose frame=''> 0.05 0.0 1.2 0 1.57 0</pose>
+      <!-- <pose frame=''> 0.05 0.0 1.2 1.57 0 1.57</pose> -->
+      <!-- <pose frame=''> -0.05 0.0 1.2 -1.57 0 -1.57</pose> -->
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0</iyy>
+          <iyz>0</iyz>
+          <izz>0</izz>
+        </inertia>
+      </inertial>
+      <collision name="platform_collision">
+        <geometry>
+          <box>
+            <size>0.48 0.48 0.01</size>
+          </box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="visual">
+        <cast_shadows>false</cast_shadows>
+        <geometry>
+          <box>
+            <size>0.48 0.48 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <uri>model://texture.material</uri>
+            <name>arcuo_92</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+    <link name='cylinder_link'>
+    <pose frame=''> 0.0 0.0 0.70 0.0 0.0 0.0</pose>
+      <inertial>
+        <mass>1</mass>
+        <inertia>
+          <ixx>0.0</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0</iyy>
+          <iyz>0</iyz>
+          <izz>0.0</izz>
+        </inertia>
+      </inertial>
+      <collision name='collision'>
+        <geometry>
+          <cylinder>
+            <radius>0.05</radius>
+            <length>1.2</length>
+          </cylinder>
+        </geometry>
+        <max_contacts>10</max_contacts>
+        <surface>
+          <contact>
+            <collide_without_contact>1</collide_without_contact>
+            <ode/>
+          </contact>
+          <bounce/>
+          <friction>
+            <torsional>
+              <ode/>
+            </torsional>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <cylinder>
+            <radius>0.05</radius>
+            <length>1.2</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+      <gravity>0</gravity>
+      <enable_wind>0</enable_wind>
+    </link>
+
+
+    <joint name='tag_link' type='fixed'>
+      <pose>0 0 0 0 0 0</pose>
+      <child>tag</child>
+      <parent>cylinder_link</parent>
+    </joint>
+
+    <joint name='cylinder_link' type='fixed'>
+      <pose>0 0 0 0 -0 0</pose>
+      <child>cylinder_link</child>
+      <parent>move_car::chassis</parent>
+    </joint>
+
+    </model>
+</sdf>

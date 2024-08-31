@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   sunray_msgs
   tf2_geometry_msgs
   mavros_msgs
+  detection_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -32,6 +33,7 @@ generate_messages(
   nav_msgs
   sensor_msgs
   std_msgs
+
 )
 
 catkin_package(
@@ -53,6 +55,10 @@ include_directories(
 add_executable(follow_a_car src/follow_a_car.cpp)
 add_dependencies(follow_a_car sunray_tutorial_gencpp)
 target_link_libraries(follow_a_car ${catkin_LIBRARIES})
+
+add_executable(follow_a_tag src/follow_a_tag.cpp)
+add_dependencies(follow_a_tag sunray_tutorial_gencpp)
+target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
 
 add_executable(takeoff_hover_land src/takeoff_hover_land.cpp)
 add_dependencies(takeoff_hover_land sunray_tutorial_gencpp)

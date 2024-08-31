@@ -5,8 +5,8 @@
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0 0 0 0</pose>
-        <mass>1.8</mass>
+        <pose>0 0 0.2 0 0 0</pose>
+        <mass>1.5</mass>
         <inertia>
           <ixx>0.029125</ixx>
           <ixy>0</ixy>
@@ -17,10 +17,10 @@
         </inertia>
       </inertial>
       <collision name='base_link_inertia_collision'>
-        <pose>0 0 0.1 0 0 0</pose>
+        <pose>0 0 0.02 0 0 0</pose>
         <geometry>
           <box>
-						<size>0.22 0.22 0.40</size>
+						<size>0.5 0.3 0.10</size>
           </box>
         </geometry>
         <surface>
@@ -55,7 +55,7 @@
       <self_collide>0</self_collide>
     </link>
     <link name='imu_link'>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>0 0 0.1 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.015</mass>

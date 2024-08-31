@@ -1,6 +1,9 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <detection_msgs/TargetMsg.h>
+#include <detection_msgs/TargetsInFrameMsg.h>
+#include "utils.hpp"
 
 using namespace std;
 
@@ -16,6 +19,17 @@ bool stop_flag{false};
 double uav_x, uav_y, uav_z, uav_yaw, x_rel, y_rel, z_rel, yaw_rel;
 bool sub_flag{false};
 bool tag_flag{false};
+
+double x_vel = 0.0;
+double y_vel = 0.0;
+double z_vel = 0.0;
+double yaw = 0.0;
+
+MovingAverageFilter x_filter(5);
+MovingAverageFilter y_filter(5);
+MovingAverageFilter z_filter(5);
+MovingAverageFilter yaw_filter(5);
+
 ros::Time last_time{0};
 
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
@@ -34,23 +48,23 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 }
 
 // 回调函数，用于获取目标二的位置和朝向
-void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
+void tagCallback(const detection_msgs::TargetsInFrameMsg::ConstPtr &msg)
 {
     
     if (msg->targets.size() > 0)
     {
         tag_flag = true;
         last_time = ros::Time::now();
-        x_rel = -msg->targets[0].py;
-        y_rel = -msg->targets[0].px;
-        z_rel = -msg->targets[0].pz;
-        yaw_rel = -msg->targets[0].yaw_a;
+        x_rel = x_filter.filter(msg->targets[0].px);
+        y_rel = y_filter.filter(-msg->targets[0].py);
+        z_rel = z_filter.filter(-msg->targets[0].pz);
+        yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
     }
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "vel_body_follow_car");
+    ros::init(argc, argv, "auto_land_node");
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
@@ -67,10 +81,18 @@ int main(int argc, char **argv)
     // 【参数】目标话题名称
     nh.param<string>("target_tpoic_name", target_tpoic_name, "/vrpn_client_node/target/pose");
 
-    uav_name = uav_name + std::to_string(uav_id);
+    double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
+    nh.param<double>("k_p_xy", k_p_xy, 1.2);
+    nh.param<double>("k_p_z", k_p_z, 0.5);
+    nh.param<double>("k_p_yaw", k_p_yaw, 0.04);
+    nh.param<double>("max_vel", max_vel, 0.5);
+    nh.param<double>("max_vel_z", max_vel_z, 0.2);
+    nh.param<double>("max_yaw", max_yaw, 0.4);
+
+    uav_name = uav_name + to_string(uav_id);
     string topic_prefix = "/" + uav_name;
     // 【订阅】目标点位置
-    ros::Subscriber target_pos_sub = nh.subscribe<sunray_msgs::TargetsInFrameMsg>("/landmark_detection_ros", 1, tagCallback);
+    ros::Subscriber target_pos_sub = nh.subscribe<detection_msgs::TargetsInFrameMsg>(topic_prefix + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
     ;
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
@@ -121,43 +143,7 @@ int main(int argc, char **argv)
     cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
 
     ros::Duration(0.5).sleep();
-    // 解锁
-    // cout << "arm" << endl;
-    // setup.cmd = 1;
-    // uav_setup_pub.publish(setup);
-    // ros::Duration(1.0).sleep();
-
-    // // 切换到指令控制模式
-    // cout << "switch CMD_CONTROL" << endl;
-    // setup.cmd = 4;
-    // setup.control_state = "CMD_CONTROL";
-    // uav_setup_pub.publish(setup);
-    // ros::Duration(1.0).sleep();
-
-    // // 起飞
-    // cout << "takeoff" << endl;
-    // uav_cmd.cmd = 1;
-    // uav_cmd.cmd_id = 0;
-    // control_cmd_pub.publish(uav_cmd);
-    // ros::Duration(10).sleep();
-
-    // 悬停
-    // cout << "hover" << endl;
-    // uav_cmd.cmd = 2;
-    // control_cmd_pub.publish(uav_cmd);
-    // ros::Duration(3).sleep();
-
-    // Define the proportional gain and maximum velocity
-    double k_p_xy = 1.0;
-    double k_p_z = 0.20;
-    double max_vel = 0.5;
-    double max_vel_z = 0.2;
-    double max_yaw = 0.01;
-
-    double x_vel = 0.0;
-    double y_vel = 0.0;
-    double z_vel = 0.0;
-    double yaw = 0.0;
+    ros::spinOnce();
 
     geometry_msgs::PoseStamped pose;
 
@@ -188,9 +174,21 @@ int main(int argc, char **argv)
             control_cmd_pub.publish(uav_cmd);
             break;
         }
-        if(landing_point_num >10 && (((abs(x_rel) < 0.08 && abs(y_rel) < 0.08 && abs(z_rel) < 0.18)) || abs(z_rel) < 0.14))
-        {
-            cout<<"降落完成"<<std::endl;
+        if(landing_point_num >10 && (((abs(x_rel) < 0.05 && abs(y_rel) < 0.05 && abs(z_rel) < 0.18)) || abs(z_rel) < 0.15))
+        {   
+            ros::Time stop_time = ros::Time::now();
+            while((ros::Time::now() - stop_time).toSec() < 3.0)
+            {
+                    uav_cmd.header.stamp = ros::Time::now();
+                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
+                    uav_cmd.desired_vel[0] = 0;
+                    uav_cmd.desired_vel[1] = 0;
+                    uav_cmd.desired_vel[2] = -0.1;
+                    uav_cmd.desired_yaw = yaw;
+                    uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+                    ros::Duration(0.1).sleep();
+            }
+            cout<<"降落完成"<<endl;
             setup.header.stamp = ros::Time::now();
             setup.cmd = 5;
             uav_setup_pub.publish(setup);
@@ -201,24 +199,16 @@ int main(int argc, char **argv)
             
             if(landing_point_num>10)
             {
-                if (abs(yaw_rel) > 30)
+                if(yaw_rel < 1 && yaw_rel > -1)
                 {
-                    max_yaw = 0.5;
-                }
-                else if (abs(yaw_rel) < 10){
-                    max_yaw = 0.05;
+                    yaw_rel = 0;
                 }
 
                 x_vel = min(max(x_rel * k_p_xy, -max_vel), max_vel);
                 y_vel = min(max(y_rel * k_p_xy, -max_vel), max_vel);
                 z_vel = min(max(z_rel * k_p_z, -max_vel_z), max_vel_z);
-                yaw = min(max(yaw_rel, -max_yaw), max_yaw);
-                if(yaw_rel < 1 && yaw_rel > -1)
-                {
-                    yaw = 0;
-                }
-                cout<<"x_rel: "<<x_rel<<" y_rel: "<<y_rel<<" z_rel: "<<z_rel<<" yaw_rel: "<<yaw_rel<<std::endl;
-                // cout << "x_vel: " << x_vel << " y_vel: " << y_vel << " z_vel" << z_vel << " yaw_rel"<< yaw_rel <<" yaw: " << yaw << std::endl;
+                yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
+                
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
                 uav_cmd.desired_vel[0] = x_vel;
@@ -227,11 +217,12 @@ int main(int argc, char **argv)
                 uav_cmd.desired_yaw = yaw;
                 uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
                 // 优先调整水平距离
-                if (z_rel < 1.0 && z_rel > 0.4 && (abs(x_rel) > 0.10 || abs(y_rel) > 0.10))
+                if (abs(z_rel) < 1 && abs(z_rel) > 0.4 && (abs(x_rel) > 0.8 || abs(y_rel) > 0.8))
                 {
                     uav_cmd.desired_vel[2] = 0.01;
                 }
-                
+                cout<<"x_rel: "<<x_rel<<" y_rel: "<<y_rel<<" z_rel: "<<z_rel<<" yaw_rel: "<<yaw_rel<<endl;
+                cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
                 control_cmd_pub.publish(uav_cmd);
             }
             continue;
@@ -244,7 +235,7 @@ int main(int argc, char **argv)
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
-            continue;
+            break;
         }
         if((ros::Time::now() - last_time).toSec() > 1)
         {

@@ -3,9 +3,11 @@
 #include "printf_utils.h"
 #include <detection_msgs/TargetMsg.h>
 #include <detection_msgs/TargetsInFrameMsg.h>
+#include <Eigen/Dense>
 #include "utils.hpp"
 
 using namespace std;
+using namespace Eigen;
 
 geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVControlCMD uav_cmd;
@@ -16,7 +18,8 @@ float target_yaw;
 bool stop_flag{false};
 
 // 全局变量存储无人机和车的坐标和朝向
-double uav_x, uav_y, uav_z, uav_yaw, x_rel, y_rel, z_rel, yaw_rel;
+double uav_x, uav_y, uav_z, uav_yaw, x_rel, y_rel, z_rel, yaw_rel, roll_rel, pitch_rel;
+double ang;
 bool sub_flag{false};
 bool tag_flag{false};
 double x_vel = 0.0;
@@ -27,8 +30,45 @@ double yaw = 0.0;
 MovingAverageFilter x_filter(5);
 MovingAverageFilter y_filter(5);
 MovingAverageFilter z_filter(5);
-MovingAverageFilter yaw_filter(3);
+MovingAverageFilter ang_filter(5);
 ros::Time last_time{0};
+
+double get_roll_pitch(double yaw, double& roll, double& pitch) {
+    //  将 yaw 转换到 0 到 360 度之间
+    yaw = int(yaw);
+    if( -180 < yaw && yaw < 0)
+    {
+        yaw += 360;  // 将负角度转换为正角度
+    }
+    if(0 <= yaw && yaw < 45)
+    {
+        return roll;
+    }
+    else if(45 <= yaw && yaw < 135)
+    {
+        if(-180 < pitch && pitch < 0)
+        {
+            return -(pitch+180);
+        }
+        return 180 - pitch;
+    }
+    else if(135 <= yaw && yaw < 225)
+    {
+        return -roll;
+    }
+    else if(225 <= yaw && yaw < 315)
+    {
+        if(-180 < pitch && pitch < 0)
+        {
+            return (pitch+180);
+        }
+        return pitch - 180;
+    }
+    else if(315 <= yaw && yaw < 360)
+    {
+        return roll;
+    }
+}
 
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
@@ -56,10 +96,9 @@ void tagCallback(const detection_msgs::TargetsInFrameMsg::ConstPtr &msg)
         x_rel = x_filter.filter(msg->targets[0].px);
         y_rel = y_filter.filter(-msg->targets[0].py);
         z_rel = z_filter.filter(msg->targets[0].pz);
-        yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
-        cout<<"--------"<<endl;
-        cout<<"x_rel: "<<msg->targets[0].px<<" y_rel: "<<-msg->targets[0].py<<" z_rel: "<<msg->targets[0].pz<<", yaw_rel: "<<-msg->targets[0].yaw<<endl;
-        cout<<"x_fil: "<<x_rel<<" y_fil: "<<y_rel<<" z_fil: "<<z_rel<<" yaw_fil: "<<yaw_rel<<endl;
+        yaw_rel = msg->targets[0].yaw;
+        roll_rel = msg->targets[0].roll;
+        pitch_rel = msg->targets[0].pitch;
     }
 }
 
@@ -68,7 +107,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "auto_land_node");
     ros::NodeHandle nh("~");
 
-    ros::Rate rate(20.0);
+    ros::Rate rate(10.0);
 
     int uav_id;
     string uav_name, target_tpoic_name;
@@ -79,7 +118,7 @@ int main(int argc, char **argv)
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
     nh.param<string>("uav_name", uav_name, "uav");
-    
+
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
@@ -92,7 +131,6 @@ int main(int argc, char **argv)
     string topic_prefix = "/" + uav_name;
     // 【订阅】目标点位置
     ros::Subscriber target_pos_sub = nh.subscribe<detection_msgs::TargetsInFrameMsg>(topic_prefix + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
-    ;
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
 
@@ -143,9 +181,15 @@ int main(int argc, char **argv)
 
     ros::Duration(0.5).sleep();
     ros::spinOnce();
+    
+    double x_vel = 0.0;
+    double y_vel = 0.0;
+    double z_vel = 0.0;
+    double yaw = 0.0;
 
     geometry_msgs::PoseStamped pose;
-
+    ros::spinOnce();
+    ros::Duration(0.5).sleep();
     while (!sub_flag)
     {
         cout << "waiting for pose" << endl;
@@ -173,35 +217,46 @@ int main(int argc, char **argv)
             control_cmd_pub.publish(uav_cmd);
             break;
         }
+        ang = get_roll_pitch(yaw_rel,roll_rel, pitch_rel);
+        ang = ang_filter.filter(ang);
         if(((ros::Time::now() - last_time).toSec()) < 0.5){
             landing_point_num  += 1;
             
             if(landing_point_num>10)
             {
-                if(yaw_rel < 1 && yaw_rel > -1)
+                if(ang < 2 && ang > -2)
                 {
-                    yaw_rel = 0;
+                    ang = 0;
                 }
 
-                x_vel = min(max(x_rel * k_p_xy, -max_vel), max_vel);
-                y_vel = min(max(y_rel * k_p_xy, -max_vel), max_vel);
-                z_vel = min(max((1.5-z_rel) * k_p_z, -max_vel_z), max_vel_z);
-                yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
+                if (abs(ang) > 30)
+                {
+                    max_yaw = 0.5;
+                }
+                else if (abs(ang) < 10){
+                    max_yaw = 0.05;
+                }
+                
+                x_vel = (z_rel - 2) * k_p_xy;
+                y_vel = y_rel * k_p_xy;
+                z_vel = x_rel * k_p_z;
+
+                x_vel = min(max(x_vel, -max_vel), max_vel);
+                y_vel = min(max(y_vel, -max_vel), max_vel);
+                z_vel = min(max(z_vel, -max_vel_z), max_vel_z);
+                ang = min(max(ang, -max_yaw), max_yaw);
+                
                 
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
                 uav_cmd.desired_vel[0] = x_vel;
                 uav_cmd.desired_vel[1] = y_vel;
                 uav_cmd.desired_vel[2] = z_vel;
-                uav_cmd.desired_yaw = yaw;
+                uav_cmd.desired_yaw = ang;
                 uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                // 优先调整水平距离
-                if (abs(z_rel) < 1 && abs(z_rel) > 0.4 && (abs(x_rel) > 0.10 || abs(y_rel) > 0.10))
-                {
-                    uav_cmd.desired_vel[2] = 0.01;
-                }
-                // cout<<"x_rel: "<<x_rel<<" y_rel: "<<y_rel<<" z_rel: "<<z_rel<<" yaw_rel: "<<yaw_rel<<endl;
-                // cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
+
+                cout<<"x_rel: "<<z_rel<<" y_rel: "<<y_rel<<" z_rel: "<<x_rel<<" yaw_rel: "<< ang <<endl;
+                cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
                 control_cmd_pub.publish(uav_cmd);
             }
             continue;

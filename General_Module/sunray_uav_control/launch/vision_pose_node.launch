@@ -20,7 +20,7 @@
     </node>
 
     <!-- Rviz config -->
-    <arg name="rviz_enable" default="true"/>
+    <arg name="rviz_enable" default="false"/>
     <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>
 	<!-- 启动Rviz-->
 	<group if="$(arg rviz_enable)">
