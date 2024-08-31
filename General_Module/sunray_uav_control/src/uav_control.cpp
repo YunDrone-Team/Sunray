@@ -218,6 +218,17 @@ void UAVControl::mainloop()
         // 需要考虑万一高度数据不准确时，从高处自由落体
         if (uav_pos[2] < Disarm_height)
         {
+            // 到达制定高度后向下移动3s 防止其直接锁桨掉落
+            ros::Time stop_time = ros::Time::now();
+            while((ros::Time::now() - stop_time).toSec() < 3.0)
+            {
+                vel_des[0] = 0;
+                vel_des[1] = 0;
+                vel_des[2] = -0.1;
+                yaw_des = uav_yaw;
+                send_local_vel_setpoint(vel_des, yaw_des);
+                ros::Duration(0.1).sleep();
+            }
             // 进入急停
             enable_emergency_func();
             control_mode = Control_Mode::INIT;
