@@ -183,9 +183,10 @@ int main(int argc, char **argv)
                     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
                     uav_cmd.desired_vel[0] = 0;
                     uav_cmd.desired_vel[1] = 0;
-                    uav_cmd.desired_vel[2] = -0.1;
+                    uav_cmd.desired_vel[2] = -0.2;
                     uav_cmd.desired_yaw = yaw;
                     uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+                    control_cmd_pub.publish(uav_cmd);
                     ros::Duration(0.1).sleep();
             }
             cout<<"降落完成"<<endl;
@@ -209,6 +210,14 @@ int main(int argc, char **argv)
                 z_vel = min(max(z_rel * k_p_z, -max_vel_z), max_vel_z);
                 yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
                 
+                // 优先调整水平距离
+                if (abs(z_rel) < 1 && abs(z_rel) > 0.2 && (abs(x_rel) > 0.08 || abs(y_rel) > 0.08))
+                {
+                    x_vel = min(max(x_rel * k_p_xy*1.8, -max_vel), max_vel);
+                    y_vel = min(max(y_rel * k_p_xy*1.8, -max_vel), max_vel);
+                    z_vel = -0.05;
+                }
+
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
                 uav_cmd.desired_vel[0] = x_vel;
@@ -216,11 +225,7 @@ int main(int argc, char **argv)
                 uav_cmd.desired_vel[2] = z_vel;
                 uav_cmd.desired_yaw = yaw;
                 uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                // 优先调整水平距离
-                if (abs(z_rel) < 1 && abs(z_rel) > 0.4 && (abs(x_rel) > 0.8 || abs(y_rel) > 0.8))
-                {
-                    uav_cmd.desired_vel[2] = 0.01;
-                }
+                
                 cout<<"x_rel: "<<x_rel<<" y_rel: "<<y_rel<<" z_rel: "<<z_rel<<" yaw_rel: "<<yaw_rel<<endl;
                 cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
                 control_cmd_pub.publish(uav_cmd);
