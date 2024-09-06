@@ -195,13 +195,6 @@ int main(int argc, char **argv)
                 uav_cmd.desired_vel[2] = z_vel;
                 uav_cmd.desired_yaw = yaw;
                 uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                // 优先调整水平距离
-                if (abs(z_rel) < 1 && abs(z_rel) > 0.4 && (abs(x_rel) > 0.10 || abs(y_rel) > 0.10))
-                {
-                    uav_cmd.desired_vel[2] = 0.01;
-                }
-                // cout<<"x_rel: "<<x_rel<<" y_rel: "<<y_rel<<" z_rel: "<<z_rel<<" yaw_rel: "<<yaw_rel<<endl;
-                // cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
                 control_cmd_pub.publish(uav_cmd);
             }
             continue;

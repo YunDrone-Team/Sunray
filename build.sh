@@ -16,6 +16,8 @@ catkin_make --source General_Module/sunray_tutorial --build build/sunray_tutoria
 catkin_make --source ego-planner-swarm --build build/ego-planner
 # 编译FUEL模块
 catkin_make --source FUEL --build build/FUEL
+# 编译simulator_utils模块
+catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # catkin_make --source orca_planenr --build build/orca_planenr
 
 # catkin_make --source sunray_msgs --build build/sunray_msgs
