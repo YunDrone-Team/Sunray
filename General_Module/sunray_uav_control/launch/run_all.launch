@@ -10,7 +10,9 @@
     <arg name="vision_enable" default="true"/>
     <arg name="control_enable" default="true"/>
     <arg name="joy_enable" default="false"/>
+    <arg name="ground_enable" default="false"/>
     <arg name="show_detail" default="true"/>
+    <arg name="rviz_enable" default="false"/>
 
     <group if="$(arg vision_enable)">
         <include file="$(find sunray_uav_control)/launch/vision_pose_node.launch">
@@ -18,6 +20,7 @@
             <arg name="uav_id" value="$(arg uav_id)"/>
             <arg name="external_source" value="$(arg external_source)"/>
             <arg name="flag_printf" value="$(arg flag_printf)"/>
+            <arg name="rviz_enable" value="$(arg rviz_enable)"/>
         </include>
     </group>
 
@@ -32,6 +35,11 @@
 
     <group if="$(arg joy_enable)">
         <include file="$(find sunray_uav_control)/launch/joynode.launch">
+        </include>
+    </group>
+
+    <group if="$(arg ground_enable)">
+        <include file="$(find sunray_ground)/launch/ground_control.launch">
         </include>
     </group>
 
