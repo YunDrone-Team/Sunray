@@ -138,7 +138,7 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[1] = state_desired[1];
             uav_cmd.desired_pos[2] = state_desired[2];
             uav_cmd.desired_yaw = state_desired[3];
-            uav_cmd.enable_yawRate = state_desired[4];
+            uav_cmd.enable_yawRate = yaw_rate;
             uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             uav_command_pub.publish(uav_cmd);
             cout << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;

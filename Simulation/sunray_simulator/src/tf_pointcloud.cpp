@@ -20,7 +20,7 @@ public:
         sub_ = nh_.subscribe("/velodyne_points", 1, &PointCloudTransformer::cloudCallback, this);
 
         // Create a ROS publisher for the output point cloud
-        pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/pointcloud_unified/world_frame", 1);
+        pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/pointcloud_world", 1);
         pos_cmd_sub_ =  nh_.subscribe("/position_cmd", 1, &PointCloudTransformer::position_command_cb, this);
         cmd_pub_ = nh_.advertise<sunray_msgs::UAVControlCMD>("/uav1/sunray/uav_control_cmd",1);
     }

@@ -14,7 +14,7 @@
     <arg name="geo_fence/z_max" default="30"/>
 
     <!-- 启动 sunray_control_node -->
-	<node pkg="sunray_uav_control" type="sunray_control_node" name="uav_control_main_$(arg uav_id)" output="screen">
+	<node pkg="sunray_uav_control" type="sunray_control_node" name="uav_control_node_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 		<param name="flag_printf" value="$(arg flag_printf)" />

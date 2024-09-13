@@ -98,3 +98,19 @@ material arcuo_92
    }
  }
 }
+
+
+material H_1
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture H_1.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}

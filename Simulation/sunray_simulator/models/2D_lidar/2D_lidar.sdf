@@ -5,8 +5,8 @@
         <visual name="lidar_visual">
           <geometry>
             <cylinder>
-              <radius>0.05</radius>
-              <length>0.05</length>
+              <radius>0.035</radius>
+              <length>0.035</length>
             </cylinder>
           </geometry>
         </visual>
@@ -14,12 +14,12 @@
         <mass>0.001</mass> <!--质量-->
          <!--惯性标签，定义模型当前link的惯性矩，是一个对称正定3x3矩阵-->
         <inertia>
-          <ixx>4.15e-6</ixx>
+          <ixx>0.407e-6</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.407e-6</iyy>
+          <iyy>0.407e-6</iyy>
           <iyz>0</iyz>
-          <izz>2.407e-6</izz>
+          <izz>0.407e-6</izz>
         </inertia>
        </inertial>
         <!-- Add a ray sensor, and give it a name -->
@@ -38,7 +38,7 @@
           </scan>
           <range>
             <min>0.10</min>
-            <max>30.0</max>
+            <max>10.0</max>
             <resolution>0.01</resolution>
           </range>
           <noise>
@@ -49,7 +49,7 @@
         </ray>
         <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
           <topicName>/scan</topicName>
-          <frameName>laser</frameName> 
+          <frameName>/base_link</frameName> 
         </plugin>
     </sensor>
     </link>

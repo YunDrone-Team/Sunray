@@ -7,12 +7,12 @@
 
     <include>
       <uri>model://camera_front</uri> 
-      <pose>0.27 0 0.27 0 0 0</pose>
+      <pose>0.10 0 0.23 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://camera_down</uri>
-      <pose>0 0 0.02 0 1.5707963 0</pose> <!--位置-->
+      <pose>0 0 0.14 0 1.5707963 0</pose> <!--位置-->
     </include>
 
     <!-- 下视相机关节 -->
