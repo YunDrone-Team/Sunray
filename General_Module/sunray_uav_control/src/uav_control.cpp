@@ -10,6 +10,8 @@ void UAVControl::init(ros::NodeHandle& nh)
     node_name = ros::this_node::getName();
     // 【参数】是否仿真模式
     nh.param<bool>("sim_mode", sim_mode, true);
+    // 【参数】是否使用遥控器控制
+    nh.param<bool>("use_rc", use_rc, false);
     // 【参数】默认起飞高度
     nh.param<float>("uav_control/Takeoff_height", Takeoff_height, 1.0);
     // 【参数】降落时自动上锁高度
@@ -41,15 +43,18 @@ void UAVControl::init(ros::NodeHandle& nh)
 
     //【订阅】飞控遥控器数据 -- 飞控 -> 本节点 
     string rc_topic_name;
-    if (sim_mode)
+    if(use_rc)
     {
-        rc_topic_name = topic_prefix + "/sunray/fake_rc_in";
+        if (sim_mode)
+        {
+            rc_topic_name = topic_prefix + "/sunray/fake_rc_in";
+        }
+        else
+        {
+            rc_topic_name = topic_prefix + "/mavros/rc/in";
+        }
+        px4_rc_sub = nh.subscribe<mavros_msgs::RCIn>(rc_topic_name, 1, &UAVControl::px4_rc_cb, this);
     }
-    else
-    {
-        rc_topic_name = topic_prefix + "/mavros/rc/in";
-    }
-    px4_rc_sub = nh.subscribe<mavros_msgs::RCIn>(rc_topic_name, 1, &UAVControl::px4_rc_cb, this);
 
     // 【发布】本地位置控制指令，包括期望位置、速度、加速度等接口 坐标系:ENU系 -- 本节点->飞控
     setpoint_raw_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);

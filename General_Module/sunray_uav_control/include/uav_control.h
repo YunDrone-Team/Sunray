@@ -30,6 +30,8 @@ class UAVControl
         bool sim_mode;
         // 是否快速降落
         bool quick_land;
+        // 是否使用遥控器控制
+        bool use_rc;
         // 默认起飞高度
         float Takeoff_height; 
         // 默认上锁高度

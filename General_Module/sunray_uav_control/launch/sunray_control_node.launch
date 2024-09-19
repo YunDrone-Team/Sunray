@@ -3,6 +3,7 @@
 	<arg name="uav_name" default="uav"/>
     <arg name="flag_printf" default="true"/>
     <arg name="sim_mode" default="true"/>
+    <arg name="use_rc" default="false"/>
     <arg name="Takeoff_height" default="0.6"/>
     <arg name="Land_speed" default="0.2"/>
     <arg name="Disarm_height" default="0.2"/>
@@ -19,6 +20,7 @@
 		<param name="uav_name" value="$(arg uav_name)" />
 		<param name="flag_printf" value="$(arg flag_printf)" />
 		<param name="sim_mode" value="$(arg sim_mode)" />
+		<param name="use_rc" value="$(arg use_rc)" />
 		<param name="Takeoff_height" value="$(arg Takeoff_height)" />
 		<param name="Land_speed" value="$(arg Land_speed)" />
 		<param name="Disarm_height" value="$(arg Disarm_height)" />
