@@ -7,6 +7,7 @@
 #include "math_utils.h"
 #include "printf_utils.h"
 #include "ros_msg_utils.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -38,7 +39,9 @@ class VISION_POSE
         // 无人机编号  
         int uav_id;                     
         // 外部定位数据来源
-        int external_source;            
+        int external_source;         
+        // 激光定位数据
+        double range_hight;   
         // vision_pose消息
         geometry_msgs::PoseStamped vision_pose;
         // 无人机状态信息
@@ -46,6 +49,7 @@ class VISION_POSE
         // 无人机轨迹容器,用于rviz显示
         std::vector<geometry_msgs::PoseStamped> uav_pos_vector;    
 
+        MovingAverageFilter* hight_filter;
         struct uav_pose
         {
             ros::Time get_time{0};
@@ -61,6 +65,7 @@ class VISION_POSE
 
         // 外部定位数据是否异常
         bool vision_pose_error{false};  
+        bool enable_rangeSensor{false};
         // 误差 - vision_pose与PX4回传的状态量之间的误差
         Eigen::Vector3d pos_error;
         Eigen::Vector3d vel_error;
@@ -73,7 +78,9 @@ class VISION_POSE
         ros::Subscriber sim_pose_sub;               // 通过gazebo仿真插件获取真值
         ros::Subscriber viobot_sub;                 // 通过VIOBOT获取定位信息
         ros::Subscriber gazebo_sub;                 // gazebo仿真
+        ros::Subscriber t265_sub;                   // t265
         ros::Subscriber vins_sub;                   // 通过VINS算法获取定位信息
+        ros::Subscriber range_sub;                   // 激光定高
         ros::Subscriber px4_position_sub;           // 从PX4订阅的本地位置信息
         ros::Subscriber px4_velocity_sub;
         ros::Subscriber px4_attitude_sub;           // 从PX4订阅的姿态信息
@@ -97,6 +104,8 @@ class VISION_POSE
         void gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void viobot_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void vins_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void t265_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void range_cb(const sensor_msgs::Range::ConstPtr &msg);
         void local_position_ned_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
         void local_vel_ned_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
         void attitude_cb(const sensor_msgs::Imu::ConstPtr &msg);
@@ -116,7 +125,10 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     // 【参数】外部定位数据来源
     nh.param<int>("external_source", external_source, sunray_msgs::ExternalOdom::GAZEBO);
     bool flag_printf;
+    bool enable_rviz;
     nh.param<bool>("flag_printf", flag_printf, false);
+    nh.param<bool>("enable_rviz", enable_rviz, false);
+    nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);
     
     string topic_prefix = "/" + uav_name;
     // 【订阅】无人机模式 - 飞控 -> 本节点
@@ -156,6 +168,11 @@ void VISION_POSE::init(ros::NodeHandle& nh)
         // 【订阅】gazebo仿真真值
         gazebo_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/sunray/gazebo_pose", 1, &VISION_POSE::gazebo_cb, this);
     }
+    else if (external_source == sunray_msgs::ExternalOdom::T265)
+    {
+        // 【订阅】T265
+        t265_sub = nh.subscribe<nav_msgs::Odometry>("/camera/odom/sample", 1, &VISION_POSE::t265_cb, this);
+    }
     else
     {
         cout << RED << node_name << ": wrong external_source param, no external location information input!" << TAIL << endl;
@@ -164,19 +181,28 @@ void VISION_POSE::init(ros::NodeHandle& nh)
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/vision_pose/pose", 1);
     // 【发布】无人机综合状态信息 - 本节点 -> 其他控制&任务节点
     uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1);
-    // 【发布】无人机里程计,主要用于RVIZ显示
-    uav_odom_pub = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/sunray/uav_odom", 1);
-    // 【发布】无人机运动轨迹,主要用于RVIZ显示
-    uav_trajectory_pub = nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/uav_trajectory", 1);
-    // 【发布】无人机位置(带图标),用于RVIZ显示
-    uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray/uav_mesh", 1);
-
 
     // 【定时器】使用外部定位设备时，需要定时发送vision信息至飞控,并保证一定频率 - 本节点 -> 飞控
     timer_px4_vision_pub = nh.createTimer(ros::Duration(0.02), &VISION_POSE::timercb_pub_vision_pose, this);
 
-    // 【定时器】定时发布 rviz显示,保证1Hz以上
-    timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &VISION_POSE::timercb_rviz, this);
+    if(enable_rviz)
+    {
+        // 【发布】无人机里程计,主要用于RVIZ显示
+        uav_odom_pub = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/sunray/uav_odom", 1);
+        // 【发布】无人机运动轨迹,主要用于RVIZ显示
+        uav_trajectory_pub = nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/uav_trajectory", 1);
+        // 【发布】无人机位置(带图标),用于RVIZ显示
+        uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray/uav_mesh", 1);
+        // 【定时器】定时发布 rviz显示,保证1Hz以上
+        timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &VISION_POSE::timercb_rviz, this);
+    }
+
+    if(enable_rangeSensor)
+    {
+        range_sub = nh.subscribe<sensor_msgs::Range>(topic_prefix + "/mavros/distance_sensor/hrlv_ez4_pub", 1, &VISION_POSE::range_cb, this);
+        hight_filter = new MovingAverageFilter(5);
+        range_hight = 0;
+    }
 
     // 初始化
     uav_state.header.frame_id = uav_name;
@@ -228,6 +254,10 @@ void VISION_POSE::timercb_rviz(const ros::TimerEvent &e)
     uav_odom.pose.pose.position.x = uav_state.position[0];
     uav_odom.pose.pose.position.y = uav_state.position[1];
     uav_odom.pose.pose.position.z = uav_state.position[2];
+    if(enable_rangeSensor)
+    {
+        uav_odom.pose.pose.position.z = range_hight;
+    }
     // 导航算法规定 高度不能小于0
     if (uav_odom.pose.pose.position.z <= 0)
     {
@@ -337,6 +367,10 @@ void VISION_POSE::timercb_pub_vision_pose(const ros::TimerEvent &e)
     vision_pose.pose.position.y = uav_pose_external.pos[1];
     vision_pose.pose.position.z = uav_pose_external.pos[2];
     vision_pose.pose.orientation = uav_pose_external.q;
+    if(enable_rangeSensor)
+    {
+        vision_pose.pose.position.z = range_hight;
+    }
     vision_pose_pub.publish(vision_pose);
     
     uav_state.uav_id = uav_id;
@@ -544,6 +578,19 @@ void VISION_POSE::vins_cb(const nav_msgs::Odometry::ConstPtr &msg)
     uav_pose_external.att = Eigen::Vector3d(pitch, -roll, yaw);
 }
 
+void VISION_POSE::t265_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    uav_pose_external.get_time = ros::Time::now(); // 记录时间戳，防止超时
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
+    double roll, pitch, yaw;
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+    uav_pose_external.pos = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+    uav_pose_external.vel = Eigen::Vector3d(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+    uav_pose_external.att = Eigen::Vector3d(roll, pitch, yaw);
+    uav_pose_external.q = msg->pose.pose.orientation;
+}
+
 void VISION_POSE::gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
     uav_pose_external.get_time = ros::Time::now(); // 记录时间戳，防止超时
@@ -630,4 +677,10 @@ void VISION_POSE::attitude_cb(const sensor_msgs::Imu::ConstPtr &msg)
     uav_pose_px4.att = Eigen::Vector3d(roll, pitch, yaw);
     uav_pose_px4.q = msg->orientation;
 }
+
+void VISION_POSE::range_cb(const sensor_msgs::Range::ConstPtr &msg)
+{
+    range_hight = hight_filter->filter(msg->range);
+}
+
 #endif

@@ -30,7 +30,7 @@ void UAVControl::init(ros::NodeHandle& nh)
     // 【订阅】无人机状态 -- vision_pose -> 本节点
     uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, &UAVControl::uav_state_cb, this);
     // 【订阅】外部控制指令 -- 外部节点 -> 本节点
-    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1, &UAVControl::control_cmd_cb, this);
+    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 10, &UAVControl::control_cmd_cb, this);
     // 【订阅】无人机设置指令 -- 外部节点 -> 本节点
     uav_setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1, &UAVControl::uav_setup_cb, this);
     //【订阅】PX4中无人机的位置/速度/加速度设定值 -- mavros -> 本节点
@@ -224,7 +224,7 @@ void UAVControl::mainloop()
             {
                 vel_des[0] = 0;
                 vel_des[1] = 0;
-                vel_des[2] = -0.1;
+                vel_des[2] = -0.3;
                 yaw_des = uav_yaw;
                 send_local_vel_setpoint(vel_des, yaw_des);
                 ros::Duration(0.1).sleep();

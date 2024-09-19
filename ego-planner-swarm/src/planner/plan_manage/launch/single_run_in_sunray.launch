@@ -3,10 +3,11 @@
     <arg name="obj_num" value="10" />
     <arg name="drone_id" value="0"/>
 
-    <arg name="map_size_x" value="50"/>
-    <arg name="map_size_y" value="50"/>
-    <arg name="map_size_z" value="5.5"/>
-    <arg name="odom_topic" value="/uav1/sunray/gazebo_pose"/>
+    <arg name="map_size_x" value="10"/>
+    <arg name="map_size_y" value="10"/>
+    <arg name="map_size_z" value="0.8"/>
+    <!-- <arg name="odom_topic" value="/camera/odom/sample"/> -->
+    <arg name="odom_topic" value="/sunray1/mavros/local_position/odom"/>
     
     <!-- main algorithm params -->
     <include file="$(find ego_planner)/launch/advanced_param_exp.xml">
@@ -23,17 +24,17 @@
         <arg name="depth_topic" value="nouse1"/>
         <!-- topic of point cloud measurement, such as from LIDAR  -->
         <!-- don't set camera pose and depth, if you already set this one! -->
-        <arg name="cloud_topic" value="/pointcloud_unified/world_frame"/>
+        <arg name="cloud_topic" value="/cloud"/>
         <!-- intrinsic params of the depth camera -->
         <arg name="cx" value="323.3316345214844"/>
         <arg name="cy" value="234.95498657226562"/>
         <arg name="fx" value="384.39654541015625"/>
         <arg name="fy" value="384.39654541015625"/>
         <!-- maximum velocity and acceleration the drone will reach -->
-        <arg name="max_vel" value="1.5" />
-        <arg name="max_acc" value="10.0" />
+        <arg name="max_vel" value="0.5" />
+        <arg name="max_acc" value="3" />
         <!--always set to 1.5 times grater than sensing horizen-->
-        <arg name="planning_horizon" value="4" />
+        <arg name="planning_horizon" value="3" />
         <arg name="use_distinctive_trajs" value="false" />
         <!-- 1: use 2D Nav Goal to select goal  -->
         <!-- 2: use global waypoints below  -->
