@@ -13,6 +13,7 @@ uav_id: 1
 # uint8 UWB = 6
 # uint8 VINS = 7
 # uint8 OPTICAL_FLOW = 8
+# uint8 T265 = 9
 
 external_source: 2
 use_udp: false

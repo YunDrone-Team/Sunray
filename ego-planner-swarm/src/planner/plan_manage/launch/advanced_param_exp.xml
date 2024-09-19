@@ -63,7 +63,7 @@
     <param name="fsm/thresh_replan_time" value="1.0" type="double"/>
     <param name="fsm/thresh_no_replan_meter" value="1.0" type="double"/>
     <param name="fsm/planning_horizon" value="$(arg planning_horizon)" type="double"/> <!--always set to 1.5 times grater than sensing horizen-->
-    <param name="fsm/planning_horizen_time" value="3" type="double"/>
+    <param name="fsm/planning_horizen_time" value="1" type="double"/>
     <param name="fsm/emergency_time" value="1.0" type="double"/>
     <param name="fsm/realworld_experiment" value="true"/>
     <param name="fsm/fail_safe" value="true"/>
@@ -85,16 +85,17 @@
     <param name="fsm/waypoint4_y" value="$(arg point4_y)" type="double"/>
     <param name="fsm/waypoint4_z" value="$(arg point4_z)" type="double"/>
 
-    <param name="grid_map/resolution"      value="0.18" /> 
+    <param name="grid_map/resolution"      value="0.14" /> 
     <param name="grid_map/map_size_x"   value="$(arg map_size_x_)" /> 
     <param name="grid_map/map_size_y"   value="$(arg map_size_y_)" /> 
     <param name="grid_map/map_size_z"   value="$(arg map_size_z_)" /> 
     <param name="grid_map/local_update_range_x"  value="5.5" /> 
     <param name="grid_map/local_update_range_y"  value="5.5" /> 
     <param name="grid_map/local_update_range_z"  value="4.5" /> 
-    <param name="grid_map/obstacles_inflation"     value="0.299" /> 
-    <param name="grid_map/local_map_margin" value="10"/>
-    <param name="grid_map/ground_height"        value="0.1"/>
+    <param name="grid_map/obstacles_inflation"     value="0.35" /> 
+    <param name="grid_map/local_map_margin" value="1.5"/>
+    <param name="grid_map/ground_height"        value="0.45"/>
+    
     <!-- camera parameter -->
     <param name="grid_map/cx" value="$(arg cx)"/>
     <param name="grid_map/cy" value="$(arg cy)"/>
@@ -117,7 +118,8 @@
     <param name="grid_map/min_ray_length" value="0.3"/>
     <param name="grid_map/max_ray_length" value="5.0"/>
 
-    <param name="grid_map/visualization_truncate_height"   value="5"/>
+    <!-- <param name="grid_map/virtual_ceil_height"   value="0.9"/> -->
+    <param name="grid_map/visualization_truncate_height"   value="0.7"/>
     <param name="grid_map/show_occ_time"  value="false"/>
     <param name="grid_map/pose_type"     value="2"/>  
     <param name="grid_map/frame_id"      value="world"/>
@@ -126,7 +128,7 @@
     <param name="manager/max_vel" value="$(arg max_vel)" type="double"/>
     <param name="manager/max_acc" value="$(arg max_acc)" type="double"/>
     <param name="manager/max_jerk" value="4" type="double"/>
-    <param name="manager/control_points_distance" value="0.4" type="double"/>
+    <param name="manager/control_points_distance" value="0.2" type="double"/>
     <param name="manager/feasibility_tolerance" value="0.05" type="double"/>
     <param name="manager/planning_horizon" value="$(arg planning_horizon)" type="double"/>
     <param name="manager/use_distinctive_trajs" value="$(arg use_distinctive_trajs)" type="bool"/>

@@ -93,3 +93,31 @@ inline Eigen::Vector4d quatMultiplication(const Eigen::Vector4d &q, const Eigen:
         p(0) * q(2) + p(1) * q(3) + p(2) * q(0) - p(3) * q(1), p(0) * q(3) - p(1) * q(2) + p(2) * q(1) + p(3) * q(0);
     return quat;
 }
+
+
+class MovingAverageFilter
+{
+public:
+    MovingAverageFilter(){};
+    MovingAverageFilter(int window_size) : window_size(window_size) {};
+
+    double filter(double new_value)
+    {
+        if (values.size() >= window_size)
+        {
+            values.pop_front();
+        }
+        values.push_back(new_value);
+
+        double sum = 0.0;
+        for (double value : values)
+        {
+            sum += value;
+        }
+        return sum / values.size();
+    }
+
+private:
+    int window_size;
+    std::list<double> values;
+};
