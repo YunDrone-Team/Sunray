@@ -19,10 +19,10 @@ Simulation --> 总仿真模块
 
 ```
 #### README.md
-- [sunray_uav_control](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module%2Fsunray_uav_control/readme.md)
-- [sunray_tutorial](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module%2Fsunray_tutorial/readme.md)
-- [sunray_ground](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module%2Fsunray_ground/readme.md)
-- [sunray_simulator](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/Simulation%2Fsunray_simulator/readme.md)
+- [sunray_uav_control](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/blob/master/General_Module/sunray_uav_control/readme.md)
+- [sunray_tutorial](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module/sunray_tutorial/readme.md)
+- [sunray_ground](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module/sunray_ground/readme.md)
+- [sunray_simulator](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/Simulation/sunray_simulator/readme.md)
 
 #### 安装教程
 ```shell
@@ -65,9 +65,6 @@ roslaunch sunray_uav_control vision_pose_node.launch external_source:=2
 roslaunch sunray_uav_control sunray_control.launch
 ## 运行终端控制 (可简单测试offboard下的起飞降落 移动等)
 roslaunch sunray_uav_control terminal_control.launch 
-
-## 控制接口demo
-General_Module/sunray_tutorial/src 下有多个控制方式可运行的demo 
 
 ```
 ##### 真机使用
