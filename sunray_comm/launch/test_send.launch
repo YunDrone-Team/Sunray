@@ -1,5 +1,0 @@
-<launch>
-	<node pkg="sunray_comm" type="fake_topic_pub_timer" name="fake_topic_pub_timer" output="screen">
-	</node>
-</launch>
-
