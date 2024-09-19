@@ -20,9 +20,9 @@ Simulation --> 总仿真模块
 ```
 #### README.md
 - [sunray_uav_control](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/blob/master/General_Module/sunray_uav_control/readme.md)
-- [sunray_tutorial](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module/sunray_tutorial/readme.md)
-- [sunray_ground](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/General_Module/sunray_ground/readme.md)
-- [sunray_simulator](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/tree/master/Simulation/sunray_simulator/readme.md)
+- [sunray_tutorial](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/blob/master/General_Module/sunray_tutorial/readme.md)
+- [sunray_ground](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/blob/master/General_Module/sunray_ground/readme.md)
+- [sunray_simulator](https://e.gitee.com/yundrone_sunray2023/repos/yundrone_sunray2023/Sunray/blob/master/Simulation/sunray_simulator/readme.md)
 
 #### 安装教程
 ```shell
