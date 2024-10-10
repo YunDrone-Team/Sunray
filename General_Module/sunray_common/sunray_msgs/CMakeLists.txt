@@ -4,6 +4,7 @@ project(sunray_msgs)
 find_package(catkin REQUIRED COMPONENTS
   message_generation
   roscpp
+  rospy
   geometry_msgs
   actionlib_msgs
   sensor_msgs

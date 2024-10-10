@@ -1,9 +1,18 @@
 #include "ground_control.h"
+#include <signal.h>
+
+void mySigintHandler(int sig)
+{
+    ROS_INFO("[ground_control_node] exit...");
+    ros::shutdown();
+}
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ground_control");
     ros::NodeHandle nh("~");
+
+    signal(SIGINT, mySigintHandler);
 
     GroundControl ground_control;
     ground_control.init(nh);
