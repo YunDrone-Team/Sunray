@@ -30,7 +30,8 @@
     -->
 
     <!-- MAVROS and vehicle configs -->
-    <arg name="ID" default="1"/>
+    <arg name="id" default="1"/>
+    <arg name="ID" value="$(eval arg('id') - 1)"/>
     <arg name="udp_port_remote" value="$(eval 14540 + arg('ID'))"/>
 	<arg name="udp_port_local" value="$(eval 14580 + arg('ID'))"/>
     <arg name="fcu_url" default="udp://:$(arg udp_port_remote)@localhost:$(arg udp_port_local)"/>

@@ -1,10 +1,10 @@
 <launch>
     <arg name="uav_id" default="1"/>
-    <arg name="uav_name" default="sunray"/>
+    <arg name="uav_name" default="uav"/>
     <arg name="flag_printf" default="false"/>
     <arg name="flash_screen" default="true"/>
     <arg name="sim_mode" default="true"/>
-    <arg name="external_source" default="9"/>
+    <arg name="external_source" default="2"/>
 	<arg name="server" default="192.168.25.12"/>
 
     <arg name="vision_enable" default="true"/>
@@ -13,9 +13,10 @@
     <arg name="ground_enable" default="false"/>
     <arg name="show_detail" default="true"/>
     <arg name="rviz_enable" default="false"/>
-    <arg name="enable_rangeSensor" default="true"/>
+    <arg name="enable_rangeSensor" default="false"/>
     
-    <arg name="Takeoff_height" default="0.6"/>
+    <arg name="Takeoff_height" default="1.0"/>
+    <arg name="use_rc" default="true"/>
 
     <group if="$(arg vision_enable)">
         <include file="$(find sunray_uav_control)/launch/vision_pose_node.launch">
@@ -36,6 +37,7 @@
             <arg name="sim_mode" value="$(arg sim_mode)"/>
             <arg name="flag_printf" value="$(arg flag_printf)"/>
             <arg name="Takeoff_height" value="$(arg Takeoff_height)"/>
+            <arg name="use_rc" value="$(arg use_rc)"/>
         </include>
     </group>
 

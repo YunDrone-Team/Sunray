@@ -354,18 +354,15 @@ void UAVControl::get_desired_state_from_cmd()
             desired_state.vel << 0.0, 0.0, 0.0;
             desired_state.acc << 0.0, 0.0, 0.0;
             desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.yaw_rate = 0.0;
+            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+            desired_state.yaw = control_cmd.desired_yaw;
             desired_state.thrust = 0.0;
             // 需要转化成q
             //desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
             if(control_cmd.enable_yawRate){
-                desired_state.yaw_rate = control_cmd.desired_yaw;
-                desired_state.yaw = 0.0;
                 send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw = control_cmd.desired_yaw;
-                desired_state.yaw_rate = 0.0;
                 send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
             }
             
@@ -379,17 +376,15 @@ void UAVControl::get_desired_state_from_cmd()
             desired_state.vel[2] = control_cmd.desired_vel[2];
             desired_state.acc << 0.0, 0.0, 0.0;
             desired_state.att << 0.0, 0.0, 0.0;
+            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+            desired_state.yaw = control_cmd.desired_yaw;
             desired_state.thrust = 0.0;
             // 需要转化成q
             //desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
             if(control_cmd.enable_yawRate){
-                desired_state.yaw_rate = control_cmd.desired_yaw;
-                desired_state.yaw = 0.0;
                 send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw = control_cmd.desired_yaw;
-                desired_state.yaw_rate = 0.0;
                 send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }        
             break;
@@ -405,15 +400,13 @@ void UAVControl::get_desired_state_from_cmd()
             desired_state.vel[2] = 0.0;
             desired_state.acc << 0.0, 0.0, 0.0;
             desired_state.att << 0.0, 0.0, 0.0;
+            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+            desired_state.yaw = control_cmd.desired_yaw;
             desired_state.thrust = 0.0;
             if(control_cmd.enable_yawRate){
-                desired_state.yaw_rate = control_cmd.desired_yaw;
-                desired_state.yaw = 0.0;
                 send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw = control_cmd.desired_yaw;
-                desired_state.yaw_rate = 0.0;
                 send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }  
             break;
@@ -434,15 +427,13 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.vel << 0.0, 0.0, 0.0;
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
+                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
                 desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
-                desired_state.yaw_rate = control_cmd.desired_yaw;
             }
             if(control_cmd.enable_yawRate){
-                desired_state.yaw = 0.0;
                 send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw_rate = 0.0;
                 send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
@@ -461,15 +452,13 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.pos << 0.0, 0.0, 0.0;
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw_rate = control_cmd.desired_yaw;
+                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
                 desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
             }
             if(control_cmd.enable_yawRate){
-                desired_state.yaw = 0.0;
                 send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw_rate = 0.0;
                 send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
@@ -489,15 +478,13 @@ void UAVControl::get_desired_state_from_cmd()
                 desired_state.pos[2] = uav_pos[2] + control_cmd.desired_pos[2];
                 desired_state.acc << 0.0, 0.0, 0.0;
                 desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw_rate = control_cmd.desired_yaw;
+                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
                 desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
             }
             if(control_cmd.enable_yawRate){
-                desired_state.yaw = 0.0;
                 send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
             }
             else{
-                desired_state.yaw_rate = 0.0;
                 send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
             }
             break;
@@ -835,6 +822,7 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
         return;
     }
 
+    // 如果没有遥控器一定要注释掉以下内容，否则无法解锁
     // 如果无人机没有解锁，则不需要判断模式切换指令，直接返回
     if (!uav_state.armed)
     {
@@ -943,8 +931,9 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
     }
     else if (msg->cmd == sunray_msgs::UAVSetup::SET_CONTROL_MODE)
     {
-        // todo more test
+        // 需要无遥控器控制一定要注释掉（ && uav_state.armed ），否则无法进入OFFBOARD模式
         if (msg->control_state == "CMD_CONTROL" && uav_state.armed)
+        // if (msg->control_state == "CMD_CONTROL")
         {
             cout << GREEN << node_name << " Switch to CMD_CONTROL by uav_setup cmd" << TAIL << endl;
             control_mode = Control_Mode::CMD_CONTROL;

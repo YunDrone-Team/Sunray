@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <arg name="vehicle" default="sunray300_with_2dlidar"/>
+    <arg name="vehicle" default="sunray300_with_2dlidar_cam"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/indoor_1.world"/>
 
     <!-- gazebo configs -->
@@ -26,7 +26,7 @@
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="ID" value="$(arg uav_id)" />
+            <arg name="id" value="$(arg uav_id)" />
             <arg name="vehicle" value="$(arg vehicle)"/>
             <arg name="x"  value="$(arg x)"/>
             <arg name="y"  value="$(arg y)"/>

@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="sunray300_with_2dlidar_cam">
+    <include>
+      <uri>model://sunray300</uri>
+    </include>
+    <include>
+      <uri>model://2D_lidar</uri>
+      <pose>0 0 0.285 0 0 0</pose>
+    </include>
+    <joint name="2Dlidar_joint" type="fixed">
+      <child>2D_lidar::laser</child>
+      <parent>sunray::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+     <!-- 下视相机关节 -->
+    <joint name="Monocular_down_joint" type="fixed">
+      <child>camera_down::Monocular_down_link</child> <!--子link-->
+      <parent>sunray::base_link</parent><!--父link-->
+      <axis>
+        <xyz>0 0 1</xyz><!--xyz标签定义轴的方向，是单位向量，默认值为0 0 1，参考系一般为joint参考系-->
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>  
+
+    <!-- 前视相机关节 -->
+    <joint name="Monocular_front_joint" type="fixed">
+      <child>camera_front::Monocular_front_link</child>
+      <parent>sunray::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+  </model>
+</sdf>

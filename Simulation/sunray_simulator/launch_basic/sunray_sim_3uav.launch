@@ -35,7 +35,7 @@
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id_1)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="ID" value="$(arg uav_id_1)" />
+            <arg name="id" value="$(arg uav_id_1)" />
             <arg name="x"  value="$(arg uav_x_1)"/>
             <arg name="y"  value="$(arg uav_y_1)"/>
         </include>
@@ -44,7 +44,7 @@
     <!-- UAV2 -->
     <group ns="uav$(arg uav_id_2)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="ID" value="$(arg uav_id_2)" />
+            <arg name="id" value="$(arg uav_id_2)" />
             <arg name="x"  value="$(arg uav_x_2)"/>
             <arg name="y"  value="$(arg uav_y_2)"/>
         </include>
@@ -53,7 +53,7 @@
     <!-- UAV3 -->
     <group ns="uav$(arg uav_id_3)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="ID" value="$(arg uav_id_3)" />
+            <arg name="id" value="$(arg uav_id_3)" />
             <arg name="x"  value="$(arg uav_x_3)"/>
             <arg name="y"  value="$(arg uav_y_3)"/>
         </include>
