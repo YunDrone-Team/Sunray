@@ -1,8 +1,8 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
-#include <detection_msgs/TargetMsg.h>
-#include <detection_msgs/TargetsInFrameMsg.h>
+#include <sunray_msgs/TargetMsg.h>
+#include <sunray_msgs/TargetsInFrameMsg.h>
 #include "utils.hpp"
 
 using namespace std;
@@ -46,7 +46,7 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 }
 
 // 回调函数，用于获取目标二的位置和朝向
-void tagCallback(const detection_msgs::TargetsInFrameMsg::ConstPtr &msg)
+void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
 {
     
     if (msg->targets.size() > 0)
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     uav_name = uav_name + to_string(uav_id);
     string topic_prefix = "/" + uav_name;
     // 【订阅】目标点位置
-    ros::Subscriber target_pos_sub = nh.subscribe<detection_msgs::TargetsInFrameMsg>(topic_prefix + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
+    ros::Subscriber target_pos_sub = nh.subscribe<sunray_msgs::TargetsInFrameMsg>(topic_prefix + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
     ;
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
