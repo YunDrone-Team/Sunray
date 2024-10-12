@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   sunray_msgs
   tf2_geometry_msgs
   mavros_msgs
-  detection_msgs
 )
 
 ## System dependencies are found with CMake's conventions

@@ -31,5 +31,5 @@ float32 los_ay
 
 ## 偏航角误差 [图像系下：垂直向上为0°，右半圈顺时针0~180°，左半圈逆时针0~-180°]
 float32 yaw
+float32 pitch   
 float32 roll
-float32 pitch
