@@ -41,6 +41,7 @@
 
   <arg name="drone_id"/>
 
+<arg name="goal_name" default="/move_base_simple/goal"/>
 
   <!-- main node -->
   <!-- <node pkg="ego_planner" name="ego_planner_node" type="ego_planner_node" output="screen" launch-prefix="valgrind"> -->
@@ -57,6 +58,7 @@
     <remap from="~grid_map/pose"   to = "/drone_$(arg drone_id)_$(arg camera_pose_topic)"/> 
     <remap from="~grid_map/depth" to = "/drone_$(arg drone_id)_$(arg depth_topic)"/>
     
+    <remap from="~move_base_simple/goal" to="$(arg goal_name)"/>
 
     <!-- planning fsm -->
     <param name="fsm/flight_type" value="$(arg flight_type)" type="int"/>

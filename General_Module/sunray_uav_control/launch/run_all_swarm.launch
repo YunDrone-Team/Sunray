@@ -1,0 +1,73 @@
+<launch>
+    <include file="$(find sunray_uav_control)/launch/run_all.launch">
+        <arg name="uav_id" value="1"/>
+        <arg name="uav_name" value="uav"/>
+        <arg name="flag_printf" value="false"/>
+        <arg name="flash_screen" value="false"/>
+        <arg name="sim_mode" value="true"/>
+        <arg name="external_source" value="2"/>
+        <arg name="server" value="192.168.25.12"/>
+
+        <arg name="vision_enable" value="true"/>
+        <arg name="control_enable" value="true"/>
+        <arg name="joy_enable" value="false"/>
+        <arg name="ground_enable" value="false"/>
+        <arg name="show_detail" value="false"/>
+        <arg name="rviz_enable" value="false"/>
+        <arg name="enable_rangeSensor" value="false"/>
+
+        <arg name="Takeoff_height" value="1.0"/>
+        <arg name="use_rc" value="false"/>
+    </include>
+
+    <include file="$(find sunray_uav_control)/launch/run_all.launch">
+        <arg name="uav_id" value="2"/>
+        <arg name="uav_name" value="uav"/>
+        <arg name="flag_printf" value="false"/>
+        <arg name="flash_screen" value="false"/>
+        <arg name="sim_mode" value="true"/>
+        <arg name="external_source" value="2"/>
+        <arg name="server" value="192.168.25.12"/>
+
+        <arg name="vision_enable" value="true"/>
+        <arg name="control_enable" value="true"/>
+        <arg name="joy_enable" value="false"/>
+        <arg name="ground_enable" value="false"/>
+        <arg name="show_detail" value="false"/>
+        <arg name="rviz_enable" value="false"/>
+        <arg name="enable_rangeSensor" value="false"/>
+
+        <arg name="Takeoff_height" value="1.0"/>
+        <arg name="use_rc" value="false"/>
+    </include>
+
+
+    <include file="$(find sunray_uav_control)/launch/run_all.launch">
+        <arg name="uav_id" value="3"/>
+        <arg name="uav_name" value="uav"/>
+        <arg name="flag_printf" value="false"/>
+        <arg name="flash_screen" value="false"/>
+        <arg name="sim_mode" value="true"/>
+        <arg name="external_source" value="2"/>
+        <arg name="server" value="192.168.25.12"/>
+
+        <arg name="vision_enable" value="true"/>
+        <arg name="control_enable" value="true"/>
+        <arg name="joy_enable" value="false"/>
+        <arg name="ground_enable" value="false"/>
+        <arg name="show_detail" value="false"/>
+        <arg name="rviz_enable" value="false"/>
+        <arg name="enable_rangeSensor" value="false"/>
+
+        <arg name="Takeoff_height" value="1.0"/>
+        <arg name="use_rc" value="false"/>
+    </include>
+
+    <include file="$(find sunray_uav_control)/launch/show_detail.launch">
+        <arg name="uav_id" value="1"/>
+        <arg name="uav_name" value="uav"/>
+        <arg name="uav_num" value="1"/>
+        <arg name="flash_screen" value="true"/>
+    </include>
+
+</launch>

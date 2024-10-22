@@ -4,7 +4,7 @@
     <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
     <!-- vehicle model and world -->
     <arg name="vehicle" default="sunray_with_3dlidar"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_cylindrical_forest.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/cylindrical_forest.world"/>
 
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>
@@ -22,14 +22,17 @@
     </include>
 
     <arg name="uav_id" value="1"/>
-    <arg name="x" value="1"/>
-    <arg name="y" value="1"/>
+    <arg name="uav_x" value="0"/>
+    <arg name="uav_y" value="0"/>
 
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
             <arg name="id" value="$(arg uav_id)" />
+            <arg name="x"  value="$(arg uav_x)"/>
+            <arg name="y"  value="$(arg uav_y)"/>
             <arg name="vehicle" value="$(arg vehicle)" />
+            
         </include>
     </group>
 </launch>

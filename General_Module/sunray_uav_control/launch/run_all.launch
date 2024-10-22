@@ -55,6 +55,7 @@
         <include file="$(find sunray_uav_control)/launch/show_detail.launch">
             <arg name="uav_id" value="$(arg uav_id)"/>
             <arg name="uav_name" value="$(arg uav_name)"/>
+            <arg name="uav_num" value="1"/>
             <arg name="flash_screen" value="$(arg flash_screen)"/>
         </include>
     </group>    

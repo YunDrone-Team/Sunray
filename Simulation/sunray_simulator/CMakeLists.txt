@@ -46,18 +46,6 @@ include_directories(
 # add_dependencies(trajectory_bezier_node sunray_control_gencpp)
 # target_link_libraries(trajectory_bezier_node ${catkin_LIBRARIES})
 
-add_executable(transform_pointcloud src/tf_pointcloud.cpp)
-add_dependencies(transform_pointcloud ${catkin_EXPORTED_TARGETS})
-target_link_libraries(transform_pointcloud ${catkin_LIBRARIES})
-
-add_executable(scan2point src/scan2Point.cpp)
-add_dependencies(scan2point ${catkin_EXPORTED_TARGETS})
-target_link_libraries(scan2point ${catkin_LIBRARIES})
-
-add_executable(ego2sunray src/ego2sunray.cpp)
-add_dependencies(ego2sunray ${catkin_EXPORTED_TARGETS})
-target_link_libraries(ego2sunray ${catkin_LIBRARIES})
-
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

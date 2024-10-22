@@ -58,13 +58,13 @@
               </vertical>
             </scan>
             <range>
-              <min>0.4</min>
-              <max>100</max>
+              <min>0.2</min>
+              <max>20</max>
               <resolution>0.001</resolution>
             </range>
           </ray>
           <plugin name='3D_laser' filename='libgazebo_ros_velodyne_laser.so'>
-            <topicName>/velodyne_points</topicName>
+            <topicName>velodyne_points</topicName>
             <frameName>velodyne</frameName>
             <organize_cloud>0</organize_cloud>
             <min_range>0.4</min_range>

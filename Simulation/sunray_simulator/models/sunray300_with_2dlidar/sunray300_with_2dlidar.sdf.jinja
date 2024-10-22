@@ -5,7 +5,7 @@
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0.18 0 0 0</pose>
+        <pose>0 0 0.06 0 0 0</pose>
         <mass>1.5</mass>
          <inertia>
           <ixx>0.029125</ixx>
@@ -17,7 +17,7 @@
         </inertia>
       </inertial>
       <collision name='base_link_inertia_collision'>
-        <pose>0 0 0.132 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <box>
 						<size>0.2 0.15 0.06</size>
@@ -36,7 +36,7 @@
         </surface>
       </collision>
       <visual name='base_link_inertia_visual'>
-        <pose>0 0 0.2 0 0 -1.57</pose>
+        <pose>0 0 0.06 0 0 -1.57</pose>
         <geometry>
           <mesh>
             <scale>0.03 0.03 0.03</scale>
@@ -57,7 +57,7 @@
     <link name='imu_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0.2 0 0 0</pose>
+        <pose>0 0 0.05 0 0 0</pose>
         <mass>0.015</mass>
         <inertia>
           <ixx>1e-05</ixx>
@@ -88,7 +88,7 @@
       </axis>
     </joint>
     <link name='rotor_0'>
-			<pose>0.13 -0.14 0.205 0 0 0</pose>
+			<pose>0.13 -0.14 0.065 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -154,7 +154,7 @@
       </axis>
     </joint>
     <link name='rotor_1'>
-			<pose>-0.148 0.137 0.205 0 0 0</pose>
+			<pose>-0.148 0.137 0.065 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -220,7 +220,7 @@
       </axis>
     </joint>
     <link name='rotor_2'>
-			<pose>0.13 0.137 0.205 0 0 0</pose>
+			<pose>0.13 0.137 0.065 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -286,7 +286,7 @@
       </axis>
     </joint>
     <link name='rotor_3'>
-			<pose>-0.148 -0.14 0.205 0 0 0</pose>
+			<pose>-0.148 -0.14 0.065 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -353,7 +353,7 @@
     </joint>
     <include>
       <uri>model://gps</uri>
-      <pose>0.0 0 0.2 0 0 0</pose>
+      <pose>0.0 0 0.05 0 0 0</pose>
       <name>gps</name>
     </include>
     <joint name='gps_joint' type='fixed'>
@@ -362,7 +362,7 @@
     </joint>
     <include>
       <uri>model://2D_lidar</uri>
-      <pose>0 0 0.285 0 0 0</pose>
+      <pose>0 0 0.146 0 0 0</pose>
     </include>
     <joint name="2Dlidar_joint" type="fixed">
       <child>2D_lidar::laser</child>

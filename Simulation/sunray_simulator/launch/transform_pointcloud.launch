@@ -1,3 +1,0 @@
-<launch>
-    <node name="transform_pointcloud" pkg="sunray_simulator" type="transform_pointcloud" output="screen"/>
-</launch>
