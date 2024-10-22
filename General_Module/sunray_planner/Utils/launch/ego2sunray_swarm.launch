@@ -1,0 +1,23 @@
+<launch>
+  <arg name="cmd_sub_topic_1" default="/uav1/pos_cmd"/>
+  <arg name="cmd_sub_topic_2" default="/uav2/pos_cmd"/>
+  <arg name="cmd_sub_topic_3" default="/uav3/pos_cmd"/>
+  <arg name="control_pub_topic_1" default="/uav1/sunray/uav_control_cmd"/>
+  <arg name="control_pub_topic_2" default="/uav2/sunray/uav_control_cmd"/>
+  <arg name="control_pub_topic_3" default="/uav3/sunray/uav_control_cmd"/>
+
+  <node name="ego2sunray_node_1" pkg="sunray_simulator" type="ego2sunray" output="screen">
+    <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_1)"/>
+    <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
+  </node>
+
+  <node name="ego2sunray_node_2" pkg="sunray_simulator" type="ego2sunray" output="screen">
+    <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_2)"/>
+    <param name="control_pub_topic" value="$(arg control_pub_topic_2)"/>
+  </node>
+
+  <node name="ego2sunray_node_3" pkg="sunray_simulator" type="ego2sunray" output="screen">
+    <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_3)"/>
+    <param name="control_pub_topic" value="$(arg control_pub_topic_3)"/>
+  </node>
+</launch>

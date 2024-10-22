@@ -1,0 +1,27 @@
+<launch>
+  <arg name="uav_id" default="1"/>
+  <arg name="pos_odom" default="0"/>
+  <arg name="uav_name" default="uav"/>
+  <arg name="scan_topic" default="/MS200/scan"/>
+  <arg name="cloud_topic" default="/cloud"/>
+  <arg name="odom_topic" default="/sunray1/sunray/gazebo_pose"/>
+  <!-- <arg name="pos_topic" default="/sunray1/mavros/vision_pose/pose"/> -->
+  <arg name="pos_topic" default="/sunray1/mavros/local_position/pose"/>
+  <arg name="world_frame" default="world"/>
+  <arg name="base_frame" default="laser_frame"/>
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="0 0 0 0 0 0 world camera_odom_frame 50" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="0 0 0 0 0 0 world map 50" />
+
+  <node name="scan2point_node" pkg="sunray_simulator" type="scan2point" output="screen">
+    <param name="uav_id" value="$(arg uav_id)"/>
+    <param name="pos_odom" value="$(arg pos_odom)"/>
+    <param name="uav_name" value="$(arg uav_name)"/>
+    <param name="scan_topic" value="$(arg scan_topic)"/>
+    <param name="cloud_topic" value="$(arg cloud_topic)"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="pos_topic" value="$(arg pos_topic)"/>
+    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="base_frame" value="$(arg base_frame)"/>
+  </node>
+</launch>

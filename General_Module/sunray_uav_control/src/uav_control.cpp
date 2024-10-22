@@ -932,8 +932,8 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
     else if (msg->cmd == sunray_msgs::UAVSetup::SET_CONTROL_MODE)
     {
         // 需要无遥控器控制一定要注释掉（ && uav_state.armed ），否则无法进入OFFBOARD模式
-        if (msg->control_state == "CMD_CONTROL" && uav_state.armed)
-        // if (msg->control_state == "CMD_CONTROL")
+        // if (msg->control_state == "CMD_CONTROL" && uav_state.armed)
+        if (msg->control_state == "CMD_CONTROL")
         {
             cout << GREEN << node_name << " Switch to CMD_CONTROL by uav_setup cmd" << TAIL << endl;
             control_mode = Control_Mode::CMD_CONTROL;
