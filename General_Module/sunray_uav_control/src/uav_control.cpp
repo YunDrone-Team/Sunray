@@ -1,6 +1,6 @@
 #include "uav_control.h"
 
-void UAVControl::init(ros::NodeHandle& nh)
+void UAVControl::init(ros::NodeHandle &nh)
 {
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 0);
@@ -8,7 +8,7 @@ void UAVControl::init(ros::NodeHandle& nh)
     nh.param<string>("uav_name", uav_name, "uav");
     uav_name = uav_name + std::to_string(uav_id);
     node_name = ros::this_node::getName();
-    // 【参数】是否仿真模式
+    // 【参数】是否仿真模式 目前只对遥控器的订阅话题有效
     nh.param<bool>("sim_mode", sim_mode, true);
     // 【参数】是否使用遥控器控制
     nh.param<bool>("use_rc", use_rc, false);
@@ -25,6 +25,8 @@ void UAVControl::init(ros::NodeHandle& nh)
     nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);
     nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);
     nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);
+    // 是否启用外部姿态估计
+    nh.param<bool>("use_external_attitude", use_external_attitude, false);
     // 【函数】打印参数
     printf_param();
 
@@ -35,15 +37,15 @@ void UAVControl::init(ros::NodeHandle& nh)
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 10, &UAVControl::control_cmd_cb, this);
     // 【订阅】无人机设置指令 -- 外部节点 -> 本节点
     uav_setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1, &UAVControl::uav_setup_cb, this);
-    //【订阅】PX4中无人机的位置/速度/加速度设定值 -- mavros -> 本节点
+    // 【订阅】PX4中无人机的位置/速度/加速度设定值 -- mavros -> 本节点
     px4_position_target_sub =
         nh.subscribe<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/target_local",
                                                   1,
                                                   &UAVControl::px4_pos_target_cb, this);
 
-    //【订阅】飞控遥控器数据 -- 飞控 -> 本节点 
+    // 【订阅】飞控遥控器数据 -- 飞控 -> 本节点
     string rc_topic_name;
-    if(use_rc)
+    if (use_rc)
     {
         if (sim_mode)
         {
@@ -62,7 +64,7 @@ void UAVControl::init(ros::NodeHandle& nh)
     setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
     // 【发布】全局位置控制指令，包括期望经纬度等接口 坐标系:WGS84坐标系 -- 本节点->飞控
     setpoint_raw_global_pub = nh.advertise<sunray_msgs::GlobalPositionSetpoint>(topic_prefix + "/mavros/setpoint_raw/global", 1);
-    // 【发布】无人机状态+cmd 
+    // 【发布】无人机状态+cmd
     uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state_cmd", 1);
 
     // 【服务】解锁/上锁 -- 本节点->飞控
@@ -73,7 +75,7 @@ void UAVControl::init(ros::NodeHandle& nh)
     px4_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
     // 【服务】重启PX4飞控 -- 本节点->飞控
     px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
-    
+
     // 状态初始化
     control_mode = Control_Mode::INIT;
     control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
@@ -86,12 +88,60 @@ void UAVControl::init(ros::NodeHandle& nh)
     desired_state.yaw_rate = 0.0;
     desired_state.thrust = 0.0;
     desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-    
+
     rc_input.init();
 
     quick_land = false;
     set_landing_des = false;
     check_off = false;
+
+    if (use_external_attitude)
+    {
+        std::cout<<"-------------------------------use_external_attitude---------------------"<<std::endl;
+        param.config_from_ros_handle(nh);
+        LinearControl controller(param);
+        fsm = new PX4CtrlFSM(param, controller);
+        fsm->init_sub(nh);
+        // ros::Subscriber state_sub =
+        //     nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state",
+        //                                      10,
+        //                                      boost::bind(&State_Data_t::feed, fsm->state_data, _1));
+
+        // ros::Subscriber extended_state_sub =
+        //     nh.subscribe<mavros_msgs::ExtendedState>(topic_prefix + "/mavros/extended_state",
+        //                                              10,
+        //                                              boost::bind(&ExtendedState_Data_t::feed, fsm->extended_state_data, _1));
+
+        // ros::Subscriber imu_sub =
+        //     nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", // Note: do NOT change it to /mavros/imu/data_raw !!!
+        //                                    100,
+        //                                    boost::bind(&Imu_Data_t::feed, fsm->imu_data, _1),
+        //                                    ros::VoidConstPtr(),
+        //                                    ros::TransportHints().tcpNoDelay());
+
+        // ros::Subscriber rc_sub;
+        // if (!param.takeoff_land.no_RC) // mavros will still publish wrong rc messages although no RC is connected
+        // {
+        //     rc_sub = nh.subscribe<mavros_msgs::RCIn>(topic_prefix + "/mavros/rc/in",
+        //                                              10,
+        //                                              boost::bind(&RC_Data_t::feed, fsm->rc_data, _1));
+        // }
+
+        // ros::Subscriber bat_sub =
+        //     nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery",
+        //                                             100,
+        //                                             boost::bind(&Battery_Data_t::feed, fsm->bat_data, _1),
+        //                                             ros::VoidConstPtr(),
+        //                                             ros::TransportHints().tcpNoDelay());
+
+        // std::cout<<"subscribe to /uav1/sunray/gazebo_pose"<<std::endl;
+        // ros::Subscriber odom_sub =
+        //     nh.subscribe<nav_msgs::Odometry>("/uav1/sunray/gazebo_pose",
+        //                                      100,
+        //                                      boost::bind(&Odom_Data_t::feed, fsm->odom_data, _1),
+        //                                      ros::VoidConstPtr(),
+        //                                      ros::TransportHints().tcpNoDelay());
+    }
 
     cout << GREEN << node_name << " init! " << TAIL << endl;
 }
@@ -157,13 +207,13 @@ void UAVControl::mainloop()
             pos_setpoint.header.stamp = ros::Time::now();
             pos_setpoint.coordinate_frame = mavros_msgs::PositionTarget::FRAME_LOCAL_NED;
             pos_setpoint.type_mask = mavros_msgs::PositionTarget::IGNORE_PX |
-                                    mavros_msgs::PositionTarget::IGNORE_PY |
-                                    mavros_msgs::PositionTarget::IGNORE_PZ |
-                                    mavros_msgs::PositionTarget::IGNORE_AFX |
-                                    mavros_msgs::PositionTarget::IGNORE_AFY |
-                                    mavros_msgs::PositionTarget::IGNORE_AFZ |
-                                    mavros_msgs::PositionTarget::IGNORE_YAW |
-                                    mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+                                     mavros_msgs::PositionTarget::IGNORE_PY |
+                                     mavros_msgs::PositionTarget::IGNORE_PZ |
+                                     mavros_msgs::PositionTarget::IGNORE_AFX |
+                                     mavros_msgs::PositionTarget::IGNORE_AFY |
+                                     mavros_msgs::PositionTarget::IGNORE_AFZ |
+                                     mavros_msgs::PositionTarget::IGNORE_YAW |
+                                     mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
             pos_setpoint.velocity.x = 0.0;
             pos_setpoint.velocity.y = 0.0;
             pos_setpoint.velocity.z = 0.0;
@@ -179,11 +229,11 @@ void UAVControl::mainloop()
     {
     case Control_Mode::INIT:
         // 检查无人机是否位于定点模式，否则切换至定点模式
-        if (uav_state.mode != "POSCTL")
-        {
-            set_px4_mode_func("POSCTL");
-        }
-        break;
+        // if (uav_state.mode != "POSCTL")
+        // {
+        //     set_px4_mode_func("POSCTL");
+        // }
+        // break;
 
     case Control_Mode::RC_CONTROL:
         get_desired_state_from_rc();
@@ -197,12 +247,24 @@ void UAVControl::mainloop()
 
     case Control_Mode::CMD_CONTROL:
         // 设置期望值
-        get_desired_state_from_cmd();
+        if(use_external_attitude)
+        {
+            get_desired_state_from_att_estamate();
+        }
+        else
+        {
+            get_desired_state_from_cmd();
+        }
+        break;
+
+    case Control_Mode::ATT_ESTAMATE:
+        // 姿态估计模式，从姿态估计器获取期望姿态和推力值
+        get_desired_state_from_att_estamate();
         break;
 
     // 当前位置原地降落，降落后会自动上锁，且切换为mannual模式
     case Control_Mode::LAND_CONTROL:
-        
+
         // 第一次进入，设置降落的期望位置和速度
         if (!set_landing_des)
         {
@@ -225,7 +287,7 @@ void UAVControl::mainloop()
         {
             // 到达制定高度后向下移动3s 防止其直接锁桨掉落
             ros::Time stop_time = ros::Time::now();
-            while((ros::Time::now() - stop_time).toSec() < 3.0)
+            while ((ros::Time::now() - stop_time).toSec() < 3.0)
             {
                 vel_des[0] = 0;
                 vel_des[1] = 0;
@@ -237,7 +299,7 @@ void UAVControl::mainloop()
             // 进入急停
             enable_emergency_func();
             control_mode = Control_Mode::INIT;
-            //控制命令初始化,不初始化将影响setup接口切换command_control模式
+            // 控制命令初始化,不初始化将影响setup接口切换command_control模式
             control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             set_landing_des = false;
         }
@@ -246,7 +308,7 @@ void UAVControl::mainloop()
         if (!uav_state.armed)
         {
             control_mode = Control_Mode::INIT;
-            //控制命令初始化,不初始化将影响setup接口切换command_control模式
+            // 控制命令初始化,不初始化将影响setup接口切换command_control模式
             control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             set_landing_des = false;
         }
@@ -306,245 +368,265 @@ void UAVControl::rotation_yaw(double yaw_angle, float body_frame[2], float enu_f
 // 从UAVControlCMD中提取指令，并设置期望值
 void UAVControl::get_desired_state_from_cmd()
 {
-    //【Move】 移动，移动子模式的区别详见UAVCommand.msg中的说明
+    // 【Move】 移动，移动子模式的区别详见UAVCommand.msg中的说明
     switch (control_cmd.cmd)
     {
-        case sunray_msgs::UAVControlCMD::Takeoff:
+    case sunray_msgs::UAVControlCMD::Takeoff:
+    {
+        desired_state.pos << Takeoff_position + Eigen::Vector3d(0, 0, Takeoff_height);
+        desired_state.vel << 0.0, 0.0, 0.0;
+        desired_state.acc << 0.0, 0.0, 0.0;
+        desired_state.att << 0.0, 0.0, 0.0;
+        desired_state.yaw = Takeoff_yaw;
+        desired_state.yaw_rate = 0.0;
+        desired_state.thrust = 0.0;
+        desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
+        send_local_pos_setpoint(desired_state.pos, desired_state.yaw);
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::Hover:
+    {
+        if (last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover)
         {
-            desired_state.pos << Takeoff_position + Eigen::Vector3d(0, 0, Takeoff_height);
-            desired_state.vel << 0.0, 0.0, 0.0;
-            desired_state.acc << 0.0, 0.0, 0.0;
-            desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.yaw = Takeoff_yaw;
-            desired_state.yaw_rate = 0.0;
-            desired_state.thrust = 0.0;
-            desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-            send_local_pos_setpoint(desired_state.pos, desired_state.yaw);
-            break;
-        }  
-        case sunray_msgs::UAVControlCMD::Hover:
-        {
-            if (last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover)
-            {
-                set_hover_pose_with_odom();
-            }
-            desired_state.pos << Hover_position;
-            desired_state.vel << 0.0, 0.0, 0.0;
-            desired_state.acc << 0.0, 0.0, 0.0;
-            desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.yaw = Hover_yaw;
-            desired_state.yaw_rate = 0.0;
-            desired_state.thrust = 0.0;
-            // 需要转化成q
-            //desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-            send_local_pos_setpoint(desired_state.pos, desired_state.yaw);
-            break;
-        } 
-        case sunray_msgs::UAVControlCMD::Land:
-        {
-            control_mode = Control_Mode::LAND_CONTROL;
-            set_landing_des = false;
-            break;
-        }  
-        case sunray_msgs::UAVControlCMD::XYZ_POS:
-        {
-            desired_state.pos[0] = control_cmd.desired_pos[0];
-            desired_state.pos[1] = control_cmd.desired_pos[1];
-            desired_state.pos[2] = control_cmd.desired_pos[2];
-            desired_state.vel << 0.0, 0.0, 0.0;
-            desired_state.acc << 0.0, 0.0, 0.0;
-            desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
-            desired_state.yaw = control_cmd.desired_yaw;
-            desired_state.thrust = 0.0;
-            // 需要转化成q
-            //desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-            if(control_cmd.enable_yawRate){
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
-            }
-            else{
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
-            }
-            
-            break;
-        }  
-        case sunray_msgs::UAVControlCMD::XYZ_VEL:
-        {
-            desired_state.pos << 0.0, 0.0, 0.0;
-            desired_state.vel[0] = control_cmd.desired_vel[0];
-            desired_state.vel[1] = control_cmd.desired_vel[1];
-            desired_state.vel[2] = control_cmd.desired_vel[2];
-            desired_state.acc << 0.0, 0.0, 0.0;
-            desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
-            desired_state.yaw = control_cmd.desired_yaw;
-            desired_state.thrust = 0.0;
-            // 需要转化成q
-            //desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-            if(control_cmd.enable_yawRate){
-                send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
-            }
-            else{
-                send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
-            }        
-            break;
+            set_hover_pose_with_odom();
         }
-        case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS:
+        desired_state.pos << Hover_position;
+        desired_state.vel << 0.0, 0.0, 0.0;
+        desired_state.acc << 0.0, 0.0, 0.0;
+        desired_state.att << 0.0, 0.0, 0.0;
+        desired_state.yaw = Hover_yaw;
+        desired_state.yaw_rate = 0.0;
+        desired_state.thrust = 0.0;
+        // 需要转化成q
+        // desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
+        send_local_pos_setpoint(desired_state.pos, desired_state.yaw);
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::Land:
+    {
+        control_mode = Control_Mode::LAND_CONTROL;
+        set_landing_des = false;
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XYZ_POS:
+    {
+        desired_state.pos[0] = control_cmd.desired_pos[0];
+        desired_state.pos[1] = control_cmd.desired_pos[1];
+        desired_state.pos[2] = control_cmd.desired_pos[2];
+        desired_state.vel << 0.0, 0.0, 0.0;
+        desired_state.acc << 0.0, 0.0, 0.0;
+        desired_state.att << 0.0, 0.0, 0.0;
+        desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+        desired_state.yaw = control_cmd.desired_yaw;
+        desired_state.thrust = 0.0;
+        // 需要转化成q
+        // desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
+        if (control_cmd.enable_yawRate)
         {
-            // todo
+            send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
+        }
+        else
+        {
+            send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
+        }
+
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XYZ_VEL:
+    {
+        desired_state.pos << 0.0, 0.0, 0.0;
+        desired_state.vel[0] = control_cmd.desired_vel[0];
+        desired_state.vel[1] = control_cmd.desired_vel[1];
+        desired_state.vel[2] = control_cmd.desired_vel[2];
+        desired_state.acc << 0.0, 0.0, 0.0;
+        desired_state.att << 0.0, 0.0, 0.0;
+        desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+        desired_state.yaw = control_cmd.desired_yaw;
+        desired_state.thrust = 0.0;
+        // 需要转化成q
+        // desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
+        if (control_cmd.enable_yawRate)
+        {
+            send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
+        }
+        else
+        {
+            send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
+        }
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS:
+    {
+        // todo
+        desired_state.pos[0] = 0.0;
+        desired_state.pos[1] = 0.0;
+        desired_state.pos[2] = control_cmd.desired_pos[2];
+        desired_state.vel[0] = control_cmd.desired_vel[0];
+        desired_state.vel[1] = control_cmd.desired_vel[1];
+        desired_state.vel[2] = 0.0;
+        desired_state.acc << 0.0, 0.0, 0.0;
+        desired_state.att << 0.0, 0.0, 0.0;
+        desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+        desired_state.yaw = control_cmd.desired_yaw;
+        desired_state.thrust = 0.0;
+        if (control_cmd.enable_yawRate)
+        {
+            send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
+        }
+        else
+        {
+            send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
+        }
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XYZ_POS_BODY:
+    {
+        // 【XYZ_POS_BODY】XYZ位置转换为惯性系
+        // 机体系的定点控制，必须使得cmd_id 递增，否则无人机会持续移动
+        if (control_cmd.cmd_id > last_control_cmd.cmd_id)
+        {
+            float d_pos_body[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
+            float d_pos_enu[2];
+            rotation_yaw(uav_yaw, d_pos_body, d_pos_enu);
+
+            desired_state.pos[0] = uav_pos[0] + d_pos_enu[0];
+            desired_state.pos[1] = uav_pos[1] + d_pos_enu[1];
+            desired_state.pos[2] = uav_pos[2] + control_cmd.desired_pos[2];
+            desired_state.vel << 0.0, 0.0, 0.0;
+            desired_state.acc << 0.0, 0.0, 0.0;
+            desired_state.att << 0.0, 0.0, 0.0;
+            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+            desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
+        }
+        if (control_cmd.enable_yawRate)
+        {
+            send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
+        }
+        else
+        {
+            send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
+        }
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XYZ_VEL_BODY:
+    {
+        // todo
+        if (control_cmd.cmd_id > last_control_cmd.cmd_id)
+        {
+            float d_vel_body[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
+            float d_vel_enu[2];
+            rotation_yaw(uav_yaw, d_vel_body, d_vel_enu);
+            desired_state.vel[0] = d_vel_enu[0];
+            desired_state.vel[1] = d_vel_enu[1];
+            desired_state.vel[2] = control_cmd.desired_vel[2];
+            desired_state.pos << 0.0, 0.0, 0.0;
+            desired_state.acc << 0.0, 0.0, 0.0;
+            desired_state.att << 0.0, 0.0, 0.0;
+            desired_state.yaw_rate = control_cmd.desired_yaw_rate;
+            desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
+        }
+        if (control_cmd.enable_yawRate)
+        {
+            send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
+        }
+        else
+        {
+            send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
+        }
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY:
+    {
+        if (control_cmd.cmd_id > last_control_cmd.cmd_id)
+        {
+            float d_vel_body[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
+            float d_vel_enu[2];
+            rotation_yaw(uav_yaw, d_vel_body, d_vel_enu);
+            desired_state.vel[0] = d_vel_enu[0];
+            desired_state.vel[1] = d_vel_enu[1];
+            desired_state.vel[2] = d_vel_enu[2];
             desired_state.pos[0] = 0.0;
             desired_state.pos[1] = 0.0;
-            desired_state.pos[2] = control_cmd.desired_pos[2];
-            desired_state.vel[0] = control_cmd.desired_vel[0];
-            desired_state.vel[1] = control_cmd.desired_vel[1];
-            desired_state.vel[2] = 0.0;
+            desired_state.pos[2] = uav_pos[2] + control_cmd.desired_pos[2];
             desired_state.acc << 0.0, 0.0, 0.0;
             desired_state.att << 0.0, 0.0, 0.0;
             desired_state.yaw_rate = control_cmd.desired_yaw_rate;
-            desired_state.yaw = control_cmd.desired_yaw;
-            desired_state.thrust = 0.0;
-            if(control_cmd.enable_yawRate){
-                send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
-            }
-            else{
-                send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
-            }  
-            break;
+            desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
         }
-        case sunray_msgs::UAVControlCMD::XYZ_POS_BODY:
+        if (control_cmd.enable_yawRate)
         {
-            // 【XYZ_POS_BODY】XYZ位置转换为惯性系
-            // 机体系的定点控制，必须使得cmd_id 递增，否则无人机会持续移动
-            if (control_cmd.cmd_id > last_control_cmd.cmd_id)
-            {
-                float d_pos_body[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
-                float d_pos_enu[2];
-                rotation_yaw(uav_yaw, d_pos_body, d_pos_enu);
-
-                desired_state.pos[0] = uav_pos[0] + d_pos_enu[0];
-                desired_state.pos[1] = uav_pos[1] + d_pos_enu[1];
-                desired_state.pos[2] = uav_pos[2] + control_cmd.desired_pos[2];
-                desired_state.vel << 0.0, 0.0, 0.0;
-                desired_state.acc << 0.0, 0.0, 0.0;
-                desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
-                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
-            }
-            if(control_cmd.enable_yawRate){
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw_rate, control_cmd.enable_yawRate);
-            }
-            else{
-                send_local_pos_setpoint(desired_state.pos, desired_state.yaw, control_cmd.enable_yawRate);
-            }
-            break;
+            send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
         }
-        case sunray_msgs::UAVControlCMD::XYZ_VEL_BODY:
+        else
         {
-            // todo
-            if (control_cmd.cmd_id > last_control_cmd.cmd_id)
-            {
-                float d_vel_body[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
-                float d_vel_enu[2];
-                rotation_yaw(uav_yaw, d_vel_body, d_vel_enu);
-                desired_state.vel[0] = d_vel_enu[0];
-                desired_state.vel[1] = d_vel_enu[1];
-                desired_state.vel[2] = control_cmd.desired_vel[2];
-                desired_state.pos << 0.0, 0.0, 0.0;
-                desired_state.acc << 0.0, 0.0, 0.0;
-                desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
-                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
-            }
-            if(control_cmd.enable_yawRate){
-                send_local_vel_setpoint(desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
-            }
-            else{
-                send_local_vel_setpoint(desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
-            }
-            break;
+            send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
         }
-        case sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY:
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::TRAJECTORY:
+    {
+        for (int i = 0; i < 3; i++)
         {
-            if (control_cmd.cmd_id > last_control_cmd.cmd_id)
-            {
-                float d_vel_body[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
-                float d_vel_enu[2];
-                rotation_yaw(uav_yaw, d_vel_body, d_vel_enu);
-                desired_state.vel[0] = d_vel_enu[0];
-                desired_state.vel[1] = d_vel_enu[1];
-                desired_state.vel[2] = d_vel_enu[2];
-                desired_state.pos[0] = 0.0;
-                desired_state.pos[1] = 0.0;
-                desired_state.pos[2] = uav_pos[2] + control_cmd.desired_pos[2];
-                desired_state.acc << 0.0, 0.0, 0.0;
-                desired_state.att << 0.0, 0.0, 0.0;
-                desired_state.yaw_rate = control_cmd.desired_yaw_rate;
-                desired_state.yaw = control_cmd.desired_yaw + uav_yaw;
-            }
-            if(control_cmd.enable_yawRate){
-                send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw_rate, control_cmd.enable_yawRate);
-            }
-            else{
-                send_vel_xy_pos_z_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
-            }
-            break;
+            desired_state.pos[i] = control_cmd.desired_pos[i];
+            desired_state.vel[i] = control_cmd.desired_vel[i];
         }
-        case sunray_msgs::UAVControlCMD::TRAJECTORY:
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                desired_state.pos[i] = control_cmd.desired_pos[i];
-                desired_state.vel[i] = control_cmd.desired_vel[i];
-            }
-            desired_state.yaw = control_cmd.desired_yaw;
-            send_pos_vel_xyz_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
-            break;
-        }
-        case sunray_msgs::UAVControlCMD::XYZ_ATT:
-        {
-            desired_state.pos << 0.0, 0.0, 0.0;
-            desired_state.vel << 0.0, 0.0, 0.0;
-            desired_state.acc << 0.0, 0.0, 0.0;
-            desired_state.att << 0.0, 0.0, 0.0;
-            desired_state.att[0] = control_cmd.desired_att[0];
-            desired_state.att[1] = control_cmd.desired_att[1];
-            desired_state.att[2] = control_cmd.desired_att[2];
-            desired_state.yaw = 0.0;
-            desired_state.yaw_rate = 0.0;
-            desired_state.thrust = control_cmd.desired_thrust;
-            desired_state.q = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-            send_attitude_setpoint(desired_state.att, desired_state.thrust);  
-            break;
-        }
-        case sunray_msgs::UAVControlCMD::LAT_LON_ALT:
-        {
-            desired_state.global_pos[0] = control_cmd.latitude;
-            desired_state.global_pos[1] = control_cmd.longitude;
-            desired_state.global_pos[2] = control_cmd.altitude;
-            desired_state.yaw = control_cmd.desired_yaw;
-            send_global_pos_setpoint(desired_state.global_pos, desired_state.yaw);
-            break;
-        }
-        default:
-        {
-            cout << RED << node_name << "Wrong command!" << TAIL << endl;
-            break;
-        }
+        desired_state.yaw = control_cmd.desired_yaw;
+        send_pos_vel_xyz_setpoint(desired_state.pos, desired_state.vel, desired_state.yaw, control_cmd.enable_yawRate);
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::XYZ_ATT:
+    {
+        desired_state.pos << 0.0, 0.0, 0.0;
+        desired_state.vel << 0.0, 0.0, 0.0;
+        desired_state.acc << 0.0, 0.0, 0.0;
+        desired_state.att << 0.0, 0.0, 0.0;
+        desired_state.att[0] = control_cmd.desired_att[0];
+        desired_state.att[1] = control_cmd.desired_att[1];
+        desired_state.att[2] = control_cmd.desired_att[2];
+        desired_state.yaw = 0.0;
+        desired_state.yaw_rate = 0.0;
+        desired_state.thrust = control_cmd.desired_thrust;
+        desired_state.q = quaternion_from_rpy(desired_state.att);
+        send_attitude_setpoint(desired_state.q, desired_state.thrust);
+        break;
+    }
+    case sunray_msgs::UAVControlCMD::LAT_LON_ALT:
+    {
+        desired_state.global_pos[0] = control_cmd.latitude;
+        desired_state.global_pos[1] = control_cmd.longitude;
+        desired_state.global_pos[2] = control_cmd.altitude;
+        desired_state.yaw = control_cmd.desired_yaw;
+        send_global_pos_setpoint(desired_state.global_pos, desired_state.yaw);
+        break;
+    }
+    default:
+    {
+        cout << RED << node_name << "Wrong command!" << TAIL << endl;
+        break;
+    }
     }
     // 记录上一时刻命令
     last_control_cmd = control_cmd;
     last_control_cmd.header.stamp = ros::Time::now();
 }
 
+// 从姿态估计中获取期望状态
+void UAVControl::get_desired_state_from_att_estamate()
+{
+    cout<<"get_desired_state_from_att_estamate!!!"<<endl;
+    Controller_Output_t att_result =  fsm->process(control_cmd, last_control_cmd);
+    cout<<"att_result.thrust: "<<att_result.thrust<<endl;
+    cout<<"att_result.q: "<<att_result.q.x()<<" "<<att_result.q.y()<<" "<<att_result.q.z()<<" "<<att_result.q.w()<<endl;
+}
 void UAVControl::printf_debug_info()
 {
     cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] State    <<<<<<<<<<<<<<<<<<" << TAIL << endl;
 
-    //固定的浮点显示
+    // 固定的浮点显示
     cout.setf(ios::fixed);
     // setprecision(n) 设显示小数精度为n位
     cout << setprecision(2);
-    //左对齐
+    // 左对齐
     cout.setf(ios::left);
     // 强制显示小数点
     cout.setf(ios::showpoint);
@@ -676,7 +758,7 @@ void UAVControl::printf_uav_state()
     {
         cout << RED << "PX4 Status:[ Unconnected ] ";
     }
-    //是否上锁
+    // 是否上锁
     if (uav_state.armed == true)
     {
         cout << GREEN << "[  Armed   ] ";
@@ -711,7 +793,7 @@ void UAVControl::printf_uav_state()
     }
     else
     {
-        cout << RED   << " Odom Status : [ Invalid ] " << TAIL << endl;
+        cout << RED << " Odom Status : [ Invalid ] " << TAIL << endl;
     }
 
     cout << GREEN << "UAV_pos [X Y Z] : " << uav_state.position[0] << " [ m ] " << uav_state.position[1] << " [ m ] " << uav_state.position[2] << " [ m ] " << TAIL << endl;
@@ -719,9 +801,8 @@ void UAVControl::printf_uav_state()
     cout << GREEN << "UAV_att [R P Y] : " << uav_state.attitude[0] * 180 / M_PI << " [deg] " << uav_state.attitude[1] * 180 / M_PI << " [deg] " << uav_state.attitude[2] * 180 / M_PI << " [deg] " << TAIL << endl;
 
     cout << GREEN << "Battery Voltage : " << uav_state.battery_state << " [V] "
-         << " Battery Percent : " << uav_state.battery_percetage << " [%] "<< TAIL << endl;
+         << " Battery Percent : " << uav_state.battery_percetage << " [%] " << TAIL << endl;
 }
-
 
 void UAVControl::control_cmd_cb(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
@@ -740,7 +821,7 @@ void UAVControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
     uav_quat.y() = msg->attitude_q.y;
     uav_quat.z() = msg->attitude_q.z;
 
-    uav_yaw = geometry_utils::get_yaw_from_quaternion(uav_quat);
+    uav_yaw = uav_utils::get_yaw_from_quaternion(uav_quat);
 
     // 在无人机解锁时，将无人机解锁位置设定为起飞点
     if (uav_state.armed && !uav_state_last.armed)
@@ -750,7 +831,7 @@ void UAVControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
         Takeoff_position[2] = uav_pos[2];
         Takeoff_yaw = uav_yaw;
         cout << BLUE << "Set Takeoff_position [X Y Z] : " << Takeoff_position[0] << " [ m ] " << Takeoff_position[1] << " [ m ] " << Takeoff_position[2] << " [ m ] " << TAIL << endl;
-        cout << BLUE << "Set Takeoff_yaw : " << Takeoff_yaw/3.1415926*180 << " [ deg ] " << TAIL << endl;
+        cout << BLUE << "Set Takeoff_yaw : " << Takeoff_yaw / 3.1415926 * 180 << " [ deg ] " << TAIL << endl;
     }
 
     uav_state_last = uav_state;
@@ -788,7 +869,7 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
         rc_input.toggle_kill = false;
         enable_emergency_func();
         control_mode = Control_Mode::INIT;
-        //控制命令初始化,不初始化将影响setup接口切换command_control模式
+        // 控制命令初始化,不初始化将影响setup接口切换command_control模式
         control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
         set_landing_des = false;
         return;
@@ -944,7 +1025,7 @@ void UAVControl::uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg)
     {
         enable_emergency_func();
         control_mode = Control_Mode::INIT;
-        //控制命令初始化,不初始化将影响setup接口切换command_control模式
+        // 控制命令初始化,不初始化将影响setup接口切换command_control模式
         control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
         set_landing_des = false;
     }
@@ -970,12 +1051,14 @@ void UAVControl::send_local_pos_setpoint(const Eigen::Vector3d &pos_sp, double y
                              mavros_msgs::PositionTarget::IGNORE_AFX |
                              mavros_msgs::PositionTarget::IGNORE_AFY |
                              mavros_msgs::PositionTarget::IGNORE_AFZ;
-    if(enable_rate){
-        pos_setpoint.type_mask = pos_setpoint.type_mask|mavros_msgs::PositionTarget::IGNORE_YAW;
+    if (enable_rate)
+    {
+        pos_setpoint.type_mask = pos_setpoint.type_mask | mavros_msgs::PositionTarget::IGNORE_YAW;
         pos_setpoint.yaw_rate = yaw_sp;
     }
-    else{
-        pos_setpoint.type_mask = pos_setpoint.type_mask|mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+    else
+    {
+        pos_setpoint.type_mask = pos_setpoint.type_mask | mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
         pos_setpoint.yaw = yaw_sp;
     };
     pos_setpoint.position.x = pos_sp[0];
@@ -996,12 +1079,14 @@ void UAVControl::send_local_vel_setpoint(const Eigen::Vector3d &vel_sp, float ya
                              mavros_msgs::PositionTarget::IGNORE_AFX |
                              mavros_msgs::PositionTarget::IGNORE_AFY |
                              mavros_msgs::PositionTarget::IGNORE_AFZ;
-    if(enable_rate){
-        pos_setpoint.type_mask = pos_setpoint.type_mask|mavros_msgs::PositionTarget::IGNORE_YAW;
+    if (enable_rate)
+    {
+        pos_setpoint.type_mask = pos_setpoint.type_mask | mavros_msgs::PositionTarget::IGNORE_YAW;
         pos_setpoint.yaw_rate = yaw_sp;
     }
-    else{
-        pos_setpoint.type_mask = pos_setpoint.type_mask|mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+    else
+    {
+        pos_setpoint.type_mask = pos_setpoint.type_mask | mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
         pos_setpoint.yaw = yaw_sp;
     };
     pos_setpoint.position.x = 0.0;
@@ -1028,12 +1113,14 @@ void UAVControl::send_vel_xy_pos_z_setpoint(const Eigen::Vector3d &pos_sp, const
                              mavros_msgs::PositionTarget::IGNORE_AFX |
                              mavros_msgs::PositionTarget::IGNORE_AFY |
                              mavros_msgs::PositionTarget::IGNORE_AFZ;
-    if(enable_rate){
-        pos_setpoint.type_mask = pos_setpoint.type_mask|mavros_msgs::PositionTarget::IGNORE_YAW;
+    if (enable_rate)
+    {
+        pos_setpoint.type_mask = pos_setpoint.type_mask | mavros_msgs::PositionTarget::IGNORE_YAW;
         pos_setpoint.yaw_rate = yaw_sp;
     }
-    else{
-        pos_setpoint.type_mask = pos_setpoint.type_mask|mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+    else
+    {
+        pos_setpoint.type_mask = pos_setpoint.type_mask | mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
         pos_setpoint.yaw = yaw_sp;
     };
     pos_setpoint.velocity.x = vel_sp[0];
@@ -1064,23 +1151,34 @@ void UAVControl::send_pos_vel_xyz_setpoint(const Eigen::Vector3d &pos_sp, const 
     setpoint_raw_local_pub.publish(pos_setpoint);
 }
 
-
 // 发送角度期望值至飞控（输入: 期望角度-四元数,期望推力）
-void UAVControl::send_attitude_setpoint(const Eigen::Vector3d &att_sp, double thrust_sp)
+void UAVControl::send_attitude_setpoint(const Eigen::Quaterniond &att_sp, double thrust_sp)
 {
     sunray_msgs::AttitudeSetpoint att_setpoint;
     att_setpoint.header.stamp = ros::Time::now();
+    att_setpoint.header.frame_id = std::string("FCU");
     att_setpoint.type_mask = sunray_msgs::AttitudeSetpoint::IGNORE_ROLL_RATE |
                              sunray_msgs::AttitudeSetpoint::IGNORE_PITCH_RATE |
                              sunray_msgs::AttitudeSetpoint::IGNORE_YAW_RATE;
-    Eigen::Quaterniond q_sp = quaternion_from_rpy(att_sp);
-    att_setpoint.orientation.x = q_sp.x();
-    att_setpoint.orientation.y = q_sp.y();
-    att_setpoint.orientation.z = q_sp.z();
-    att_setpoint.orientation.w = q_sp.w();
-    att_setpoint.body_rate.x = 0.0;
-    att_setpoint.body_rate.y = 0.0;
-    att_setpoint.body_rate.z = 0.0;
+    // Eigen::Quaterniond q_sp = quaternion_from_rpy(att_sp);
+    att_setpoint.orientation.x = att_sp.x();
+    att_setpoint.orientation.y = att_sp.y();
+    att_setpoint.orientation.z = att_sp.z();
+    att_setpoint.orientation.w = att_sp.w();
+    att_setpoint.thrust = thrust_sp;
+    setpoint_raw_attitude_pub.publish(att_setpoint);
+}
+
+// 发送角度期望值至飞控（输入: 期望角度-欧拉角,期望推力）机体系
+void UAVControl::send_attitude_setpoint_body(const Eigen::Vector3d &att_sp, double thrust_sp)
+{
+    sunray_msgs::AttitudeSetpoint att_setpoint;
+    att_setpoint.header.stamp = ros::Time::now();
+    att_setpoint.header.frame_id = std::string("FCU");
+    att_setpoint.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ATTITUDE;
+    att_setpoint.body_rate.x = att_sp[0];
+    att_setpoint.body_rate.y = att_sp[1];
+    att_setpoint.body_rate.z = att_sp[2];
     att_setpoint.thrust = thrust_sp;
     setpoint_raw_attitude_pub.publish(att_setpoint);
 }
@@ -1088,7 +1186,7 @@ void UAVControl::send_attitude_setpoint(const Eigen::Vector3d &att_sp, double th
 // 发送经纬度以及高度期望值至飞控(输入,期望lat/lon/alt,期望yaw)
 void UAVControl::send_global_pos_setpoint(const Eigen::Vector3d &global_pos_sp, float yaw_sp)
 {
-   sunray_msgs::GlobalPositionSetpoint global_setpoint;
+    sunray_msgs::GlobalPositionSetpoint global_setpoint;
     global_setpoint.coordinate_frame = sunray_msgs::GlobalPositionSetpoint::FRAME_GLOBAL_INT;
     global_setpoint.type_mask = sunray_msgs::GlobalPositionSetpoint::IGNORE_VX |
                                 sunray_msgs::GlobalPositionSetpoint::IGNORE_VY |
@@ -1104,7 +1202,6 @@ void UAVControl::send_global_pos_setpoint(const Eigen::Vector3d &global_pos_sp, 
     global_setpoint.yaw = yaw_sp;
     setpoint_raw_global_pub.publish(global_setpoint);
 }
-
 
 /***
  * 上锁解锁函数，调用mavros上锁和解决服务

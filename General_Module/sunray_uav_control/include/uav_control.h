@@ -9,6 +9,10 @@
 #include "rc_input.h"
 #include "math_utils.h"
 #include "geometry_utils.h"
+
+// #include "controller.h"
+#include "PX4CtrlFSM.h"
+
 #include "ros_msg_utils.h"
 
 using namespace std;
@@ -41,7 +45,9 @@ class UAVControl
         // 是否设置降落期望点
         bool set_landing_des;
         // offboard进入标志
-        bool check_off;       
+        bool check_off;     
+        // 是否启用外部姿态估计
+        bool use_external_attitude;
 
         // 无人机状态量
         Eigen::Vector3d uav_pos;     // 无人机位置
@@ -56,6 +62,9 @@ class UAVControl
         // 无人机当前悬停点（Hover模式）
         Eigen::Vector3d Hover_position;
         double Hover_yaw;
+
+        Parameter_t param;
+        PX4CtrlFSM* fsm;
 
         // 目标设定值
         Eigen::Vector3d pos_des;
@@ -108,7 +117,8 @@ class UAVControl
             INIT = 0,               // 初始模式      
             RC_CONTROL = 1,         // 遥控器控制模式
             CMD_CONTROL = 2,         // 外部指令控制模式
-            LAND_CONTROL = 3        // 降落
+            LAND_CONTROL = 3,        // 降落
+            ATT_ESTAMATE = 4        // 外部姿态估计
         };
         Control_Mode control_mode;
         Control_Mode last_control_mode;
@@ -166,6 +176,8 @@ class UAVControl
         void get_desired_state_from_rc();
         // 根据外部指令设置期望值
         void get_desired_state_from_cmd();
+        // 根据姿态估计设置期望值
+        void get_desired_state_from_att_estamate();
         // 回调函数
         void control_cmd_cb(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
         void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg);
@@ -175,7 +187,8 @@ class UAVControl
         // 发送底层控制指令函数
         void send_local_pos_setpoint(const Eigen::Vector3d &pos_sp, double yaw_sp, bool enable_rate=false);
         void send_local_vel_setpoint(const Eigen::Vector3d &vel_sp, float yaw_sp, bool enable_rate=false);
-        void send_attitude_setpoint(const Eigen::Vector3d &att_sp, double thrust_sp);
+        void send_attitude_setpoint(const Eigen::Quaterniond &att_sp, double thrust_sp);
+        void send_attitude_setpoint_body(const Eigen::Vector3d &att_sp, double thrust_sp);
         void send_global_pos_setpoint(const Eigen::Vector3d &global_pos_sp, float yaw_sp);
         void send_vel_xy_pos_z_setpoint(const Eigen::Vector3d &pos_sp, const Eigen::Vector3d &vel_sp, float yaw_sp, bool enable_rate=false);
         void send_pos_vel_xyz_setpoint(const Eigen::Vector3d &pos_sp, const Eigen::Vector3d &vel_sp, float yaw_sp, bool enable_rate=false);
