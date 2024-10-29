@@ -105,17 +105,17 @@ void UAVControl::init(ros::NodeHandle &nh)
         state_sub =
             nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state",
                                              10,
-                                             boost::bind(&State_Data_t::feed, fsm->state_data, _1));
+                                             boost::bind(&State_Data_t::feed, &fsm->state_data, _1));
 
         extended_state_sub =
             nh.subscribe<mavros_msgs::ExtendedState>(topic_prefix + "/mavros/extended_state",
                                                      10,
-                                                     boost::bind(&ExtendedState_Data_t::feed, fsm->extended_state_data, _1));
+                                                     boost::bind(&ExtendedState_Data_t::feed, &fsm->extended_state_data, _1));
 
         imu_sub =
             nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", // Note: do NOT change it to /mavros/imu/data_raw !!!
                                            100,
-                                           boost::bind(&Imu_Data_t::feed, fsm->imu_data, _1),
+                                           boost::bind(&Imu_Data_t::feed, &fsm->imu_data, _1),
                                            ros::VoidConstPtr(),
                                            ros::TransportHints().tcpNoDelay());
 
@@ -123,13 +123,13 @@ void UAVControl::init(ros::NodeHandle &nh)
         {
             rc_sub = nh.subscribe<mavros_msgs::RCIn>(topic_prefix + "/mavros/rc/in",
                                                      10,
-                                                     boost::bind(&RC_Data_t::feed, fsm->rc_data, _1));
+                                                     boost::bind(&RC_Data_t::feed, &fsm->rc_data, _1));
         }
 
         bat_sub =
             nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery",
                                                     100,
-                                                    boost::bind(&Battery_Data_t::feed, fsm->bat_data, _1),
+                                                    boost::bind(&Battery_Data_t::feed, &fsm->bat_data, _1),
                                                     ros::VoidConstPtr(),
                                                     ros::TransportHints().tcpNoDelay());
 
@@ -137,7 +137,7 @@ void UAVControl::init(ros::NodeHandle &nh)
         odom_sub =
             nh.subscribe<nav_msgs::Odometry>("/uav1/sunray/gazebo_pose",
                                              100,
-                                             boost::bind(&Odom_Data_t::feed, fsm->odom_data, _1),
+                                             boost::bind(&Odom_Data_t::feed, &fsm->odom_data, _1),
                                              ros::VoidConstPtr(),
                                              ros::TransportHints().tcpNoDelay());
     }
@@ -614,8 +614,11 @@ void UAVControl::get_desired_state_from_att_estamate()
 {
     // cout<<"get_desired_state_from_att_estamate!!!"<<endl;
     Controller_Output_t att_result =  fsm->process(control_cmd, last_control_cmd);
+    // send_attitude_setpoint(att_result.q, att_result.thrust);
     // cout<<"att_result.thrust: "<<att_result.thrust<<endl;
     // cout<<"att_result.q: "<<att_result.q.x()<<" "<<att_result.q.y()<<" "<<att_result.q.z()<<" "<<att_result.q.w()<<endl;
+    last_control_cmd = control_cmd;
+    last_control_cmd.header.stamp = ros::Time::now();
 }
 void UAVControl::printf_debug_info()
 {
