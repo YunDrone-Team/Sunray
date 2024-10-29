@@ -43,15 +43,29 @@ catkin_package(
 ###########
 include_directories(
   include
+  att_estimate/include
   ${catkin_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
 )
 
+# add_library(${PROJECT_NAME}
+#   att_estimate/src/controller.cpp
+#   att_estimate/src/input.cpp
+#   att_estimate/src/PX4CtrlFSM.cpp
+#   att_estimate/src/PX4CtrlParam.cpp
+#   att_estimate/src/uav_utils_test.cpp
+# )
 
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
-add_library(uav_control src/uav_control.cpp)
+add_library(uav_control 
+    src/uav_control.cpp
+    att_estimate/src/PX4CtrlFSM.cpp
+    att_estimate/src/PX4CtrlParam.cpp
+    att_estimate/src/controller.cpp
+    att_estimate/src/input.cpp
+    )
 add_executable(sunray_control_node src/sunray_control_node.cpp)
 add_dependencies(sunray_control_node sunray_control_gencpp)
 target_link_libraries(sunray_control_node ${catkin_LIBRARIES})
