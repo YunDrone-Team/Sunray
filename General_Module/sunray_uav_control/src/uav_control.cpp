@@ -101,46 +101,45 @@ void UAVControl::init(ros::NodeHandle &nh)
         param.config_from_ros_handle(nh);
         LinearControl controller(param);
         fsm = new PX4CtrlFSM(param, controller);
-        fsm->init_sub(nh);
-        // ros::Subscriber state_sub =
-        //     nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state",
-        //                                      10,
-        //                                      boost::bind(&State_Data_t::feed, fsm->state_data, _1));
+        // fsm->init_sub(nh);
+        state_sub =
+            nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state",
+                                             10,
+                                             boost::bind(&State_Data_t::feed, fsm->state_data, _1));
 
-        // ros::Subscriber extended_state_sub =
-        //     nh.subscribe<mavros_msgs::ExtendedState>(topic_prefix + "/mavros/extended_state",
-        //                                              10,
-        //                                              boost::bind(&ExtendedState_Data_t::feed, fsm->extended_state_data, _1));
+        extended_state_sub =
+            nh.subscribe<mavros_msgs::ExtendedState>(topic_prefix + "/mavros/extended_state",
+                                                     10,
+                                                     boost::bind(&ExtendedState_Data_t::feed, fsm->extended_state_data, _1));
 
-        // ros::Subscriber imu_sub =
-        //     nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", // Note: do NOT change it to /mavros/imu/data_raw !!!
-        //                                    100,
-        //                                    boost::bind(&Imu_Data_t::feed, fsm->imu_data, _1),
-        //                                    ros::VoidConstPtr(),
-        //                                    ros::TransportHints().tcpNoDelay());
+        imu_sub =
+            nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", // Note: do NOT change it to /mavros/imu/data_raw !!!
+                                           100,
+                                           boost::bind(&Imu_Data_t::feed, fsm->imu_data, _1),
+                                           ros::VoidConstPtr(),
+                                           ros::TransportHints().tcpNoDelay());
 
-        // ros::Subscriber rc_sub;
-        // if (!param.takeoff_land.no_RC) // mavros will still publish wrong rc messages although no RC is connected
-        // {
-        //     rc_sub = nh.subscribe<mavros_msgs::RCIn>(topic_prefix + "/mavros/rc/in",
-        //                                              10,
-        //                                              boost::bind(&RC_Data_t::feed, fsm->rc_data, _1));
-        // }
+        if (!param.takeoff_land.no_RC) // mavros will still publish wrong rc messages although no RC is connected
+        {
+            rc_sub = nh.subscribe<mavros_msgs::RCIn>(topic_prefix + "/mavros/rc/in",
+                                                     10,
+                                                     boost::bind(&RC_Data_t::feed, fsm->rc_data, _1));
+        }
 
-        // ros::Subscriber bat_sub =
-        //     nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery",
-        //                                             100,
-        //                                             boost::bind(&Battery_Data_t::feed, fsm->bat_data, _1),
-        //                                             ros::VoidConstPtr(),
-        //                                             ros::TransportHints().tcpNoDelay());
+        bat_sub =
+            nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery",
+                                                    100,
+                                                    boost::bind(&Battery_Data_t::feed, fsm->bat_data, _1),
+                                                    ros::VoidConstPtr(),
+                                                    ros::TransportHints().tcpNoDelay());
 
         // std::cout<<"subscribe to /uav1/sunray/gazebo_pose"<<std::endl;
-        // ros::Subscriber odom_sub =
-        //     nh.subscribe<nav_msgs::Odometry>("/uav1/sunray/gazebo_pose",
-        //                                      100,
-        //                                      boost::bind(&Odom_Data_t::feed, fsm->odom_data, _1),
-        //                                      ros::VoidConstPtr(),
-        //                                      ros::TransportHints().tcpNoDelay());
+        odom_sub =
+            nh.subscribe<nav_msgs::Odometry>("/uav1/sunray/gazebo_pose",
+                                             100,
+                                             boost::bind(&Odom_Data_t::feed, fsm->odom_data, _1),
+                                             ros::VoidConstPtr(),
+                                             ros::TransportHints().tcpNoDelay());
     }
 
     cout << GREEN << node_name << " init! " << TAIL << endl;
@@ -613,10 +612,10 @@ void UAVControl::get_desired_state_from_cmd()
 // 从姿态估计中获取期望状态
 void UAVControl::get_desired_state_from_att_estamate()
 {
-    cout<<"get_desired_state_from_att_estamate!!!"<<endl;
+    // cout<<"get_desired_state_from_att_estamate!!!"<<endl;
     Controller_Output_t att_result =  fsm->process(control_cmd, last_control_cmd);
-    cout<<"att_result.thrust: "<<att_result.thrust<<endl;
-    cout<<"att_result.q: "<<att_result.q.x()<<" "<<att_result.q.y()<<" "<<att_result.q.z()<<" "<<att_result.q.w()<<endl;
+    // cout<<"att_result.thrust: "<<att_result.thrust<<endl;
+    // cout<<"att_result.q: "<<att_result.q.x()<<" "<<att_result.q.y()<<" "<<att_result.q.z()<<" "<<att_result.q.w()<<endl;
 }
 void UAVControl::printf_debug_info()
 {
@@ -1319,4 +1318,36 @@ void UAVControl::printf_param()
     cout << GREEN << "geo_fence_x : " << uav_geo_fence.x_min << " [m]  to  " << uav_geo_fence.x_min << " [m]" << TAIL << endl;
     cout << GREEN << "geo_fence_y : " << uav_geo_fence.y_min << " [m]  to  " << uav_geo_fence.y_max << " [m]" << TAIL << endl;
     cout << GREEN << "geo_fence_z : " << uav_geo_fence.z_min << " [m]  to  " << uav_geo_fence.z_max << " [m]" << TAIL << endl;
+}
+
+
+void UAVControl::imu_cb(const sensor_msgs::Imu::ConstPtr &msg)
+{
+    cout<<"IMU data received!"<<endl;
+    fsm->imu_data.feed(msg);
+}
+
+void UAVControl::st_cb(const mavros_msgs::State::ConstPtr &msg)
+{
+    
+}
+
+void UAVControl::ex_st_cb(const mavros_msgs::ExtendedState::ConstPtr &msg)
+{
+    
+}
+
+void UAVControl::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    
+}
+
+void UAVControl::rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
+{
+    
+}
+
+void UAVControl::bat_cb(const sensor_msgs::BatteryState::ConstPtr &msg)
+{
+    
 }

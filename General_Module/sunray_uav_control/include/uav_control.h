@@ -158,6 +158,14 @@ class UAVControl
         ros::Subscriber px4_rc_sub;
         ros::Subscriber uav_setup_sub;
         ros::Subscriber px4_position_target_sub;
+
+        ros::Subscriber state_sub;
+        ros::Subscriber extended_state_sub;
+        ros::Subscriber imu_sub;
+        ros::Subscriber rc_sub;
+        ros::Subscriber bat_sub;
+        ros::Subscriber odom_sub;
+
         // 发布话题
         ros::Publisher setpoint_raw_local_pub;
         ros::Publisher setpoint_raw_attitude_pub;
@@ -184,6 +192,13 @@ class UAVControl
         void uav_setup_cb(const sunray_msgs::UAVSetup::ConstPtr &msg);
         void px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg);
         void px4_pos_target_cb(const mavros_msgs::PositionTarget::ConstPtr &msg);
+
+        void imu_cb(const sensor_msgs::Imu::ConstPtr &msg);
+        void odom_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void rc_cb(const mavros_msgs::RCIn::ConstPtr &msg);
+        void ex_st_cb(const mavros_msgs::ExtendedState::ConstPtr &msg);
+        void st_cb(const mavros_msgs::State::ConstPtr &msg);
+        void bat_cb(const sensor_msgs::BatteryState::ConstPtr &msg);
         // 发送底层控制指令函数
         void send_local_pos_setpoint(const Eigen::Vector3d &pos_sp, double yaw_sp, bool enable_rate=false);
         void send_local_vel_setpoint(const Eigen::Vector3d &vel_sp, float yaw_sp, bool enable_rate=false);

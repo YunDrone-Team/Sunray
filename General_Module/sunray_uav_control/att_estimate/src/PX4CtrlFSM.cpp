@@ -5,49 +5,6 @@ using namespace std;
 using namespace uav_utils;
 
 
-void PX4CtrlFSM::init_sub(ros::NodeHandle& nh)
-{
-	ros::Subscriber state_sub =
-            nh.subscribe<mavros_msgs::State>("/uav1/mavros/state",
-                                             10,
-                                             boost::bind(&State_Data_t::feed, this->state_data, _1));
-
-        ros::Subscriber extended_state_sub =
-            nh.subscribe<mavros_msgs::ExtendedState>("/uav1/mavros/extended_state",
-                                                     10,
-                                                     boost::bind(&ExtendedState_Data_t::feed, this->extended_state_data, _1));
-
-        ros::Subscriber imu_sub =
-            nh.subscribe<sensor_msgs::Imu>("/uav1/mavros/imu/data", // Note: do NOT change it to /uav1/mavros/imu/data_raw !!!
-                                           100,
-                                           boost::bind(&Imu_Data_t::feed, this->imu_data, _1),
-                                           ros::VoidConstPtr(),
-                                           ros::TransportHints().tcpNoDelay());
-
-        ros::Subscriber rc_sub;
-        if (!param.takeoff_land.no_RC) // mavros will still publish wrong rc messages although no RC is connected
-        {
-            rc_sub = nh.subscribe<mavros_msgs::RCIn>("/uav1/mavros/rc/in",
-                                                     10,
-                                                     boost::bind(&RC_Data_t::feed, this->rc_data, _1));
-        }
-
-        ros::Subscriber bat_sub =
-            nh.subscribe<sensor_msgs::BatteryState>("/uav1/mavros/battery",
-                                                    100,
-                                                    boost::bind(&Battery_Data_t::feed, this->bat_data, _1),
-                                                    ros::VoidConstPtr(),
-                                                    ros::TransportHints().tcpNoDelay());
-
-        std::cout<<"subscribe to /uav1/sunray/gazebo_pose"<<std::endl;
-        ros::Subscriber odom_sub =
-            nh.subscribe<nav_msgs::Odometry>("/uav1/sunray/gazebo_pose",
-                                             100,
-                                             boost::bind(&Odom_Data_t::feed, this->odom_data, _1),
-                                             ros::VoidConstPtr(),
-                                             ros::TransportHints().tcpNoDelay());
-}
-
 
 PX4CtrlFSM::PX4CtrlFSM(Parameter_t &param_, LinearControl &controller_) : param(param_), controller(controller_) /*, thrust_curve(thrust_curve_)*/
 {
@@ -82,7 +39,8 @@ PX4CtrlFSM::PX4CtrlFSM(Parameter_t &param_, LinearControl &controller_) : param(
 
 Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd, sunray_msgs::UAVControlCMD &last_control_cmd)
 {
-
+	// std::cout<<"odom_data_x"<<odom_data.msg.pose.pose.position.x<<std::endl;
+    // std::cout<<"odom_data_y"<<odom_data.msg.pose.pose.position.y<<std::endl;
     ros::Time now_time = ros::Time::now();
 	Controller_Output_t u;
 	Desired_State_t des(odom_data);
@@ -570,6 +528,7 @@ bool PX4CtrlFSM::cmd_is_received(const ros::Time &now_time)
 
 bool PX4CtrlFSM::odom_is_received(const ros::Time &now_time)
 {
+	std::cout<< odom_data.msg.pose.pose.position.z << std::endl;
 	return (now_time - odom_data.rcv_stamp).toSec() < param.msg_timeout.odom;
 }
 
