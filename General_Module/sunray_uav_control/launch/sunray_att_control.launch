@@ -1,7 +1,7 @@
 <launch>
 	<arg name="uav_id" value="1"/>
 	<arg name="uav_name" value="uav"/>
-    <arg name="flag_printf" value="true"/>
+    <arg name="flag_printf" value="false"/>
     <arg name="sim_mode" value="true"/>
     <arg name="use_rc" value="false"/>
     <arg name="use_external_attitude" value="true"/>

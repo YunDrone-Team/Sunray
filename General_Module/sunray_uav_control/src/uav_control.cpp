@@ -99,7 +99,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     {
         std::cout<<"-------------------------------use_external_attitude---------------------"<<std::endl;
         param.config_from_ros_handle(nh);
-        LinearControl controller(param);
+        LinearControl controller(param, nh);
         fsm = new PX4CtrlFSM(param, controller);
         // fsm->init_sub(nh);
         state_sub =
@@ -907,10 +907,10 @@ void UAVControl::px4_rc_cb(const mavros_msgs::RCIn::ConstPtr &msg)
 
     // 如果没有遥控器一定要注释掉以下内容，否则无法解锁
     // 如果无人机没有解锁，则不需要判断模式切换指令，直接返回
-    if (!uav_state.armed)
-    {
-        return;
-    }
+    // if (!uav_state.armed)
+    // {
+    //     return;
+    // }
 
     // 如果无人机处于LAND_CONTROL下，单独判断无人机模式切换指令
     if (control_mode == Control_Mode::LAND_CONTROL)
