@@ -65,6 +65,7 @@ class UAVControl
 
         Parameter_t param;
         PX4CtrlFSM* fsm;
+        LinearControl* controller;
 
         // 目标设定值
         Eigen::Vector3d pos_des;

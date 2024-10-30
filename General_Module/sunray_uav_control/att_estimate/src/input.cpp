@@ -125,12 +125,10 @@ Odom_Data_t::Odom_Data_t()
 
 void Odom_Data_t::feed(nav_msgs::OdometryConstPtr pMsg)
 {
-    // std::cout<<"odom"<<std::endl;
     ros::Time now = ros::Time::now();
 
     msg = *pMsg;
     rcv_stamp = now;
-    // std::cout<<"odom_cb_time: "<<now.toSec()<<std::endl;
     
     recv_new_msg = true;
 
@@ -154,7 +152,7 @@ void Odom_Data_t::feed(nav_msgs::OdometryConstPtr pMsg)
     {
         if ( one_min_count < 100 )
         {
-            ROS_WARN("ODOM frequency seems lower than 100Hz, which is too low!");
+            // ROS_WARN("ODOM frequency seems lower than 100Hz, which is too low!");
         }
         one_min_count = 0;
         last_clear_count_time = now;
@@ -170,7 +168,6 @@ Imu_Data_t::Imu_Data_t()
 void Imu_Data_t::feed(sensor_msgs::ImuConstPtr pMsg)
 {
     ros::Time now = ros::Time::now();
-    // std::cout<<"imu cb"<<std::endl;
     msg = *pMsg;
     rcv_stamp = now;
 
@@ -194,7 +191,7 @@ void Imu_Data_t::feed(sensor_msgs::ImuConstPtr pMsg)
     {
         if ( one_min_count < 100 )
         {
-            ROS_WARN("IMU frequency seems lower than 100Hz, which is too low!");
+            // ROS_WARN("IMU frequency seems lower than 100Hz, which is too low!");
         }
         one_min_count = 0;
         last_clear_count_time = now;

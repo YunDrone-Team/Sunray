@@ -49,11 +49,13 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	{
 		takeoff_land_data.triggered = true;
 		takeoff_land_data.takeoff_land_cmd = 1;
+		std::cout<<"switch to takeoff"<<std::endl;
 	}
 	if(control_cmd.cmd == sunray_msgs::UAVControlCMD::Land && last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Land)
 	{
 		takeoff_land_data.triggered = true;
-		takeoff_land_data.takeoff_land_cmd = 1;
+		takeoff_land_data.takeoff_land_cmd = 2;
+		std::cout<<"switch to land"<<std::endl;
 	}
 
 	if(control_cmd.cmd == sunray_msgs::UAVControlCMD::XYZ_ATT)
@@ -65,6 +67,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	{
 	case MANUAL_CTRL:
 	{
+		std::cout<<"MANUAL_CTRL"<<std::endl;
 		// if (rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
 		if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover) // Try to jump to AUTO_HOVER
 		{
@@ -83,7 +86,6 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 				ROS_ERROR("[px4ctrl] Reject AUTO_HOVER(L2). Odom_Vel=%fm/s, which seems that the locolization module goes wrong!", odom_data.v.norm());
 				break;
 			}
-			std::cout<<"AUTO_HOVER"<<std::endl;
 			state = AUTO_HOVER;
 			controller.resetThrustMapping();
 			set_hov_with_odom();
@@ -131,11 +133,10 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 					break;
 				}
 			}
-			std::cout<<"AUTO_TAKEOFF"<<std::endl;
 			state = AUTO_TAKEOFF;
 			controller.resetThrustMapping();
 			set_start_pose_for_takeoff_land(odom_data);
-			toggle_offboard_mode(true);				  // toggle on offboard before arm
+			// toggle_offboard_mode(true);				  // toggle on offboard before arm
 			for (int i = 0; i < 10 && ros::ok(); ++i) // wait for 0.1 seconds to allow mode change by FMU // mark
 			{
 				ros::Duration(0.01).sleep();
@@ -165,11 +166,12 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	case AUTO_HOVER:
 	{
+		std::cout<<"AUTO_HOVER"<<std::endl;
 		if (control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover || !odom_is_received(now_time))
 		// if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
 			state = MANUAL_CTRL;
-			toggle_offboard_mode(false);
+			// toggle_offboard_mode(false);
 
 			ROS_WARN("[px4ctrl] AUTO_HOVER(L2) --> MANUAL_CTRL(L1)");
 		}
@@ -182,7 +184,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 				ROS_INFO("\033[32m[px4ctrl] AUTO_HOVER(L2) --> CMD_CTRL(L3)\033[32m");
 			}
 		}
-		else if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 0)
+		else if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 2)
 		{
 
 			state = AUTO_LAND;
@@ -194,12 +196,11 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		{
 			set_hov_with_rc();
 			des = get_hover_des();
-			std::cout<<"des: "<<des.p[0]<<" "<<des.p[1]<<" "<<des.p[2]<<std::endl;
 			if ((rc_data.enter_command_mode) ||
 				(takeoff_land.delay_trigger.first && now_time > takeoff_land.delay_trigger.second))
 			{
 				takeoff_land.delay_trigger.first = false;
-				publish_trigger(odom_data.msg);
+				// publish_trigger(odom_data.msg);
 				ROS_INFO("\033[32m[px4ctrl] TRIGGER sent, allow user command.\033[32m");
 			}
 
@@ -211,10 +212,11 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	case CMD_CTRL:
 	{
+		std::cout<<"CMD_CTRL"<<std::endl;
 		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
 			state = MANUAL_CTRL;
-			toggle_offboard_mode(false);
+			// toggle_offboard_mode(false);
 
 			ROS_WARN("[px4ctrl] From CMD_CTRL(L3) to MANUAL_CTRL(L1)!");
 		}
@@ -230,7 +232,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 			des = get_cmd_des();
 		}
 
-		if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 0)
+		if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 2)
 		{
 			ROS_ERROR("[px4ctrl] Reject AUTO_LAND, which must be triggered in AUTO_HOVER. \
 					Stop sending control commands for longer than %fs to let px4ctrl return to AUTO_HOVER first.",
@@ -242,6 +244,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	case AUTO_TAKEOFF:
 	{
+		std::cout<<"AUTO_TAKEOFF"<<std::endl;
 		if ((now_time - takeoff_land.toggle_takeoff_land_time).toSec() < AutoTakeoffLand_t::MOTORS_SPEEDUP_TIME) // Wait for several seconds to warn prople.
 		{
 			des = get_rotor_speed_up_des(now_time);
@@ -258,7 +261,6 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		else
 		{
 			des = get_takeoff_land_des(param.takeoff_land.speed);
-			// std::cout<<"des: "<<des.p[0]<<" "<<des.p[1]<<" "<<des.p[2]<<std::endl;
 		}
 
 		break;
@@ -266,10 +268,11 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	case AUTO_LAND:
 	{
+		std::cout<<"AUTO_LAND"<<std::endl;
 		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
 			state = MANUAL_CTRL;
-			toggle_offboard_mode(false);
+			// toggle_offboard_mode(false);
 
 			ROS_WARN("[px4ctrl] From AUTO_LAND to MANUAL_CTRL(L1)!");
 		}
@@ -304,7 +307,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 					{
 						print_once_flag = true;
 						state = MANUAL_CTRL;
-						toggle_offboard_mode(false); // toggle off offboard after disarm
+						// toggle_offboard_mode(false); // toggle off offboard after disarm
 						ROS_INFO("\033[32m[px4ctrl] AUTO_LAND --> MANUAL_CTRL(L1)\033[32m");
 					}
 
