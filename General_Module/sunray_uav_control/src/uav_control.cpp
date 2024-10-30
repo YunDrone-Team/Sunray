@@ -208,6 +208,9 @@ void UAVControl::mainloop()
             pos_setpoint.type_mask = mavros_msgs::PositionTarget::IGNORE_PX |
                                      mavros_msgs::PositionTarget::IGNORE_PY |
                                      mavros_msgs::PositionTarget::IGNORE_PZ |
+                                     mavros_msgs::PositionTarget::IGNORE_VX |
+                                     mavros_msgs::PositionTarget::IGNORE_VY |
+                                     mavros_msgs::PositionTarget::IGNORE_VZ |
                                      mavros_msgs::PositionTarget::IGNORE_AFX |
                                      mavros_msgs::PositionTarget::IGNORE_AFY |
                                      mavros_msgs::PositionTarget::IGNORE_AFZ |

@@ -113,8 +113,8 @@ int main(int argc, char **argv)
             {
                 cout << "disable)" << TAIL << endl;
             }
-            cout << GREEN << "Please choose the CMD: 1 for Move(XYZ_POS), 2 for Move(XY_VEL_Z_POS), \
-3 for Move(XYZ_VEL), 4 for Move(XYZ_POS_BODY), 5 for Move(XYZ_VEL_BODY), 6 for Move(XY_VEL_Z_POS_BODY)" << TAIL << endl;
+            cout << GREEN << "Choose CMD: 1 (XYZ_POS), 2 (XY_VEL_Z_POS), \
+3 (XYZ_VEL), 4 (XYZ_POS_BODY), 5 (XYZ_VEL_BODY), 6 (XY_VEL_Z_POS_BODY) 7(XYZ_ATT)" << TAIL << endl;
             cin >> CMD;
         }
 
@@ -285,6 +285,35 @@ int main(int argc, char **argv)
             uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             uav_command_pub.publish(uav_cmd);
             cout << "vel_des [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << " pos_des [Z] : " << state_desired[2] << " [ m ] " << endl;
+            cout << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
+            break;
+        case 7:
+            cout << "Move for XYZ_ATT frame, Pls input the desired position and yaw (or yaw rate) angle" << endl;
+            cout << "desired state: --- x [m] " << endl;
+            cin >> state_desired[0];
+            cout << "desired state: --- y [m]" << endl;
+            cin >> state_desired[1];
+            cout << "desired state: --- z [m]" << endl;
+            cin >> state_desired[2];
+            cout << "desired state: --- yaw [deg]:" << endl;
+            cin >> state_desired[3];
+            state_desired[4] = yaw_rate;
+            state_desired[3] = state_desired[3] / 180.0 * M_PI;
+
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_ATT;
+            uav_cmd.desired_pos[0] = state_desired[0];
+            uav_cmd.desired_pos[1] = state_desired[1];
+            uav_cmd.desired_pos[2] = state_desired[2];
+            uav_cmd.desired_vel[0] = 0.0;
+            uav_cmd.desired_vel[1] = 0.0;
+            uav_cmd.desired_vel[2] = 0.0;
+            uav_cmd.desired_yaw = state_desired[3];
+            uav_cmd.desired_yaw_rate = state_desired[3];
+            uav_cmd.enable_yawRate = state_desired[4];
+            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+            uav_command_pub.publish(uav_cmd);
+            cout << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;
             cout << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
             break;
         case 100:

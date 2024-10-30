@@ -60,6 +60,15 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	if(control_cmd.cmd == sunray_msgs::UAVControlCMD::XYZ_ATT)
 	{
+		cmd_data.p[0] = control_cmd.desired_pos[0];
+		cmd_data.p[1] = control_cmd.desired_pos[1];
+		cmd_data.p[2] = control_cmd.desired_pos[2];
+
+		cmd_data.v[0] = control_cmd.desired_vel[0];
+		cmd_data.v[1] = control_cmd.desired_vel[1];
+		cmd_data.v[2] = control_cmd.desired_vel[2];
+
+		cmd_data.rcv_stamp = ros::Time::now();
 		state = CMD_CTRL;
 	}
 
@@ -167,7 +176,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	case AUTO_HOVER:
 	{
 		std::cout<<"AUTO_HOVER"<<std::endl;
-		if (control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover || !odom_is_received(now_time))
+		if (!odom_is_received(now_time))
 		// if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
 			state = MANUAL_CTRL;
@@ -183,6 +192,11 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 				des = get_cmd_des();
 				ROS_INFO("\033[32m[px4ctrl] AUTO_HOVER(L2) --> CMD_CTRL(L3)\033[32m");
 			}
+		}
+		else if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 1)
+		{
+			state = MANUAL_CTRL;
+			ROS_INFO("\033[32m[px4ctrl] AUTO_HOVER(L2) --> MANUAL_CTRL\033[32m");
 		}
 		else if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 2)
 		{
@@ -220,7 +234,8 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 			ROS_WARN("[px4ctrl] From CMD_CTRL(L3) to MANUAL_CTRL(L1)!");
 		}
-		else if (!rc_data.is_command_mode || !cmd_is_received(now_time))
+		// else if (!rc_data.is_command_mode || !cmd_is_received(now_time))
+		else if (control_cmd.cmd != sunray_msgs::UAVControlCMD::XYZ_ATT || !cmd_is_received(now_time))
 		{
 			state = AUTO_HOVER;
 			set_hov_with_odom();
