@@ -5,6 +5,7 @@
 #ifndef __CONTROLLER_H
 #define __CONTROLLER_H
 
+#include <ros/ros.h>
 #include <mavros_msgs/AttitudeTarget.h>
 // #include <quadrotor_msgs/Px4ctrlDebug.h>
 #include <queue>
@@ -53,19 +54,22 @@ struct Controller_Output_t
 class LinearControl
 {
 public:
-  LinearControl(Parameter_t &);
+  LinearControl(Parameter_t &, ros::NodeHandle &);
   void calculateControl(const Desired_State_t &des,
       const Odom_Data_t &odom,
       const Imu_Data_t &imu, 
-      Controller_Output_t &u);
+      Controller_Output_t &u,
+	  ros::Time &now);
   bool estimateThrustModel(const Eigen::Vector3d &est_v,
-      const Parameter_t &param);
+      const Parameter_t &param,
+	  ros::Time &now);
   void resetThrustMapping(void);
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
   Parameter_t param_;
+  ros::NodeHandle nh_;
 //   quadrotor_msgs::Px4ctrlDebug debug_msg_;
   std::queue<std::pair<ros::Time, double>> timed_thrust_;
   static constexpr double kMinNormalizedCollectiveThrust_ = 3.0;
@@ -75,7 +79,7 @@ private:
   double thr2acc_;
   double P_;
 
-  double computeDesiredCollectiveThrustSignal(const Eigen::Vector3d &des_acc);
+  double computeDesiredCollectiveThrustSignal(const Eigen::Vector3d &des_acc, ros::Time &now);
   double fromQuaternion2yaw(Eigen::Quaterniond q);
 };
 
