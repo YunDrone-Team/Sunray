@@ -51,12 +51,12 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		takeoff_land_data.takeoff_land_cmd = 1;
 		std::cout<<"switch to takeoff"<<std::endl;
 	}
-	if(control_cmd.cmd == sunray_msgs::UAVControlCMD::Land && last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Land)
-	{
-		takeoff_land_data.triggered = true;
-		takeoff_land_data.takeoff_land_cmd = 2;
-		std::cout<<"switch to land"<<std::endl;
-	}
+	// if(control_cmd.cmd == sunray_msgs::UAVControlCMD::Land && last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Land)
+	// {
+	// 	takeoff_land_data.triggered = true;
+	// 	takeoff_land_data.takeoff_land_cmd = 2;
+	// 	std::cout<<"switch to land"<<std::endl;
+	// }
 
 	if(control_cmd.cmd == sunray_msgs::UAVControlCMD::XYZ_ATT)
 	{
@@ -67,6 +67,8 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		cmd_data.v[0] = control_cmd.desired_vel[0];
 		cmd_data.v[1] = control_cmd.desired_vel[1];
 		cmd_data.v[2] = control_cmd.desired_vel[2];
+
+		cmd_data.yaw = control_cmd.desired_yaw;
 
 		cmd_data.rcv_stamp = ros::Time::now();
 		state = CMD_CTRL;

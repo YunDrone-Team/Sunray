@@ -615,11 +615,14 @@ void UAVControl::get_desired_state_from_cmd()
 // 从姿态估计中获取期望状态
 void UAVControl::get_desired_state_from_att_estamate()
 {
-    // cout<<"get_desired_state_from_att_estamate!!!"<<endl;
+    if(control_cmd.cmd == sunray_msgs::UAVControlCMD::Land)
+    {
+        control_mode = Control_Mode::LAND_CONTROL;
+        set_landing_des = false;
+        return;
+    }
     Controller_Output_t att_result =  fsm->process(control_cmd, last_control_cmd);
     send_attitude_setpoint(att_result.q, att_result.thrust);
-    // cout<<"att_result.thrust: "<<att_result.thrust<<endl;
-    // cout<<"att_result.q: "<<att_result.q.x()<<" "<<att_result.q.y()<<" "<<att_result.q.z()<<" "<<att_result.q.w()<<endl;
     last_control_cmd = control_cmd;
     last_control_cmd.header.stamp = ros::Time::now();
 }
