@@ -4,7 +4,7 @@
     <arg name="flag_printf" default="true"/>
     <arg name="external_source" default="0"/>
 	<arg name="server" default="192.168.25.12"/>
-	<arg name="enable_rangeSensor" default="false"/>
+	<arg name="enable_rangeSensor" default="true"/>
 
     <!-- 启动 vrpn_client_ros -->
     <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 0)">
