@@ -88,6 +88,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		//std::cout<<"MANUAL_CTRL"<<std::endl;
 		if (param.takeoff_land.enable && takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 1) // Try to jump to AUTO_TAKEOFF
 		{
+			std::cout << "111" << std::endl;
 			if (!odom_is_received(now_time))
 			{
 				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. No odom!");
@@ -141,9 +142,10 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 			ROS_INFO("\033[32m[px4ctrl] MANUAL_CTRL(L1) --> AUTO_TAKEOFF\033[32m");
 		}
-		// else if (rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
-		else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover || rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
+		else if (rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
+		// else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover || rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
 		{
+			// std::cout << "control_cmd()"
 			if (!odom_is_received(now_time))
 			{
 				std::cout  << "MANUAL_CTRL:odom not be received"  << std::endl;
@@ -187,7 +189,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		// if (!odom_is_received(now_time))
 		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
-			std::cout << "MANUAL_CTRL:odom not be received" << std::endl;
+			std::cout << "MANUAL_CTRL:odom not be received(rc_data.is_hover_mode)=" << rc_data.is_hover_mode << "odom_is_received(now_time)=" << odom_is_received(now_time) << std::endl;
 			state = MANUAL_CTRL;
 			// toggle_offboard_mode(false);
 
@@ -270,7 +272,15 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	case AUTO_TAKEOFF:
 	{
 		std::cout<<"AUTO_TAKEOFF"<<std::endl;
-		if ((now_time - takeoff_land.toggle_takeoff_land_time).toSec() < AutoTakeoffLand_t::MOTORS_SPEEDUP_TIME) // Wait for several seconds to warn prople.
+		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
+		{
+			std::cout << "MANUAL_CTRL:odom not be received(rc_data.is_hover_mode)=" << rc_data.is_hover_mode << "odom_is_received(now_time)=" << odom_is_received(now_time) << std::endl;
+			state = MANUAL_CTRL;
+			// toggle_offboard_mode(false);
+
+			ROS_WARN("[px4ctrl] AUTO_HOVER(L2) --> MANUAL_CTRL(L1)");
+		}
+		else if ((now_time - takeoff_land.toggle_takeoff_land_time).toSec() < AutoTakeoffLand_t::MOTORS_SPEEDUP_TIME) // Wait for several seconds to warn prople.
 		{
 			des = get_rotor_speed_up_des(now_time);
 		}

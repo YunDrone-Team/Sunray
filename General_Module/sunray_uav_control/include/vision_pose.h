@@ -551,31 +551,41 @@ void VISION_POSE::mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
 
 void VISION_POSE::vins_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
+    // uav_pose_external.get_time = ros::Time::now(); // 记录时间戳，防止超时
+    // geometry_msgs::Pose pose = msg->pose.pose;
+
+    // // Convert the pose from RFU to FLU coordinate system
+    // tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    // tf::Matrix3x3 m(q);
+    // double roll, pitch, yaw;
+    // m.getRPY(roll, pitch, yaw);
+
+    // // Swap y and z axes to convert from RFU to FLU
+    // double temp = pose.position.y;
+    // pose.position.y = -pose.position.x;
+    // pose.position.x = temp;
+
+    // // Update the orientation accordingly
+    // roll = roll + M_PI/2;
+    // q.setRPY(pitch, -roll, yaw);
+    // pose.orientation.x = q.x();
+    // pose.orientation.y = q.y();
+    // pose.orientation.z = q.z();
+    // pose.orientation.w = q.w();
+
+    // uav_pose_external.pos = Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z);
+    // uav_pose_external.q = pose.orientation;
+    // uav_pose_external.att = Eigen::Vector3d(pitch, -roll, yaw);
+
     uav_pose_external.get_time = ros::Time::now(); // 记录时间戳，防止超时
-    geometry_msgs::Pose pose = msg->pose.pose;
-
-    // Convert the pose from RFU to FLU coordinate system
-    tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-    tf::Matrix3x3 m(q);
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
     double roll, pitch, yaw;
-    m.getRPY(roll, pitch, yaw);
-
-    // Swap y and z axes to convert from RFU to FLU
-    double temp = pose.position.y;
-    pose.position.y = -pose.position.x;
-    pose.position.x = temp;
-
-    // Update the orientation accordingly
-    roll = roll + M_PI/2;
-    q.setRPY(pitch, -roll, yaw);
-    pose.orientation.x = q.x();
-    pose.orientation.y = q.y();
-    pose.orientation.z = q.z();
-    pose.orientation.w = q.w();
-
-    uav_pose_external.pos = Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z);
-    uav_pose_external.q = pose.orientation;
-    uav_pose_external.att = Eigen::Vector3d(pitch, -roll, yaw);
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+    uav_pose_external.pos = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+    uav_pose_external.vel = Eigen::Vector3d(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+    uav_pose_external.att = Eigen::Vector3d(roll, pitch, yaw);
+    uav_pose_external.q = msg->pose.pose.orientation;
 }
 
 void VISION_POSE::t265_cb(const nav_msgs::Odometry::ConstPtr &msg)
@@ -681,7 +691,7 @@ void VISION_POSE::attitude_cb(const sensor_msgs::Imu::ConstPtr &msg)
 void VISION_POSE::range_cb(const sensor_msgs::Range::ConstPtr &msg)
 {
     range_hight = hight_filter->filter(msg->range);
-    std::cout << "height = " << range_hight << std::endl;
+    // std::cout << "height = " << range_hight << std::endl;
 }
 
 #endif
