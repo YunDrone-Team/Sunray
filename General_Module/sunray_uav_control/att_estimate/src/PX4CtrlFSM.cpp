@@ -5,7 +5,6 @@ using namespace std;
 using namespace uav_utils;
 
 
-
 PX4CtrlFSM::PX4CtrlFSM(Parameter_t &param_, LinearControl &controller_) : param(param_), controller(controller_) /*, thrust_curve(thrust_curve_)*/
 {
 	state = MANUAL_CTRL;
@@ -78,12 +77,13 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	{
 	case MANUAL_CTRL:
 	{
-		std::cout<<"MANUAL_CTRL"<<std::endl;
+		//std::cout<<"MANUAL_CTRL"<<std::endl;
 		// if (rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
-		if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover) // Try to jump to AUTO_HOVER
+		if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover || rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
 		{
 			if (!odom_is_received(now_time))
 			{
+				std::cout  << "MANUAL_CTRL:odom not be received"  << std::endl;
 				ROS_ERROR("[px4ctrl] Reject AUTO_HOVER(L2). No odom!");
 				break;
 			}
@@ -145,6 +145,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 				}
 			}
 			state = AUTO_TAKEOFF;
+			std::cout<<"AUTO_TAKEOFF"<<std::endl;
 			controller.resetThrustMapping();
 			set_start_pose_for_takeoff_land(odom_data);
 			// toggle_offboard_mode(true);				  // toggle on offboard before arm
@@ -178,15 +179,17 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	case AUTO_HOVER:
 	{
 		std::cout<<"AUTO_HOVER"<<std::endl;
-		if (!odom_is_received(now_time))
-		// if (!rc_data.is_hover_mode || !odom_is_received(now_time))
+		// if (!odom_is_received(now_time))
+		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
+			std::cout << "MANUAL_CTRL:odom not be received" << std::endl;
 			state = MANUAL_CTRL;
 			// toggle_offboard_mode(false);
 
 			ROS_WARN("[px4ctrl] AUTO_HOVER(L2) --> MANUAL_CTRL(L1)");
 		}
 		else if (rc_data.is_command_mode && cmd_is_received(now_time))
+		// else if (cmd_is_received(now_time))
 		{
 			if (state_data.current_state.mode == "OFFBOARD")
 			{
@@ -556,6 +559,7 @@ bool PX4CtrlFSM::cmd_is_received(const ros::Time &now_time)
 
 bool PX4CtrlFSM::odom_is_received(const ros::Time &now_time)
 {
+	
 	return (now_time - odom_data.rcv_stamp).toSec() < param.msg_timeout.odom;
 }
 

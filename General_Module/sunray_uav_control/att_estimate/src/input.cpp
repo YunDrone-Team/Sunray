@@ -126,9 +126,10 @@ Odom_Data_t::Odom_Data_t()
 void Odom_Data_t::feed(nav_msgs::OdometryConstPtr pMsg)
 {
     ros::Time now = ros::Time::now();
-
+    
     msg = *pMsg;
     rcv_stamp = now;
+    //std::cout<<rcv_stamp<<std::endl;
     
     recv_new_msg = true;
 
