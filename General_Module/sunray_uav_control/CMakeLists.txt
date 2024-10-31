@@ -87,6 +87,15 @@ add_executable(show_detail_node utils/show_detail.cpp)
 add_dependencies(show_detail_node sunray_control_gencpp)
 target_link_libraries(show_detail_node ${catkin_LIBRARIES})
 
+add_executable(uav_search_strategy_indoor 
+  uav_control/uav_search_strategy_indoor.cpp
+  uav_control/uav_pid.h
+  uav_control/uav_search_strategy.h
+)
+add_dependencies(uav_search_strategy_indoor sunray_control_gencpp)
+target_link_libraries(uav_search_strategy_indoor ${catkin_LIBRARIES})
+
+
 
 add_executable(joy_node utils/joy_node.cpp)
 target_link_libraries(joy_node ${catkin_LIBRARIES})

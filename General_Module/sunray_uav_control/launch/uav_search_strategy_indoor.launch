@@ -1,0 +1,109 @@
+<launch>
+    <arg name="uav_id" default="1"/>
+    <arg name="uav_name" default="uestc"/>
+
+    <arg name="vision_source" default="VO"/>
+    <!-- 起飞高度 -->
+    <arg name="Takeoff_height" default="0.5"/> 
+    <!-- 横向搜索高度 -->
+    <arg name="State1_height" default="0.5"/>
+    <!-- 寻找靶标搜索高度 -->
+    <arg name="State2_height" default="1.5"/>
+    <!-- 起飞的最大高度 -->
+    <arg name="height_up" default="2.5"/>
+
+    <!-- 整个场地的宽度 -->
+    <arg name="total_width" default = "10"/>
+
+    <!-- 栅格的宽度 m -->
+    <arg name="square_width" default = "7.5"/>
+    <!-- 栅格的高度 m -->
+    <arg name="square_height" default="20.0"/>
+    <!-- 横向搜索的步长 m -->
+    <arg name="step" default="6"/>
+    <!-- 纵向搜索的步长 m -->
+    <arg name="height_step" default="6"/>
+    <!-- 由于前视相机视野有限，在横向搜索时，需要向后退一个步长 m -->
+    <arg name="back_step" default="0.2"/>
+    <!-- 无人机分组 -->
+    <arg name="uav_group" default="2"/> 
+
+    <arg name="external_source" default="2"/>  
+    <!-- 控制模式 true:速度控制， false：位置控制 -->
+    <arg name="velocity_ctrl_mode" default="true"/> 
+     <!--使用高度雷达  -->
+    <arg name="enable_hight_lidar" default="true" />
+    <!-- 搜索策略 -->
+    <arg name="search_strategy" default="v_search" />
+    
+    <!-- 无人机前往搜索区域时，飞行的纵向步长 -->
+    <arg name="service_height" default="5" />
+
+    <!-- 
+    vins  7
+    mocap 0
+    gazebo 2    
+     -->
+
+    <!-- 是否使用外部姿态 -->
+    <arg name="use_external_attitude" default="false" />
+    
+
+    <!-- 电子围栏 -->
+    <arg name="x_min" default="-1" />
+    <arg name="x_max" default="$(eval square_height + 1)" />
+    <arg name="y_min" default="$-(eval square_width + 1)" />
+    <arg name="y_max" default="1" />
+    <arg name="z_min" default="-0.1" />
+    <arg name="z_max" default="$(eval height_up)" />
+
+    
+    <group ns="$(arg uav_name)$(arg uav_id)">
+        <node pkg="sunray_uav_control" type="uav_search_strategy_indoor" name="uav_search_strategy_indoor" output="screen">
+        <param name="uav_id" value="$(arg uav_id)"/>
+        <param name="uav_name" value="$(arg uav_name)"/>
+
+        <param name="use_external_attitude" value="$(arg use_external_attitude)"/>
+        
+
+        <param name="Takeoff_height" value="$(arg Takeoff_height)" />
+        <param name="State1_height" value="$(arg State1_height)" />
+        <param name="State2_height" value="$(arg State2_height)" />
+
+        
+        <param name="total_width" value="$(arg total_width)" />
+
+        <param name="service_height" value="$(arg service_height)" />
+
+        <param name="square_width" value="$(arg square_width)" />
+        <param name="square_height" value="$(arg square_height)" />
+
+        <param name="height_step" value="$(arg height_step)" />
+        <param name="step" value="$(arg step)" />
+        <param name="back_step" value="$(arg back_step)" />
+
+        <param name="uav_group" value="$(arg uav_group)" />
+
+        <param name="external_source" value="$(arg external_source)" />
+
+        <param name="velocity_ctrl_mode" value="$(arg velocity_ctrl_mode)" />
+
+        <param name="enable_hight_lidar" value="$(arg enable_hight_lidar)" />
+
+        <param name="height_up" value="$(arg height_up)" />
+
+        <param name="search_strategy" value="$(arg search_strategy)" />
+
+        <param name="vision_source" value="$(arg vision_source)" />
+        
+
+        <param name="x_min" value="$(arg x_min)" />
+		<param name="x_max" value="$(arg x_max)" />
+		<param name="y_min" value="$(arg y_min)" />
+		<param name="y_max" value="$(arg y_max)" />
+		<param name="z_min" value="$(arg z_min)" />
+		<param name="z_max" value="$(arg z_max)" />
+
+        </node>
+    </group>
+</launch>

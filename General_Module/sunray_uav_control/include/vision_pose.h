@@ -681,6 +681,7 @@ void VISION_POSE::attitude_cb(const sensor_msgs::Imu::ConstPtr &msg)
 void VISION_POSE::range_cb(const sensor_msgs::Range::ConstPtr &msg)
 {
     range_hight = hight_filter->filter(msg->range);
+    std::cout << "height = " << range_hight << std::endl;
 }
 
 #endif

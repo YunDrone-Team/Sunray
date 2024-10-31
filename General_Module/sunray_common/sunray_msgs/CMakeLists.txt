@@ -49,6 +49,16 @@ add_message_files(
   TargetsInFrameMsg.msg
 )
 
+add_message_files(
+  DIRECTORY msg
+  FILES
+  targetBoxes.msg
+  front_detect.msg
+  targetPos.msg
+  detection.msg
+)
+
+
 add_service_files(
   DIRECTORY srv
   FILES

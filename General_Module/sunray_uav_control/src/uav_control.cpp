@@ -135,7 +135,7 @@ void UAVControl::init(ros::NodeHandle &nh)
 
         // std::cout<<"subscribe to /uav1/sunray/gazebo_pose"<<std::endl;
         odom_sub =
-            nh.subscribe<nav_msgs::Odometry>("/uav1/sunray/gazebo_pose",
+            nh.subscribe<nav_msgs::Odometry>("/vins_estimator/imu_propagate",
                                              100,
                                              boost::bind(&Odom_Data_t::feed, &fsm->odom_data, _1),
                                              ros::VoidConstPtr(),
