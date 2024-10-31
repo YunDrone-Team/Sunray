@@ -35,8 +35,8 @@ void RC_Data_t::feed(mavros_msgs::RCInConstPtr pMsg)
             ch[i] = 0.0;
     }
 
-    mode = ((double)msg.channels[4] - 1000.0) / 1000.0;
-    gear = ((double)msg.channels[5] - 1000.0) / 1000.0;
+    mode = ((double)msg.channels[8] - 1000.0) / 1000.0;
+    gear = ((double)msg.channels[9] - 1000.0) / 1000.0;
     reboot_cmd = ((double)msg.channels[7] - 1000.0) / 1000.0;
 
     check_validity();

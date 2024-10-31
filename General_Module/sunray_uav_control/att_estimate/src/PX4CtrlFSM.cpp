@@ -72,14 +72,77 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 		cmd_data.rcv_stamp = ros::Time::now();
 		state = CMD_CTRL;
 	}
+	// if(rc_data.is_hover_mode)
+	// {
+	// 	std::cout<<"rc_data.is_hover_mode"<<std::endl;
+	// }
+	// if(rc_data.is_command_mode)
+	// {
+	// 	std::cout<<"rc_data.is_command_mode"<<std::endl;
+	// }
 
     switch (state)
 	{
 	case MANUAL_CTRL:
 	{
 		//std::cout<<"MANUAL_CTRL"<<std::endl;
-		// if (rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
-		if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover || rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
+		if (param.takeoff_land.enable && takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 1) // Try to jump to AUTO_TAKEOFF
+		{
+			if (!odom_is_received(now_time))
+			{
+				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. No odom!");
+				break;
+			}
+			if (cmd_is_received(now_time))
+			{
+				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. You are sending commands before toggling into AUTO_TAKEOFF, which is not allowed. Stop sending commands now!");
+				break;
+			}
+			if (odom_data.v.norm() > 0.1)
+			{
+				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. Odom_Vel=%fm/s, non-static takeoff is not allowed!", odom_data.v.norm());
+				break;
+			}
+			// if (!get_landed())
+			// {
+			// 	ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. land detector says that the drone is not landed now!");
+			// 	break;
+			// }
+			if (rc_is_received(now_time)) // Check this only if RC is connected.
+			{
+				if (!rc_data.is_hover_mode || !rc_data.is_command_mode || !rc_data.check_centered())
+				{
+					ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. If you have your RC connected, keep its switches at \"auto hover\" and \"command control\" states, and all sticks at the center, then takeoff again.");
+					while (ros::ok())
+					{
+						ros::Duration(0.01).sleep();
+						ros::spinOnce();
+						if (rc_data.is_hover_mode && rc_data.is_command_mode && rc_data.check_centered())
+						{
+							ROS_INFO("\033[32m[px4ctrl] OK, you can takeoff again.\033[32m");
+							break;
+						}
+					}
+					break;
+				}
+			}
+			state = AUTO_TAKEOFF;
+			takeoff_land_data.triggered = false;
+			std::cout<<"AUTO_TAKEOFF"<<std::endl;
+			controller.resetThrustMapping();
+			set_start_pose_for_takeoff_land(odom_data);
+			// toggle_offboard_mode(true);				  // toggle on offboard before arm
+			for (int i = 0; i < 10 && ros::ok(); ++i) // wait for 0.1 seconds to allow mode change by FMU // mark
+			{
+				ros::Duration(0.01).sleep();
+				ros::spinOnce();
+			}
+			takeoff_land.toggle_takeoff_land_time = now_time;
+
+			ROS_INFO("\033[32m[px4ctrl] MANUAL_CTRL(L1) --> AUTO_TAKEOFF\033[32m");
+		}
+		// else if (rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
+		else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Hover || rc_data.enter_hover_mode) // Try to jump to AUTO_HOVER
 		{
 			if (!odom_is_received(now_time))
 			{
@@ -104,64 +167,6 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 			ROS_INFO("\033[32m[px4ctrl] MANUAL_CTRL(L1) --> AUTO_HOVER(L2)\033[32m");
 		}
-		else if (param.takeoff_land.enable && takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == 1) // Try to jump to AUTO_TAKEOFF
-		{
-			if (!odom_is_received(now_time))
-			{
-				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. No odom!");
-				break;
-			}
-			if (cmd_is_received(now_time))
-			{
-				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. You are sending commands before toggling into AUTO_TAKEOFF, which is not allowed. Stop sending commands now!");
-				break;
-			}
-			if (odom_data.v.norm() > 0.1)
-			{
-				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. Odom_Vel=%fm/s, non-static takeoff is not allowed!", odom_data.v.norm());
-				break;
-			}
-			if (!get_landed())
-			{
-				ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. land detector says that the drone is not landed now!");
-				break;
-			}
-			if (rc_is_received(now_time)) // Check this only if RC is connected.
-			{
-				if (!rc_data.is_hover_mode || !rc_data.is_command_mode || !rc_data.check_centered())
-				{
-					ROS_ERROR("[px4ctrl] Reject AUTO_TAKEOFF. If you have your RC connected, keep its switches at \"auto hover\" and \"command control\" states, and all sticks at the center, then takeoff again.");
-					while (ros::ok())
-					{
-						ros::Duration(0.01).sleep();
-						ros::spinOnce();
-						if (rc_data.is_hover_mode && rc_data.is_command_mode && rc_data.check_centered())
-						{
-							ROS_INFO("\033[32m[px4ctrl] OK, you can takeoff again.\033[32m");
-							break;
-						}
-					}
-					break;
-				}
-			}
-			state = AUTO_TAKEOFF;
-			std::cout<<"AUTO_TAKEOFF"<<std::endl;
-			controller.resetThrustMapping();
-			set_start_pose_for_takeoff_land(odom_data);
-			// toggle_offboard_mode(true);				  // toggle on offboard before arm
-			for (int i = 0; i < 10 && ros::ok(); ++i) // wait for 0.1 seconds to allow mode change by FMU // mark
-			{
-				ros::Duration(0.01).sleep();
-				ros::spinOnce();
-			}
-			if (param.takeoff_land.enable_auto_arm)
-			{
-				toggle_arm_disarm(true);
-			}
-			takeoff_land.toggle_takeoff_land_time = now_time;
-
-			ROS_INFO("\033[32m[px4ctrl] MANUAL_CTRL(L1) --> AUTO_TAKEOFF\033[32m");
-		}
 
 		if (rc_data.toggle_reboot) // Try to reboot. EKF2 based PX4 FCU requires reboot when its state estimator goes wrong.
 		{
@@ -178,7 +183,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	case AUTO_HOVER:
 	{
-		std::cout<<"AUTO_HOVER"<<std::endl;
+		// std::cout<<"AUTO_HOVER"<<std::endl;
 		// if (!odom_is_received(now_time))
 		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
@@ -231,7 +236,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 	case CMD_CTRL:
 	{
-		std::cout<<"CMD_CTRL"<<std::endl;
+		// std::cout<<"CMD_CTRL"<<std::endl;
 		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
 		{
 			state = MANUAL_CTRL;
@@ -285,60 +290,7 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 
 		break;
 	}
-
-	case AUTO_LAND:
-	{
-		std::cout<<"AUTO_LAND"<<std::endl;
-		if (!rc_data.is_hover_mode || !odom_is_received(now_time))
-		{
-			state = MANUAL_CTRL;
-			// toggle_offboard_mode(false);
-
-			ROS_WARN("[px4ctrl] From AUTO_LAND to MANUAL_CTRL(L1)!");
-		}
-		else if (!rc_data.is_command_mode)
-		{
-			state = AUTO_HOVER;
-			set_hov_with_odom();
-			des = get_hover_des();
-			ROS_INFO("[px4ctrl] From AUTO_LAND to AUTO_HOVER(L2)!");
-		}
-		else if (!get_landed())
-		{
-			des = get_takeoff_land_des(-param.takeoff_land.speed);
-		}
-		else
-		{
-			rotor_low_speed_during_land = true;
-
-			static bool print_once_flag = true;
-			if (print_once_flag)
-			{
-				ROS_INFO("\033[32m[px4ctrl] Wait for abount 10s to let the drone arm.\033[32m");
-				print_once_flag = false;
-			}
-
-			if (extended_state_data.current_extended_state.landed_state == mavros_msgs::ExtendedState::LANDED_STATE_ON_GROUND) // PX4 allows disarm after this
-			{
-				static double last_trial_time = 0; // Avoid too frequent calls
-				if (now_time.toSec() - last_trial_time > 1.0)
-				{
-					if (toggle_arm_disarm(false)) // disarm
-					{
-						print_once_flag = true;
-						state = MANUAL_CTRL;
-						// toggle_offboard_mode(false); // toggle off offboard after disarm
-						ROS_INFO("\033[32m[px4ctrl] AUTO_LAND --> MANUAL_CTRL(L1)\033[32m");
-					}
-
-					last_trial_time = now_time.toSec();
-				}
-			}
-		}
-
-		break;
-	}
-
+	
 	default:
 		break;
 	}
@@ -383,7 +335,6 @@ Controller_Output_t PX4CtrlFSM::process(sunray_msgs::UAVControlCMD &control_cmd,
 	rc_data.enter_hover_mode = false;
 	rc_data.enter_command_mode = false;
 	rc_data.toggle_reboot = false;
-	takeoff_land_data.triggered = false;
 	return u;
 }
 
