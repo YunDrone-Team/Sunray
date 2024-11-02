@@ -6,25 +6,32 @@
 #include "utils.hpp"
 
 using namespace std;
-
+//当前无人机的位姿
 geometry_msgs::PoseStamped current_pose;
+//存储发送给控制模块的指令
 sunray_msgs::UAVControlCMD uav_cmd;
+//目标位位姿
 geometry_msgs::PoseStamped target_pose;
+//无人机设置指令
 sunray_msgs::UAVSetup setup;
-
+//目标yaw
 float target_yaw;
+//停止标志
 bool stop_flag{false};
 
 // 全局变量存储无人机和车的坐标和朝向
 double uav_x, uav_y, uav_z, uav_yaw, x_rel, y_rel, z_rel, yaw_rel;
+//可能表示是否收到当前位置信息和目标检测信息的标志位。
 bool sub_flag{false};
 bool tag_flag{false};
 
+//无人机的速度和朝向
 double x_vel = 0.0;
 double y_vel = 0.0;
 double z_vel = 0.0;
 double yaw = 0.0;
 
+//移动平均滤波器，用于平滑目标物相对位置和朝向的变化。
 MovingAverageFilter x_filter(5);
 MovingAverageFilter y_filter(5);
 MovingAverageFilter z_filter(5);
@@ -32,11 +39,21 @@ MovingAverageFilter yaw_filter(5);
 
 ros::Time last_time{0};
 
+/*
+stop_tutorial_cb: 
+监听 /sunray/stop_tutorial 话题，用于接收任务结束的指令，
+一旦接收到消息，stop_flag 被设置为 true。
+*/
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
 }
 
+/*
+pose_cb: 
+监听 /mavros/local_position/pose 话题，
+用于更新当前无人机的位置和朝向信息，将其存储到全局变量中
+*/
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     sub_flag = true;
@@ -48,6 +65,10 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 }
 
 // 回调函数，用于获取目标二的位置和朝向
+/*
+tagCallback: 监听目标检测消息 /sunray_detect/qrcode_detection_ros，
+用于获取目标的相对位置和朝向，并对其进行滤波处理。如果有目标检测到，会更新相对位置信息。
+*/
 void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
 {
     
@@ -80,7 +101,7 @@ int main(int argc, char **argv)
     nh.param<string>("uav_name", uav_name, "uav");
     // 【参数】目标话题名称
     nh.param<string>("target_tpoic_name", target_tpoic_name, "/vrpn_client_node/target/pose");
-
+    //PID控制P参数和速度参数的限制
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
@@ -147,13 +168,13 @@ int main(int argc, char **argv)
 
     geometry_msgs::PoseStamped pose;
 
-    while (!sub_flag)
+    while (!sub_flag && ros::ok())
     {
         cout << "waiting for pose" << endl;
         ros::spinOnce();
         ros::Duration(1).sleep();
     }
-    while (!tag_flag)
+    while (!tag_flag && ros::ok())
     {
         cout << "waiting for tag" << endl;
         ros::spinOnce();

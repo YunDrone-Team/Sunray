@@ -4,6 +4,18 @@
 
 using namespace  std;
 
+/*
+这些变量存储无人机的状态、目标位置、控制命令等信息：
+current_pose：当前无人机的位置。
+uav_state：无人机的状态信息。
+uav_cmd：无人机的控制指令。
+uav_control_state：无人机的控制状态。
+target_pose：目标位置。
+setup：无人机的设置指令。
+target_yaw：目标航向角。
+stop_flag：控制任务停止的标志
+*/
+
 geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
@@ -14,14 +26,19 @@ sunray_msgs::UAVSetup setup;
 float target_yaw;
 bool stop_flag{false};
 
+//uav_state_cb：更新无人机状态的回调函数。
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
 }
+
+//uav_control_state_cb：更新无人机控制状态的回调函数。
 void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
 {
     uav_control_state = *msg;
 }
+
+//target_pos_cb：更新目标位置并提取目标航向角
 void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     target_pose = *msg;
@@ -31,11 +48,13 @@ void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
     target_yaw = yaw;
 }
+//stop_tutorial_cb：设置 stop_flag 为 true，表示需要停止当前任务。
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
 }
 
+//pose_cb：更新当前无人机的位置。
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
     current_pose = *msg;
 }
@@ -46,7 +65,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
-
+    //获取 ROS 参数，设置默认值。如果没有在参数服务器上找到这些参数，会使用默认值。
     int uav_id;
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
@@ -69,7 +88,9 @@ int main(int argc, char **argv)
     if(sim_mode){
         ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/sunray/gazebo_pose", 1, target_pos_cb);
     }
-    else{
+    //动作捕捉
+    else
+    {
         ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/" + uav_name + "/pose", 1, target_pos_cb);
     }
     // 【订阅】任务结束
@@ -150,5 +171,7 @@ int main(int argc, char **argv)
     cout<<"land"<<endl;
     uav_cmd.cmd = 3;
     control_cmd_pub.publish(uav_cmd);
+    //关键
+    ros::Duration(0.5).sleep();
 
 }
