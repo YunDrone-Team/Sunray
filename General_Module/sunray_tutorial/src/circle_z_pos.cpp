@@ -4,6 +4,13 @@
 
 using namespace  std;
 
+/*
+current_pose：存储无人机的当前位置。
+uav_state：存储无人机的当前状态。
+uav_cmd：包含要发送给无人机的控制命令。
+target_pose：存储无人机要到达的目标位置。
+stop_flag：一个布尔标志，用于指示何时停止无人机的操作。
+*/
 geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
@@ -13,15 +20,17 @@ sunray_msgs::UAVSetup setup;
 
 float target_yaw;
 bool stop_flag{false};
-
+//更新uav_state，接收无人机状态消息。
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
 }
+//更新uav_control_state，接收控制状态消息。
 void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
 {
     uav_control_state = *msg;
 }
+//target_pos_cb：更新target_pose，接收目标位置，并根据方向四元数计算目标偏航角。
 void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     target_pose = *msg;
@@ -31,11 +40,13 @@ void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
     target_yaw = yaw;
 }
+//stop_tutorial_cb：接收到停止命令时，将stop_flag设置为真。
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
 }
 
+//pose_cb：从MAVROS主题更新current_pose，获取无人机的当前位置。
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
     current_pose = *msg;
 }
@@ -265,5 +276,7 @@ int main(int argc, char **argv)
     uav_cmd.cmd = 3;
     uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
     control_cmd_pub.publish(uav_cmd);
+    //关键
+    ros::Duration(0.5).sleep();
 
 }

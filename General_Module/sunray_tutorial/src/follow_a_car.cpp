@@ -207,6 +207,8 @@ int main(int argc, char **argv)
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
+            //关键
+            ros::Duration(0.5).sleep();
             break;
         }
         if((ros::Time::now() - last_time).toSec() > 1)

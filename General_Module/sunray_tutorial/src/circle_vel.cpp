@@ -4,6 +4,19 @@
 
 using namespace  std;
 
+
+/*
+这些变量存储无人机的状态、目标位置、控制命令等信息：
+current_pose：当前无人机的位置。
+uav_state：无人机的状态信息。
+uav_cmd：无人机的控制指令。
+uav_control_state：无人机的控制状态。
+target_pose：目标位置。
+setup：无人机的设置指令。
+target_yaw：目标航向角。
+stop_flag：控制任务停止的标志
+*/
+
 geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
@@ -13,15 +26,17 @@ sunray_msgs::UAVSetup setup;
 
 float target_yaw;
 bool stop_flag{false};
-
+// 处理无人机状态消息的回调，更新 uav_state
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
 }
+//uav_control_state_cb: 处理无人机控制状态的回调。
 void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
 {
     uav_control_state = *msg;
 }
+//处理目标位置的回调，计算目标航向角。
 void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     target_pose = *msg;
@@ -31,11 +46,12 @@ void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
     target_yaw = yaw;
 }
+//处理停止指令的回调。
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
 }
-
+//更新当前无人机位置的回调。
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
     current_pose = *msg;
 }
@@ -43,13 +59,25 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "circle_vel");
+    //创建一个节点句柄，允许访问参数服务器。
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
+    //声明变量，用于无人机 ID、名称、目标话题名、模拟模式和打印标志。
+
 
     int uav_id;
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
+
+    /*
+    nh.param<Type>(param_name, variable, default_value);
+    Type: 参数的类型（如string, int, double, bool等）。
+    param_name: 在参数服务器上查找的参数名。
+    variable: 如果在参数服务器上找到该参数，值会赋给该变量。
+    default_value: 如果参数服务器上没有该参数，使用此默认值。
+    */
+
     nh.param<bool>("sim_mode", sim_mode, true);
     nh.param<bool>("flag_printf", flag_printf, true);
     // 【参数】无人机编号
@@ -59,6 +87,7 @@ int main(int argc, char **argv)
     // 【参数】目标话题名称
     nh.param<string>("target_tpoic_name", target_tpoic_name, "/vrpn_client_node/target/pose");
 
+    //无人机名和话题前缀
     uav_name = uav_name + std::to_string(uav_id);
     string topic_prefix = "/" + uav_name;
     // 【订阅】无人机状态 -- from vision_pose
@@ -74,13 +103,15 @@ int main(int argc, char **argv)
     }
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
-    
+    ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
+    //发布话题
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
+    
+    
 
-    ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
     uav_cmd.cmd_id = 0;
@@ -263,5 +294,7 @@ int main(int argc, char **argv)
     uav_cmd.cmd = 3;
     uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
     control_cmd_pub.publish(uav_cmd);
+    //关键
+    ros::Duration(0.5).sleep();
 
 }
