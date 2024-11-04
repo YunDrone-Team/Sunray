@@ -208,11 +208,14 @@ int main(int argc, char **argv)
             control_cmd_pub.publish(uav_cmd);
 
             
-            if (fabs(current_pose.pose.position.x - std::get<0>(vertex)) < 0.2 &&
-                fabs(current_pose.pose.position.y - std::get<1>(vertex)) < 0.2 &&
-                fabs(current_pose.pose.position.z - std::get<2>(vertex)) < 0.2) {
-                break;
-            }
+            if (fabs(current_pose.pose.position.x - std::get<0>(vertex)) < 0.15 &&
+                fabs(current_pose.pose.position.y - std::get<1>(vertex)) < 0.15 &&
+                fabs(current_pose.pose.position.z - std::get<2>(vertex)) < 0.15) 
+                {
+                    // 停下1秒等待无人机速度降下来
+                    ros::Duration(1.0).sleep();
+                    break;
+                }
 
             ros::spinOnce();
             rate.sleep();
