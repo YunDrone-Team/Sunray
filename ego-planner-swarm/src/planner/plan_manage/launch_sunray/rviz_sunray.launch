@@ -1,3 +1,0 @@
-<launch>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ego_planner)/launch_sunray/sunray_swarm.rviz" required="true" />
-</launch>
