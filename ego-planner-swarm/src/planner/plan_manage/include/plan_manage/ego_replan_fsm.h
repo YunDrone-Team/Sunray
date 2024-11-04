@@ -44,8 +44,8 @@ namespace ego_planner
     {
       MANUAL_TARGET = 1,
       PRESET_TARGET = 2,
-      REFENCE_PATH = 3
-      CMD_TARGET = 4,
+      REFENCE_PATH = 3,
+      CMD_TARGET = 4
     };
 
     /* planning utils */
@@ -63,7 +63,6 @@ namespace ego_planner
     double emergency_time_;
     bool flag_realworld_experiment_;
     bool enable_fail_safe_;
-    double waypoint_hight_;
 
     /* planning data */
     bool have_trigger_, have_target_, have_odom_, have_new_target_, have_recv_pre_agent_;
