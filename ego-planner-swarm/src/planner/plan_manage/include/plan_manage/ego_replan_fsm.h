@@ -45,6 +45,7 @@ namespace ego_planner
       MANUAL_TARGET = 1,
       PRESET_TARGET = 2,
       REFENCE_PATH = 3
+      CMD_TARGET = 4,
     };
 
     /* planning utils */
