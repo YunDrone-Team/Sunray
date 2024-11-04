@@ -53,10 +53,18 @@ void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
     {
         tag_flag = true;
         last_time = ros::Time::now();
+        // 相机正装
         x_rel = x_filter.filter(msg->targets[0].px);
         y_rel = y_filter.filter(-msg->targets[0].py);
         z_rel = z_filter.filter(msg->targets[0].pz);
         yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
+        // // 相机反装（180旋转）
+        // x_rel = x_filter.filter(-msg->targets[0].px);
+        // y_rel = y_filter.filter(msg->targets[0].py);
+        // z_rel = z_filter.filter(msg->targets[0].pz);
+        // // 机体系相对旋转都是一样的
+        // yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
+
         cout<<"--------"<<endl;
         cout<<"x_rel: "<<msg->targets[0].px<<" y_rel: "<<-msg->targets[0].py<<" z_rel: "<<msg->targets[0].pz<<", yaw_rel: "<<-msg->targets[0].yaw<<endl;
         cout<<"x_fil: "<<x_rel<<" y_fil: "<<y_rel<<" z_fil: "<<z_rel<<" yaw_fil: "<<yaw_rel<<endl;

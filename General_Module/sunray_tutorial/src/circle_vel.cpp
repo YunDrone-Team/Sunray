@@ -236,8 +236,8 @@ int main(int argc, char **argv)
             control_cmd_pub.publish(uav_cmd);
 
             // Check if the drone has reached the target point
-            if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.2 &&
-                fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.2 ) {
+            if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.15 &&
+                fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.15 ) {
                 break;
             }
 
@@ -247,6 +247,7 @@ int main(int argc, char **argv)
         
     }
 
+    // 回到原点
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
     pose.pose.position.z = hight;
