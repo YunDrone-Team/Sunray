@@ -96,7 +96,7 @@
     </node>
 
     <!-- ego-planenr-swarm -->
-    <include file="$(find ego_planner)/launch_sunray/run_in_swarm.launch">
+    <include file="$(find sunray_planner_utils)/launch/run_in_single.launch">
         <arg name="drone_id" value="1"/>
 
         <arg name="init_x" value="-20.0"/>
@@ -116,7 +116,7 @@
         <arg name="goal_name_" value="$(arg goal_tipic_1)"/>
     </include>
 
-    <include file="$(find ego_planner)/launch_sunray/run_in_swarm.launch">
+    <include file="$(find sunray_planner_utils)/launch/run_in_single.launch">
         <arg name="drone_id" value="2"/>
 
         <arg name="init_x" value="-20.0"/>
@@ -136,7 +136,7 @@
         <arg name="goal_name_" value="$(arg goal_tipic_2)"/>
     </include>
 
-    <include file="$(find ego_planner)/launch_sunray/run_in_swarm.launch">
+    <include file="$(find sunray_planner_utils)/launch/run_in_single.launch">
         <arg name="drone_id" value="3"/>
 
         <arg name="init_x" value="-20.0"/>
