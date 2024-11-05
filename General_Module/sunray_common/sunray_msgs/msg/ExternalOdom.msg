@@ -13,6 +13,7 @@ uint8 UWB = 6
 uint8 VINS = 7
 uint8 OPTICAL_FLOW = 8
 uint8 T265 = 9
+uint8 ODOM = 10
 
 ## 里程计状态
 bool odom_valid                     ## 里程计是否有效

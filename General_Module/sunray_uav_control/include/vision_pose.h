@@ -20,6 +20,7 @@ using namespace std;
 #define GPS_TIMEOUT 1.0
 #define VINS_TIMEOUT 0.35
 #define VIOBOT_TIMEOUT 0.35
+#define ODOM_TIMEOUT 0.35
 
 class VISION_POSE
 {
@@ -79,6 +80,8 @@ class VISION_POSE
         ros::Subscriber viobot_sub;                 // 通过VIOBOT获取定位信息
         ros::Subscriber gazebo_sub;                 // gazebo仿真
         ros::Subscriber t265_sub;                   // t265
+        ros::Subscriber odometry_sub;               //odometry_sub   ODOM
+
         ros::Subscriber vins_sub;                   // 通过VINS算法获取定位信息
         ros::Subscriber range_sub;                   // 激光定高
         ros::Subscriber px4_position_sub;           // 从PX4订阅的本地位置信息
@@ -103,6 +106,9 @@ class VISION_POSE
         void mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
         void gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void viobot_cb(const nav_msgs::Odometry::ConstPtr &msg);
+
+        void odometry_cb(const nav_msgs::Odometry::ConstPtr &msg);
+
         void vins_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void t265_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void range_cb(const sensor_msgs::Range::ConstPtr &msg);
@@ -173,6 +179,14 @@ void VISION_POSE::init(ros::NodeHandle& nh)
         // 【订阅】T265
         t265_sub = nh.subscribe<nav_msgs::Odometry>("/camera/odom/sample", 1, &VISION_POSE::t265_cb, this);
     }
+   
+    else if (external_source == sunray_msgs::ExternalOdom::ODOM)
+    {
+    // 【订阅】odometry数据
+        odometry_sub = nh.subscribe<nav_msgs::Odometry>("/Odometry", 1, &VISION_POSE::odometry_cb, this);
+    }
+    
+
     else
     {
         cout << RED << node_name << ": wrong external_source param, no external location information input!" << TAIL << endl;
@@ -465,6 +479,9 @@ void VISION_POSE::printf_debug_info()
     case sunray_msgs::ExternalOdom::VINS:
         cout << GREEN << "External Odom: [ VINS ] ";
         break;
+    case sunray_msgs::ExternalOdom::ODOM:
+        cout << GREEN << "External Odom: [ ODOM ] ";
+        break;
     }
 
     if (uav_state.odom_valid)
@@ -526,6 +543,13 @@ bool VISION_POSE::check_timeout()
     {
         if((ros::Time::now() - uav_pose_external.get_time).toSec()>GAZEBO_TIMEOUT){
             cout << RED << "Odom Timeut: [ GAZEBO ] " << TAIL << endl;
+            return false;
+        }
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::ODOM)
+    {
+        if((ros::Time::now() - uav_pose_external.get_time).toSec()>ODOM_TIMEOUT){
+            cout << RED << "Odom Timeut: [ ODOM ] " << TAIL << endl;
             return false;
         }
     }
@@ -603,6 +627,35 @@ void VISION_POSE::gazebo_cb(const nav_msgs::Odometry::ConstPtr &msg)
     uav_pose_external.att = Eigen::Vector3d(roll, pitch, yaw);
     uav_pose_external.q = msg->pose.pose.orientation;
 }
+
+void VISION_POSE::odometry_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    // 记录时间戳，防止数据超时
+    uav_pose_external.get_time = ros::Time::now(); 
+
+    // 获取四元数并转换为欧拉角
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
+    double roll, pitch, yaw;
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+
+    // 位置、速度、姿态数据的赋值
+    uav_pose_external.pos = Eigen::Vector3d(msg->pose.pose.position.x, 
+                                            msg->pose.pose.position.y, 
+                                            msg->pose.pose.position.z);
+
+    uav_pose_external.vel = Eigen::Vector3d(msg->twist.twist.linear.x, 
+                                            msg->twist.twist.linear.y, 
+                                            msg->twist.twist.linear.z);
+
+    uav_pose_external.att = Eigen::Vector3d(roll, pitch, yaw);
+
+    // 直接存储四元数
+    uav_pose_external.q = msg->pose.pose.orientation;
+}
+
+
+
 
 void VISION_POSE::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
