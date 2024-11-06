@@ -25,6 +25,8 @@ public:
     {
         nh_.param<std::string>("cmd_sub_topic", cmd_sub_topic_, "/position_cmd");
         nh_.param<std::string>("control_pub_topic", control_pub_topic, "/sunray/uav_control_cmd");
+        nh_.param<int>("control_type", control_type, 0);
+        nh_.param<bool>("enable_yaw", enable_yaw, true);
 
         std::cout << "cmd_sub_topic: " << cmd_sub_topic_ << std::endl;
         std::cout << "control_pub_topic: " << control_pub_topic << std::endl;
@@ -56,10 +58,30 @@ public:
         cmd_value.ay = msg->acceleration.y;
         cmd_value.az = msg->acceleration.z;
         cmd_value.yaw = msg->yaw;
-
-        if (cmd_value.x != cmd_value_last.x || cmd_value.y != cmd_value_last.y || cmd_value.z != cmd_value_last.z)
+        if(!enable_yaw)
         {
-            cmd_.cmd = 4;
+            cmd_value.yaw = 0;
+        }
+
+        if(msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
+        {
+            cmd_.cmd = sunray_msgs::UAVControlCMD::Hover;
+        }
+        else
+        {
+            if(control_type == 0){
+                cmd_.cmd = sunray_msgs::UAVControlCMD::XYZ_POS;
+            }
+            else if(control_type == 1){
+                cmd_.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL;
+            }
+            else if(control_type == 2){
+                cmd_.cmd = sunray_msgs::UAVControlCMD::TRAJECTORY;
+            }
+            else{
+                std::cout << "control_type error!" << std::endl;
+                return;
+            }
             cmd_.desired_pos[0] = cmd_value.x;
             cmd_.desired_pos[1] = cmd_value.y;
             cmd_.desired_pos[2] = cmd_value.z;
@@ -71,9 +93,18 @@ public:
             cmd_.desired_acc[2] = cmd_value.az;
             cmd_.enable_yawRate = false;
             cmd_.desired_yaw = cmd_value.yaw;
-            cmd_pub_.publish(cmd_);
         }
-        cmd_value_last = cmd_value;
+        if(last_cmd_.cmd == sunray_msgs::UAVControlCMD::Hover && cmd_.cmd == sunray_msgs::UAVControlCMD::Hover)
+        {
+           last_cmd_ = cmd_;
+           return;
+        }
+        else
+        {
+             cmd_pub_.publish(cmd_);
+        }
+        // cmd_value_last = cmd_value;
+        last_cmd_ = cmd_;
         
     }
 
@@ -82,8 +113,11 @@ private:
     ros::Subscriber ego_sub_;
     ros::Publisher cmd_pub_;
     sunray_msgs::UAVControlCMD cmd_;
+    sunray_msgs::UAVControlCMD last_cmd_;
 
     int uav_id_;
+    int control_type;
+    bool enable_yaw;
     std::string uav_name_{""};
     std::string cmd_sub_topic_{""};
     std::string control_pub_topic{""};

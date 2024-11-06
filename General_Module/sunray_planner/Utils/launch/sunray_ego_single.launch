@@ -12,6 +12,8 @@
 
     <!-- 对应的sunray控制指令 -->
     <arg name="control_pub_topic_1" default="/uav1/sunray/uav_control_cmd"/>
+    <arg name="control_type" default="2"/>
+    <arg name="enable_yaw" default="false"/>
 
     <!-- 局部坐标系下的点云话题 -->
     <arg name="local_pointcloud_topic_1" default="/uav1/livox"/>
@@ -36,6 +38,8 @@
     <node name="ego2sunray_node_1" pkg="sunray_planner_utils" type="ego2sunray" output="screen">
         <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_1)"/>
         <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
+        <param name="control_type" value="$(arg control_type)"/>
+        <param name="enable_yaw" value="$(arg enable_yaw)"/>
     </node>
 
     <!-- 点云转换为世界坐标系 -->
@@ -74,5 +78,7 @@
 
         <arg name="goal_name_" value="$(arg goal_tipic_1)"/>
     </include>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" />
 
 </launch>

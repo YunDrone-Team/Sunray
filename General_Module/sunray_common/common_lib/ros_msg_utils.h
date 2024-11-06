@@ -54,6 +54,7 @@
 #include <mavros_msgs/RCIn.h>
 #include <mavros_msgs/CommandLong.h>
 #include <mavros_msgs/CommandHome.h>
+#include <mavros_msgs/GPSRAW.h>
 
 // nav_msgs
 #include <nav_msgs/Odometry.h>

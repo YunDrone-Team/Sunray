@@ -221,12 +221,11 @@ namespace ego_planner
     // trigger_ = true;
     init_pt_ = odom_pos_;
 
+    Eigen::Vector3d end_wp(msg->pose.position.x, msg->pose.position.y, 1.0);
+
     if(target_type_ == TARGET_TYPE::CMD_TARGET)
     {
-      Eigen::Vector3d end_wp(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
-    }
-    else{
-      Eigen::Vector3d end_wp(msg->pose.position.x, msg->pose.position.y, 1.0);
+      end_wp = Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
     }
 
     planNextWaypoint(end_wp);
