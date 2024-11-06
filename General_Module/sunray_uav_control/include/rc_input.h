@@ -14,11 +14,11 @@ public:
     void printf_info();
 
     double ch[4];     // 1-4通道数值: roll pitch yaw thrust
-    double channel_5; // 通道5（三段） - 切换RC_POS_CONTROL
-    double channel_6; // 通道6（三段） - 切换COMMAND_CONTROL
-    double channel_7; // 通道7（二段） - 切换LAND_CONTROL
-    double channel_8; // 通道8（二段） - 重启飞控
-    double channel_9; // 通道9（二段） - 解锁
+    double channel_5; // 通道5（二或三段)  - 解锁-上锁
+    double channel_6; // 通道6（三段）     - 切换INIT或RC或COMMAND_CONTROL
+    double channel_7; // 通道7（二段）     - KILL模式
+    double channel_8; // 通道8（二段）     - 切换LAND_CONTROL
+    double channel_9; // 通道9（二段）     - 未启用
     double last_channel_5;
     double last_channel_6;
     double last_channel_7;
