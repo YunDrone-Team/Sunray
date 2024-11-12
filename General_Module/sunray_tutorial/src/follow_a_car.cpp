@@ -188,13 +188,14 @@ int main(int argc, char **argv)
             {
                 if(yaw_rel < 1 && yaw_rel > -1)
                 {
-                    yaw_rel = 0;
+                    yaw_rel = 0;   // 小角度则不再调整 避免无人机超调而产生抽搐情况
                 }
 
                 x_vel = min(max(x_rel * k_p_xy, -max_vel), max_vel);
                 y_vel = min(max(y_rel * k_p_xy, -max_vel), max_vel);
-                z_vel = min(max((1.5-z_rel) * k_p_z, -max_vel_z), max_vel_z);
-                yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
+                z_vel = min(max((1-z_rel) * k_p_z, -max_vel_z), max_vel_z);     // 1-z_rel 调整跟随高度 程序中定为高度1m
+                // yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
+                yaw = yaw_rel/180.0*M_PI;   // 转为弧度制
                 
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
@@ -215,7 +216,7 @@ int main(int argc, char **argv)
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
-            //关键
+            // 程序结束太快会导致消息没有发送出去 因此要停止一段时间
             ros::Duration(0.5).sleep();
             break;
         }

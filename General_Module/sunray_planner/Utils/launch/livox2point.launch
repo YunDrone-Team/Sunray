@@ -1,0 +1,11 @@
+<launch>
+  <arg name="pointcloud_topic" default="/livox/pointcloud2"/>
+  <arg name="livox_topic" default="/livox/lidar"/>
+  <arg name="filter_distance" default="0.3"/>
+
+  <node name="livox2Point" pkg="sunray_planner_utils" type="livox2Point" output="screen">
+    <!-- <param name="pointcloud_topic" value="$(arg pointcloud_topic)"/>
+    <param name="livox_topic" value="$(arg livox_topic)"/>
+    <param name="filter_distance" value="$(arg filter_distance)"/> -->
+  </node>
+</launch>

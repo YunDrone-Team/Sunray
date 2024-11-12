@@ -8,21 +8,21 @@
   <arg name="control_type" default="0"/>
   <arg name="enable_yaw" default="false"/>
 
-  <node name="ego2sunray_node_1" pkg="sunray_simulator" type="ego2sunray" output="screen">
+  <node name="ego2sunray_node_1" pkg="sunray_planner_utils" type="ego2sunray" output="screen">
     <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_1)"/>
     <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
     <param name="control_type" value="$(arg control_type)"/>
     <param name="enable_yaw" value="$(arg enable_yaw)"/>
   </node>
 
-  <node name="ego2sunray_node_2" pkg="sunray_simulator" type="ego2sunray" output="screen">
+  <node name="ego2sunray_node_2" pkg="sunray_planner_utils" type="ego2sunray" output="screen">
     <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_2)"/>
     <param name="control_pub_topic" value="$(arg control_pub_topic_2)"/>
     <param name="control_type" value="$(arg control_type)"/>
     <param name="enable_yaw" value="$(arg enable_yaw)"/>
   </node>
 
-  <node name="ego2sunray_node_3" pkg="sunray_simulator" type="ego2sunray" output="screen">
+  <node name="ego2sunray_node_3" pkg="sunray_planner_utils" type="ego2sunray" output="screen">
     <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_3)"/>
     <param name="control_pub_topic" value="$(arg control_pub_topic_3)"/>
     <param name="control_type" value="$(arg control_type)"/>
