@@ -229,13 +229,13 @@ int main(int argc, char **argv)
                     ang = 0;
                 }
 
-                if (abs(ang) > 30)
-                {
-                    max_yaw = 0.5;
-                }
-                else if (abs(ang) < 10){
-                    max_yaw = 0.05;
-                }
+                // if (abs(ang) > 30)
+                // {
+                //     max_yaw = 0.5;
+                // }
+                // else if (abs(ang) < 10){
+                //     max_yaw = 0.05;
+                // }
                 
                 x_vel = (z_rel - 2) * k_p_xy;
                 y_vel = y_rel * k_p_xy;
@@ -244,7 +244,8 @@ int main(int argc, char **argv)
                 x_vel = min(max(x_vel, -max_vel), max_vel);
                 y_vel = min(max(y_vel, -max_vel), max_vel);
                 z_vel = min(max(z_vel, -max_vel_z), max_vel_z);
-                ang = min(max(ang, -max_yaw), max_yaw);
+                // ang = min(max(ang, -max_yaw), max_yaw);
+                yaw = ang/180.0*M_PI;   // 转为弧度制
                 
                 
                 uav_cmd.header.stamp = ros::Time::now();

@@ -1,12 +1,12 @@
 <!-- <launch>
-    <node name="transform_pointcloud" pkg="sunray_simulator" type="transform_pointcloud" output="screen"/>
+    <node name="transform_pointcloud" pkg="sunray_planner_utils" type="transform_pointcloud" output="screen"/>
 </launch> -->
 
 <launch>
 
     <!-- <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="0 0 0 0 0 0 base_link laser_livox 50" /> -->
 
-    <node name="point_cloud_transform_1" pkg="sunray_simulator" type="point_cloud_transform" output="screen">
+    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
         <param name="input_point_topic" value="/uav1/livox" />
         <param name="output_point_topic" value="/uav1/livox_world" />
         <param name="odom_topic" value="/uav1/sunray/gazebo_pose" />
@@ -15,7 +15,7 @@
         <param name="child_frame_id" value="uav1/livox_laser" />
     </node>
 
-    <node name="point_cloud_transform_2" pkg="sunray_simulator" type="point_cloud_transform" output="screen">
+    <node name="point_cloud_transform_2" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
         <param name="input_point_topic" value="/uav2/livox" />
         <param name="output_point_topic" value="/uav2/livox_world" />
         <param name="odom_topic" value="/uav2/sunray/gazebo_pose" />

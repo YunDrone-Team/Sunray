@@ -13,7 +13,7 @@
   <!-- <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="0 0 0 0 0 0 world camera_odom_frame 50" /> -->
   <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="0 0 0 0 0 0 world map 50" />
 
-  <node name="scan2point_node" pkg="sunray_simulator" type="scan2point" output="screen">
+  <node name="scan2point_node" pkg="sunray_planner_utils" type="scan2point" output="screen">
     <param name="uav_id" value="$(arg uav_id)"/>
     <param name="pos_odom" value="$(arg pos_odom)"/>
     <param name="uav_name" value="$(arg uav_name)"/>

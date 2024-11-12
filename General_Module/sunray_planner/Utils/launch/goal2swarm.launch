@@ -1,7 +1,7 @@
 <!-- move_base_simple/goal转为三个平行的目标点 供ego中的每个飞机指明目标点-->
 <launch>
 
-    <node name="goal2swarm" pkg="sunray_planner" type="goal2swarm" output="screen">
+    <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
         <param name="uav_num" value="3" />
         <param name="offset" value="1.0" />
         <param name="goal_topic" value="goal" />

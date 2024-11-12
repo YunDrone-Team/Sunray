@@ -85,8 +85,8 @@ void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
         // // 相机反装（180旋转）
         // x_rel = x_filter.filter(-msg->targets[0].px);
         // y_rel = y_filter.filter(msg->targets[0].py);
-        // z_rel = z_filter.filter(msg->targets[0].pz);
-        // // 机体系相对旋转都是一样的
+        // z_rel = z_filter.filter(-msg->targets[0].pz);
+        // // 机体系相对旋转都是一样的 由于标签识别在180度时候的数据波动异常 因此只能反向降落到标签上而不纠正180度的偏差
         // yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
     }
 }
@@ -103,20 +103,38 @@ int main(int argc, char **argv)
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);
     nh.param<bool>("flag_printf", flag_printf, true);
+
+    //error_xy   error_z
+    double error_xy,error_z;
+    //land_v
+    double land_v;
+    //land_time
+    double land_time;
+
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
     nh.param<string>("uav_name", uav_name, "uav");
-    // 【参数】目标话题名称
+    // 【参数】目标话题名称 （预留，可以通过外部定位直接发送降落地点）
     nh.param<string>("target_tpoic_name", target_tpoic_name, "/vrpn_client_node/target/pose");
-    //PID控制P参数和速度参数的限制
+    // PID控制P参数和速度参数的限制
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
-    nh.param<double>("k_p_yaw", k_p_yaw, 0.04);
+    nh.param<double>("k_p_yaw", k_p_yaw, 0.04);  // 已弃用 预留参数 当数据输出波动较为剧烈时可以降低偏航抽搐 需要将程序中相应的计算注释打开
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
-    nh.param<double>("max_yaw", max_yaw, 0.4);
+    nh.param<double>("max_yaw", max_yaw, 0.4);   // 已弃用 预留参数 当数据输出波动较为剧烈时可以降低偏航抽搐 需要将程序中相应的计算注释打开
+    
+    // 降落相关参数
+    // 当无人机当前位置与标签位置(x,y)误差小于error_xy且z小于error_z时 无人机直接降落 不再进行姿态调整了
+    nh.param<double>("error_xy", error_xy, 0.05);
+    nh.param<double>("error_z", error_z, 0.25);
+    // 最后的俯冲速度 根据不同的无人机重量和地效（有些无人机在靠经地面时会被自己吹出的风反向吹开）调整land_vel和last_land_time能有效解决这个问题
+    nh.param<double>("land_vel", land_v, -0.3);
+    // land_vel在经历last_land_time时间后会直接锁桨
+    nh.param<double>("last_land_time", land_time, 1.5);
+    // 还有一个没有启用的参数 当无人机与标签Z轴上的误差达到阈值阈值后也会直接降落
 
     uav_name = uav_name + to_string(uav_id);
     string topic_prefix = "/" + uav_name;
@@ -203,16 +221,16 @@ int main(int argc, char **argv)
             control_cmd_pub.publish(uav_cmd);
             break;
         }
-        if(landing_point_num >10 && (((abs(x_rel) < 0.05 && abs(y_rel) < 0.05 && abs(z_rel) < 0.18)) || abs(z_rel) < 0.15))
+        if(landing_point_num >10 && (((abs(x_rel) < error_xy && abs(y_rel) < error_xy && abs(z_rel) < error_z)) || abs(z_rel) < 0.20))
         {   
             ros::Time stop_time = ros::Time::now();
-            while((ros::Time::now() - stop_time).toSec() < 3.0)
+            while((ros::Time::now() - stop_time).toSec() < land_time)
             {
                     uav_cmd.header.stamp = ros::Time::now();
                     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
                     uav_cmd.desired_vel[0] = 0;
                     uav_cmd.desired_vel[1] = 0;
-                    uav_cmd.desired_vel[2] = -0.2;
+                    uav_cmd.desired_vel[2] = land_v;
                     uav_cmd.desired_yaw = yaw;
                     uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
                     control_cmd_pub.publish(uav_cmd);
@@ -231,13 +249,14 @@ int main(int argc, char **argv)
             {
                 if(yaw_rel < 1 && yaw_rel > -1)
                 {
-                    yaw_rel = 0;
+                    yaw_rel = 0;    // 小角度则不再调整 避免无人机超调而产生抽搐情况
                 }
 
                 x_vel = min(max(x_rel * k_p_xy, -max_vel), max_vel);
                 y_vel = min(max(y_rel * k_p_xy, -max_vel), max_vel);
                 z_vel = min(max(z_rel * k_p_z, -max_vel_z), max_vel_z);
-                yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
+                // yaw = min(max(yaw_rel*k_p_yaw, -max_yaw), max_yaw);
+                yaw = yaw_rel/180.0*M_PI;   // 转为弧度制
                 
                 // 优先调整水平距离
                 if (abs(z_rel) < 1 && abs(z_rel) > 0.2 && (abs(x_rel) > 0.08 || abs(y_rel) > 0.08))
