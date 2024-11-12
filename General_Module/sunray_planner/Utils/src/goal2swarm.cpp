@@ -13,6 +13,8 @@ public:
     {
         nh.param<int>("uav_num", uav_num, 3);
         nh.param<float>("offset", offset, 1.0);
+        nh.param<bool>("use_hight", use_hight, true);
+        nh.param<float>("z_hight", z_hight, 1.0);
         nh.param<std::string>("goal_topic", goal_topic, "goal");
         // 订阅move_base_simple/goal话题
         goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GoalEgoSwarm::goalCallback, this);
@@ -30,6 +32,11 @@ public:
         float x = msg->pose.position.x;
         float y = msg->pose.position.y;
         float z = msg->pose.position.z;
+        if(use_hight)
+        {
+            z = z_hight;
+        }
+        
         for (int i = 0; i < uav_num; i++)
         {
             geometry_msgs::PoseStamped goal = *msg;
@@ -53,6 +60,8 @@ public:
 private:
     int uav_num;
     float offset;
+    bool use_hight;
+    float z_hight;
     std::string goal_topic;
     ros::NodeHandle nh_;
     ros::Subscriber goal_sub_;
