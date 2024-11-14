@@ -1,10 +1,17 @@
 <!-- move_base_simple/goal转为三个平行的目标点 供ego中的每个飞机指明目标点-->
 <launch>
+    <arg name="uav_num" default="3" />
+    <arg name="offset" default="1.0" />
+    <arg name="goal_topic" default="goal" />
+    <arg name="use_hight" default="true" />
+    <arg name="z_hight" default="1.0" />
 
     <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
-        <param name="uav_num" value="3" />
-        <param name="offset" value="1.0" />
-        <param name="goal_topic" value="goal" />
+        <param name="uav_num" value="$(arg uav_num)" />
+        <param name="offset" value="$(arg offset)" />
+        <param name="goal_topic" value="$(arg goal_topic)" />
+        <param name="use_hight" value="$(arg use_hight)" />
+        <param name="z_hight" value="$(arg z_hight)" />
     </node>
 
 </launch>

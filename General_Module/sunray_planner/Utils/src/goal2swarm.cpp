@@ -49,8 +49,9 @@ public:
             // float offset =
             goal.pose.position.x = x - offset * i * cos(M_PI / 2 - yaw);
             goal.pose.position.y = y + offset * i * sin(M_PI / 2 - yaw);
+            goal.pose.position.z = z;
 
-            std::cout << "cos: " << offset * i * cos(M_PI / 2 - yaw) << " sin: " << offset * i * sin(M_PI / 2 - yaw) << std::endl;
+            // std::cout << "cos: " << offset * i * cos(M_PI / 2 - yaw) << " sin: " << offset * i * sin(M_PI / 2 - yaw) << std::endl;
 
             // 发布目标位置
             goal_pub_[i].publish(goal);
