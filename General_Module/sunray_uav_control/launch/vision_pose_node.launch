@@ -5,6 +5,8 @@
     <arg name="external_source" default="0"/>
 	<arg name="server" default="192.168.25.12"/>
 	<arg name="enable_rangeSensor" default="false"/>
+    <!-- Rviz config -->
+    <arg name="rviz_enable" default="false"/>
 
     <!-- 启动 vrpn_client_ros -->
     <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 0)">
@@ -19,10 +21,9 @@
         <param name="uav_name" value="$(arg uav_name)" />
         <param name="external_source" value="$(arg external_source)" />
         <param name="enable_rangeSensor" value="$(arg enable_rangeSensor)" />
+        <param name="enable_rviz" value="$(arg rviz_enable)" />
     </node>
 
-    <!-- Rviz config -->
-    <arg name="rviz_enable" default="false"/>
     <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>
 	<!-- 启动Rviz-->
 	<group if="$(arg rviz_enable)">
