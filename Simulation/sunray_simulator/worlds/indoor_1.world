@@ -58,15 +58,10 @@
     </include>
 
     <include>
-      <uri>model://indoor_1</uri>
+      <uri>model://room3</uri>
     </include>
 
-    <model name='cilcle_1'> 
-    	<include>
-        <pose>-0.3 -0.8 0 -1.57 0 -1.57</pose>
-        <uri>model://square</uri>
-      </include>
-    </model>
+    
     
     <model name='cilcle_2'> 
         <include>
