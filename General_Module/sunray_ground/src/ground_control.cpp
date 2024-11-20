@@ -12,7 +12,7 @@ void GroundControl::init(ros::NodeHandle &nh)
     nh.param<string>("tcp_ip", tcp_ip, "0.0.0.0");
     nh.param<string>("udp_ip", udp_ip, "127.0.0.1");
     nh.param<string>("tcp_port", tcp_port, "8969");
-    nh.param<string>("udp_port", udp_port, "8968");
+    nh.param<string>("udp_port", udp_port, "9898");
     State_Message state_msg;
     state_msg.head = 0;
     state_msg.length = 0;
@@ -42,7 +42,7 @@ void GroundControl::init(ros::NodeHandle &nh)
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(
             topic_prefix + "/sunray/uav_control_cmd", 1));
-        
+
         uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(
             topic_prefix + "/sunray/uav_state_cmd", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
 
@@ -55,17 +55,24 @@ void GroundControl::init(ros::NodeHandle &nh)
     recvMsgTimer = nh.createTimer(ros::Duration(0.02), &GroundControl::recvMsgCb, this);
     sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
 
-    tcp_server.m_strIp = tcp_ip;
-    tcp_server.m_uPort = stoul(tcp_port);
-    while(!tcp_server.InitServer() && ros::ok())
-    {
-        std::cout << "TCP网络服务端初始化失败！\n";
-        std::cout << "正在重试...";
-        ros::Duration(5).sleep();
-    }
-    tcp_server.startListening();
-    tcp_server.startWaitForClient();
-    std::cout << "TCP网络服务端初始化成功！\n";
+    // tcp_server.m_strIp = tcp_ip;
+    // tcp_server.m_uPort = stoul(tcp_port);
+    // while(!tcp_server.InitServer() && ros::ok())
+    // {
+    //     std::cout << "TCP网络服务端初始化失败！\n";
+    //     std::cout << "正在重试...";
+    //     ros::Duration(5).sleep();
+    // }
+    // tcp_server.startListening();
+    // tcp_server.startWaitForClient();
+    // std::cout << "TCP网络服务端初始化成功！\n";
+
+    int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
+    // qDebug()<<"TCPServer绑定端口号结果： "<<back;
+    tcpServer.Listen(30);
+    tcpServer.sigTCPServerReadData.connect(boost::bind(&GroundControl::TCPServerCallBack, this, _1));
+    tcpServer.setRunState(true);
+
     // if (tcp_server.InitServer())
     // {
     //     std::cout << "TCP网络服务端初始化成功！\n";
@@ -76,15 +83,194 @@ void GroundControl::init(ros::NodeHandle &nh)
     // {
     //     std::cout << "TCP网络服务端初始化失败！\n";
     // }
-    udp_server.m_strIp = udp_ip;
-    udp_server.m_uPort = stoul(udp_port);
-    while (!udp_server.InitUDPClient() && ros::ok())
+
+    udpSocket = CommunicationUDPSocket::getInstance();
+    // udpSocket->Bind(static_cast<unsigned short>(std::stoi(udp_port)));
+    udpSocket->InitSocket();
+    udpSocket->setRunState(true);
+
+    // udp_server.m_strIp = udp_ip;
+    // udp_server.m_uPort = stoul(udp_port);
+    // while (!udp_server.InitUDPClient() && ros::ok())
+    // {
+    //     std::cout << "UDP网络服务端初始化失败！\n";
+    //     std::cout << "正在重试...";
+    //     ros::Duration(5).sleep();
+    // }
+    // std::cout << "UDP网络服务端初始化成功！\n";
+}
+
+uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
+{
+    uint8_t back;
+    if (modeStr == "MANUAL")
+        back = PX4ModeType::ManualType;
+    else if (modeStr == "STABILIZED")
+        back = PX4ModeType::StabilizedType;
+    else if (modeStr == "ACRO")
+        back = PX4ModeType::AcroType;
+    else if (modeStr == "RATTITUDE")
+        back = PX4ModeType::RattitudeType;
+    else if (modeStr == "ALTITUDE")
+        back = PX4ModeType::AltitudeType;
+    else if (modeStr == "OFFBOARD")
+        back = PX4ModeType::OffboardType;
+    else if (modeStr == "POSITION")
+        back = PX4ModeType::PositionType;
+    else if (modeStr == "HOLD")
+        back = PX4ModeType::HoldType;
+    else if (modeStr == "MISSION")
+        back = PX4ModeType::MissionType;
+    else if (modeStr == "RETURN")
+        back = PX4ModeType::ReturnType;
+    else if (modeStr == "FOLLOW ME")
+        back = PX4ModeType::FollowMeType;
+    else if (modeStr == "PRECISION LAND")
+        back = PX4ModeType::PrecisionLandType;
+    else
+        back = 0;
+    return back;
+}
+
+void GroundControl::TCPServerCallBack(ReceivedParameter readData)
+{
+    // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
+    //  std::cout << "TCP网络服务端收到数据：" << readData.data << std::endl;
+    //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
+    //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.length() << std::endl;
+    //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
+    float x;
+    float y;
+    float z;
+    float yaw;
+    float roll;
+    float pitch;
+    uint8_t frame;
+    float yaw_rate;
+    uint32_t time_stamp;
+    uint8_t robot_id;
+
+    std::cout << "GroundControl::TCPServerCallBack" << std::endl;
+    switch (readData.messageID)
     {
-        std::cout << "UDP网络服务端初始化失败！\n";
-        std::cout << "正在重试...";
-        ros::Duration(5).sleep();
+    case MessageID::HeartbeatMessageID:
+        std::cout << "TCPServer心跳包接收到机器人id： " << (int)readData.data.heartbeat.robotID << std::endl;
+        std::cout << "TCPServer心跳包接收到时间戳 " << readData.data.heartbeat.timestamp << std::endl;
+
+        break;
+    case MessageID::ControlMessageID:
+        std::cout << "TCPServer参数控制接收到机器人id： " << (int)readData.data.contro.robotID << std::endl;
+        std::cout << "TCPServer接收到参数控制数据" << std::endl;
+        std::cout << "TCPServer参数控制接收到时间戳 " << readData.data.contro.timestamp << std::endl;
+        std::cout << "TCPServer控制模式 " << (int)readData.data.contro.controlMode << std::endl;
+        std::cout << "x " << readData.data.contro.position.x << std::endl;
+        std::cout << "y " << readData.data.contro.position.y << std::endl;
+        std::cout << "z " << readData.data.contro.position.z << std::endl;
+        std::cout << "yaw " << readData.data.contro.yaw << std::endl;
+        std::cout << "roll " << readData.data.contro.roll << std::endl;
+        std::cout << "pitch " << readData.data.contro.pitch << std::endl;
+        std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
+
+        time_stamp = readData.data.contro.timestamp;
+        x = readData.data.contro.position.x;
+        y = readData.data.contro.position.y;
+        z = readData.data.contro.position.z;
+        yaw = readData.data.contro.yaw;
+        roll = readData.data.contro.roll;
+        pitch = readData.data.contro.pitch;
+        yaw_rate = readData.data.contro.yawRate;
+        robot_id = readData.data.contro.robotID;
+        std::cout << "time_stamp: " << time_stamp << " x: " << x << " y: " << y << " z: " << z << " yaw: " << yaw << " roll: " << roll << " pitch: " << pitch << " frame: " << static_cast<int>(frame) << " yaw_rate: " << yaw_rate << std::endl;
+
+        // uav_cmd.cmd = readData.data.contro.controlMode;
+        // uav_cmd.header.stamp = ros::Time::now();
+        // uav_cmd.desired_pos[0] = x;
+        // uav_cmd.desired_pos[1] = y;
+        // uav_cmd.desired_pos[2] = z;
+        // uav_cmd.desired_yaw = yaw;
+        // uav_cmd.enable_yawRate = yaw_rate;
+        // uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+        // // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY;
+
+        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
+        uav_cmd.header.stamp = ros::Time::now();
+        uav_cmd.cmd = readData.data.contro.controlMode;
+
+        uav_cmd.desired_pos[0] = x;
+        uav_cmd.desired_pos[1] = y;
+        uav_cmd.desired_pos[2] = z;
+
+        uav_cmd.desired_vel[0] = readData.data.contro.velocity.x;
+        uav_cmd.desired_vel[1] = readData.data.contro.velocity.y;
+        uav_cmd.desired_vel[2] = readData.data.contro.velocity.z;
+
+        uav_cmd.desired_yaw = yaw;
+        uav_cmd.enable_yawRate = yaw_rate;
+        uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+
+        control_cmd_pub[robot_id - 1].publish(uav_cmd);
+
+        // 解锁
+        // cout<<"arm"<<endl;
+        // setup.cmd = 1;
+        // uav_setup_pub.at(robot_id - 1).publish(setup);
+        // ros::Duration(1.0).sleep();
+
+        // // 切换到指令控制模式
+        // cout<<"switch CMD_CONTROL"<<endl;
+        // setup.cmd = 4;
+        // setup.control_state = "CMD_CONTROL";
+        // uav_setup_pub.at(robot_id - 1).publish(setup);
+        // ros::Duration(1.0).sleep();
+
+        // 起飞
+        // cout << "takeoff" << endl;
+        // uav_cmd.cmd = 1;
+        // uav_cmd.cmd_id = 0;
+        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
+        // ros::Duration(10).sleep();
+
+        // // 悬停
+        // cout << "hover" << endl;
+        // uav_cmd.cmd = 2;
+        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
+        // ros::Duration(5).sleep();
+
+        // // 降落
+        // cout << "land" << endl;
+        // uav_cmd.cmd = 3;
+        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
+        // // 关键
+        // ros::Duration(0.5).sleep();
+
+        break;
+    case MessageID::VehicleMessageID:
+        std::cout << "TCPServer模式切换接收到机器人id： " << (int)readData.data.vehicle.robotID << std::endl;
+
+        std::cout << "TCPServer接收到模式切换数据" << std::endl;
+        std::cout << "TCPServer模式切换接收到时间戳 " << readData.data.vehicle.timestamp << std::endl;
+        std::cout << "TCPServersunray控制模式 " << (int)readData.data.vehicle.sunray_mode << std::endl;
+        std::cout << "TCPServerpx4控制模式 " << (int)readData.data.vehicle.px4_mode << std::endl;
+        robot_id = readData.data.vehicle.robotID;
+        setup.header.stamp = ros::Time::now();
+        if (readData.data.vehicle.sunray_mode == VehicleControlType::SetControlMode)
+        {
+            setup.control_state = "CMD_CONTROL";
+        }
+        setup.cmd = readData.data.vehicle.sunray_mode;
+        uav_setup_pub.at(robot_id - 1).publish(setup);
+
+        // // 解锁
+        // cout<<"arm"<<endl;
+        // setup.cmd = 1;
+        // uav_setup_pub.at(robot_id - 1).publish(setup);
+        // ros::Duration(1.0).sleep();
+
+        break;
+    default:
+        break;
     }
-    std::cout << "UDP网络服务端初始化成功！\n";
+    std::cout << "GroundControl::TCPServerCallBack end" << std::endl;
 }
 
 void GroundControl::parseTcpMessage(char *message)
@@ -284,21 +470,22 @@ void GroundControl::parseTcpMessage(char *message)
 
 void GroundControl::recvMsgCb(const ros::TimerEvent &e)
 {
-    if (tcp_server.HasMsg())
-    {
-        std::cout << "has msg" << std::endl;
-        char *msg = tcp_server.GetMsg();
-        if (msg != nullptr)
-        {
-            parseTcpMessage(msg);
-            delete[] msg;
-        }
-    }
+    // if (tcp_server.HasMsg())
+    // {
+    //     std::cout << "has msg" << std::endl;
+    //     char *msg = tcp_server.GetMsg();
+    //     if (msg != nullptr)
+    //     {
+    //         parseTcpMessage(msg);
+    //         delete[] msg;
+    //     }
+    // }
 }
 
 void GroundControl::sendMsgCb(const ros::TimerEvent &e)
 {
     // std::cout << "send msg" << std::endl;
+    std::string ip = "192.168.0.82";
     for (int i = 0; i < uav_num; i++)
     {
         // std::cout << "send msg to " << i << std::endl;
@@ -307,23 +494,73 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
         //     stateMessage.at(i).payload.connected = false;
         // }
         // char *msg = encode_State_Message(&stateMessage.at(i));
-        char *msg = pack_State_Message(stateMessage.at(i).head, stateMessage.at(i).length, stateMessage.at(i).msg_id, stateMessage.at(i).robot_id,stateMessage.at(i).check, stateMessage.at(i).payload);
-        udp_server.SendUDPMsg(msg);
-        
+
+        udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i]), udp_ip, std::stoi(udp_port));
     }
+    // // std::cout << "send msg" << std::endl;
+    // for (int i = 0; i < uav_num; i++)
+    // {
+    //     // std::cout << "send msg to " << i << std::endl;
+    //     // if ((ros::Time::now() - ros::Time::fromSec(static_cast<double>(stateMessage.at(i).payload.time_stamp))).toSec() > 3.0)
+    //     // {
+    //     //     stateMessage.at(i).payload.connected = false;
+    //     // }
+    //     // char *msg = encode_State_Message(&stateMessage.at(i));
+    //     char *msg = pack_State_Message(stateMessage.at(i).head, stateMessage.at(i).length, stateMessage.at(i).msg_id, stateMessage.at(i).robot_id, stateMessage.at(i).check, stateMessage.at(i).payload);
+    //     udp_server.SendUDPMsg(msg);
+    // }
 }
 
 void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
 {
+
     int index = robot_id - 1;
-    stateMessage.at(index).head = 0xAD21;
-    stateMessage.at(index).length = 72;
-    stateMessage.at(index).msg_id = STATE_MESSAGE;
-    stateMessage.at(index).robot_id = robot_id;
-    stateMessage.at(index).payload.time_stamp = static_cast<uint32_t>(ros::Time::now().toSec());
-    stateMessage.at(index).payload.uav_id = robot_id;
-    stateMessage.at(index).payload.connected = msg->connected;
-    stateMessage.at(index).payload.armed = msg->armed;
+    udpData[index].state.init();
+    udpData[index].state.robotID = robot_id;
+    udpData[index].state.uavID = robot_id;
+    udpData[index].state.connected = msg->connected;
+    ;
+    udpData[index].state.armed = msg->armed;
+    udpData[index].state.mode = getPX4ModeEnum(msg->mode);
+    udpData[index].state.locationSource = msg->location_source;
+    udpData[index].state.odom_valid = msg->odom_valid;
+    udpData[index].state.position.x = msg->position[0];
+    udpData[index].state.position.y = msg->position[1];
+    udpData[index].state.position.z = msg->position[2];
+
+    // std::cout << "position z: "<<msg->position[2] << std::endl;
+    udpData[index].state.velocity.x = msg->velocity[0];
+    udpData[index].state.velocity.y = msg->velocity[1];
+    udpData[index].state.velocity.z = msg->velocity[2];
+
+    udpData[index].state.attitude.x = msg->attitude[0];
+    udpData[index].state.attitude.y = msg->attitude[1];
+    udpData[index].state.attitude.z = msg->attitude[2];
+
+    // std::cout << "期望姿态 x: "<<msg->att_setpoint[0] << std::endl;
+    // std::cout << "期望姿态 y: "<<msg->att_setpoint[1] << std::endl;
+    // std::cout << "期望姿态 z: "<<msg->att_setpoint[2] << std::endl;
+
+    // udpData[index].state.attitudeRate.x=msg->att_setpoint[0];
+    // udpData[index].state.attitudeRate.y=msg->att_setpoint[1];
+    // udpData[index].state.attitudeRate.z=msg->att_setpoint[2];
+
+    udpData[index].state.posSetpoint.x = msg->pos_setpoint[0];
+    udpData[index].state.posSetpoint.y = msg->pos_setpoint[1];
+    udpData[index].state.posSetpoint.z = msg->pos_setpoint[2];
+
+    udpData[index].state.velSetpoint.x = msg->vel_setpoint[0];
+    udpData[index].state.velSetpoint.y = msg->vel_setpoint[1];
+    udpData[index].state.velSetpoint.z = msg->vel_setpoint[2];
+
+    udpData[index].state.attSetpoint.x = msg->att_setpoint[0];
+    udpData[index].state.attSetpoint.y = msg->att_setpoint[1];
+    udpData[index].state.attSetpoint.z = msg->att_setpoint[2];
+
+    udpData[index].state.batteryState = msg->battery_state;
+    udpData[index].state.batteryPercentage = msg->battery_percetage;
+    udpData[index].state.controlMode = msg->control_mode;
+
     std::string mode = msg->mode;
     if (mode.length() > 15)
     {
@@ -333,17 +570,37 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     {
         mode.append(15 - mode.length(), ' ');
     }
-    stateMessage.at(index).payload.mode = mode;
-    stateMessage.at(index).payload.location_source = msg->location_source;
-    stateMessage.at(index).payload.odom_valid = msg->odom_valid;
-    stateMessage.at(index).payload.position = {msg->position[0], msg->position[1], msg->position[2]};
-    stateMessage.at(index).payload.velocity = {msg->velocity[0], msg->velocity[1], msg->velocity[2]};
-    stateMessage.at(index).payload.attitude = {msg->attitude[0], msg->attitude[1], msg->attitude[2]};
-    stateMessage.at(index).payload.pos_setpoint = {msg->pos_setpoint[0], msg->pos_setpoint[1], msg->pos_setpoint[2]};
-    stateMessage.at(index).payload.vel_setpoint = {msg->vel_setpoint[0], msg->vel_setpoint[1], msg->vel_setpoint[2]};
-    stateMessage.at(index).payload.att_setpoint = {msg->att_setpoint[0], msg->att_setpoint[1], msg->att_setpoint[2]};
-    stateMessage.at(index).payload.battery_state = msg->battery_state;
-    stateMessage.at(index).payload.battery_percentage = msg->battery_percetage;
-    stateMessage.at(index).payload.control_mode = msg->control_mode;
-    stateMessage.at(index).check = calculate_checksum_State_Message(&stateMessage.at(index));
+    // stateMessage.at(index).payload.mode = mode;
+
+    //  int index = robot_id - 1;
+    // stateMessage.at(index).head = 0xAD21;
+    // stateMessage.at(index).length = 72;
+    // stateMessage.at(index).msg_id = STATE_MESSAGE;
+    // stateMessage.at(index).robot_id = robot_id;
+    // stateMessage.at(index).payload.time_stamp = static_cast<uint32_t>(ros::Time::now().toSec());
+    // stateMessage.at(index).payload.uav_id = robot_id;
+    // stateMessage.at(index).payload.connected = msg->connected;
+    // stateMessage.at(index).payload.armed = msg->armed;
+    // std::string mode = msg->mode;
+    // if (mode.length() > 15)
+    // {
+    //     mode = mode.substr(0, 15);
+    // }
+    // else if (mode.length() < 15)
+    // {
+    //     mode.append(15 - mode.length(), ' ');
+    // }
+    // stateMessage.at(index).payload.mode = mode;
+    // stateMessage.at(index).payload.location_source = msg->location_source;
+    // stateMessage.at(index).payload.odom_valid = msg->odom_valid;
+    // stateMessage.at(index).payload.position = {msg->position[0], msg->position[1], msg->position[2]};
+    // stateMessage.at(index).payload.velocity = {msg->velocity[0], msg->velocity[1], msg->velocity[2]};
+    // stateMessage.at(index).payload.attitude = {msg->attitude[0], msg->attitude[1], msg->attitude[2]};
+    // stateMessage.at(index).payload.pos_setpoint = {msg->pos_setpoint[0], msg->pos_setpoint[1], msg->pos_setpoint[2]};
+    // stateMessage.at(index).payload.vel_setpoint = {msg->vel_setpoint[0], msg->vel_setpoint[1], msg->vel_setpoint[2]};
+    // stateMessage.at(index).payload.att_setpoint = {msg->att_setpoint[0], msg->att_setpoint[1], msg->att_setpoint[2]};
+    // stateMessage.at(index).payload.battery_state = msg->battery_state;
+    // stateMessage.at(index).payload.battery_percentage = msg->battery_percetage;
+    // stateMessage.at(index).payload.control_mode = msg->control_mode;
+    // stateMessage.at(index).check = calculate_checksum_State_Message(&stateMessage.at(index));
 }

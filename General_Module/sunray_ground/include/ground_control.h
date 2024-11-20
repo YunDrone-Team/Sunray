@@ -4,11 +4,18 @@
 #include "ground_msg.h"
 #include "SunrayServer.h"
 #include "ros_msg_utils.h"
+#include "Communication/TCPServer.h"
+#include "Communication/CommunicationUDPSocket.h"
+#include "Communication/MSG.h"
+#include "Communication/Codec.h"
 
 using namespace std;
 class GroundControl {
 public:
     GroundControl(){};
+
+
+     ~GroundControl(){tcpServer.Close();};
 
     void init(ros::NodeHandle& nh);
     void parseTcpMessage(char *message);
@@ -37,10 +44,17 @@ private:
     ros::Timer sendMsgTimer;
 
     TcpServer tcp_server;
-    UDPServer udp_server;
+    // UDPServer udp_server;
 
+    TCPServer tcpServer;
+    CommunicationUDPSocket* udpSocket;
+    Codec codec;
+    unionData udpData[30];
+
+    uint8_t getPX4ModeEnum(std::string modeStr);
     void recvMsgCb(const ros::TimerEvent &e);
     void sendMsgCb(const ros::TimerEvent &e);
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
+    void TCPServerCallBack(ReceivedParameter readData);
 };
 
