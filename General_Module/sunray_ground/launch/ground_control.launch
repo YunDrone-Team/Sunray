@@ -2,7 +2,7 @@
     <arg name="uav_num" default="1" />
     <arg name="uav_name" default="uav" />
     <arg name="tcp_ip" default="192.168.0.29" />    <!-- 无人机IP地址 0.0.0.0 则监听所有ip-->
-    <arg name="udp_ip" default="192.168.0.79" />
+    <arg name="udp_ip" default="192.168.0.82" />
     <arg name="tcp_port" default="8969" />
     <arg name="udp_port" default="8968" />
 

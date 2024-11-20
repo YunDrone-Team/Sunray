@@ -48,12 +48,21 @@ include_directories(
 )
 
 
+
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
 
+# 定义一个变量来存储所有 Communication 目录下的 .cpp 文件
+set(COMMUNICATION_SRCS)
+ 
+# 使用 file(GLOB ...) 命令来查找 Communication 目录下的所有 .cpp 文件,这个是静态的，不会实时更新，需要手动更新删除缓存
+file(GLOB COMMUNICATION_SRCS "include/Communication/*.cpp")
+
+# ${COMMUNICATION_SRCS}将找到的.cpp文件添加到项目中
 add_library(${PROJECT_NAME}
   src/ground_control.cpp
+  ${COMMUNICATION_SRCS}
 )
 
 add_executable(ground_control_node src/ground_control_node.cpp)
