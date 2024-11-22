@@ -52,8 +52,8 @@
     <!-- <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include> -->
 
     <!-- ego-planenr-swarm -->
-    <include file="$(find sunray_planner_utils)/launch/exploration.launch">
-    </include>
+    <!-- <include file="$(find sunray_planner_utils)/launch/exploration.launch">
+    </include> -->
 
     <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray_fuel.rviz" required="true" /> -->
 

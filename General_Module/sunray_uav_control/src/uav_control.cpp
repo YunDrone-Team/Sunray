@@ -59,9 +59,9 @@ void UAVControl::init(ros::NodeHandle& nh)
     // 【发布】本地位置控制指令，包括期望位置、速度、加速度等接口 坐标系:ENU系 -- 本节点->飞控
     setpoint_raw_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
     // 【发布】姿态控制指令，包括期望姿态等接口 -- 本节点->飞控
-    setpoint_raw_attitude_pub = nh.advertise<sunray_msgs::AttitudeSetpoint>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
+    setpoint_raw_attitude_pub = nh.advertise<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
     // 【发布】全局位置控制指令，包括期望经纬度等接口 坐标系:WGS84坐标系 -- 本节点->飞控
-    setpoint_raw_global_pub = nh.advertise<sunray_msgs::GlobalPositionSetpoint>(topic_prefix + "/mavros/setpoint_raw/global", 1);
+    setpoint_raw_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(topic_prefix + "/mavros/setpoint_raw/global", 1);
     // 【发布】无人机状态+cmd 
     uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state_cmd", 1);
 
@@ -538,7 +538,7 @@ void UAVControl::get_desired_state_from_cmd()
 
 void UAVControl::printf_debug_info()
 {
-    cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] State    <<<<<<<<<<<<<<<<<<" << TAIL << endl;
+    cout << BLUE << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] State    <<<<<<<<<<<<<<<<<<" << TAIL << endl;
 
     //固定的浮点显示
     cout.setf(ios::fixed);
@@ -552,7 +552,7 @@ void UAVControl::printf_debug_info()
     cout.setf(ios::showpos);
 
     printf_uav_state();
-    cout << GREEN << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] Control  <<<<<<<<<<<<<<<<<<" << TAIL << endl;
+    cout << BLUE << ">>>>>>>>>>>>>>>>>>>> UAV [" << uav_id << "] Control  <<<<<<<<<<<<<<<<<<" << TAIL << endl;
 
     switch (control_mode)
     {
@@ -1046,9 +1046,6 @@ void UAVControl::send_vel_xy_pos_z_setpoint(const Eigen::Vector3d &pos_sp, const
 void UAVControl::send_pos_vel_xyz_setpoint(const Eigen::Vector3d &pos_sp, const Eigen::Vector3d &vel_sp, float yaw_sp, bool enable_rate)
 {
     mavros_msgs::PositionTarget pos_setpoint;
-    // 速度作为前馈项， 参见FlightTaskOffboard.cpp
-    // 控制方法请见 PositionControl.cpp
-    // 0b100111000000;  100 111 000 000  vx vy　vz x y z+ yaw
     pos_setpoint.coordinate_frame = mavros_msgs::PositionTarget::FRAME_LOCAL_NED;
     pos_setpoint.type_mask = mavros_msgs::PositionTarget::IGNORE_AFX |
                              mavros_msgs::PositionTarget::IGNORE_AFY |
@@ -1068,11 +1065,11 @@ void UAVControl::send_pos_vel_xyz_setpoint(const Eigen::Vector3d &pos_sp, const 
 // 发送角度期望值至飞控（输入: 期望角度-四元数,期望推力）
 void UAVControl::send_attitude_setpoint(const Eigen::Vector3d &att_sp, double thrust_sp)
 {
-    sunray_msgs::AttitudeSetpoint att_setpoint;
+    mavros_msgs::AttitudeTarget att_setpoint;
     att_setpoint.header.stamp = ros::Time::now();
-    att_setpoint.type_mask = sunray_msgs::AttitudeSetpoint::IGNORE_ROLL_RATE |
-                             sunray_msgs::AttitudeSetpoint::IGNORE_PITCH_RATE |
-                             sunray_msgs::AttitudeSetpoint::IGNORE_YAW_RATE;
+    att_setpoint.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ROLL_RATE |
+                             mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE |
+                             mavros_msgs::AttitudeTarget::IGNORE_YAW_RATE;
     Eigen::Quaterniond q_sp = quaternion_from_rpy(att_sp);
     att_setpoint.orientation.x = q_sp.x();
     att_setpoint.orientation.y = q_sp.y();
@@ -1088,16 +1085,16 @@ void UAVControl::send_attitude_setpoint(const Eigen::Vector3d &att_sp, double th
 // 发送经纬度以及高度期望值至飞控(输入,期望lat/lon/alt,期望yaw)
 void UAVControl::send_global_pos_setpoint(const Eigen::Vector3d &global_pos_sp, float yaw_sp)
 {
-   sunray_msgs::GlobalPositionSetpoint global_setpoint;
-    global_setpoint.coordinate_frame = sunray_msgs::GlobalPositionSetpoint::FRAME_GLOBAL_INT;
-    global_setpoint.type_mask = sunray_msgs::GlobalPositionSetpoint::IGNORE_VX |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_VY |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_VZ |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_AFX |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_AFY |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_AFZ |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_AFY |
-                                sunray_msgs::GlobalPositionSetpoint::IGNORE_YAW_RATE;
+   mavros_msgs::GlobalPositionTarget global_setpoint;
+    global_setpoint.coordinate_frame = mavros_msgs::GlobalPositionTarget::FRAME_GLOBAL_INT;
+    global_setpoint.type_mask = mavros_msgs::GlobalPositionTarget::IGNORE_VX |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_VY |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_VZ |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_AFX |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_AFY |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_AFZ |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_AFY |
+                                mavros_msgs::GlobalPositionTarget::IGNORE_YAW_RATE;
     global_setpoint.latitude = global_pos_sp[0];
     global_setpoint.longitude = global_pos_sp[1];
     global_setpoint.altitude = global_pos_sp[2];
@@ -1213,7 +1210,7 @@ void UAVControl::reboot_PX4()
 // 打印参数
 void UAVControl::printf_param()
 {
-    cout << GREEN << ">>>>>>>>>>>>>>>> UAV control Param <<<<<<<<<<<<<<<<" << TAIL << endl;
+    cout << BLUE << ">>>>>>>>>>>>>>>> UAV control Param <<<<<<<<<<<<<<<<" << TAIL << endl;
     cout << GREEN << "uav_id                    : " << uav_id << " " << TAIL << endl;
     cout << GREEN << "sim_mode                  : " << sim_mode << " " << TAIL << endl;
     cout << GREEN << "Takeoff_height            : " << Takeoff_height << " [m] " << TAIL << endl;
