@@ -1,0 +1,260 @@
+#include "externalFusion.h"
+#include "printf_format.h"
+#include <signal.h>
+
+using namespace std;
+using namespace sunray_logger;
+
+ExternalFusion::ExternalFusion()
+{
+    source_map[ODOM] = "ODOM";
+    source_map[POSE] = "POSE";
+    source_map[GAZEBO] = "GAZEBO";
+    source_map[MOCAP] = "MOCAP";
+    source_map[VIOBOT] = "VIOBOT";
+    source_map[GPS] = "GPS";
+    source_map[RTK] = "RTK";
+    source_map[VINS] = "VINS";
+}
+void ExternalFusion::init(ros::NodeHandle &nh)
+{
+    nh_ = nh;
+    double source_timeout, jump_threshold, pub_rate, task_rate;
+    bool flag_printf, enable_rviz, check_jump;
+
+    node_name = ros::this_node::getName();                                        // 【参数】节点名称
+    nh.param<int>("uav_id", uav_id, 1);                                           // 【参数】无人机编号
+    nh.param<int>("external_source", external_source, ODOM);                      // 【参数】外部定位数据来源
+    nh.param<string>("uav_name", uav_name, "uav");                                // 【参数】无人机名称
+    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose"); // 【参数】外部定位数据来源
+    nh.param<double>("source_timeout", source_timeout, 0.35);                     // 【参数】外部定位数据来源
+    nh.param<double>("jump_threshold", jump_threshold, 0.1);                      // 【参数】外部定位数据跳变阈值
+    nh.param<double>("pub_rate", pub_rate, 0.02);                                 // 【参数】发布到mavros的频率
+    nh.param<double>("task_rate", task_rate, 0.05);                               // 【参数】定时任务的频率
+    nh.param<bool>("check_jump", check_jump, false);                              // 【参数】是否检查外部定位数据跳变
+    nh.param<bool>("listen_uav", listen_uav_state, true);                         // 【参数】是否监听无人机状态
+    nh.param<bool>("flag_printf", flag_printf, true);                             // 【参数】是否打印日志
+    nh.param<bool>("enable_rviz", enable_rviz, false);                            // 【参数】是否发布到rviz
+    // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);               // 【参数】是否使用rangeSensor
+
+    uav_name = uav_name + std::to_string(uav_id);
+    string topic_prefix = "/" + uav_name;
+
+    if (source_map.find(external_source) != source_map.end())
+    {
+        external_position = factory.create(source_map[external_source]);
+        if(source_map[external_source] == "MOCAP")
+        {
+            external_position->init();
+        }
+        else
+        {
+            external_position->init();
+        }
+        external_position.bindTopic(nh);
+        Logger::info("external source: [", source_map[external_source], "]");
+    }
+    else
+    {
+        Logger::error("external source not found,external source id: [ ", external_source, " ]");
+    }
+
+    if (listen_uav_state || flag_printf)
+    {
+        px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
+        px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
+        px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
+    }
+
+    // 定时任务
+    timer_task = nh.createTimer(ros::Duration(0.5), &ExternalFusion::timer_callback, this);
+
+    // 初始化变量
+    px4_state.connected = false;
+    px4_state.armed = false;
+    px4_state.battery = 0;
+    px4_state.battery_percentage = 0;
+    px4_state.mode = "UNKNOWN";
+    Logger::info("external fusion node init");
+}
+
+void ExternalFusion::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    px4_state.position_state.pos_x = msg->pose.pose.position.x;
+    px4_state.position_state.pos_y = msg->pose.pose.position.y;
+    px4_state.position_state.pos_z = msg->pose.pose.position.z;
+    px4_state.position_state.vel_x = msg->twist.twist.linear.x;
+    px4_state.position_state.vel_y = msg->twist.twist.linear.y;
+    px4_state.position_state.vel_z = msg->twist.twist.linear.z;
+}
+
+void ExternalFusion::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
+{
+    px4_state.connected = msg->connected;
+    px4_state.armed = msg->armed;
+    px4_state.mode = msg->mode;
+}
+
+void ExternalFusion::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
+{
+    px4_state.battery = msg->voltage;
+    px4_state.battery_percentage = msg->percentage * 100;
+}
+
+void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
+{
+    px4_state.position_state.att_x = msg->orientation.x;
+    px4_state.position_state.att_y = msg->orientation.y;
+    px4_state.position_state.att_z = msg->orientation.z;
+    px4_state.position_state.att_w = msg->orientation.w;
+
+    // 转为rpy
+    tf::Quaternion q(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
+    tf::Matrix3x3 m(q);
+    m.getRPY(px4_state.position_state.roll, px4_state.position_state.pitch, px4_state.position_state.yaw);
+}
+
+void ExternalFusion::show_px4_state()
+{
+    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>", uav_name, "<<<<<<<<<<");
+    if (px4_state.connected)
+    {
+        Logger::print_color(int(LogColor::green), "CONNECTED:", "TRUE");
+        if (px4_state.armed)
+            Logger::print_color(int(LogColor::green), "MODE:", px4_state.mode, LOG_GREEN, "ARMED");
+        else
+            Logger::print_color(int(LogColor::green), "MODE:", px4_state.mode, LOG_RED, "DISARMED");
+        Logger::print_color(int(LogColor::green), "BATTERY:", px4_state.battery, "[V]", px4_state.battery_percentage, "[%]");
+    }
+    else
+        Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
+
+    Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
+    // Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+    //                     external_position.external_position.external_px,
+    //                     external_position.external_position.external_py,
+    //                     external_position.external_position.external_pz,
+    //                     "[m]");
+    // Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+    //                     external_position.external_position.external_vx,
+    //                     external_position.external_position.external_vy,
+    //                     external_position.external_position.external_vz,
+    //                     "[m/s]");
+    // Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+    //                     external_position.external_position.external_roll,
+    //                     external_position.external_position.external_pitch,
+    //                     external_position.external_position.external_yaw,
+    //                     "[deg]");
+
+    if (px4_state.connected)
+    {
+        Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
+        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                            px4_state.position_state.pos_x,
+                            px4_state.position_state.pos_y,
+                            px4_state.position_state.pos_z,
+                            "[m]");
+        Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                            px4_state.position_state.vel_x,
+                            px4_state.position_state.vel_y,
+                            px4_state.position_state.vel_z,
+                            "[m/s]");
+        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                            px4_state.position_state.roll,
+                            px4_state.position_state.pitch,
+                            px4_state.position_state.yaw,
+                            "[deg]");
+
+        Logger::print_color(int(LogColor::blue), "ERR POS(external - receive)");
+        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                            err_state.pos_x,
+                            err_state.pos_y,
+                            err_state.pos_z,
+                            "[m]");
+        Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                            err_state.vel_x,
+                            err_state.vel_y,
+                            err_state.vel_z,
+                            "[m/s]");
+        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                            err_state.roll,
+                            err_state.pitch,
+                            err_state.yaw,
+                            "[deg]");
+    }
+}
+
+// 定时器回调函数
+void ExternalFusion::timer_callback(const ros::TimerEvent &event)
+{
+    // external_state.pos_x = external_position.external_position.external_px + external_position.offset.external_px;
+    // external_state.pos_y = external_position.external_position.external_py + external_position.offset.external_py;
+    // external_state.pos_z = external_position.external_position.external_pz + external_position.offset.external_pz;
+    // external_state.vel_x = external_position.external_position.external_vx;
+    // external_state.vel_y = external_position.external_position.external_vy;
+    // external_state.vel_z = external_position.external_position.external_vz;
+    // external_state.att_x = external_position.external_position.external_qx;
+    // external_state.roll = external_position.external_position.external_roll + external_position.offset.external_roll;
+    // external_state.pitch = external_position.external_position.external_pitch + external_position.offset.external_pitch;
+    // external_state.yaw = external_position.external_position.external_yaw + external_position.offset.external_yaw;
+
+    // err_state.pos_x = external_state.pos_x - px4_state.position_state.pos_x;
+    // err_state.pos_y = external_state.pos_y - px4_state.position_state.pos_y;
+    // err_state.pos_z = external_state.pos_z - px4_state.position_state.pos_z;
+    // err_state.vel_x = external_state.vel_x - px4_state.position_state.vel_x;
+    // err_state.vel_y = external_state.vel_y - px4_state.position_state.vel_y;
+    // err_state.vel_z = external_state.vel_z - px4_state.position_state.vel_z;
+    // err_state.roll = external_state.roll - px4_state.position_state.roll;
+    // err_state.pitch = external_state.pitch - px4_state.position_state.pitch;
+    // err_state.yaw = external_state.yaw - px4_state.position_state.yaw;
+
+    // // 检查超时
+    // if (external_position.timeout_flag)
+    // {
+    //     Logger::warning("Warning: The external position is timeout!");
+    // }
+
+    // // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
+    // if (abs(err_state.pos_x) > 0.1 ||
+    //     abs(err_state.pos_y) > 0.1 ||
+    //     abs(err_state.pos_z) > 0.1)
+    // // abs(err_state.yaw) > 10) // deg
+    // {
+    //     Logger::warning("Warning: The error between external state and px4 state is too large!");
+    // }
+
+    // show_px4_state();
+}
+
+void mySigintHandler(int sig)
+{
+    ROS_INFO("[external_fusion_node] exit...");
+    ros::shutdown();
+    exit(0);
+}
+
+int main(int argc, char **argv)
+{
+
+    Logger::init_default();
+    Logger::setPrintLevel(false);
+    Logger::setPrintTime(false);
+    Logger::setPrintToFile(false);
+    Logger::setFilename("/home/yundrone/Sunray/General_Module/sunray_uav_control/test/log.txt");
+
+    ros::init(argc, argv, "external_fusion");
+    ros::NodeHandle nh("~");
+    ros::Rate rate(50);
+
+    signal(SIGINT, mySigintHandler);
+    ExternalFusion external_fusion;
+    external_fusion.init(nh);
+
+    while (ros::ok)
+    {
+        ros::spinOnce();
+        rate.sleep();
+    }
+
+    return 0;
+}

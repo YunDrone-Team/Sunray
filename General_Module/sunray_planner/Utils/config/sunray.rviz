@@ -220,8 +220,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.851337194442749
-            Min Value: -0.15306594967842102
+            Max Value: 1.8476098775863647
+            Min Value: -0.15151755511760712
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -229,7 +229,7 @@ Visualization Manager:
           Color: 255; 25; 0
           Color Transformer: AxisColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 25; 0
           Min Color: 0; 0; 0
@@ -244,7 +244,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Angle Tolerance: 0.10000000149011612
           Class: rviz/Odometry
           Covariance:
@@ -413,6 +413,6 @@ Window Geometry:
     collapsed: false
   Width: 1468
   X: 87
-  Y: 105
+  Y: 68
   depth:
     collapsed: false

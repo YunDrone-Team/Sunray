@@ -61,22 +61,6 @@
       <uri>model://room3</uri>
     </include>
 
-    
-    
-    <model name='cilcle_2'> 
-        <include>
-          <pose>1.3 0.8 0 -1.57 0 -1.57</pose>
-          <uri>model://square</uri>
-        </include>
-    </model>
-
-    <model name='target'> 
-    	<pose frame=''>2.8 1 0  0 0 0</pose> 
-      <include>
-      <uri>model://tag_car_down</uri>
-      </include>
-    </model>
-
     <!-- 装饰 -->
     <model name='texture'>
       <static>true</static>

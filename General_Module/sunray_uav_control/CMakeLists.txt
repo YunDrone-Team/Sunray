@@ -73,9 +73,14 @@ add_executable(show_detail_node utils/show_detail.cpp)
 add_dependencies(show_detail_node sunray_control_gencpp)
 target_link_libraries(show_detail_node ${catkin_LIBRARIES})
 
-
 add_executable(joy_node utils/joy_node.cpp)
 target_link_libraries(joy_node ${catkin_LIBRARIES})
+
+add_executable(logTest test/logTest.cpp)
+target_link_libraries(logTest ${catkin_LIBRARIES})
+
+add_executable(external_fusion_node src/externalFusion.cpp)
+target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
