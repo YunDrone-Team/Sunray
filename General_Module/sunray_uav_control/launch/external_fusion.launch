@@ -1,0 +1,29 @@
+<launch>
+    <arg name="uav_id" default="1" />
+    <arg name="external_source" default="ODOM" />
+    <arg name="uav_name" default="uav" />
+    <arg name="position_topic" default="/uav1/sunray/gazebo_pose" />
+    <arg name="source_timeout" default="0.35" />
+    <arg name="jump_threshold" default="0.1" />
+    <arg name="pub_rate" default="0.02" />
+    <arg name="task_rate" default="0.05" />
+    <arg name="check_jump" default="false" />
+    <arg name="listen_uav" default="true" />
+    <arg name="flag_printf" default="true" />
+    <arg name="enable_rviz" default="false" />
+
+    <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="external_source" value="$(arg external_source)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="position_topic" value="$(arg position_topic)" />
+        <param name="source_timeout" value="$(arg source_timeout)" />
+        <param name="jump_threshold" value="$(arg jump_threshold)" />
+        <param name="pub_rate" value="$(arg pub_rate)" />
+        <param name="task_rate" value="$(arg task_rate)" />
+        <param name="check_jump" value="$(arg check_jump)" />
+        <param name="listen_uav" value="$(arg listen_uav)" />
+        <param name="flag_printf" value="$(arg flag_printf)" />
+        <param name="enable_rviz" value="$(arg enable_rviz)" />
+    </node>
+</launch>

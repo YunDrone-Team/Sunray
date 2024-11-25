@@ -39,6 +39,7 @@ public:
         // 初始化其他参数
         this->timeout_flag = false;
         this->timeout_counter = 0.0;
+        this->external_position.external_time = ros::Time::now();
     }
 
     ~VsionMavros() {}
@@ -70,6 +71,22 @@ public:
     double getTimeoutCounter()
     {
         return this->timeout_counter;
+    }
+
+    // 更性新外部定位数据
+    void updateExternalPosition(VisionPosition ep)
+    {
+        external_position = ep;
+    }
+
+    // 话题绑定
+    void bindTopic(ros::NodeHandle &nh)
+    {
+        // 绑定vision pos
+        external_position_pub = nh.advertise<geometry_msgs::PoseStamped>(pub_topic, 10);
+        // 定时器
+        timer_task = nh.createTimer(ros::Duration(1.0 / task_rate), &VsionMavros::timerCallback, this);
+        timer_pub = nh.createTimer(ros::Duration(1.0 / pub_rate), &VsionMavros::timerPubCallback, this);
     }
 
 private:
@@ -104,16 +121,6 @@ private:
         publishExternalPosition();
         // 更新上一次的定位数据
         updateLastExternalPosition();
-    }
-
-    // 话题绑定
-    void bindTopic(ros::NodeHandle &nh)
-    {
-        // 绑定vision pos
-        external_position_pub = nh.advertise<geometry_msgs::PoseStamped>(pub_topic, 10);
-        // 定时器
-        timer_task = nh.createTimer(ros::Duration(1.0 / task_rate), &VsionMavros::timerCallback, this);
-        timer_pub = nh.createTimer(ros::Duration(1.0 / pub_rate), &VsionMavros::timerPubCallback, this);
     }
 
     // 超时检测 定时调用改函数
@@ -170,12 +177,6 @@ private:
     void updateLastExternalPosition()
     {
         last_external_position = external_position;
-    }
-
-    // 更性新外部定位数据
-    void updateExternalPosition(VisionPosition ep)
-    {
-        external_position = ep;
     }
 };
 

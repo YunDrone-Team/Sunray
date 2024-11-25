@@ -33,7 +33,7 @@ public:
     VisionPosition vision_position;
     VsionMavros external_mavros;
 
-
+    virtual void init(int id, std::string name, std::string souce_topic) = 0;
     // 实现定时回调函数
     virtual void timerCallback(const ros::TimerEvent &event) = 0;
 

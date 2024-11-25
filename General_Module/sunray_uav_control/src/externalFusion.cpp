@@ -37,21 +37,21 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     nh.param<bool>("enable_rviz", enable_rviz, false);                            // 【参数】是否发布到rviz
     // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);               // 【参数】是否使用rangeSensor
 
-    uav_name = uav_name + std::to_string(uav_id);
-    string topic_prefix = "/" + uav_name;
+    uav_prefix = uav_name + std::to_string(uav_id);
+    string topic_prefix = "/" + uav_prefix;
 
     if (source_map.find(external_source) != source_map.end())
     {
         external_position = factory.create(source_map[external_source]);
-        if(source_map[external_source] == "MOCAP")
+        if (source_map[external_source] == "MOCAP")
         {
-            external_position->init();
+            external_position->init(uav_id, uav_name, source_topic);
         }
         else
         {
-            external_position->init();
+            external_position->init(uav_id, uav_name, source_topic);
         }
-        external_position.bindTopic(nh);
+        external_position->bindTopic(nh);
         Logger::info("external source: [", source_map[external_source], "]");
     }
     else
@@ -111,12 +111,16 @@ void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     // 转为rpy
     tf::Quaternion q(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
     tf::Matrix3x3 m(q);
-    m.getRPY(px4_state.position_state.roll, px4_state.position_state.pitch, px4_state.position_state.yaw);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    px4_state.position_state.roll = roll;
+    px4_state.position_state.pitch = pitch;
+    px4_state.position_state.yaw = yaw;
 }
 
 void ExternalFusion::show_px4_state()
 {
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>", uav_name, "<<<<<<<<<<");
+    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>", uav_prefix, "<<<<<<<<<<");
     if (px4_state.connected)
     {
         Logger::print_color(int(LogColor::green), "CONNECTED:", "TRUE");
@@ -130,21 +134,21 @@ void ExternalFusion::show_px4_state()
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
 
     Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
-    // Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-    //                     external_position.external_position.external_px,
-    //                     external_position.external_position.external_py,
-    //                     external_position.external_position.external_pz,
-    //                     "[m]");
-    // Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
-    //                     external_position.external_position.external_vx,
-    //                     external_position.external_position.external_vy,
-    //                     external_position.external_position.external_vz,
-    //                     "[m/s]");
-    // Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-    //                     external_position.external_position.external_roll,
-    //                     external_position.external_position.external_pitch,
-    //                     external_position.external_position.external_yaw,
-    //                     "[deg]");
+    Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                        external_state.pos_x,
+                        external_state.pos_y,
+                        external_state.pos_z,
+                        "[m]");
+    Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                        external_state.vel_x,
+                        external_state.vel_y,
+                        external_state.vel_z,
+                        "[m/s]");
+    Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                        external_state.roll,
+                        external_state.pitch,
+                        external_state.yaw,
+                        "[deg]");
 
     if (px4_state.connected)
     {
@@ -187,43 +191,42 @@ void ExternalFusion::show_px4_state()
 // 定时器回调函数
 void ExternalFusion::timer_callback(const ros::TimerEvent &event)
 {
-    // external_state.pos_x = external_position.external_position.external_px + external_position.offset.external_px;
-    // external_state.pos_y = external_position.external_position.external_py + external_position.offset.external_py;
-    // external_state.pos_z = external_position.external_position.external_pz + external_position.offset.external_pz;
-    // external_state.vel_x = external_position.external_position.external_vx;
-    // external_state.vel_y = external_position.external_position.external_vy;
-    // external_state.vel_z = external_position.external_position.external_vz;
-    // external_state.att_x = external_position.external_position.external_qx;
-    // external_state.roll = external_position.external_position.external_roll + external_position.offset.external_roll;
-    // external_state.pitch = external_position.external_position.external_pitch + external_position.offset.external_pitch;
-    // external_state.yaw = external_position.external_position.external_yaw + external_position.offset.external_yaw;
+    external_state.pos_x = external_position->position_state.px;
+    external_state.pos_y = external_position->position_state.py;
+    external_state.pos_z = external_position->position_state.pz;
+    external_state.vel_x = external_position->position_state.vx;
+    external_state.vel_y = external_position->position_state.vy;
+    external_state.vel_z = external_position->position_state.vz;
+    external_state.att_x = external_position->position_state.roll;
+    external_state.roll = external_position->position_state.pitch;
+    external_state.yaw = external_position->position_state.yaw;
 
-    // err_state.pos_x = external_state.pos_x - px4_state.position_state.pos_x;
-    // err_state.pos_y = external_state.pos_y - px4_state.position_state.pos_y;
-    // err_state.pos_z = external_state.pos_z - px4_state.position_state.pos_z;
-    // err_state.vel_x = external_state.vel_x - px4_state.position_state.vel_x;
-    // err_state.vel_y = external_state.vel_y - px4_state.position_state.vel_y;
-    // err_state.vel_z = external_state.vel_z - px4_state.position_state.vel_z;
-    // err_state.roll = external_state.roll - px4_state.position_state.roll;
-    // err_state.pitch = external_state.pitch - px4_state.position_state.pitch;
-    // err_state.yaw = external_state.yaw - px4_state.position_state.yaw;
+    err_state.pos_x = external_state.pos_x - px4_state.position_state.pos_x;
+    err_state.pos_y = external_state.pos_y - px4_state.position_state.pos_y;
+    err_state.pos_z = external_state.pos_z - px4_state.position_state.pos_z;
+    err_state.vel_x = external_state.vel_x - px4_state.position_state.vel_x;
+    err_state.vel_y = external_state.vel_y - px4_state.position_state.vel_y;
+    err_state.vel_z = external_state.vel_z - px4_state.position_state.vel_z;
+    err_state.roll = external_state.roll - px4_state.position_state.roll;
+    err_state.pitch = external_state.pitch - px4_state.position_state.pitch;
+    err_state.yaw = external_state.yaw - px4_state.position_state.yaw;
 
-    // // 检查超时
-    // if (external_position.timeout_flag)
-    // {
-    //     Logger::warning("Warning: The external position is timeout!");
-    // }
+    // 检查超时
+    if (external_position->position_state.valid)
+    {
+        Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
+    }
 
-    // // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
-    // if (abs(err_state.pos_x) > 0.1 ||
-    //     abs(err_state.pos_y) > 0.1 ||
-    //     abs(err_state.pos_z) > 0.1)
-    // // abs(err_state.yaw) > 10) // deg
-    // {
-    //     Logger::warning("Warning: The error between external state and px4 state is too large!");
-    // }
+    // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
+    if (abs(err_state.pos_x) > 0.1 ||
+        abs(err_state.pos_y) > 0.1 ||
+        abs(err_state.pos_z) > 0.1)
+    // abs(err_state.yaw) > 10) // deg
+    {
+        Logger::warning("Warning: The error between external state and px4 state is too large!");
+    }
 
-    // show_px4_state();
+    show_px4_state();
 }
 
 void mySigintHandler(int sig)

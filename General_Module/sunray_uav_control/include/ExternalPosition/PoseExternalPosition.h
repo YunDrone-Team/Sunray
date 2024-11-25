@@ -7,7 +7,7 @@ public:
     {
     }
 
-    void init(int id = 1, std::string name = "uav", std::string souce_topic = "Pose")
+    void init(int id = 1, std::string name = "uav", std::string souce_topic = "Pose") override
     {
         // 初始化参数
         uav_id = id;
@@ -16,7 +16,7 @@ public:
 
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
         std::string vision_topic = topic_prefix + "/mavros/vision_pose/pose";
-        external_mavros.initParameters(topic_prefix, 0.35, 0.1, true, true, 50, 20);
+        external_mavros.initParameters(vision_topic, 0.35, 0.1, true, true, 50, 20);
     }
 
     // 实现外部定位源话题回调函数
@@ -31,6 +31,7 @@ public:
         vision_position.external_qy = msg->pose.orientation.y;
         vision_position.external_qz = msg->pose.orientation.z;
         vision_position.external_qw = msg->pose.orientation.w;
+        external_mavros.updateExternalPosition(vision_position);
 
         // 四元素转rpy
         tf2::Quaternion quaternion;
@@ -66,6 +67,8 @@ public:
         pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(source_topic_name, 1, &PoseExternalPosition::PosCallback, this);
         // 【定时器】定时任务
         task_timer = nh.createTimer(ros::Duration(0.05), &PoseExternalPosition::timerCallback, this);
+        // 给vision mavros节点也绑定话题
+        external_mavros.bindTopic(nh);
     }
 
 private:
