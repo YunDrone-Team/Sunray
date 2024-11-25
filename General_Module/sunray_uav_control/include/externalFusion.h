@@ -54,10 +54,11 @@ struct PX4State // 无人机状态集合
 class ExternalFusion
 {
 private:
-    std::string node_name;                                       // 节点名称
-    std::string uav_name{""};                                    // 无人机名称
-    std::string source_topic{""};                                // 外部定位数据来源
-    std::string pub_topic{""};                                   // 发布到无人机话题
+    std::string node_name;                                  // 节点名称
+    std::string uav_name{""};                               // 无人机名称
+    std::string source_topic{""};                           // 外部定位数据来源
+    std::string pub_topic{""};                              // 发布到无人机话题
+    std::string uav_prefix{""};                             // 无人机前缀 uav_name+uav_id
     int uav_id;                                             // 无人机编号
     int external_source;                                    // 外部定位数据来源
     double range_hight;                                     // 激光定位数据
@@ -72,7 +73,6 @@ private:
 
     ExternalPositioFactory factory;
     std::shared_ptr<ExternalPosition> external_position;
-
 
     ros::NodeHandle nh_;             // ros节点句柄
     ros::Subscriber px4_state_sub;   // 无人机状态订阅
@@ -90,7 +90,7 @@ public:
     ExternalFusion(/* args */);
     ~ExternalFusion();
 
-    std::map<int, std::string> source_map;  // 外部定位数据来源映射
+    std::map<int, std::string> source_map; // 外部定位数据来源映射
     // std::map<int, ExternalPosition> obj_map; // 外部定位数据来源映射
 
     void init(ros::NodeHandle &nh);                                            // 初始化
