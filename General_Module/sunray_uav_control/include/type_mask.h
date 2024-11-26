@@ -1,6 +1,6 @@
 #include "ros_msg_utils.h"
 
-struct TypeMask
+namespace TypeMask
 {
     uint16_t XYZ_POS =
         mavros_msgs::PositionTarget::IGNORE_VX |
@@ -154,5 +154,4 @@ struct TypeMask
         mavros_msgs::PositionTarget::IGNORE_AFZ |
         mavros_msgs::PositionTarget::IGNORE_YAW |
         mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
-    ;
 };
