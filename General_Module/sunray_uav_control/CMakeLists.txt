@@ -82,7 +82,9 @@ target_link_libraries(logTest ${catkin_LIBRARIES})
 add_executable(external_fusion_node src/externalFusion.cpp)
 target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 
+add_library(mavros_control src/controller.cpp)
 add_executable(mavros_control_node src/mavros_control.cpp)
+target_link_libraries(mavros_control_node mavros_control)
 target_link_libraries(mavros_control_node ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
