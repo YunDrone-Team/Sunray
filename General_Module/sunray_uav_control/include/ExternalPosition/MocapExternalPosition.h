@@ -15,6 +15,14 @@ public:
         std::string topic_prefix = "/" + this->uav_name + std::to_string(this->uav_id);
         std::string vision_topic = topic_prefix + "/mavros/vision_pose/pose";
         external_mavros.initParameters(vision_topic, 0.35, 0.1, true, true, 50, 20);
+
+        position_state.px = -0.01;
+        position_state.py = -0.01;
+        position_state.pz = -0.01;
+        position_state.qz = -0.01;
+        position_state.roll = 0.0;
+        position_state.pitch = 0.0;
+        position_state.yaw = 0.0;
     };
 
     // 实现外部定位源话题回调函数

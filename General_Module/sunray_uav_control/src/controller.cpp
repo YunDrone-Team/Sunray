@@ -137,7 +137,6 @@ void mavros_control::setArm(bool arm)
 void mavros_control::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
     control_cmd = *msg;
-    std::cout << "control_cmd: " << control_cmd << std::endl;
 }
 
 void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
@@ -197,7 +196,28 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
 
 void mavros_control::print_state(const ros::TimerEvent &event)
 {
-    Logger::print_color(int(LogColor::blue), "Control Mode", control_mode);
+    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_prefix, "<<<<<<<<<<<<<<<");
+    Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[control_mode], LOG_GREEN, "]");
+
+    if (px4_state.connected)
+    {
+        Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
+        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                            px4_state.pos[0],
+                            px4_state.pos[1],
+                            px4_state.pos[2],
+                            "[m]");
+        Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                            px4_state.vel[0],
+                            px4_state.vel[1],
+                            px4_state.vel[2],
+                            "[m/s]");
+        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                            px4_state.att[0] / M_PI * 180,
+                            px4_state.att[1] / M_PI * 180,
+                            px4_state.att[2] / M_PI * 180,
+                            "[deg]");
+    }
 }
 
 void mavros_control::set_hover_pos()
@@ -248,67 +268,68 @@ void mavros_control::set_offboard_mode()
 void mavros_control::set_desired_from_cmd()
 {
     // 判断是否是新的指令
-    bool new_cmd = control_cmd.header.stamp == last_control_cmd.header.stamp;
+    bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
     if (new_cmd)
     {
         if (control_cmd.cmd == Takeoff)
-    {
-        set_default_setpoint();
-        local_setpoint.position.x = flight_params.home_pos[0];
-        local_setpoint.position.y = flight_params.home_pos[1];
-        local_setpoint.position.z = flight_params.home_pos[2] + takeoff_height;
-        local_setpoint.yaw = flight_params.home_yaw;
-        flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-    }
-    else if (control_cmd.cmd == Land)
-    {
-    }
-    else if (control_cmd.cmd == Hover)
-    {
-        set_default_setpoint();
-        set_hover_pos();
-        local_setpoint.position.x = flight_params.hover_pos[0];
-        local_setpoint.position.y = flight_params.hover_pos[1];
-        local_setpoint.position.z = flight_params.hover_pos[2];
-        local_setpoint.yaw = flight_params.hover_yaw;
-        flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-    }
-    else
-    {
-        auto it = moveModeMap.find(control_cmd.cmd);
-        if (it != moveModeMap.end())
         {
-            flight_params.type_mask = it->second;
             set_default_setpoint();
-            local_setpoint.position.x = control_cmd.desired_pos[0];
-            local_setpoint.position.y = control_cmd.desired_pos[1];
-            local_setpoint.position.z = control_cmd.desired_pos[2];
-            local_setpoint.velocity.x = control_cmd.desired_vel[0];
-            local_setpoint.velocity.y = control_cmd.desired_vel[1];
-            local_setpoint.velocity.z = control_cmd.desired_vel[2];
-            local_setpoint.acceleration_or_force.x = control_cmd.desired_acc[0];
-            local_setpoint.acceleration_or_force.y = control_cmd.desired_acc[1];
-            local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
-            local_setpoint.yaw = control_cmd.desired_yaw;
-            local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
+            local_setpoint.position.x = flight_params.home_pos[0];
+            local_setpoint.position.y = flight_params.home_pos[1];
+            local_setpoint.position.z = flight_params.home_pos[2] + takeoff_height;
+            local_setpoint.yaw = flight_params.home_yaw;
+            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+        }
+        else if (control_cmd.cmd == Land)
+        {
+            control_mode = Control_Mode::LAND_CONTROL;
+        }
+        else if (control_cmd.cmd == Hover)
+        {
+            set_default_setpoint();
+            set_hover_pos();
+            local_setpoint.position.x = flight_params.hover_pos[0];
+            local_setpoint.position.y = flight_params.hover_pos[1];
+            local_setpoint.position.z = flight_params.hover_pos[2];
+            local_setpoint.yaw = flight_params.hover_yaw;
+            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
         }
         else
         {
-            std::cout << "Unknown command!" << std::endl;
-            if (new_cmd)
+            auto it = moveModeMap.find(control_cmd.cmd);
+            if (it != moveModeMap.end())
             {
+                flight_params.type_mask = it->second;
                 set_default_setpoint();
-                set_hover_pos();
-                local_setpoint.position.x = flight_params.hover_pos[0];
-                local_setpoint.position.y = flight_params.hover_pos[1];
-                local_setpoint.position.z = flight_params.hover_pos[2];
-                local_setpoint.yaw = flight_params.hover_yaw;
-                flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-            };
+                local_setpoint.position.x = control_cmd.desired_pos[0];
+                local_setpoint.position.y = control_cmd.desired_pos[1];
+                local_setpoint.position.z = control_cmd.desired_pos[2];
+                local_setpoint.velocity.x = control_cmd.desired_vel[0];
+                local_setpoint.velocity.y = control_cmd.desired_vel[1];
+                local_setpoint.velocity.z = control_cmd.desired_vel[2];
+                local_setpoint.acceleration_or_force.x = control_cmd.desired_acc[0];
+                local_setpoint.acceleration_or_force.y = control_cmd.desired_acc[1];
+                local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
+                local_setpoint.yaw = control_cmd.desired_yaw;
+                local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
+            }
+            else
+            {
+                std::cout << "Unknown command!" << std::endl;
+                if (new_cmd)
+                {
+                    set_default_setpoint();
+                    set_hover_pos();
+                    local_setpoint.position.x = flight_params.hover_pos[0];
+                    local_setpoint.position.y = flight_params.hover_pos[1];
+                    local_setpoint.position.z = flight_params.hover_pos[2];
+                    local_setpoint.yaw = flight_params.hover_yaw;
+                    flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+                };
+            }
         }
     }
-    }
-    
+
     setpoint_pub(flight_params.type_mask, local_setpoint);
     last_control_cmd = control_cmd;
 }
@@ -319,6 +340,54 @@ void mavros_control::set_desired_from_rc()
 
 void mavros_control::set_desired_from_land()
 {
+    bool new_cmd = control_mode != last_control_mode;
+    if (new_cmd)
+    {
+        flight_params.last_land_time = ros::Time(0);
+        set_default_setpoint();
+        flight_params.land_pos[0] = px4_state.pos[0];
+        flight_params.land_pos[1] = px4_state.pos[1];
+        flight_params.land_pos[2] = flight_params.home_pos[2];
+        flight_params.land_yaw = px4_state.att[2];
+    }
+
+    local_setpoint.position.x = flight_params.land_pos[0];
+    local_setpoint.position.y = flight_params.land_pos[1];
+    local_setpoint.position.z = flight_params.land_pos[2];
+    local_setpoint.velocity.z = -land_speed;
+    local_setpoint.yaw = flight_params.land_yaw;
+    flight_params.type_mask = TypeMask::XYZ_POS_VEL_YAW;
+
+    // 当无人机位置低于指定高度时，自动上锁
+    if (px4_state.pos[2] < disarm_height)
+    {
+        if (flight_params.last_land_time == ros::Time(0))
+        {
+            flight_params.last_land_time = ros::Time::now();
+        }
+        // 到达制定高度后向下移动land_end_time 防止其直接锁桨掉落
+        set_default_setpoint();
+        if ((ros::Time::now() - flight_params.last_land_time).toSec() < land_end_time)
+        {
+            local_setpoint.velocity.z = -land_end_speed;
+            local_setpoint.yaw = flight_params.land_yaw;
+            flight_params.type_mask = TypeMask::XYZ_VEL_YAW;
+        }
+        else
+        {
+            // 停桨降落完成
+            emergencyStop();
+            control_mode = Control_Mode::INIT;
+        }
+    }
+
+    // 如果无人机已经上锁，代表已经降落结束
+    if (!px4_state.armed)
+    {
+        control_mode = Control_Mode::INIT;
+    }
+
+    setpoint_pub(flight_params.type_mask, local_setpoint);
 }
 
 void mavros_control::set_desired_from_hover()
