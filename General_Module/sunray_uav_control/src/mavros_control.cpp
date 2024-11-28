@@ -16,8 +16,12 @@ void mavros_control::init(ros::NodeHandle &nh)
     nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);
     nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);
     nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);
+    // 【参数】飞行参数
+    nh.param<float>("flight_param/land_end_time", land_end_time, 1.0);    // 【参数】降落最后一阶段时间
+    nh.param<float>("land_end_time/land_end_speed", land_end_speed, 0.3); // 【参数】降落最后一阶段速度
 
-    topic_prefix = "/" + uav_name + std::to_string(uav_id);
+    uav_prefix = uav_name + std::to_string(uav_id);
+    topic_prefix = "/" + uav_prefix;
 
     px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state",
                                                      10, &mavros_control::px4_state_callback, this);
@@ -46,6 +50,7 @@ void mavros_control::init(ros::NodeHandle &nh)
     print_timer = nh.createTimer(ros::Duration(1), &mavros_control::print_state, this);
 
     control_mode = Control_Mode::INIT;
+    last_control_mode = Control_Mode::INIT;
 }
 void mavros_control::mainLoop()
 {
@@ -77,6 +82,7 @@ void mavros_control::mainLoop()
         set_desired_from_hover();
         break;
     }
+    last_control_mode = control_mode;
 }
 
 int main(int argc, char **argv)

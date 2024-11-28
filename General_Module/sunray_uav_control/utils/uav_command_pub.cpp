@@ -10,7 +10,7 @@
 
 // #include "controller_test.h"
 #include "printf_utils.h"
-
+#include <signal.h>
 #include "ros_msg_utils.h"
 
 using namespace std;
@@ -21,7 +21,6 @@ sunray_msgs::UAVSetup setup;
 sunray_msgs::UAVState uav_control_state;
 std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
 
-// 如果要使用地面站PrometheusGround控制，需要将此值改为true，否则改为false
 bool is_ground_station_control = false;
 bool flag = false;
 
@@ -35,12 +34,19 @@ void uav_control_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
     uav_control_state = *msg;
 }
 
+void mySigintHandler(int sig)
+{
+    ROS_INFO("[uav_command_pub] exit...");
+    ros::shutdown();
+    exit(0);
+}
+
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>主 函 数<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "uav_command_pub");
     ros::NodeHandle nh("~");
-
+    signal(SIGINT, mySigintHandler);
     int uav_id;
     bool sim_mode;
     string uav_name{""};
@@ -61,7 +67,7 @@ int main(int argc, char **argv)
     ros::Publisher uav_command_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
 
     // 【发布】UAVSetup
-    ros::Publisher setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup",1);
+    ros::Publisher setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
     // 用于控制器测试的类，功能例如：生成圆形轨迹，8字轨迹等
     //  Controller_Test Controller_Test;
@@ -104,12 +110,12 @@ int main(int argc, char **argv)
         {
             cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>UAV Terminal Control<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
             cout << GREEN << "setup: "
-                    << YELLOW << "101 " << GREEN << "arm or dis arm,"
-                    << YELLOW << " 102 " << GREEN << "control(offboard),"
-                    << YELLOW << " 103 " << GREEN << "takeoff,"
-                    << YELLOW << " 104 " << GREEN << "hover,"
-                    << YELLOW << " 105 " << GREEN << "land,"
-                    << YELLOW << " 100 " << GREEN << "yawRate(now ";
+                 << YELLOW << "101 " << GREEN << "arm or dis arm,"
+                 << YELLOW << " 102 " << GREEN << "control_state,"
+                 << YELLOW << " 103 " << GREEN << "takeoff,"
+                 << YELLOW << " 104 " << GREEN << "land,"
+                 << YELLOW << " 105 " << GREEN << "hover,"
+                 << YELLOW << " 100 " << GREEN << "yawRate(";
             if (yaw_rate)
             {
                 cout << YELLOW << "enable" << GREEN << ")" << TAIL << endl;
@@ -119,12 +125,12 @@ int main(int argc, char **argv)
                 cout << YELLOW << "disable" << GREEN << ")" << TAIL << endl;
             }
             cout << GREEN << "CMD: "
-                    << YELLOW << "1 " << GREEN << "(XYZ_POS),"
-                    << YELLOW << " 2 " << GREEN << "(XY_VEL_Z_POS),"
-                    << YELLOW << " 3 " << GREEN << "(XYZ_VEL),"
-                    << YELLOW << " 4 " << GREEN << "(XYZ_POS_BODY),"
-                    << YELLOW << " 5 " << GREEN << "(XYZ_VEL_BODY),"
-                    << YELLOW << " 6 " << GREEN << "(XY_VEL_Z_POS_BODY)" << TAIL << endl;
+                 << YELLOW << "1 " << GREEN << "(XYZ_POS),"
+                 << YELLOW << " 2 " << GREEN << "(XY_VEL_Z_POS),"
+                 << YELLOW << " 3 " << GREEN << "(XYZ_VEL),"
+                 << YELLOW << " 4 " << GREEN << "(XYZ_POS_BODY),"
+                 << YELLOW << " 5 " << GREEN << "(XYZ_VEL_BODY),"
+                 << YELLOW << " 6 " << GREEN << "(XY_VEL_Z_POS_BODY)" << TAIL << endl;
             cin >> CMD;
         }
 
@@ -178,7 +184,7 @@ int main(int argc, char **argv)
         //     uav_cmd.desired_yaw = state_desired[3];
         //     uav_cmd.desired_yaw_rate = state_desired[3];
         //     uav_cmd.enable_yawRate = state_desired[4];
-        //     
+        //
         //     uav_command_pub.publish(uav_cmd);
         //     cout << BLUE << "vel_des [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << " pos_des [Z] : " << state_desired[2] << " [ m ] " << endl;
         //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -207,7 +213,7 @@ int main(int argc, char **argv)
         //     uav_cmd.desired_yaw = state_desired[3];
         //     uav_cmd.desired_yaw_rate = state_desired[3];
         //     uav_cmd.enable_yawRate = state_desired[4];
-        //     
+        //
         //     uav_command_pub.publish(uav_cmd);
         //     cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
         //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -231,9 +237,9 @@ int main(int argc, char **argv)
         //     uav_cmd.desired_pos[1] = state_desired[1];
         //     uav_cmd.desired_pos[2] = state_desired[2];
         //     uav_cmd.desired_yaw = state_desired[3];
-        //     uav_cmd.desired_yaw_rate = state_desired[3];
+        //     uav_cmd.desired_yaw_setuprate = state_desired[3];
         //     uav_cmd.enable_yawRate = state_desired[4];
-        //     
+        //
         //     uav_command_pub.publish(uav_cmd);
         //     cout << BLUE << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;
         //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -262,7 +268,7 @@ int main(int argc, char **argv)
         //     uav_cmd.desired_yaw = state_desired[3];
         //     uav_cmd.desired_yaw_rate = state_desired[3];
         //     uav_cmd.enable_yawRate = state_desired[4];
-        //     
+        //
         //     uav_command_pub.publish(uav_cmd);
         //     cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
         //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -291,7 +297,7 @@ int main(int argc, char **argv)
         //     uav_cmd.desired_yaw = state_desired[3];
         //     uav_cmd.desired_yaw_rate = state_desired[3];
         //     uav_cmd.enable_yawRate = state_desired[4];
-        //     
+        //
         //     uav_command_pub.publish(uav_cmd);
         //     cout << BLUE << "vel_des [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << " pos_des [Z] : " << state_desired[2] << " [ m ] " << endl;
         //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -310,40 +316,60 @@ int main(int argc, char **argv)
             {
                 setup.cmd = 1;
                 setup_pub.publish(setup);
-            } 
-            else if(arming == 0)
+            }
+            else if (arming == 0)
             {
                 setup.cmd = 0;
                 setup_pub.publish(setup);
             }
-            else {
+            else
+            {
                 std::cout << BLUE << "input error" << std::endl;
             }
             break;
         }
         case 102:
         {
+            int control_state;
+            cout << BLUE << "control_state 1 INIT 2 RC_CONTROL 3 CMD_CONTROL 4 LAND_CONTROL 5 WITHOUT_CONTROL" << std::endl;
+            cin >> control_state;
+            if (control_state == 1)
+                setup.control_state = "INIT";
+            else if (control_state == 2)
+                setup.control_state = "RC_CONTROL";
+            else if (control_state == 3)
+                setup.control_state = "CMD_CONTROL";
+            else if (control_state == 4)
+                setup.control_state = "LAND_CONTROL";
+            else if (control_state == 5)
+                setup.control_state = "WITHOUT_CONTROL";
+            else
+            {
+                std::cout << BLUE << "input error" << std::endl;
+                break;
+            }
             setup.cmd = 4;
-            setup.control_state = "INIT";
             setup_pub.publish(setup);
             break;
         }
         case 103:
-            setup.cmd = 4;
-            setup.control_state = "RC_CONTROL";
-            setup_pub.publish(setup);
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = 100;
+            uav_command_pub.publish(uav_cmd);
+            std::cout<<"takeoff"<<std::endl;
             break;
         case 104:
-            setup.cmd = 4;
-            setup.control_state = "CMD_CONTROL";
-            setup_pub.publish(setup);
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = 101;
+            uav_command_pub.publish(uav_cmd);
+            std::cout<<"land"<<std::endl;
             break;
         case 105:
-            setup.cmd = 4;
-            setup.control_state = "WITHOUT_CONTROL";
-            setup_pub.publish(setup);
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = 102;
+            uav_command_pub.publish(uav_cmd);
+            std::cout<<"hover"<<std::endl;
             break;
-        break;
         }
 
         ros::Duration(0.5).sleep();

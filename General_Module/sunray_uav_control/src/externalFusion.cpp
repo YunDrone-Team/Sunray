@@ -64,6 +64,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
         px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
         px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
+        px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
     }
 
     // 定时任务
@@ -120,7 +121,7 @@ void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
 
 void ExternalFusion::show_px4_state()
 {
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>", uav_prefix, "<<<<<<<<<<");
+    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_prefix, "<<<<<<<<<<<<<<<");
     if (px4_state.connected)
     {
         Logger::print_color(int(LogColor::green), "CONNECTED:", "TRUE");
@@ -145,9 +146,9 @@ void ExternalFusion::show_px4_state()
                         external_state.vel_z,
                         "[m/s]");
     Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                        external_state.roll,
-                        external_state.pitch,
-                        external_state.yaw,
+                        external_state.roll/M_PI*180,
+                        external_state.pitch/M_PI*180,
+                        external_state.yaw/M_PI*180,
                         "[deg]");
 
     if (px4_state.connected)
@@ -164,9 +165,9 @@ void ExternalFusion::show_px4_state()
                             px4_state.position_state.vel_z,
                             "[m/s]");
         Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                            px4_state.position_state.roll,
-                            px4_state.position_state.pitch,
-                            px4_state.position_state.yaw,
+                            px4_state.position_state.roll/M_PI*180,
+                            px4_state.position_state.pitch/M_PI*180,
+                            px4_state.position_state.yaw/M_PI*180,
                             "[deg]");
 
         Logger::print_color(int(LogColor::blue), "ERR POS(external - receive)");
@@ -181,9 +182,9 @@ void ExternalFusion::show_px4_state()
                             err_state.vel_z,
                             "[m/s]");
         Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                            err_state.roll,
-                            err_state.pitch,
-                            err_state.yaw,
+                            err_state.roll/M_PI*180,
+                            err_state.pitch/M_PI*180,
+                            err_state.yaw/M_PI*180,
                             "[deg]");
     }
 }

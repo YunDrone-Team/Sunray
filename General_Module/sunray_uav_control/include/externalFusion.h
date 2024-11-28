@@ -1,5 +1,6 @@
 #include "ExternalPosition.h"
 #include "ExternalPositionFactory.h"
+#include <math.h>
 #include <map>
 
 #define MOCAP_TIMEOUT 0.35

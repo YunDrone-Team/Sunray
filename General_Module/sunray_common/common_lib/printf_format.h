@@ -229,7 +229,7 @@ namespace sunray_logger
         template <typename T, typename... Args>
         static void append_to_stream(std::ostringstream &oss, T first, Args... args)
         {
-            oss << first << " ";
+            oss << first << delimiter;
             append_to_stream(oss, args...);
         }
 
@@ -315,6 +315,60 @@ namespace sunray_logger
             append_to_stream(oss, args...);
             std::cout << oss.str() << std::endl;
 
+            // 判断是否要输出到文件
+            if (printToFile)
+            {
+                // 判断文件输入已经打开
+                if (is_openFile)
+                {
+                    if (!f_stream.fail())
+                    {
+                        f_stream << oss.str().substr(colors[color].size()) << std::endl;
+                    }
+                }
+                else
+                {
+                    createLogFile();
+                    if (!f_stream.fail())
+                    {
+                        f_stream << oss.str().substr(colors[color].size()) << std::endl;
+                    }
+                }
+            }
+        }
+
+        // 主函数：接受颜色 + 1到N个参数，并输出拼接后的字符串 不拼接分隔符
+        template <typename... Args>
+        static void color_no_del(int color, Args... args)
+        {
+            if (!is_init)
+            {
+                throw std::logic_error("printf_format not init");
+                return;
+            }
+            std::ostringstream oss;
+            // 强制显示正负号
+            oss << std::showpos;
+            // 设置小数点精度
+            oss << std::fixed << std::setprecision(precision);
+            // 添加颜色
+            oss << colors[color];
+            // 判断level和时间是否需要打印
+            if (printLevel)
+            {
+                oss << "[" << printLevelStr << "]";
+            }
+            if (printTime)
+            {
+                oss << get_current_timestamp() << ":";
+            }
+            // 拼接分隔符
+            oss << delimiter;
+            std::string tmp_delimiter = delimiter;
+            setSeparator("");
+            append_to_stream(oss, args...);
+            std::cout << oss.str() << std::endl;
+            setSeparator(tmp_delimiter.c_str());
             // 判断是否要输出到文件
             if (printToFile)
             {
@@ -555,7 +609,7 @@ bool sunray_logger::Logger::printTime;            // 是否打印时间
 bool sunray_logger::Logger::printToFile;          // 是否输出到文件
 bool sunray_logger::Logger::is_openFile;          // 是否打开了文件
 bool sunray_logger::Logger::is_init;              // 是否初始化
-std::string sunray_logger::Logger::delimiter;     // 分隔符
+std::string sunray_logger::Logger::delimiter{" "};     // 分隔符
 std::string sunray_logger::Logger::printColor;    // 设置默认颜色
 std::string sunray_logger::Logger::printLevelStr; // 设置默认level
 std::string sunray_logger::Logger::fileName;      // 文件路径+文件名

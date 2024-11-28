@@ -9,14 +9,18 @@ class mavros_control
 private:
     int uav_id;                                        // 无人机ID
     int control_mode;                                  // 控制模式
+    int last_control_mode;                             // 控制模式
     float takeoff_height;                              // 起飞高度
     float disarm_height;                               // 锁桨高度
     float land_speed;                                  // 降落速度
     float cmd_timeout;                                 // 指令超时时间
+    float land_end_time;                               // 降落最后一段时间
+    float land_end_speed;                              // 降落最后一段速度
     bool check_cmd_timeout;                            // 检查指令超时
     std::string uav_name;                              // 无人机名称
     std::string uav_ns;                                // 节点命名空间
     std::string topic_prefix;                          // 话题前缀
+    std::string uav_prefix;                            // 无人机前缀
     sunray_msgs::UAVControlCMD control_cmd;            // 外部控制指令
     sunray_msgs::UAVControlCMD last_control_cmd;       // 上一刻控制指令
     sunray_msgs::UAVState uav_state;                   // 无人机状态
@@ -58,30 +62,34 @@ private:
 
     struct PX4State
     {
-        bool connected = false;       // 无人机连接状态
-        bool armed = false;           // 无人机解锁状态
-        std::string mode;             // 无人机模式
-        float batt_volt = 0.0;        // 无人机电池电压
-        float batt_perc = 0.0;        // 无人机电池电量
-        float target_thrust = 0.0;    // 无人机目标推力
-        Eigen::Vector3d pos;          // 无人机当前位置
-        Eigen::Vector3d vel;          // 无人机当前速度
-        Eigen::Vector3d att;          // 无人机当前姿态 角度
-        Eigen::Vector4d att_q;        // 无人机当前姿态 四元数
-        Eigen::Vector3d target_pos;   // 无人机目标位置
-        Eigen::Vector3d target_vel;   // 无人机目标速度
-        Eigen::Vector3d target_att;   // 无人机目标姿态 角度
-        Eigen::Vector4d target_att_q; // 无人机目标姿态 四元数
+        bool connected = false;                           // 无人机连接状态
+        bool armed = false;                               // 无人机解锁状态
+        std::string mode;                                 // 无人机模式
+        float batt_volt = 0.0;                            // 无人机电池电压
+        float batt_perc = 0.0;                            // 无人机电池电量
+        float target_thrust = 0.0;                        // 无人机目标推力
+        Eigen::Vector3d pos{-0.01, -0.01, -0.01};         // 无人机当前位置
+        Eigen::Vector3d vel{-0.01, -0.01, -0.01};         // 无人机当前速度
+        Eigen::Vector3d att{0.0, 0.0, 0.0};               // 无人机当前姿态 角度
+        Eigen::Vector4d att_q{0.0, 0.0, 0.0, 0.0};        // 无人机当前姿态 四元数
+        Eigen::Vector3d target_pos{0.0, 0.0, 0.0};        // 无人机目标位置
+        Eigen::Vector3d target_vel{0.0, 0.0, 0.0};        // 无人机目标速度
+        Eigen::Vector3d target_att{0.0, 0.0, 0.0};        // 无人机目标姿态 角度
+        Eigen::Vector4d target_att_q{0.0, 0.0, 0.0, 0.0}; // 无人机目标姿态 四元数
     };
     PX4State px4_state;
 
     struct FlightParams
     {
-        uint16_t type_mask = 0;    // 控制指令类型
-        float home_yaw = 0.0;      // 起飞点航向
-        float hover_yaw = 0.0;     // 无人机目标航向
-        Eigen::Vector3d home_pos;  // 起飞点
-        Eigen::Vector3d hover_pos; // 悬停点
+        uint16_t type_mask = 0;                   // 控制指令类型
+        float home_yaw = 0.0;                     // 起飞点航向
+        float hover_yaw = 0.0;                    // 无人机目标航向
+        float land_yaw = 0.0;                     // 降落点航向
+        float last_land_speed = 0.0;              // 降落点航向
+        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};  // 起飞点
+        Eigen::Vector3d hover_pos{0.0, 0.0, 0.0}; // 悬停点
+        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};  // 降落点
+        ros::Time last_land_time;                 // 最后停止时间
     };
     FlightParams flight_params;
 
@@ -94,34 +102,44 @@ private:
         WITHOUT_CONTROL = 4 // 无控制
     };
 
-    enum moveMode // 无人机移动模式
+    enum BaseMoveMode // 基础移动模式
     {
-        Takeoff = 1,
-        Land,
-        Hover,
-        Waypoint,
-        XyzPosYaw,
+        XyzPosYaw = 1,
         XyzPosYawrate,
         XyzPosYawYawrate,
         XyzVelYaw,
-        XyzVelYawrate,
+        XyzVelYawrate = 5,
         XyzVelYawYawrate,
         XyVelZPosYaw,
         XyVelZPosYawrate,
         XyVelZPosYawYawrate,
-        XyzPosVelYaw,
+        XyzPosVelYaw = 10,
         XyzPosVelYawrate,
         XyzPosVelYawYawrate,
         PosVelAccYaw,
         PosVelAccYawrate,
-        PosVelAccYawYawrate,
+        PosVelAccYawYawrate = 15,
+        XyzPos,
+        XyzVel,
+        XyVelZPos,
+        XyzPosYawBody,
+        XyzVelYawBody = 20,
+        XyVelZPosYawBody,
         GlobalPos,
         Att
     };
 
+    enum AdvanceMoveMode // 高级移动模式
+    {
+        Takeoff = 100,
+        Land = 101,
+        Hover = 102,
+        Waypoint,
+        Return
+    };
+
     std::map<int, uint16_t> moveModeMap =
         {
-            {Waypoint, TypeMask::XYZ_POS_YAW},
             {XyzPosYaw, TypeMask::XYZ_POS_YAW},
             {XyzPosYawrate, TypeMask::XYZ_POS_YAWRATE},
             {XyzPosYawYawrate, TypeMask::XYZ_POS_YAW_YAWRATE},
@@ -136,10 +154,23 @@ private:
             {XyzPosVelYawYawrate, TypeMask::XYZ_POS_VEL_YAW_YAWRATE},
             {PosVelAccYaw, TypeMask::POS_VEL_ACC_YAW},
             {PosVelAccYawrate, TypeMask::POS_VEL_ACC_YAWRATE},
-            {PosVelAccYawYawrate, TypeMask::POS_VEL_ACC_YAW_YAWRATE}};
+            {PosVelAccYawYawrate, TypeMask::POS_VEL_ACC_YAW_YAWRATE},
+            {XyzPos, TypeMask::XYZ_POS},
+            {XyzVel, TypeMask::XYZ_VEL},
+            {XyVelZPos, TypeMask::XY_VEL_Z_POS},
+            {XyzPosYawBody, TypeMask::XYZ_POS_YAW},
+            {XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
+            {XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW}};
 
-    int
-    saftyCheck();                   // 安全检查
+    std::map<int, std::string> modeMap =
+        {
+            {int(Control_Mode::INIT), "INIT"},
+            {int(Control_Mode::RC_CONTROL), "RC_CONTROL"},
+            {int(Control_Mode::CMD_CONTROL), "CMD_CONTROL"},
+            {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
+            {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
+
+    int saftyCheck();               // 安全检查
     void setArm(bool arm);          // 设置解锁 0:上锁 1:解锁
     void reboot();                  // 重启
     void emergencyStop();           // 紧急停止
