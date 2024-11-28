@@ -92,7 +92,7 @@ private:
         float home_yaw = 0.0;                     // 起飞点航向
         float hover_yaw = 0.0;                    // 无人机目标航向
         float land_yaw = 0.0;                     // 降落点航向
-        float last_land_speed = 0.0;              // 降落点航向
+        float last_land_speed = 0.0;              // 最后降落速度
         Eigen::Vector3d home_pos{0.0, 0.0, 0.0};  // 起飞点
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0}; // 悬停点
         Eigen::Vector3d land_pos{0.0, 0.0, 0.0};  // 降落点

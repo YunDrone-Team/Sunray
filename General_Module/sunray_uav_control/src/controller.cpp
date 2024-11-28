@@ -299,7 +299,8 @@ void mavros_control::task_timer_callback(const ros::TimerEvent &event)
     }
     else if (safety_state == 2) // 定位数据失效
     {
-        // 预留暂不做任何事情
+        // 定位失效要要进入降落模式
+        control_mode = Control_MOde::LAND_CONTROL;
     }
     else if (safety_state == 3) // 定位数据没有失效但是延迟较高
     {
@@ -401,6 +402,26 @@ void mavros_control::set_desired_from_cmd()
 
 void mavros_control::set_desired_from_rc()
 {
+    ros::Time now = ros::Time::now();
+    double delta_t = (now - last_set_hover_pose_time).toSec();
+    last_set_hover_pose_time = now;
+
+    double max_vel_xy = 1.5;
+    double max_vel_z = 1.3;
+    double max_vel_yaw = 1.5;
+
+    float body_xy[2], enu_xy[2];
+    body_xy[0] = rc_input.ch[1] * max_vel_xy * delta_t;
+    body_xy[1] = -rc_input.ch[0] * max_vel_xy * delta_t;
+
+    rotation_yaw(Hover_yaw, body_xy, enu_xy);
+
+    // 悬停位置 = 前一个悬停位置 + 遥控器数值[-1,1] * 0.01(如果主程序中设定是100Hz的话)
+    Hover_position(0) += enu_xy[0];
+    Hover_position(1) += enu_xy[1];
+    Hover_position(2) += rc_input.ch[2] * max_vel_z * delta_t;
+    Hover_yaw += -rc_input.ch[3] * max_vel_yaw * delta_t;
+    // 因为这是一个积分系统，所以即使停杆了，无人机也还会继续移动一段距离
 }
 
 void mavros_control::set_desired_from_land()
