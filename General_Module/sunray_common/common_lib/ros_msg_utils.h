@@ -32,6 +32,7 @@
 #include <std_msgs/UInt32.h>
 #include <std_msgs/Empty.h>
 #include "std_msgs/Int32.h"
+#include "std_msgs/Bool.h"
 
 // sensor_msgs
 #include <sensor_msgs/BatteryState.h>

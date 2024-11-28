@@ -81,6 +81,7 @@ private:
     ros::Subscriber px4_odom_sub;    // 无人机里程计订阅
     ros::Subscriber px4_att_sub;     // 无人机姿态订阅
 
+    ros::Publisher odom_state_pub;           // 发布定位状态
     ros::Publisher uav_state_pub;            // 无人机状态发布
     ros::Publisher uav_pos_vector_pub;       // 无人机轨迹发布
     ros::Publisher uav_pos_vector_clear_pub; // 无人机轨迹清空发布
