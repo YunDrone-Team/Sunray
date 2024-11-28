@@ -1,16 +1,19 @@
 #include "mavros_control.h"
 
-int mavros_control::saftyCheck()
+int mavros_control::safetyCheck()
 {
-    if (uav_state.position[0] < uav_geo_fence.x_min || uav_state.position[0] > uav_geo_fence.x_max ||
-        uav_state.position[1] < uav_geo_fence.y_min || uav_state.position[1] > uav_geo_fence.y_max ||
-        uav_state.position[2] < uav_geo_fence.z_min || uav_state.position[2] > uav_geo_fence.z_max)
+    float time_diff = (ros::Time::now() - odom_valid_time).toSec(); 
+    if (uav_state.position[0] < uav_geo_fence.x_min || uav_state.position[0] > uav_geo_fence.x_max || uav_state.position[1] < uav_geo_fence.y_min || uav_state.position[1] > uav_geo_fence.y_max || uav_state.position[2] < uav_geo_fence.z_min || uav_state.position[2] > uav_geo_fence.z_max)
     {
         return 1;
     }
-    else if (!uav_state.odom_valid)
+    else if (time_diff > odom_valid_timeout || !odom_valid)
     {
         return 2;
+    }
+    else if (time_diff < odom_valid_timeout && odom_valid && time_diff > odom_valid_warmup_time)
+    {
+        return 3;
     }
     else
     {
@@ -58,7 +61,7 @@ void mavros_control::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.att[2] = yaw;
 }
 
-void mavros_control::px4_pos_target_cb(const mavros_msgs::PositionTarget::ConstPtr &msg)
+void mavros_control::px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg)
 {
     px4_state.target_pos[0] = msg->position.x;
     px4_state.target_pos[1] = msg->position.y;
@@ -66,6 +69,12 @@ void mavros_control::px4_pos_target_cb(const mavros_msgs::PositionTarget::ConstP
     px4_state.target_vel[0] = msg->velocity.x;
     px4_state.target_vel[1] = msg->velocity.y;
     px4_state.target_vel[2] = msg->velocity.z;
+}
+
+void mavros_control::odom_state_callback(const std_msgs::Bool::ConstPtr &msg)
+{
+    odom_valid_time = ros::Time::now();
+    odom_valid = msg->data;
 }
 
 void mavros_control::setMode(std::string mode)
@@ -167,12 +176,26 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         }
         else if (msg->control_state == "CMD_CONTROL")
         {
-            set_offboard_mode();
-            control_mode = Control_Mode::CMD_CONTROL;
+            if (safety_state == 0)
+            {
+                set_offboard_mode();
+                control_mode = Control_Mode::CMD_CONTROL;
+            }
+            else
+            {
+                std::cout << "Safety state is not 0, cannot switch to CMD_CONTROL mode!" << std::endl;
+            }
         }
         else if (msg->control_state == "RC_CONTROL")
         {
-            control_mode = Control_Mode::RC_CONTROL;
+            if (safety_state == 0)
+            {
+                control_mode = Control_Mode::RC_CONTROL;
+            }
+            else
+            {
+                std::cout << "Safety state is not 0, cannot switch to RC_CONTROL mode!" << std::endl;
+            }
         }
         else if (msg->control_state == "LAND_CONTROL")
         {
@@ -265,6 +288,25 @@ void mavros_control::set_offboard_mode()
     setMode("OFFBOARD");
 }
 
+void mavros_control::task_timer_callback(const ros::TimerEvent &event)
+{
+    // 安全检查
+    safety_state = safetyCheck();
+    if (safety_state == 1)
+    {
+        // 超出安全范围 进入降落模式
+        control_mode = Control_Mode::LAND_CONTROL;
+    }
+    else if (safety_state == 2) // 定位数据失效
+    {
+        // 预留暂不做任何事情
+    }
+    else if (safety_state == 3) // 定位数据没有失效但是延迟较高
+    {
+        // 预留暂不做任何事情
+    }
+}
+
 void mavros_control::set_desired_from_cmd()
 {
     // 判断是否是新的指令
@@ -300,18 +342,41 @@ void mavros_control::set_desired_from_cmd()
             if (it != moveModeMap.end())
             {
                 flight_params.type_mask = it->second;
-                set_default_setpoint();
-                local_setpoint.position.x = control_cmd.desired_pos[0];
-                local_setpoint.position.y = control_cmd.desired_pos[1];
-                local_setpoint.position.z = control_cmd.desired_pos[2];
-                local_setpoint.velocity.x = control_cmd.desired_vel[0];
-                local_setpoint.velocity.y = control_cmd.desired_vel[1];
-                local_setpoint.velocity.z = control_cmd.desired_vel[2];
-                local_setpoint.acceleration_or_force.x = control_cmd.desired_acc[0];
-                local_setpoint.acceleration_or_force.y = control_cmd.desired_acc[1];
-                local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
-                local_setpoint.yaw = control_cmd.desired_yaw;
-                local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
+
+                if (control_cmd.cmd == XyzPosYawBody ||
+                    control_cmd.cmd == XyzVelYawBody ||
+                    control_cmd.cmd == XyVelZPosYawBody)
+                {
+                    // Body系的需要转换到NED下
+                    local_setpoint.position.x =
+                        control_cmd.desired_pos[0] * cos(px4_state.att[2]) - control_cmd.desired_pos[1] * sin(px4_state.att[2]);
+                    local_setpoint.position.y =
+                        control_cmd.desired_pos[1] * sin(px4_state.att[2]) + control_cmd.desired_pos[1] * cos(px4_state.att[2]);
+                    local_setpoint.position.z = control_cmd.desired_pos[2] + px4_state.pos[2];
+
+                    local_setpoint.velocity.x =
+                        control_cmd.desired_vel[0] * cos(px4_state.att[2]) - control_cmd.desired_vel[1] * sin(px4_state.att[2]);
+                    local_setpoint.velocity.y =
+                        control_cmd.desired_vel[1] * sin(px4_state.att[2]) + control_cmd.desired_vel[1] * cos(px4_state.att[2]);
+                    local_setpoint.velocity.z = control_cmd.desired_vel[2];
+
+                    local_setpoint.yaw = control_cmd.desired_yaw + px4_state.att[2];
+                }
+                else
+                {
+                    set_default_setpoint();
+                    local_setpoint.position.x = control_cmd.desired_pos[0];
+                    local_setpoint.position.y = control_cmd.desired_pos[1];
+                    local_setpoint.position.z = control_cmd.desired_pos[2];
+                    local_setpoint.velocity.x = control_cmd.desired_vel[0];
+                    local_setpoint.velocity.y = control_cmd.desired_vel[1];
+                    local_setpoint.velocity.z = control_cmd.desired_vel[2];
+                    local_setpoint.acceleration_or_force.x = control_cmd.desired_acc[0];
+                    local_setpoint.acceleration_or_force.y = control_cmd.desired_acc[1];
+                    local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
+                    local_setpoint.yaw = control_cmd.desired_yaw;
+                    local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
+                }
             }
             else
             {

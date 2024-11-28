@@ -10,13 +10,17 @@ private:
     int uav_id;                                        // 无人机ID
     int control_mode;                                  // 控制模式
     int last_control_mode;                             // 控制模式
+    int safety_state;                                  // 安全标志
     float takeoff_height;                              // 起飞高度
     float disarm_height;                               // 锁桨高度
     float land_speed;                                  // 降落速度
     float cmd_timeout;                                 // 指令超时时间
     float land_end_time;                               // 降落最后一段时间
     float land_end_speed;                              // 降落最后一段速度
-    bool check_cmd_timeout;                            // 检查指令超时
+    float odom_valid_timeout;                          // 外部定位超时时间
+    float odom_valid_warmup_time;                      // 外部定位超时警告
+    bool check_cmd_timeout;                            // 是否检查指令超时
+    bool odom_valid;                                   // 外部定位是否有效
     std::string uav_name;                              // 无人机名称
     std::string uav_ns;                                // 节点命名空间
     std::string topic_prefix;                          // 话题前缀
@@ -28,9 +32,11 @@ private:
     mavros_msgs::PositionTarget local_setpoint;        // px4目标指令
     mavros_msgs::GlobalPositionTarget global_setpoint; // px4目标指令
     mavros_msgs::AttitudeTarget att_setpoint;          // px4目标指令
+    ros::Time odom_valid_time;                         // 外部定位状态订阅时间
     // 订阅节点
     ros::Subscriber setup_sub;       // 无人机模式设置
     ros::Subscriber control_cmd_sub; // 控制指令订阅
+    ros::Subscriber odom_state_sub;  // 无人机位置状态订阅
     ros::Subscriber px4_target_sub;  // px4目标订阅
     ros::Subscriber px4_state_sub;   // 无人机状态订阅
     ros::Subscriber px4_battery_sub; // 无人机电池状态订阅
@@ -47,6 +53,7 @@ private:
     ros::ServiceClient px4_emergency_client; // px4紧急停止
     // 定时器
     ros::Timer cmd_timer;   // 指令定时器
+    ros::Timer task_timer;  // 任务定时器
     ros::Timer print_timer; // 状态定时器
 
     struct geo_fence // 地理围栏
@@ -170,7 +177,7 @@ private:
             {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
             {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
 
-    int saftyCheck();               // 安全检查
+    int safetyCheck();              // 安全检查
     void setArm(bool arm);          // 设置解锁 0:上锁 1:解锁
     void reboot();                  // 重启
     void emergencyStop();           // 紧急停止
@@ -181,17 +188,19 @@ private:
     void set_desired_from_land();
     void set_desired_from_hover();
     void print_state(const ros::TimerEvent &event);
+    void task_timer_callback(const ros::TimerEvent &event);
     void set_hover_pos();
     void set_default_setpoint();
     void set_offboard_mode();
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
+    void odom_state_callback(const std_msgs::Bool::ConstPtr &msg);
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);
     void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
-    void px4_pos_target_cb(const mavros_msgs::PositionTarget::ConstPtr &msg);
+    void px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg);
 
 public:
     mavros_control() {};

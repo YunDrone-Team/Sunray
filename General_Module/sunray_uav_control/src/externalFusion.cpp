@@ -66,7 +66,8 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
         px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
     }
-
+    
+    odom_state_pub = nh.advertise<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10);
     // 定时任务
     timer_task = nh.createTimer(ros::Duration(0.5), &ExternalFusion::timer_callback, this);
 
@@ -213,7 +214,7 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     err_state.yaw = external_state.yaw - px4_state.position_state.yaw;
 
     // 检查超时
-    if (external_position->position_state.valid)
+    if (!external_position->position_state.valid)
     {
         Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
     }
@@ -226,6 +227,10 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     {
         Logger::warning("Warning: The error between external state and px4 state is too large!");
     }
+
+    std_msgs::Bool msg;
+    msg.data = external_position->position_state.valid;
+    odom_state_pub.publish(msg);
 
     show_px4_state();
 }

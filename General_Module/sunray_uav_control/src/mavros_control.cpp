@@ -16,7 +16,7 @@ void mavros_control::init(ros::NodeHandle &nh)
     nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);
     nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);
     nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);
-    // 【参数】飞行参数
+    // 【参数】其他参数
     nh.param<float>("flight_param/land_end_time", land_end_time, 1.0);    // 【参数】降落最后一阶段时间
     nh.param<float>("land_end_time/land_end_speed", land_end_speed, 0.3); // 【参数】降落最后一阶段速度
 
@@ -30,11 +30,13 @@ void mavros_control::init(ros::NodeHandle &nh)
     px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom",
                                                     10, &mavros_control::px4_odom_callback, this);
     px4_target_sub = nh.subscribe<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/target_local",
-                                                               1, &mavros_control::px4_pos_target_cb, this);
+                                                               1, &mavros_control::px4_pos_target_callback, this);
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd",
                                                                10, &mavros_control::control_cmd_callback, this);
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup",
                                                     1, &mavros_control::setup_callback, this);
+    odom_state_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10,
+                                                  &mavros_control::odom_state_callback, this);
 
     px4_setpoint_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
 
@@ -51,6 +53,8 @@ void mavros_control::init(ros::NodeHandle &nh)
 
     control_mode = Control_Mode::INIT;
     last_control_mode = Control_Mode::INIT;
+
+    safety_state = -1;
 }
 void mavros_control::mainLoop()
 {

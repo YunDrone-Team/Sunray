@@ -129,11 +129,11 @@ private:
         timeout_counter = (ros::Time::now() - external_position.external_time).toSec();
         if (timeout_counter > timeout_threshold)
         {
-            timeout_flag = true;
+            timeout_flag = false;
         }
         else
         {
-            timeout_flag = false;
+            timeout_flag = true;
         }
         return timeout_flag;
     }

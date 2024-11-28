@@ -57,9 +57,9 @@ include_directories(
 # target_link_libraries(sunray_control_node ${catkin_LIBRARIES})
 # target_link_libraries(sunray_control_node uav_control)
 
-add_executable(vision_pose_node src/vision_pose_node.cpp)
-add_dependencies(vision_pose_node sunray_control_gencpp)
-target_link_libraries(vision_pose_node ${catkin_LIBRARIES})
+# add_executable(vision_pose_node src/vision_pose_node.cpp)
+# add_dependencies(vision_pose_node sunray_control_gencpp)
+# target_link_libraries(vision_pose_node ${catkin_LIBRARIES})
 
 add_executable(uav_command_pub utils/uav_command_pub.cpp)
 add_dependencies(uav_command_pub sunray_control_gencpp)
