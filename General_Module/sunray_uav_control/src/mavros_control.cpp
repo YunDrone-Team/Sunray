@@ -41,6 +41,8 @@ void mavros_control::init(ros::NodeHandle &nh)
                                                   &mavros_control::odom_state_callback, this);
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1,
                                                  &mavros_control::px4_att_callback, this);
+    rc_state_sub =  nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
+                                                 &mavros_control::rc_state_callback, this);                                                
 
     px4_setpoint_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
 
@@ -58,7 +60,6 @@ void mavros_control::init(ros::NodeHandle &nh)
 
     control_mode = Control_Mode::INIT;
     last_control_mode = Control_Mode::INIT;
-
     safety_state = -1;
 }
 void mavros_control::mainLoop()

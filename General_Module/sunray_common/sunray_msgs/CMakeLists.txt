@@ -38,6 +38,7 @@ add_message_files(
   UAVControlCMD.msg
   UAVState.msg
   UAVSetup.msg
+  RcState.msg
   TextInfo.msg
   ExternalOdom.msg
   SetMode.msg
