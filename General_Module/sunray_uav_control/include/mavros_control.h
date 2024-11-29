@@ -1,6 +1,7 @@
 #include "ros_msg_utils.h"
 #include "type_mask.h"
 #include "printf_format.h"
+#include "rc_input.h"
 
 using namespace sunray_logger;
 
@@ -18,7 +19,7 @@ private:
     float land_end_time;                               // 降落最后一段时间
     float land_end_speed;                              // 降落最后一段速度
     float odom_valid_timeout;                          // 外部定位超时时间
-    float odom_valid_warmup_time;                      // 外部定位超时警告
+    float odom_valid_warming_time;                      // 外部定位超时警告
     bool check_cmd_timeout;                            // 是否检查指令超时
     bool odom_valid;                                   // 外部定位是否有效
     std::string uav_name;                              // 无人机名称
@@ -92,11 +93,14 @@ private:
         float home_yaw = 0.0;                     // 起飞点航向
         float hover_yaw = 0.0;                    // 无人机目标航向
         float land_yaw = 0.0;                     // 降落点航向
-        float last_land_speed = 0.0;              // 最后降落速度
+        float max_vel_xy = 1.0;                   // 最大水平速度
+        float max_vel_z = 1.0;                    // 最大垂直速度
+        float max_vel_yaw = 1.5;                  // 最大偏航速度
         Eigen::Vector3d home_pos{0.0, 0.0, 0.0};  // 起飞点
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0}; // 悬停点
         Eigen::Vector3d land_pos{0.0, 0.0, 0.0};  // 降落点
         ros::Time last_land_time;                 // 最后停止时间
+        ros::Time last_rc_time;                   // 上一个rc控制时间点
     };
     FlightParams flight_params;
 
@@ -176,6 +180,8 @@ private:
             {int(Control_Mode::CMD_CONTROL), "CMD_CONTROL"},
             {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
             {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
+    
+    RC_Input rc_input;
 
     int safetyCheck();              // 安全检查
     void setArm(bool arm);          // 设置解锁 0:上锁 1:解锁
@@ -192,6 +198,7 @@ private:
     void set_hover_pos();
     void set_default_setpoint();
     void set_offboard_mode();
+    void body2ned(double body_xy[2], double ned_xy[2], double yaw);
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
