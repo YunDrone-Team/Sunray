@@ -137,7 +137,7 @@ int main(int argc, char **argv)
         switch (CMD)
         {
         case 1:
-            cout << BLUE << "Move for XYZ_POS in END frame, input the desired position and yaw (or yaw rate) angle" << endl;
+            cout << BLUE << "XyxPosYaw" << endl;
             cout << BLUE << "desired state: --- x [m] " << endl;
             cin >> state_desired[0];
             cout << BLUE << "desired state: --- y [m]" << endl;
@@ -149,10 +149,13 @@ int main(int argc, char **argv)
             state_desired[3] = state_desired[3] / 180.0 * M_PI;
 
             uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = 5;
+            uav_cmd.cmd = 1;
             uav_cmd.desired_pos[0] = state_desired[0];
             uav_cmd.desired_pos[1] = state_desired[1];
             uav_cmd.desired_pos[2] = state_desired[2];
+            uav_cmd.desired_vel[0] = 0;
+            uav_cmd.desired_vel[1] = 0;
+            uav_cmd.desired_vel[2] = 0;
             uav_cmd.desired_yaw = state_desired[3];
             uav_cmd.desired_yaw_rate = state_desired[3];
             uav_cmd.enable_yawRate = yaw_rate;
@@ -160,35 +163,35 @@ int main(int argc, char **argv)
             cout << BLUE << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;
             cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
             break;
-        // case 2:
-        //     cout << BLUE << "Move for XY_VEL_Z_POS in END frame, input the desired position and yaw (or yaw rate) angle" << endl;
-        //     cout << BLUE << "desired state: --- x [m/s] " << endl;
-        //     cin >> state_desired[0];
-        //     cout << BLUE << "desired state: --- y [m/s]" << endl;
-        //     cin >> state_desired[1];
-        //     cout << BLUE << "desired state: --- z [m]" << endl;
-        //     cin >> state_desired[2];
-        //     cout << BLUE << "desired state: --- yaw [deg]:" << endl;
-        //     cin >> state_desired[3];
-        //     state_desired[4] = yaw_rate;
-        //     state_desired[3] = state_desired[3] / 180.0 * M_PI;
+        case 2:
+            cout << BLUE << "XyzPosVelYaw" << endl;
+            cout << BLUE << "desired state: --- x [m] " << endl;
+            cin >> state_desired[0];
+            cout << BLUE << "desired state: --- y [m]" << endl;
+            cin >> state_desired[1];
+            cout << BLUE << "desired state: --- z [m]" << endl;
+            cin >> state_desired[2];
+            cout << BLUE << "desired state: --- yaw [deg]:" << endl;
+            cin >> state_desired[3];
+            state_desired[4] = yaw_rate;
+            state_desired[3] = state_desired[3] / 180.0 * M_PI;
 
-        //     uav_cmd.header.stamp = ros::Time::now();
-        //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS;
-        //     uav_cmd.desired_vel[0] = state_desired[0];
-        //     uav_cmd.desired_vel[1] = state_desired[1];
-        //     uav_cmd.desired_vel[2] = 0.0;
-        //     uav_cmd.desired_pos[0] = 0.0;
-        //     uav_cmd.desired_pos[1] = 0.0;
-        //     uav_cmd.desired_pos[2] = state_desired[2];
-        //     uav_cmd.desired_yaw = state_desired[3];
-        //     uav_cmd.desired_yaw_rate = state_desired[3];
-        //     uav_cmd.enable_yawRate = state_desired[4];
-        //
-        //     uav_command_pub.publish(uav_cmd);
-        //     cout << BLUE << "vel_des [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << " pos_des [Z] : " << state_desired[2] << " [ m ] " << endl;
-        //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
-        //     break;
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = 10;
+            uav_cmd.desired_pos[0] = state_desired[0];
+            uav_cmd.desired_pos[1] = state_desired[1];
+            uav_cmd.desired_pos[2] = state_desired[2];
+            uav_cmd.desired_vel[0] = 1;
+            uav_cmd.desired_vel[1] = 1;
+            uav_cmd.desired_vel[2] = 0;
+            uav_cmd.desired_yaw = state_desired[3];
+            uav_cmd.desired_yaw_rate = state_desired[3];
+            uav_cmd.enable_yawRate = state_desired[4];
+        
+            uav_command_pub.publish(uav_cmd);
+            cout << BLUE << "vel_des [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << " pos_des [Z] : " << state_desired[2] << " [ m ] " << endl;
+            cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
+            break;
         // case 3:
         //     cout << BLUE << "Move for XYZ_VEL in END frame, input the desired position and yaw (or yaw rate) angle" << endl;
         //     cout << BLUE << "desired state: --- x [m/s] " << endl;

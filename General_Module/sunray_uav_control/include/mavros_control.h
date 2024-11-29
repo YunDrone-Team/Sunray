@@ -1,7 +1,6 @@
 #include "ros_msg_utils.h"
 #include "type_mask.h"
 #include "printf_format.h"
-#include "rc_input.h"
 
 using namespace sunray_logger;
 
@@ -19,7 +18,7 @@ private:
     float land_end_time;                               // 降落最后一段时间
     float land_end_speed;                              // 降落最后一段速度
     float odom_valid_timeout;                          // 外部定位超时时间
-    float odom_valid_warming_time;                      // 外部定位超时警告
+    float odom_valid_warming_time;                     // 外部定位超时警告
     bool check_cmd_timeout;                            // 是否检查指令超时
     bool odom_valid;                                   // 外部定位是否有效
     std::string uav_name;                              // 无人机名称
@@ -30,6 +29,7 @@ private:
     sunray_msgs::UAVControlCMD last_control_cmd;       // 上一刻控制指令
     sunray_msgs::UAVState uav_state;                   // 无人机状态
     sunray_msgs::UAVState uav_state_last;              // 上一刻无人机状态
+    sunray_msgs::RcState rc_state;                     // rc_control状态
     mavros_msgs::PositionTarget local_setpoint;        // px4目标指令
     mavros_msgs::GlobalPositionTarget global_setpoint; // px4目标指令
     mavros_msgs::AttitudeTarget att_setpoint;          // px4目标指令
@@ -43,6 +43,7 @@ private:
     ros::Subscriber px4_battery_sub; // 无人机电池状态订阅
     ros::Subscriber px4_odom_sub;    // 无人机里程计订阅
     ros::Subscriber px4_att_sub;     // 无人机姿态订阅
+    ros::Subscriber rc_state_sub;    // rc_control状态订阅
     // 发布节点
     ros::Publisher uav_control_pub;  // 控制指令发布
     ros::Publisher uav_state_pub;    // 无人机状态发布
@@ -180,8 +181,6 @@ private:
             {int(Control_Mode::CMD_CONTROL), "CMD_CONTROL"},
             {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
             {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
-    
-    RC_Input rc_input;
 
     int safetyCheck();              // 安全检查
     void setArm(bool arm);          // 设置解锁 0:上锁 1:解锁
@@ -199,6 +198,8 @@ private:
     void set_default_setpoint();
     void set_offboard_mode();
     void body2ned(double body_xy[2], double ned_xy[2], double yaw);
+    void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);
+    void setset_offboard_control(int mode);
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);

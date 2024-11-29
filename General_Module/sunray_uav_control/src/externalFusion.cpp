@@ -232,7 +232,7 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     msg.data = external_position->position_state.valid;
     odom_state_pub.publish(msg);
 
-    show_px4_state();
+    
 }
 
 void mySigintHandler(int sig)
@@ -258,10 +258,16 @@ int main(int argc, char **argv)
     signal(SIGINT, mySigintHandler);
     ExternalFusion external_fusion;
     external_fusion.init(nh);
-
+    ros::Time now = ros::Time::now();
     while (ros::ok)
     {
         ros::spinOnce();
+        if( ros::Time::now() - now > ros::Duration(1.0))
+        {
+            external_fusion.show_px4_state();
+            now = ros::Time::now();
+        }
+        
         rate.sleep();
     }
 

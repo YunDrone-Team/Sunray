@@ -26,6 +26,7 @@
 #include <sunray_msgs/OrcaCmd.h>
 #include <sunray_msgs/TargetMsg.h>
 #include <sunray_msgs/TargetsInFrameMsg.h>
+#include <sunray_msgs/RcState.h>
 
 // std_msgs
 #include <std_msgs/Float64.h>
