@@ -69,7 +69,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     
     odom_state_pub = nh.advertise<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10);
     // 定时任务
-    timer_task = nh.createTimer(ros::Duration(0.5), &ExternalFusion::timer_callback, this);
+    timer_task = nh.createTimer(ros::Duration(0.2), &ExternalFusion::timer_callback, this);
 
     // 初始化变量
     px4_state.connected = false;
