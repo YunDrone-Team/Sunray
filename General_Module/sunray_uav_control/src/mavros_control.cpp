@@ -31,20 +31,28 @@ void mavros_control::init(ros::NodeHandle &nh)
                                                               10, &mavros_control::px4_battery_callback, this);
     px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom",
                                                     10, &mavros_control::px4_odom_callback, this);
-    px4_target_sub = nh.subscribe<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/target_local",
-                                                               1, &mavros_control::px4_pos_target_callback, this);
+    px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1,
+                                                 &mavros_control::px4_att_callback, this);
+    px4_pos_target_sub =
+        nh.subscribe<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/target_local",
+                                                  1,
+                                                  &mavros_control::px4_pos_target_callback, this);
+    // px4_att_target_sub =
+    //     nh.subscribe<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/target_attitude",
+    //                                               1,
+    //                                               &mavros_control::px4_att_target_callback, this);
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd",
                                                                10, &mavros_control::control_cmd_callback, this);
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup",
                                                     1, &mavros_control::setup_callback, this);
     odom_state_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10,
                                                   &mavros_control::odom_state_callback, this);
-    px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1,
-                                                 &mavros_control::px4_att_callback, this);
-    rc_state_sub =  nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
-                                                 &mavros_control::rc_state_callback, this);                                                
+    rc_state_sub = nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
+                                                      &mavros_control::rc_state_callback, this);
 
-    px4_setpoint_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
+    px4_setpoint_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
+    px4_setpoint_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(topic_prefix + "/mavros/setpoint_raw/global", 1);
+    px4_setpoint_attitude_pub = nh.advertise<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
 
     // 【服务】解锁/上锁 -- 本节点->飞控
     px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_prefix + "/mavros/cmd/arming");
@@ -58,9 +66,17 @@ void mavros_control::init(ros::NodeHandle &nh)
     print_timer = nh.createTimer(ros::Duration(1), &mavros_control::print_state, this);
     task_timer = nh.createTimer(ros::Duration(0.05), &mavros_control::task_timer_callback, this);
 
+    // 初始化各个部分参数
     control_mode = Control_Mode::INIT;
     last_control_mode = Control_Mode::INIT;
     safety_state = -1;
+
+    advancedModeFuncMap[Takeoff] = std::bind(&mavros_control::set_takeoff, this);
+    advancedModeFuncMap[Land] = [this]()
+    { this->control_mode = Control_Mode::CMD_CONTROL; };
+    advancedModeFuncMap[Hover] = std::bind(&mavros_control::set_desired_from_hover, this);
+    advancedModeFuncMap[Waypoint] = std::bind(&mavros_control::waypoint_mission, this);
+    advancedModeFuncMap[Return] = std::bind(&mavros_control::return_to_home, this);
 }
 void mavros_control::mainLoop()
 {
