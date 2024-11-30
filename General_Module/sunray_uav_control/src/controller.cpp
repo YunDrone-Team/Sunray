@@ -33,9 +33,23 @@ void mavros_control::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
 void mavros_control::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
+    if (!px4_state.connected && msg->connected)
+    {
+        flight_params.home_pos[0] = px4_state.pos[0];
+        flight_params.home_pos[1] = px4_state.pos[1];
+        flight_params.home_pos[2] = px4_state.pos[2];
+        flight_params.home_set = true;
+        Logger::info("Home position set to: ", flight_params.home_pos[0], flight_params.home_pos[1], flight_params.home_pos[2]);
+    }
+    
     px4_state.connected = msg->connected;
     px4_state.armed = msg->armed;
     px4_state.mode = msg->mode;
+
+    if(flight_params.home_set && !px4_state.armed)
+    {
+        flight_params.home_set = false;
+    }
 }
 
 void mavros_control::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
@@ -138,6 +152,7 @@ void mavros_control::emergencyStop()
     px4_emergency_client.call(emergency_srv);
 
     control_mode = Control_Mode::INIT; // 紧急停止后，切换到初始化模式
+    Logger::error("Emergency Stop!");
 }
 
 void mavros_control::reboot()
@@ -150,6 +165,7 @@ void mavros_control::reboot()
     reboot_srv.request.param2 = 0;    // Do nothing for onboard computer
     reboot_srv.request.confirmation = true;
     px4_reboot_client.call(reboot_srv);
+    Logger::error("Reboot!");
 }
 
 void mavros_control::setArm(bool arm)
@@ -270,13 +286,6 @@ void mavros_control::print_state(const ros::TimerEvent &event)
         else
             Logger::print_color(int(LogColor::green), "MODE:", px4_state.mode, LOG_RED, "DISARMED");
         Logger::print_color(int(LogColor::green), "BATTERY:", px4_state.batt_volt, "[V]", px4_state.batt_perc, "[%]");
-    }
-    else
-        Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
-    Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[control_mode], LOG_GREEN, "]");
-
-    if (px4_state.connected)
-    {
         Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
         Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
                             px4_state.pos[0],
@@ -294,6 +303,9 @@ void mavros_control::print_state(const ros::TimerEvent &event)
                             px4_state.att[2] / M_PI * 180,
                             "[deg]");
     }
+    else
+        Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
+    Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[control_mode], LOG_GREEN, "]");
 }
 
 void mavros_control::set_hover_pos()
@@ -302,12 +314,12 @@ void mavros_control::set_hover_pos()
     flight_params.hover_yaw = px4_state.att[2];
 }
 
-void mavros_control::setpoint_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
+void mavros_control::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
     setpoint.header.frame_id = "map";
     setpoint.type_mask = type_mask;
-    px4_setpoint_pub.publish(setpoint);
+    px4_setpoint_local_pub.publish(setpoint);
 }
 
 void mavros_control::set_default_setpoint()
@@ -346,7 +358,7 @@ void mavros_control::set_offboard_mode()
     local_setpoint.velocity.x = 0.0;
     local_setpoint.velocity.y = 0.0;
     local_setpoint.velocity.z = 0.0;
-    setpoint_pub(TypeMask::XYZ_VEL, local_setpoint);
+    setpoint_local_pub(TypeMask::XYZ_VEL, local_setpoint);
     control_cmd.cmd = Hover;
     control_cmd.header.stamp = ros::Time::now();
     setMode("OFFBOARD");
@@ -382,32 +394,34 @@ void mavros_control::set_desired_from_cmd()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
-    if (new_cmd)
+    // 如果无人机未解锁则不执行
+    if (!px4_state.armed)
     {
-        if (control_cmd.cmd == Takeoff)
+        if (new_cmd)
         {
-            set_default_setpoint();
-            local_setpoint.position.x = flight_params.home_pos[0];
-            local_setpoint.position.y = flight_params.home_pos[1];
-            local_setpoint.position.z = flight_params.home_pos[2] + takeoff_height;
-            local_setpoint.yaw = flight_params.home_yaw;
-            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+            Logger::error("UAV not armed, can't set desired frome cmd");
         }
-        else if (control_cmd.cmd == Land)
-        {
-            control_mode = Control_Mode::LAND_CONTROL;
-        }
-        else if (control_cmd.cmd == Hover)
-        {
-            set_default_setpoint();
-            set_hover_pos();
-            local_setpoint.position.x = flight_params.hover_pos[0];
-            local_setpoint.position.y = flight_params.hover_pos[1];
-            local_setpoint.position.z = flight_params.hover_pos[2];
-            local_setpoint.yaw = flight_params.hover_yaw;
-            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-        }
-        else
+
+        return;
+    }
+    // 高级模式单独判断
+    if (advancedModeFuncMap.find(control_cmd.cmd) != advancedModeFuncMap.end())
+    {
+        // 调用对应的函数
+        advancedModeFuncMap[control_cmd.cmd]();
+    }
+    else if(control_cmd.cmd = GlobalPos)
+    {
+        // 经纬度海拔控制模式
+    }
+    else if (control_cmd.cmd == Att)
+    {
+        // 姿态控制模式
+    }
+    else
+    {
+        // 基础控制模式
+        if (new_cmd)
         {
             auto it = moveModeMap.find(control_cmd.cmd);
             if (it != moveModeMap.end())
@@ -462,19 +476,13 @@ void mavros_control::set_desired_from_cmd()
                 Logger::error("Unknown command!");
                 if (new_cmd)
                 {
-                    set_default_setpoint();
-                    set_hover_pos();
-                    local_setpoint.position.x = flight_params.hover_pos[0];
-                    local_setpoint.position.y = flight_params.hover_pos[1];
-                    local_setpoint.position.z = flight_params.hover_pos[2];
-                    local_setpoint.yaw = flight_params.hover_yaw;
-                    flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-                };
+                    set_desired_from_hover();
+                }
             }
         }
     }
 
-    setpoint_pub(flight_params.type_mask, local_setpoint);
+    setpoint_local_pub(flight_params.type_mask, local_setpoint);
     last_control_cmd = control_cmd;
 }
 
@@ -510,7 +518,7 @@ void mavros_control::set_desired_from_rc()
     local_setpoint.yaw = flight_params.hover_yaw;
     // 因为这是一个积分系统，所以即使停杆了，无人机也还会继续移动一段距离
     flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-    setpoint_pub(flight_params.type_mask, local_setpoint);
+    setpoint_local_pub(flight_params.type_mask, local_setpoint);
 }
 
 void mavros_control::set_desired_from_land()
@@ -560,11 +568,94 @@ void mavros_control::set_desired_from_land()
     if (!px4_state.armed)
     {
         control_mode = Control_Mode::INIT;
+        Logger::warning("Landing finished!");
     }
 
-    setpoint_pub(flight_params.type_mask, local_setpoint);
+    setpoint_local_pub(flight_params.type_mask, local_setpoint);
 }
 
 void mavros_control::set_desired_from_hover()
 {
+    if (control_cmd.cmd != Hover)
+    {
+        control_cmd.cmd = Hover;
+        set_default_setpoint();
+        set_hover_pos();
+        local_setpoint.position.x = flight_params.hover_pos[0];
+        local_setpoint.position.y = flight_params.hover_pos[1];
+        local_setpoint.position.z = flight_params.hover_pos[2];
+        local_setpoint.yaw = flight_params.hover_yaw;
+        flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+    }
+}
+
+void mavros_control::return_to_home()
+{
+    // 判断是否是新的指令
+    bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
+    if (new_cmd)
+    {
+        // 如果未设置home点，则无法进入返航模式
+        if (!flight_params.home_set)
+        {
+            Logger::error("Home position not set! Cannot return to home!");
+            set_desired_from_hover();
+            return;
+        }
+        else
+        {
+            set_default_setpoint();
+            local_setpoint.position.x = flight_params.home_pos[0];
+            local_setpoint.position.y = flight_params.home_pos[1];
+            local_setpoint.position.z = px4_state.pos[2];
+            local_setpoint.yaw = flight_params.home_yaw;
+            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+        }
+    }
+    // 达到home点上方后，且速度降低后开始降落
+    if ((px4_state.pos[0] - flight_params.home_pos[0]) < 0.15 &&
+        (px4_state.pos[1] - flight_params.home_pos[1]) < 0.15 &&
+        abs(px4_state.vel[0]) < 0.2 &&
+        abs(px4_state.vel[1]) < 0.2 &&
+        abs(px4_state.vel[2]) < 0.2)
+
+    {
+        control_cmd.cmd = Land;
+    }
+}
+
+void mavros_control::waypoint_mission()
+{
+}
+
+void mavros_control::set_takeoff()
+{
+    // 判断是否是新的指令
+    bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
+    if (new_cmd)
+    {
+        // 如果未设置home点，则无法起飞
+        if (!flight_params.home_set)
+        {
+            Logger::error("Home position not set! Cannot takeoff!");
+            set_desired_from_hover();
+            return;
+        }
+        // 如果已经起飞，则不执行
+        if ((px4_state.pos[0] - flight_params.home_pos[0]) > 0.1 ||
+            (px4_state.pos[1] - flight_params.home_pos[1]) > 0.1 ||
+            (px4_state.pos[2] - flight_params.home_pos[2]) > 0.1)
+        {
+            Logger::warning("UAV already takeoff!");
+        }
+        else
+        {
+            set_default_setpoint();
+            local_setpoint.position.x = flight_params.home_pos[0];
+            local_setpoint.position.y = flight_params.home_pos[1];
+            local_setpoint.position.z = flight_params.home_pos[2] + takeoff_height;
+            local_setpoint.yaw = flight_params.home_yaw;
+            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+        }
+    }
 }

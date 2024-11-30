@@ -35,19 +35,23 @@ private:
     mavros_msgs::AttitudeTarget att_setpoint;          // px4目标指令
     ros::Time odom_valid_time;                         // 外部定位状态订阅时间
     // 订阅节点
-    ros::Subscriber setup_sub;       // 无人机模式设置
-    ros::Subscriber control_cmd_sub; // 控制指令订阅
-    ros::Subscriber odom_state_sub;  // 无人机位置状态订阅
-    ros::Subscriber px4_target_sub;  // px4目标订阅
-    ros::Subscriber px4_state_sub;   // 无人机状态订阅
-    ros::Subscriber px4_battery_sub; // 无人机电池状态订阅
-    ros::Subscriber px4_odom_sub;    // 无人机里程计订阅
-    ros::Subscriber px4_att_sub;     // 无人机姿态订阅
-    ros::Subscriber rc_state_sub;    // rc_control状态订阅
+    ros::Subscriber setup_sub;          // 无人机模式设置
+    ros::Subscriber control_cmd_sub;    // 控制指令订阅
+    ros::Subscriber odom_state_sub;     // 无人机位置状态订阅
+    ros::Subscriber rc_state_sub;       // rc_control状态订阅
+    ros::Subscriber px4_state_sub;      // 无人机状态订阅
+    ros::Subscriber px4_battery_sub;    // 无人机电池状态订阅
+    ros::Subscriber px4_odom_sub;       // 无人机里程计订阅
+    ros::Subscriber px4_att_sub;        // 无人机imu姿态订阅
+    ros::Subscriber px4_pos_target_sub; // px4目标订阅 位置 速度加 速度
+    ros::Subscriber px4_att_target_sub; // 无人机姿态订阅
+
     // 发布节点
-    ros::Publisher uav_control_pub;  // 控制指令发布
-    ros::Publisher uav_state_pub;    // 无人机状态发布
-    ros::Publisher px4_setpoint_pub; // 无人机指令发布
+    ros::Publisher uav_control_pub;           // 控制指令发布
+    ros::Publisher uav_state_pub;             // 无人机状态发布
+    ros::Publisher px4_setpoint_local_pub;    // 无人机指令发布 NED
+    ros::Publisher px4_setpoint_global_pub;   // 无人机指令发布 经纬度+海拔
+    ros::Publisher px4_setpoint_attitude_pub; // 无人机指令发布 姿态+推力
     // 服务节点
     ros::ServiceClient px4_arming_client;    // px4解锁
     ros::ServiceClient px4_set_mode_client;  // px4模式设置
@@ -73,7 +77,7 @@ private:
     {
         bool connected = false;                           // 无人机连接状态
         bool armed = false;                               // 无人机解锁状态
-        std::string mode;                                 // 无人机模式
+        std::string mode{"unknown"};                      // 无人机模式
         float batt_volt = 0.0;                            // 无人机电池电压
         float batt_perc = 0.0;                            // 无人机电池电量
         float target_thrust = 0.0;                        // 无人机目标推力
@@ -97,6 +101,7 @@ private:
         float max_vel_xy = 1.0;                   // 最大水平速度
         float max_vel_z = 1.0;                    // 最大垂直速度
         float max_vel_yaw = 1.5;                  // 最大偏航速度
+        bool home_set = false;                    // 起飞点是否设置
         Eigen::Vector3d home_pos{0.0, 0.0, 0.0};  // 起飞点
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0}; // 悬停点
         Eigen::Vector3d land_pos{0.0, 0.0, 0.0};  // 降落点
@@ -182,12 +187,14 @@ private:
             {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
             {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
 
+    std::map<int, std::function<void()>> advancedModeFuncMap;
+
     int safetyCheck();              // 安全检查
     void setArm(bool arm);          // 设置解锁 0:上锁 1:解锁
     void reboot();                  // 重启
     void emergencyStop();           // 紧急停止
     void setMode(std::string mode); // 设置模式
-    void setpoint_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);
+    void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);
     void set_desired_from_cmd();
     void set_desired_from_rc();
     void set_desired_from_land();
@@ -200,6 +207,9 @@ private:
     void body2ned(double body_xy[2], double ned_xy[2], double yaw);
     void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);
     void setset_offboard_control(int mode);
+    void return_to_home();
+    void waypoint_mission();
+    void set_takeoff();
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
@@ -209,6 +219,7 @@ private:
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
     void px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg);
+    void px4_att_target_callback(const mavros_msgs::AttitudeTarget::ConstPtr &msg);
 
 public:
     mavros_control() {};
