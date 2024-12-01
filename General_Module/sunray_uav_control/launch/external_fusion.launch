@@ -10,7 +10,7 @@
     <arg name="check_jump" default="false" />
     <arg name="listen_uav" default="true" />
     <arg name="flag_printf" default="true" />
-    <arg name="enable_rviz" default="false" />
+    <arg name="enable_rviz" default="true" />
 
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
@@ -26,4 +26,10 @@
         <param name="flag_printf" value="$(arg flag_printf)" />
         <param name="enable_rviz" value="$(arg enable_rviz)" />
     </node>
+
+    <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>
+	<!-- 启动Rviz-->
+	<group if="$(arg enable_rviz)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(arg rivz_config)"/>
+    </group>
 </launch>

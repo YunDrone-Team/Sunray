@@ -26,19 +26,19 @@ enum external_source
 
 struct PositionState
 {
-    double pos_x;
-    double pos_y;
-    double pos_z;
-    double vel_x;
-    double vel_y;
-    double vel_z;
-    double att_x;
-    double att_y;
-    double att_z;
-    double att_w;
-    double roll;
-    double pitch;
-    double yaw;
+    double pos_x = 0.0;
+    double pos_y = 0.0;
+    double pos_z = 0.0;
+    double vel_x = 0.0;
+    double vel_y = 0.0;
+    double vel_z = 0.0;
+    double att_x = 0.0;
+    double att_y = 0.0;
+    double att_z = 0.0;
+    double att_w = 0.0;
+    double roll = 0.0;
+    double pitch = 0.0;
+    double yaw = 0.0;
 };
 
 struct PX4State // 无人机状态集合
@@ -81,12 +81,13 @@ private:
     ros::Subscriber px4_odom_sub;    // 无人机里程计订阅
     ros::Subscriber px4_att_sub;     // 无人机姿态订阅
 
-    ros::Publisher odom_state_pub;           // 发布定位状态
-    ros::Publisher uav_state_pub;            // 无人机状态发布
-    ros::Publisher uav_pos_vector_pub;       // 无人机轨迹发布
-    ros::Publisher uav_pos_vector_clear_pub; // 无人机轨迹清空发布
+    ros::Publisher odom_state_pub;     // 发布定位状态
+    ros::Publisher uav_odom_pub;       // 无人机里程计发布
+    ros::Publisher uav_trajectory_pub; // 无人机轨迹发布
+    ros::Publisher uav_mesh_pub;       // 无人机mesh发布
 
-    ros::Timer timer_task; // 定时器
+    ros::Timer timer_task;     // 定时器
+    ros::Timer timer_rviz_pub; // 定时发布rviz显示消息
 
 public:
     ExternalFusion(/* args */);
@@ -102,6 +103,7 @@ public:
     void px4_odom_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);   // 无人机里程计回调函数（同时包含了位置和速度）
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);              // 无人机姿态回调函数 从imu获取解析
     void timer_callback(const ros::TimerEvent &event);                         // 定时器回调函数
+    void timer_rviz(const ros::TimerEvent &e);                                 // 定时发布rviz显示消息
     void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);           // 无人机里程计回调函数（同时包含了位置和速度）
 };
 

@@ -51,13 +51,6 @@ include_directories(
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
-add_executable(follow_a_car src/follow_a_car.cpp)
-add_dependencies(follow_a_car sunray_tutorial_gencpp)
-target_link_libraries(follow_a_car ${catkin_LIBRARIES})
-
-add_executable(follow_a_tag src/follow_a_tag.cpp)
-add_dependencies(follow_a_tag sunray_tutorial_gencpp)
-target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
 
 add_executable(takeoff_hover_land src/takeoff_hover_land.cpp)
 add_dependencies(takeoff_hover_land sunray_tutorial_gencpp)
@@ -75,21 +68,29 @@ add_executable(circle_vel src/circle_vel.cpp)
 add_dependencies(circle_vel sunray_tutorial_gencpp)
 target_link_libraries(circle_vel ${catkin_LIBRARIES})
 
-add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
-add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
-target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
+# add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
+# add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
+# target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
 
-add_executable(vel_body_follow_car src/vel_body_follow_car.cpp)
-add_dependencies(vel_body_follow_car sunray_tutorial_gencpp)
-target_link_libraries(vel_body_follow_car ${catkin_LIBRARIES})
+# add_executable(vel_body_follow_car src/vel_body_follow_car.cpp)
+# add_dependencies(vel_body_follow_car sunray_tutorial_gencpp)
+# target_link_libraries(vel_body_follow_car ${catkin_LIBRARIES})
 
-add_executable(vel_body_z_pos_follow_car src/vel_body_z_pos_follow_car.cpp)
-add_dependencies(vel_body_z_pos_follow_car sunray_tutorial_gencpp)
-target_link_libraries(vel_body_z_pos_follow_car ${catkin_LIBRARIES})
+# add_executable(vel_body_z_pos_follow_car src/vel_body_z_pos_follow_car.cpp)
+# add_dependencies(vel_body_z_pos_follow_car sunray_tutorial_gencpp)
+# target_link_libraries(vel_body_z_pos_follow_car ${catkin_LIBRARIES})
 
-add_executable(auto_land src/auto_land.cpp)
-add_dependencies(auto_land sunray_tutorial_gencpp)
-target_link_libraries(auto_land ${catkin_LIBRARIES})
+# add_executable(auto_land src/auto_land.cpp)
+# add_dependencies(auto_land sunray_tutorial_gencpp)
+# target_link_libraries(auto_land ${catkin_LIBRARIES})
+
+# add_executable(follow_a_car src/follow_a_car.cpp)
+# add_dependencies(follow_a_car sunray_tutorial_gencpp)
+# target_link_libraries(follow_a_car ${catkin_LIBRARIES})
+
+# add_executable(follow_a_tag src/follow_a_tag.cpp)
+# add_dependencies(follow_a_tag sunray_tutorial_gencpp)
+# target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
 
 
 catkin_install_python(PROGRAMS

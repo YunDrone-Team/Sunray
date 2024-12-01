@@ -70,10 +70,10 @@ void mavros_control::init(ros::NodeHandle &nh)
     control_mode = Control_Mode::INIT;
     last_control_mode = Control_Mode::INIT;
     safety_state = -1;
+    odom_valid_time = ros::Time(0);
 
     advancedModeFuncMap[Takeoff] = std::bind(&mavros_control::set_takeoff, this);
-    advancedModeFuncMap[Land] = [this]()
-    { this->control_mode = Control_Mode::CMD_CONTROL; };
+    advancedModeFuncMap[Land] = std::bind(&mavros_control::set_land, this);
     advancedModeFuncMap[Hover] = std::bind(&mavros_control::set_desired_from_hover, this);
     advancedModeFuncMap[Waypoint] = std::bind(&mavros_control::waypoint_mission, this);
     advancedModeFuncMap[Return] = std::bind(&mavros_control::return_to_home, this);
