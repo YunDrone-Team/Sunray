@@ -2,6 +2,10 @@
 
 int mavros_control::safetyCheck()
 {
+    if (odom_valid_time == ros::Time(0))
+    {
+        return 0;
+    }
     float time_diff = (ros::Time::now() - odom_valid_time).toSec();
     if (uav_state.position[0] < uav_geo_fence.x_min || uav_state.position[0] > uav_geo_fence.x_max || uav_state.position[1] < uav_geo_fence.y_min || uav_state.position[1] > uav_geo_fence.y_max || uav_state.position[2] < uav_geo_fence.z_min || uav_state.position[2] > uav_geo_fence.z_max)
     {
@@ -33,7 +37,7 @@ void mavros_control::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
 void mavros_control::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
-    if (!px4_state.connected && msg->connected)
+    if (!px4_state.armed && msg->armed)
     {
         flight_params.home_pos[0] = px4_state.pos[0];
         flight_params.home_pos[1] = px4_state.pos[1];
@@ -41,12 +45,12 @@ void mavros_control::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
         flight_params.home_set = true;
         Logger::info("Home position set to: ", flight_params.home_pos[0], flight_params.home_pos[1], flight_params.home_pos[2]);
     }
-    
+
     px4_state.connected = msg->connected;
     px4_state.armed = msg->armed;
     px4_state.mode = msg->mode;
 
-    if(flight_params.home_set && !px4_state.armed)
+    if (flight_params.home_set && !px4_state.armed)
     {
         flight_params.home_set = false;
     }
@@ -345,6 +349,7 @@ void mavros_control::setset_offboard_control(int mode)
 {
     set_hover_pos();
     control_cmd.cmd = Hover;
+    control_cmd.header.stamp = ros::Time::now();
     if (px4_state.mode != "OFFBOARD")
     {
         set_offboard_mode();
@@ -371,12 +376,20 @@ void mavros_control::task_timer_callback(const ros::TimerEvent &event)
     if (safety_state == 1)
     {
         // 超出安全范围 进入降落模式
-        control_mode = Control_Mode::LAND_CONTROL;
+        if (control_mode != Control_Mode::LAND_CONTROL)
+        {
+            control_mode = Control_Mode::LAND_CONTROL;
+            Logger::error("Out of safe range, landing...");
+        }
     }
     else if (safety_state == 2) // 定位数据失效
     {
         // 定位失效要要进入降落模式
-        control_mode = Control_Mode::LAND_CONTROL;
+        if (control_mode == Control_Mode::RC_CONTROL || control_mode == Control_Mode::CMD_CONTROL)
+        {
+            control_mode = Control_Mode::LAND_CONTROL;
+            Logger::error("Lost odom, landing...");
+        }
     }
     else if (safety_state == 3) // 定位数据没有失效但是延迟较高
     {
@@ -400,6 +413,7 @@ void mavros_control::set_desired_from_cmd()
         if (new_cmd)
         {
             Logger::error("UAV not armed, can't set desired frome cmd");
+            last_control_cmd = control_cmd;
         }
 
         return;
@@ -408,9 +422,10 @@ void mavros_control::set_desired_from_cmd()
     if (advancedModeFuncMap.find(control_cmd.cmd) != advancedModeFuncMap.end())
     {
         // 调用对应的函数
+        // std::cout<<"advancedMode"<<std::endl;
         advancedModeFuncMap[control_cmd.cmd]();
     }
-    else if(control_cmd.cmd = GlobalPos)
+    else if (control_cmd.cmd == GlobalPos)
     {
         // 经纬度海拔控制模式
     }
@@ -420,6 +435,7 @@ void mavros_control::set_desired_from_cmd()
     }
     else
     {
+        // std::cout<<"baseMode"<<std::endl;
         // 基础控制模式
         if (new_cmd)
         {
@@ -523,7 +539,8 @@ void mavros_control::set_desired_from_rc()
 
 void mavros_control::set_desired_from_land()
 {
-    bool new_cmd = control_mode != last_control_mode;
+    bool new_cmd = control_mode != last_control_mode ||
+        (control_cmd.cmd == Land && (control_cmd.header.stamp != last_control_cmd.header.stamp));
     if (new_cmd)
     {
         flight_params.last_land_time = ros::Time(0);
@@ -576,9 +593,12 @@ void mavros_control::set_desired_from_land()
 
 void mavros_control::set_desired_from_hover()
 {
-    if (control_cmd.cmd != Hover)
+    // 判断是否是新的指令
+    bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
+    if (new_cmd)
     {
         control_cmd.cmd = Hover;
+        control_cmd.header.stamp = ros::Time::now();
         set_default_setpoint();
         set_hover_pos();
         local_setpoint.position.x = flight_params.hover_pos[0];
@@ -621,6 +641,7 @@ void mavros_control::return_to_home()
 
     {
         control_cmd.cmd = Land;
+        control_cmd.header.stamp = ros::Time::now();
     }
 }
 
@@ -657,5 +678,14 @@ void mavros_control::set_takeoff()
             local_setpoint.yaw = flight_params.home_yaw;
             flight_params.type_mask = TypeMask::XYZ_POS_YAW;
         }
+    }
+}
+
+void mavros_control::set_land()
+{
+    if(control_mode != Control_Mode::LAND_CONTROL)
+    {
+        control_mode = Control_Mode::LAND_CONTROL;
+        set_desired_from_land();
     }
 }

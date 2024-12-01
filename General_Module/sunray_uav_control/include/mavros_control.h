@@ -121,29 +121,24 @@ private:
 
     enum BaseMoveMode // 基础移动模式
     {
-        XyzPosYaw = 1,
-        XyzPosYawrate,
-        XyzPosYawYawrate,
-        XyzVelYaw,
-        XyzVelYawrate = 5,
-        XyzVelYawYawrate,
-        XyVelZPosYaw,
-        XyVelZPosYawrate,
-        XyVelZPosYawYawrate,
-        XyzPosVelYaw = 10,
-        XyzPosVelYawrate,
-        XyzPosVelYawYawrate,
-        PosVelAccYaw,
-        PosVelAccYawrate,
-        PosVelAccYawYawrate = 15,
-        XyzPos,
+        XyzPos = 1,
         XyzVel,
         XyVelZPos,
+        XyzPosYaw ,
+        XyzPosYawrate = 5,
+        XyzVelYaw,
+        XyzVelYawrate,
+        XyVelZPosYaw,
+        XyVelZPosYawrate,
+        XyzPosVelYaw = 10,
+        XyzPosVelYawrate,
+        PosVelAccYaw,
+        PosVelAccYawrate,
         XyzPosYawBody,
-        XyzVelYawBody = 20,
+        XyzVelYawBody = 15,
         XyVelZPosYawBody,
         GlobalPos,
-        Att
+        Att = 18
     };
 
     enum AdvanceMoveMode // 高级移动模式
@@ -157,24 +152,19 @@ private:
 
     std::map<int, uint16_t> moveModeMap =
         {
-            {XyzPosYaw, TypeMask::XYZ_POS_YAW},
-            {XyzPosYawrate, TypeMask::XYZ_POS_YAWRATE},
-            {XyzPosYawYawrate, TypeMask::XYZ_POS_YAW_YAWRATE},
-            {XyzVelYaw, TypeMask::XYZ_VEL_YAW},
-            {XyzVelYawrate, TypeMask::XYZ_VEL_YAW_YAWRATE},
-            {XyzVelYawYawrate, TypeMask::XYZ_VEL_YAW_YAWRATE},
-            {XyVelZPosYaw, TypeMask::XY_VEL_Z_POS_YAW},
-            {XyVelZPosYawrate, TypeMask::XY_VEL_Z_POS_YAWRATE},
-            {XyVelZPosYawYawrate, TypeMask::XY_VEL_Z_POS_YAW_YAWRATE},
-            {XyzPosVelYaw, TypeMask::XYZ_POS_VEL_YAW},
-            {XyzPosVelYawrate, TypeMask::XYZ_POS_VEL_YAWRATE},
-            {XyzPosVelYawYawrate, TypeMask::XYZ_POS_VEL_YAW_YAWRATE},
-            {PosVelAccYaw, TypeMask::POS_VEL_ACC_YAW},
-            {PosVelAccYawrate, TypeMask::POS_VEL_ACC_YAWRATE},
-            {PosVelAccYawYawrate, TypeMask::POS_VEL_ACC_YAW_YAWRATE},
             {XyzPos, TypeMask::XYZ_POS},
             {XyzVel, TypeMask::XYZ_VEL},
             {XyVelZPos, TypeMask::XY_VEL_Z_POS},
+            {XyzPosYaw, TypeMask::XYZ_POS_YAW},
+            {XyzPosYawrate, TypeMask::XYZ_POS_YAWRATE},
+            {XyzVelYaw, TypeMask::XYZ_VEL_YAW},
+            {XyzVelYawrate, TypeMask::XYZ_VEL_YAWRATE},
+            {XyVelZPosYaw, TypeMask::XY_VEL_Z_POS_YAW},
+            {XyVelZPosYawrate, TypeMask::XY_VEL_Z_POS_YAWRATE},
+            {XyzPosVelYaw, TypeMask::XYZ_POS_VEL_YAW},
+            {XyzPosVelYawrate, TypeMask::XYZ_POS_VEL_YAWRATE},
+            {PosVelAccYaw, TypeMask::POS_VEL_ACC_YAW},
+            {PosVelAccYawrate, TypeMask::POS_VEL_ACC_YAWRATE},
             {XyzPosYawBody, TypeMask::XYZ_POS_YAW},
             {XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
             {XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW}};
@@ -210,6 +200,7 @@ private:
     void return_to_home();
     void waypoint_mission();
     void set_takeoff();
+    void set_land();
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
