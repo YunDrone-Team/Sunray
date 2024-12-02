@@ -6,7 +6,7 @@
   <arg name="control_type" default="0"/>
   <arg name="enable_yaw" default="false"/>
 
-  <node name="ego2sunray_node" pkg="sunray_planner_utils" type="ego2sunray" output="screen">
+  <node name="positionCmd2sunray_node" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
     <param name="uav_id" value="$(arg uav_id)"/>
     <param name="cmd_sub_topic" value="$(arg cmd_sub_topic)"/>
     <param name="control_pub_topic" value="$(arg control_pub_topic)"/>

@@ -51,15 +51,14 @@ include_directories(
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
-# add_library(uav_control src/uav_control.cpp)
-# add_executable(sunray_control_node src/sunray_control_node.cpp)
-# add_dependencies(sunray_control_node sunray_control_gencpp)
-# target_link_libraries(sunray_control_node ${catkin_LIBRARIES})
-# target_link_libraries(sunray_control_node uav_control)
+add_library(uav_control src/uav_control.cpp)
+add_executable(uav_control_node src/uav_control_node.cpp)
+add_dependencies(uav_control_node sunray_control_gencpp)
+target_link_libraries(uav_control_node ${catkin_LIBRARIES})
+target_link_libraries(uav_control_node uav_control)
 
-# add_executable(vision_pose_node src/vision_pose_node.cpp)
-# add_dependencies(vision_pose_node sunray_control_gencpp)
-# target_link_libraries(vision_pose_node ${catkin_LIBRARIES})
+add_executable(external_fusion_node src/externalFusion.cpp)
+target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 
 add_executable(uav_command_pub utils/uav_command_pub.cpp)
 add_dependencies(uav_command_pub sunray_control_gencpp)
@@ -79,16 +78,10 @@ target_link_libraries(joy_node ${catkin_LIBRARIES})
 add_executable(logTest test/logTest.cpp)
 target_link_libraries(logTest ${catkin_LIBRARIES})
 
-add_executable(external_fusion_node src/externalFusion.cpp)
-target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
+
 
 add_executable(rc_control_node src/rc_control_node.cpp)
 target_link_libraries(rc_control_node ${catkin_LIBRARIES})
-
-add_library(mavros_control src/controller.cpp)
-add_executable(mavros_control_node src/mavros_control.cpp)
-target_link_libraries(mavros_control_node mavros_control)
-target_link_libraries(mavros_control_node ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/

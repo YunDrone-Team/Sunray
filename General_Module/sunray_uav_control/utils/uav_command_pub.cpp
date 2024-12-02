@@ -656,6 +656,12 @@ int main(int argc, char **argv)
             uav_command_pub.publish(uav_cmd);
             std::cout<<"land"<<std::endl;
             break;
+        case 106:
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = 104;
+            uav_command_pub.publish(uav_cmd);
+            std::cout<<"land"<<std::endl;
+            break;
         }
 
         ros::Duration(0.5).sleep();

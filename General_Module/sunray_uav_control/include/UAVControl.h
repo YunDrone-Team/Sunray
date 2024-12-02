@@ -4,7 +4,7 @@
 
 using namespace sunray_logger;
 
-class mavros_control
+class UAVControl
 {
 private:
     int uav_id;                                        // 无人机ID
@@ -21,6 +21,8 @@ private:
     float odom_valid_warming_time;                     // 外部定位超时警告
     bool check_cmd_timeout;                            // 是否检查指令超时
     bool odom_valid;                                   // 外部定位是否有效
+    bool use_rc;                                       // 是否使用遥控器
+    bool rcState_cb;                                   // 遥控器状态回调
     std::string uav_name;                              // 无人机名称
     std::string uav_ns;                                // 节点命名空间
     std::string topic_prefix;                          // 话题前缀
@@ -84,7 +86,7 @@ private:
         Eigen::Vector3d pos{-0.01, -0.01, -0.01};         // 无人机当前位置
         Eigen::Vector3d vel{-0.01, -0.01, -0.01};         // 无人机当前速度
         Eigen::Vector3d att{0.0, 0.0, 0.0};               // 无人机当前姿态 角度
-        Eigen::Vector4d att_q{0.0, 0.0, 0.0, 0.0};        // 无人机当前姿态 四元数
+        Eigen::Vector4d att_q{0.0, 0.0, 0.0, 0.0};        // 无人机当前姿态 四元数xyzw
         Eigen::Vector3d target_pos{0.0, 0.0, 0.0};        // 无人机目标位置
         Eigen::Vector3d target_vel{0.0, 0.0, 0.0};        // 无人机目标速度
         Eigen::Vector3d target_att{0.0, 0.0, 0.0};        // 无人机目标姿态 角度
@@ -124,7 +126,7 @@ private:
         XyzPos = 1,
         XyzVel,
         XyVelZPos,
-        XyzPosYaw ,
+        XyzPosYaw,
         XyzPosYawrate = 5,
         XyzVelYaw,
         XyzVelYawrate,
@@ -169,6 +171,32 @@ private:
             {XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
             {XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW}};
 
+    std::map<int, std::string> moveModeMapStr =
+        {
+            {XyzPos, "XyzPos"},
+            {XyzVel, "XyzVel"},
+            {XyVelZPos, "XyVelZPos"},
+            {XyzPosYaw, "XyzPosYaw"},
+            {XyzPosYawrate, "XyzPosYawrate"},
+            {XyzVelYaw, "XyzVelYaw"},
+            {XyzVelYawrate, "XyzVelYawrate"},
+            {XyVelZPosYaw, "XyVelZPosYaw"},
+            {XyVelZPosYawrate, "XyVelZPosYawrate"},
+            {XyzPosVelYaw, "XyzPosVelYaw"},
+            {XyzPosVelYawrate, "XyzPosVelYawrate"},
+            {PosVelAccYaw, "PosVelAccYaw"},
+            {PosVelAccYawrate, "PosVelAccYawrate"},
+            {XyzPosYawBody, "XyzPosYawBody"},
+            {XyzVelYawBody, "XyzVelYawBody"},
+            {XyVelZPosYawBody, "XyVelZPosYawBody"},
+            {GlobalPos, "GlobalPos"},
+            {Att, "Att"},
+            {Takeoff, "Takeoff"},
+            {Land, "Land"},
+            {Hover, "Hover"},
+            {Waypoint, "Waypoint"},
+            {Return, "Return"}};
+
     std::map<int, std::string> modeMap =
         {
             {int(Control_Mode::INIT), "INIT"},
@@ -182,7 +210,7 @@ private:
     int safetyCheck();              // 安全检查
     void setArm(bool arm);          // 设置解锁 0:上锁 1:解锁
     void reboot();                  // 重启
-    void emergencyStop();           // 紧急停止
+    void emergencyStop();           // 紧急停止出来
     void setMode(std::string mode); // 设置模式
     void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);
     void set_desired_from_cmd();
@@ -196,7 +224,7 @@ private:
     void set_offboard_mode();
     void body2ned(double body_xy[2], double ned_xy[2], double yaw);
     void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);
-    void setset_offboard_control(int mode);
+    void set_offboard_control(int mode);
     void return_to_home();
     void waypoint_mission();
     void set_takeoff();
@@ -213,8 +241,8 @@ private:
     void px4_att_target_callback(const mavros_msgs::AttitudeTarget::ConstPtr &msg);
 
 public:
-    mavros_control() {};
-    ~mavros_control() {};
+    UAVControl() {};
+    ~UAVControl() {};
 
     void mainLoop();
     void init(ros::NodeHandle &nh);

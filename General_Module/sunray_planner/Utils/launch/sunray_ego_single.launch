@@ -37,7 +37,7 @@
     <arg name="goal_tipic_1" default="/goal_1"/>
 
     <!-- ego 输出转换为sunray控制指令 -->
-    <node name="ego2sunray_node_1" pkg="sunray_planner_utils" type="ego2sunray" output="screen">
+    <node name="positionCmd2sunray_node_1" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
         <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_1)"/>
         <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
         <param name="control_type" value="$(arg control_type)"/>
