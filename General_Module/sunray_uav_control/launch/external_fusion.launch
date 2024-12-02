@@ -1,4 +1,5 @@
 <launch>
+    <!-- external_source ODOM MOCAP POSE -->
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="ODOM" />
     <arg name="uav_name" default="uav" />
@@ -10,7 +11,9 @@
     <arg name="check_jump" default="false" />
     <arg name="listen_uav" default="true" />
     <arg name="flag_printf" default="true" />
-    <arg name="enable_rviz" default="true" />
+    <arg name="enable_rviz" default="false" />
+    <arg name="server" default="192.168.25.12"/>
+
 
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
@@ -26,6 +29,12 @@
         <param name="flag_printf" value="$(arg flag_printf)" />
         <param name="enable_rviz" value="$(arg enable_rviz)" />
     </node>
+
+    <!-- 启动 vrpn_client_ros -->
+    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 'MOCAP')">
+        <arg name="server" value="$(arg server)"/>
+        <arg name="uav_id" value="$(arg uav_id)"/>
+    </include>
 
     <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>
 	<!-- 启动Rviz-->

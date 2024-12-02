@@ -1,7 +1,8 @@
-#include "mavros_control.h"
+#include "UAVControl.h"
 
-void mavros_control::init(ros::NodeHandle &nh)
+void UAVControl::init(ros::NodeHandle &nh)
 {
+    float default_home_x, default_home_y, default_home_z;
 
     nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
     nh.param<std::string>("uav_name", uav_name, "uav"); // 【参数】无人机名称
@@ -16,43 +17,53 @@ void mavros_control::init(ros::NodeHandle &nh)
     nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);
     nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);
     nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);
+
+    // 【参数】是否检测命令超时 超时后进入指令悬停模式
+    nh.param<bool>("check_cmd_timeout", check_cmd_timeout,true);
+    nh.param<float>("cmd_timeout", cmd_timeout, 2.0);
+
     // 【参数】其他参数
     nh.param<float>("flight_param/land_end_time", land_end_time, 1.0);        // 【参数】降落最后一阶段时间
     nh.param<float>("land_end_speed", land_end_speed, 0.3);                   // 【参数】降落最后一阶段速度
-    nh.param<float>("odom_valid_timeout", odom_valid_timeout, 0.5);           // 【参数】定位超时时间
-    nh.param<float>("odom_valid_warming_time", odom_valid_warming_time, 0.3); // 【参数】定位超时时间
+    nh.param<float>("odom_valid_timeout", odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
+    nh.param<float>("odom_valid_warming_time", odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
+    nh.param<float>("default/home_x", default_home_x, 0.0);                   // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("default/home_y", default_home_y, 0.0);                   // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("default/home_z", default_home_z, 0.0);                   // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<bool>("use_rc_control", use_rc, true);                           // 【参数】是否使用遥控器控制
 
     uav_prefix = uav_name + std::to_string(uav_id);
     topic_prefix = "/" + uav_prefix;
 
     px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state",
-                                                     10, &mavros_control::px4_state_callback, this);
+                                                     10, &UAVControl::px4_state_callback, this);
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery",
-                                                              10, &mavros_control::px4_battery_callback, this);
+                                                              10, &UAVControl::px4_battery_callback, this);
     px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom",
-                                                    10, &mavros_control::px4_odom_callback, this);
+                                                    10, &UAVControl::px4_odom_callback, this);
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1,
-                                                 &mavros_control::px4_att_callback, this);
+                                                 &UAVControl::px4_att_callback, this);
     px4_pos_target_sub =
         nh.subscribe<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/target_local",
                                                   1,
-                                                  &mavros_control::px4_pos_target_callback, this);
+                                                  &UAVControl::px4_pos_target_callback, this);
     // px4_att_target_sub =
     //     nh.subscribe<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/target_attitude",
     //                                               1,
-    //                                               &mavros_control::px4_att_target_callback, this);
+    //                                               &UAVControl::px4_att_target_callback, this);
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd",
-                                                               10, &mavros_control::control_cmd_callback, this);
+                                                               10, &UAVControl::control_cmd_callback, this);
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup",
-                                                    1, &mavros_control::setup_callback, this);
+                                                    1, &UAVControl::setup_callback, this);
     odom_state_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10,
-                                                  &mavros_control::odom_state_callback, this);
+                                                  &UAVControl::odom_state_callback, this);
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
-                                                      &mavros_control::rc_state_callback, this);
+                                                      &UAVControl::rc_state_callback, this);
 
     px4_setpoint_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
     px4_setpoint_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(topic_prefix + "/mavros/setpoint_raw/global", 1);
     px4_setpoint_attitude_pub = nh.advertise<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
+    uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1);
 
     // 【服务】解锁/上锁 -- 本节点->飞控
     px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_prefix + "/mavros/cmd/arming");
@@ -63,26 +74,30 @@ void mavros_control::init(ros::NodeHandle &nh)
     // 【服务】重启PX4飞控 -- 本节点->飞控
     px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(topic_prefix + "/mavros/cmd/command");
 
-    print_timer = nh.createTimer(ros::Duration(1), &mavros_control::print_state, this);
-    task_timer = nh.createTimer(ros::Duration(0.05), &mavros_control::task_timer_callback, this);
+    print_timer = nh.createTimer(ros::Duration(1), &UAVControl::print_state, this);
+    task_timer = nh.createTimer(ros::Duration(0.05), &UAVControl::task_timer_callback, this);
 
     // 初始化各个部分参数
     control_mode = Control_Mode::INIT;
     last_control_mode = Control_Mode::INIT;
     safety_state = -1;
     odom_valid_time = ros::Time(0);
+    rcState_cb = false;
+    flight_params.home_pos[0] = default_home_x;
+    flight_params.home_pos[1] = default_home_y;
+    flight_params.home_pos[2] = default_home_z;
 
-    advancedModeFuncMap[Takeoff] = std::bind(&mavros_control::set_takeoff, this);
-    advancedModeFuncMap[Land] = std::bind(&mavros_control::set_land, this);
-    advancedModeFuncMap[Hover] = std::bind(&mavros_control::set_desired_from_hover, this);
-    advancedModeFuncMap[Waypoint] = std::bind(&mavros_control::waypoint_mission, this);
-    advancedModeFuncMap[Return] = std::bind(&mavros_control::return_to_home, this);
+    advancedModeFuncMap[Takeoff] = std::bind(&UAVControl::set_takeoff, this);
+    advancedModeFuncMap[Land] = std::bind(&UAVControl::set_land, this);
+    advancedModeFuncMap[Hover] = std::bind(&UAVControl::set_desired_from_hover, this);
+    advancedModeFuncMap[Waypoint] = std::bind(&UAVControl::waypoint_mission, this);
+    advancedModeFuncMap[Return] = std::bind(&UAVControl::return_to_home, this);
 }
-void mavros_control::mainLoop()
+void UAVControl::mainLoop()
 {
     switch (control_mode)
     {
-        // 检查无人机是否位于定点模式，否则切换至定点模式
+        // 检查无人机是否位于定点模式，否则切换至定点模式safety_state
     case Control_Mode::INIT:
         if (uav_state.mode != "POSCTL")
         {
@@ -119,10 +134,10 @@ int main(int argc, char **argv)
     Logger::setPrintToFile(false);
     Logger::setFilename("/home/yundrone/Sunray/General_Module/sunray_uav_control/test/log.txt");
 
-    ros::init(argc, argv, "mavros_control");
+    ros::init(argc, argv, "UAVControl");
     ros::NodeHandle nh("~");
     ros::Rate rate(50);
-    mavros_control mavctrl;
+    UAVControl mavctrl;
     mavctrl.init(nh);
     while (ros::ok())
     {

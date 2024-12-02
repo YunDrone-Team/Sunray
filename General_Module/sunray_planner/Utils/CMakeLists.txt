@@ -54,9 +54,9 @@ add_executable(scan2point src/scan2Point.cpp)
 add_dependencies(scan2point ${catkin_EXPORTED_TARGETS})
 target_link_libraries(scan2point ${catkin_LIBRARIES})
 
-add_executable(ego2sunray src/ego2sunray.cpp)
-add_dependencies(ego2sunray ${catkin_EXPORTED_TARGETS})
-target_link_libraries(ego2sunray ${catkin_LIBRARIES})
+add_executable(positionCmd2sunray src/positionCmd2sunray.cpp)
+add_dependencies(positionCmd2sunray ${catkin_EXPORTED_TARGETS})
+target_link_libraries(positionCmd2sunray ${catkin_LIBRARIES})
 
 add_executable(goal2swarm src/goal2swarm.cpp)
 add_dependencies(goal2swarm ${catkin_EXPORTED_TARGETS})

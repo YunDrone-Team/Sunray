@@ -1,15 +1,21 @@
-#include "mavros_control.h"
+#include "UAVControl.h"
 
-int mavros_control::safetyCheck()
+int UAVControl::safetyCheck()
 {
+    if (px4_state.pos[0] < uav_geo_fence.x_min ||
+        px4_state.pos[0] > uav_geo_fence.x_max ||
+        px4_state.pos[1] < uav_geo_fence.y_min ||
+        px4_state.pos[1] > uav_geo_fence.y_max ||
+        px4_state.pos[2] < uav_geo_fence.z_min ||
+        px4_state.pos[2] > uav_geo_fence.z_max)
+    {
+        return 1;
+    }
+    
+    float time_diff = (ros::Time::now() - odom_valid_time).toSec();
     if (odom_valid_time == ros::Time(0))
     {
         return 0;
-    }
-    float time_diff = (ros::Time::now() - odom_valid_time).toSec();
-    if (uav_state.position[0] < uav_geo_fence.x_min || uav_state.position[0] > uav_geo_fence.x_max || uav_state.position[1] < uav_geo_fence.y_min || uav_state.position[1] > uav_geo_fence.y_max || uav_state.position[2] < uav_geo_fence.z_min || uav_state.position[2] > uav_geo_fence.z_max)
-    {
-        return 1;
     }
     else if (time_diff > odom_valid_timeout || !odom_valid)
     {
@@ -25,7 +31,7 @@ int mavros_control::safetyCheck()
     }
 }
 
-void mavros_control::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
+void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
     px4_state.pos[0] = msg->pose.pose.position.x;
     px4_state.pos[1] = msg->pose.pose.position.y;
@@ -35,7 +41,7 @@ void mavros_control::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     px4_state.vel[2] = msg->twist.twist.linear.z;
 }
 
-void mavros_control::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
+void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
     if (!px4_state.armed && msg->armed)
     {
@@ -56,16 +62,16 @@ void mavros_control::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
     }
 }
 
-void mavros_control::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
+void UAVControl::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
 {
     px4_state.batt_volt = msg->voltage;
     px4_state.batt_perc = msg->percentage * 100;
 }
 
-void mavros_control::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
+void UAVControl::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     px4_state.att_q[0] = msg->orientation.x;
-    px4_state.att_q[2] = msg->orientation.y;
+    px4_state.att_q[1] = msg->orientation.y;
     px4_state.att_q[2] = msg->orientation.z;
     px4_state.att_q[3] = msg->orientation.w;
 
@@ -79,7 +85,7 @@ void mavros_control::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.att[2] = yaw;
 }
 
-void mavros_control::px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg)
+void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg)
 {
     px4_state.target_pos[0] = msg->position.x;
     px4_state.target_pos[1] = msg->position.y;
@@ -89,14 +95,15 @@ void mavros_control::px4_pos_target_callback(const mavros_msgs::PositionTarget::
     px4_state.target_vel[2] = msg->velocity.z;
 }
 
-void mavros_control::odom_state_callback(const std_msgs::Bool::ConstPtr &msg)
+void UAVControl::odom_state_callback(const std_msgs::Bool::ConstPtr &msg)
 {
     odom_valid_time = ros::Time::now();
     odom_valid = msg->data;
 }
 
-void mavros_control::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
+void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
 {
+    rcState_cb = true;
     rc_state = *msg;
     if (rc_state.arm_state == 2)
     {
@@ -113,34 +120,34 @@ void mavros_control::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg
     }
     else if (rc_state.mode_state == 2)
     {
-        setset_offboard_control(Control_Mode::RC_CONTROL);
         Logger::warning("Switch to RC_CONTROL mode with rc");
+        set_offboard_control(Control_Mode::RC_CONTROL);
     }
     else if (rc_state.mode_state == 3)
     {
-        setset_offboard_control(Control_Mode::CMD_CONTROL);
         Logger::warning("Switch to CMD_CONTROL mode with rc");
+        set_offboard_control(Control_Mode::CMD_CONTROL);
     }
     if (rc_state.land_state == 1)
     {
-        setset_offboard_control(Control_Mode::LAND_CONTROL);
         Logger::warning("Switch to LAND_CONTROL mode with rc");
+        set_offboard_control(Control_Mode::LAND_CONTROL);
     }
     if (rc_state.kill_state == 1)
     {
-        emergencyStop();
         Logger::error("Emergency Stop with rc");
+        emergencyStop();
     }
 }
 
-void mavros_control::setMode(std::string mode)
+void UAVControl::setMode(std::string mode)
 {
     mavros_msgs::SetMode mode_cmd;
     mode_cmd.request.custom_mode = mode;
     px4_set_mode_client.call(mode_cmd);
 }
 
-void mavros_control::emergencyStop()
+void UAVControl::emergencyStop()
 {
     mavros_msgs::CommandLong emergency_srv;
     emergency_srv.request.broadcast = false;
@@ -159,7 +166,7 @@ void mavros_control::emergencyStop()
     Logger::error("Emergency Stop!");
 }
 
-void mavros_control::reboot()
+void UAVControl::reboot()
 {
     // https://mavlink.io/en/messages/common.html, MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN(#246)
     mavros_msgs::CommandLong reboot_srv;
@@ -172,7 +179,7 @@ void mavros_control::reboot()
     Logger::error("Reboot!");
 }
 
-void mavros_control::setArm(bool arm)
+void UAVControl::setArm(bool arm)
 {
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = arm;
@@ -203,12 +210,13 @@ void mavros_control::setArm(bool arm)
     arm_cmd.request.value = arm;
 }
 
-void mavros_control::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
+void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
+    control_cmd.header.stamp = ros::Time::now();
     control_cmd = *msg;
 }
 
-void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
+void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
 {
     if (msg->cmd == sunray_msgs::UAVSetup::ARM)
     {
@@ -228,8 +236,6 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     }
     else if (msg->cmd == sunray_msgs::UAVSetup::SET_CONTROL_MODE)
     {
-        // 需要无遥控器控制一定要注释掉（ && uav_state.armed ），否则无法进入OFFBOARD模式
-        // if (msg->control_state == "CMD_CONTROL" && uav_state.armed)
         if (msg->control_state == "INIT")
         {
             control_mode = Control_Mode::INIT;
@@ -239,8 +245,8 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         {
             if (safety_state == 0)
             {
-                setset_offboard_control(Control_Mode::CMD_CONTROL);
                 Logger::warning("Switch to CMD_CONTROL mode with cmd");
+                set_offboard_control(Control_Mode::CMD_CONTROL);
             }
             else
             {
@@ -251,8 +257,8 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         {
             if (safety_state == 0)
             {
-                setset_offboard_control(Control_Mode::RC_CONTROL);
                 Logger::warning("Switch to RC_CONTROL mode with cmd");
+                set_offboard_control(Control_Mode::RC_CONTROL);
             }
             else
             {
@@ -261,7 +267,7 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         }
         else if (msg->control_state == "LAND_CONTROL")
         {
-            setset_offboard_control(Control_Mode::LAND_CONTROL);
+            set_offboard_control(Control_Mode::LAND_CONTROL);
         }
         else if (msg->control_state == "WITHOUT_CONTROL")
         {
@@ -279,16 +285,16 @@ void mavros_control::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     }
 }
 
-void mavros_control::print_state(const ros::TimerEvent &event)
+void UAVControl::print_state(const ros::TimerEvent &event)
 {
     Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_prefix, "<<<<<<<<<<<<<<<");
     if (px4_state.connected)
     {
         Logger::print_color(int(LogColor::green), "CONNECTED:", "TRUE");
         if (px4_state.armed)
-            Logger::print_color(int(LogColor::green), "MODE:", px4_state.mode, LOG_GREEN, "ARMED");
+            Logger::print_color(int(LogColor::green), "MODE:", LOG_BLUE, px4_state.mode, "ARMED");
         else
-            Logger::print_color(int(LogColor::green), "MODE:", px4_state.mode, LOG_RED, "DISARMED");
+            Logger::print_color(int(LogColor::green), "MODE:", LOG_BLUE, px4_state.mode, LOG_RED, "DISARMED");
         Logger::print_color(int(LogColor::green), "BATTERY:", px4_state.batt_volt, "[V]", px4_state.batt_perc, "[%]");
         Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
         Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
@@ -310,15 +316,30 @@ void mavros_control::print_state(const ros::TimerEvent &event)
     else
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
     Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[control_mode], LOG_GREEN, "]");
+    if (control_mode == Control_Mode::CMD_CONTROL || control_mode == Control_Mode::RC_CONTROL)
+    {
+        Logger::color_no_del(int(LogColor::green), "Move Mode [", LOG_BLUE, moveModeMapStr[control_cmd.cmd], LOG_GREEN, "]");
+        Logger::print_color(int(LogColor::blue), "PX4 TARGET (receive)");
+        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                            px4_state.target_pos[0],
+                            px4_state.target_pos[1],
+                            px4_state.target_pos[2],
+                            "[m]");
+        Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                            px4_state.target_vel[0],
+                            px4_state.target_vel[1],
+                            px4_state.target_vel[2],
+                            "[m/s]");
+    }
 }
 
-void mavros_control::set_hover_pos()
+void UAVControl::set_hover_pos()
 {
     flight_params.hover_pos = px4_state.pos;
     flight_params.hover_yaw = px4_state.att[2];
 }
 
-void mavros_control::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
+void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
     setpoint.header.frame_id = "map";
@@ -326,7 +347,7 @@ void mavros_control::setpoint_local_pub(uint16_t type_mask, mavros_msgs::Positio
     px4_setpoint_local_pub.publish(setpoint);
 }
 
-void mavros_control::set_default_setpoint()
+void UAVControl::set_default_setpoint()
 {
     local_setpoint.header.stamp = ros::Time::now();
     local_setpoint.header.frame_id = "map";
@@ -345,8 +366,24 @@ void mavros_control::set_default_setpoint()
     local_setpoint.yaw_rate = 0;
 }
 
-void mavros_control::setset_offboard_control(int mode)
+void UAVControl::set_offboard_control(int mode)
 {
+    // 如果不使用遥控器不允许进入RC_CONTROL模式
+    if (mode == Control_Mode::RC_CONTROL && !use_rc)
+    {
+        Logger::error("RC not enabled, cannot enter RC_CONTROL mode!");
+        return;
+    }
+    if (mode == Control_Mode::RC_CONTROL && !rcState_cb)
+    {
+        Logger::error("RC callback error, cannot enter RC_CONTROL mode!");
+        return;
+    }
+    if (!px4_state.armed && use_rc)
+    {
+        Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
+        return;
+    }
     set_hover_pos();
     control_cmd.cmd = Hover;
     control_cmd.header.stamp = ros::Time::now();
@@ -357,8 +394,14 @@ void mavros_control::setset_offboard_control(int mode)
     control_mode = mode;
 }
 
-void mavros_control::set_offboard_mode()
+void UAVControl::set_offboard_mode()
 {
+    // 使用遥控器时 未解锁则不允许进入OFFBOARD模式
+    if (!px4_state.armed && use_rc)
+    {
+        Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
+        return;
+    }
     set_default_setpoint();
     local_setpoint.velocity.x = 0.0;
     local_setpoint.velocity.y = 0.0;
@@ -369,14 +412,14 @@ void mavros_control::set_offboard_mode()
     setMode("OFFBOARD");
 }
 
-void mavros_control::task_timer_callback(const ros::TimerEvent &event)
+void UAVControl::task_timer_callback(const ros::TimerEvent &event)
 {
     // 安全检查
     safety_state = safetyCheck();
     if (safety_state == 1)
     {
         // 超出安全范围 进入降落模式
-        if (control_mode != Control_Mode::LAND_CONTROL)
+        if (px4_state.armed && control_mode != Control_Mode::LAND_CONTROL)
         {
             control_mode = Control_Mode::LAND_CONTROL;
             Logger::error("Out of safe range, landing...");
@@ -394,19 +437,55 @@ void mavros_control::task_timer_callback(const ros::TimerEvent &event)
     else if (safety_state == 3) // 定位数据没有失效但是延迟较高
     {
         // 预留暂不做任何事情
+        Logger::warning("Odom delay too high!");
     }
+    // 发布状态
+    uav_state.uav_id = uav_id;
+    uav_state.header.stamp = ros::Time::now();
+    uav_state.connected = px4_state.connected;
+    uav_state.armed = px4_state.armed;
+    uav_state.mode = px4_state.mode;
+    uav_state.odom_valid = odom_valid;
+    for(int i=0;i<3;i++)
+    {
+        uav_state.position[i] = px4_state.pos[i];
+        uav_state.velocity[i] = px4_state.vel[i];
+        uav_state.attitude[i] = px4_state.att[i];
+        uav_state.pos_setpoint[i] = px4_state.target_pos[i];
+        uav_state.vel_setpoint[i] = px4_state.target_vel[i];
+        uav_state.att_setpoint[i] = px4_state.target_att[i];
+    }
+    uav_state.attitude_q.x = px4_state.att_q[0];
+    uav_state.attitude_q.y = px4_state.att_q[1];
+    uav_state.attitude_q.z = px4_state.att_q[2];
+    uav_state.attitude_q.w = px4_state.att_q[3];
+    uav_state.battery_state = px4_state.batt_volt;
+    uav_state.battery_percetage = px4_state.batt_perc;
+    uav_state.control_mode = control_mode;
+    uav_state_pub.publish(uav_state);
 }
 
-void mavros_control::body2ned(double body_xy[2], double ned_xy[2], double yaw)
+void UAVControl::body2ned(double body_xy[2], double ned_xy[2], double yaw)
 {
     ned_xy[0] = cos(yaw) * body_xy[0] - sin(yaw) * body_xy[1];
     ned_xy[1] = sin(yaw) * body_xy[0] + cos(yaw) * body_xy[1];
 }
 
-void mavros_control::set_desired_from_cmd()
+void UAVControl::set_desired_from_cmd()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
+    if (check_cmd_timeout && !new_cmd && control_cmd.cmd != Hover && control_cmd.cmd != Takeoff)
+    {
+        if ((ros::Time::now() - last_control_cmd.header.stamp).toSec() > cmd_timeout)
+        {
+            Logger::error("Command timeout, change to hover mode");
+            control_cmd.cmd = Hover;
+            control_cmd.header.stamp = ros::Time::now();
+            set_desired_from_hover();
+            return;
+        }
+    }
     // 如果无人机未解锁则不执行
     if (!px4_state.armed)
     {
@@ -452,7 +531,7 @@ void mavros_control::set_desired_from_cmd()
                     set_default_setpoint();
                     double body_pos[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
                     double ned_pos[2] = {0.0, 0.0};
-                    mavros_control::body2ned(body_pos, ned_pos, px4_state.att[2]); // 偏航角 px4_state.att[2]
+                    UAVControl::body2ned(body_pos, ned_pos, px4_state.att[2]); // 偏航角 px4_state.att[2]
 
                     local_setpoint.position.x = px4_state.pos[0] + ned_pos[0];
                     local_setpoint.position.y = px4_state.pos[1] + ned_pos[1];
@@ -461,7 +540,7 @@ void mavros_control::set_desired_from_cmd()
                     // Body 系速度向量到 NED 系的转换
                     double body_vel[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
                     double ned_vel[2] = {0.0, 0.0};
-                    mavros_control::body2ned(body_vel, ned_vel, px4_state.att[2]);
+                    UAVControl::body2ned(body_vel, ned_vel, px4_state.att[2]);
 
                     local_setpoint.velocity.x = ned_vel[0];
                     local_setpoint.velocity.y = ned_vel[1];
@@ -479,6 +558,7 @@ void mavros_control::set_desired_from_cmd()
                     local_setpoint.velocity.x = control_cmd.desired_vel[0];
                     local_setpoint.velocity.y = control_cmd.desired_vel[1];
                     local_setpoint.velocity.z = control_cmd.desired_vel[2];
+                    std::cout<<local_setpoint.velocity.x<<local_setpoint.velocity.y<<local_setpoint.velocity.z<<std::endl;
                     local_setpoint.acceleration_or_force.x = control_cmd.desired_acc[0];
                     local_setpoint.acceleration_or_force.y = control_cmd.desired_acc[1];
                     local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
@@ -502,7 +582,7 @@ void mavros_control::set_desired_from_cmd()
     last_control_cmd = control_cmd;
 }
 
-void mavros_control::set_desired_from_rc()
+void UAVControl::set_desired_from_rc()
 {
     if ((ros::Time::now() - rc_state.header.stamp).toSec() > 1.5)
     {
@@ -537,10 +617,10 @@ void mavros_control::set_desired_from_rc()
     setpoint_local_pub(flight_params.type_mask, local_setpoint);
 }
 
-void mavros_control::set_desired_from_land()
+void UAVControl::set_desired_from_land()
 {
     bool new_cmd = control_mode != last_control_mode ||
-        (control_cmd.cmd == Land && (control_cmd.header.stamp != last_control_cmd.header.stamp));
+                   (control_cmd.cmd == Land && (control_cmd.header.stamp != last_control_cmd.header.stamp));
     if (new_cmd)
     {
         flight_params.last_land_time = ros::Time(0);
@@ -591,7 +671,7 @@ void mavros_control::set_desired_from_land()
     setpoint_local_pub(flight_params.type_mask, local_setpoint);
 }
 
-void mavros_control::set_desired_from_hover()
+void UAVControl::set_desired_from_hover()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
@@ -609,7 +689,7 @@ void mavros_control::set_desired_from_hover()
     }
 }
 
-void mavros_control::return_to_home()
+void UAVControl::return_to_home()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
@@ -645,11 +725,11 @@ void mavros_control::return_to_home()
     }
 }
 
-void mavros_control::waypoint_mission()
+void UAVControl::waypoint_mission()
 {
 }
 
-void mavros_control::set_takeoff()
+void UAVControl::set_takeoff()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
@@ -681,9 +761,9 @@ void mavros_control::set_takeoff()
     }
 }
 
-void mavros_control::set_land()
+void UAVControl::set_land()
 {
-    if(control_mode != Control_Mode::LAND_CONTROL)
+    if (control_mode != Control_Mode::LAND_CONTROL)
     {
         control_mode = Control_Mode::LAND_CONTROL;
         set_desired_from_land();

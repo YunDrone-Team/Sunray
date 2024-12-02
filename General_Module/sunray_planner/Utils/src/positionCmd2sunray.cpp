@@ -58,6 +58,7 @@ public:
         cmd_value.ay = msg->acceleration.y;
         cmd_value.az = msg->acceleration.z;
         cmd_value.yaw = msg->yaw;
+        cmd_.header.stamp = ros::Time::now();
         if(!enable_yaw)
         {
             cmd_value.yaw = 0;
@@ -65,18 +66,21 @@ public:
 
         if(msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
         {
-            cmd_.cmd = sunray_msgs::UAVControlCMD::Hover;
+            cmd_.cmd = 102;
         }
         else
-        {
+        {   
+            // XyzPosYaw
             if(control_type == 0){
-                cmd_.cmd = sunray_msgs::UAVControlCMD::XYZ_POS;
+                cmd_.cmd = 4;
             }
+            // XyzPosVelYaw
             else if(control_type == 1){
-                cmd_.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL;
+                cmd_.cmd = 6;
             }
+            // XyzPosVelYaw
             else if(control_type == 2){
-                cmd_.cmd = sunray_msgs::UAVControlCMD::TRAJECTORY;
+                cmd_.cmd = 10;
             }
             else{
                 std::cout << "control_type error!" << std::endl;
@@ -91,10 +95,9 @@ public:
             cmd_.desired_acc[0] = cmd_value.ax;
             cmd_.desired_acc[1] = cmd_value.ay;
             cmd_.desired_acc[2] = cmd_value.az;
-            cmd_.enable_yawRate = false;
             cmd_.desired_yaw = cmd_value.yaw;
         }
-        if(last_cmd_.cmd == sunray_msgs::UAVControlCMD::Hover && cmd_.cmd == sunray_msgs::UAVControlCMD::Hover)
+        if(last_cmd_.cmd == 102 && cmd_.cmd == 102)
         {
            last_cmd_ = cmd_;
            return;
