@@ -43,11 +43,15 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     if (source_map.find(external_source) != source_map.end())
     {
         external_position = factory.create(source_map[external_source]);
-        if (source_map[external_source] == "MOCAP")
+        if (external_source == MOCAP)
         {
-            external_position->init(uav_id, uav_name, uav_prefix);
+            external_position->init(uav_id, uav_name, topic_prefix);
         }
-        else
+        else if (external_source == POSE)
+        {
+            external_position->init(uav_id, uav_name, source_topic);
+        }
+        else if( external_source == ODOM || external_source == GAZEBO)
         {
             external_position->init(uav_id, uav_name, source_topic);
         }

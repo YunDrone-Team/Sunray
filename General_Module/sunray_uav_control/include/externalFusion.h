@@ -15,13 +15,13 @@
 enum external_source
 {
     ODOM = 0,
-    POSE,
-    GAZEBO,
-    MOCAP,
-    VIOBOT,
-    GPS,
-    RTK,
-    VINS
+    POSE = 1,
+    GAZEBO = 2,
+    MOCAP = 3,
+    VIOBOT = 4,
+    GPS = 5,
+    RTK = 6,
+    VINS = 7
 };
 
 struct PositionState
