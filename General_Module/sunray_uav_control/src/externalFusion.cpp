@@ -83,7 +83,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &ExternalFusion::timer_rviz, this);
     }
     
-    odom_state_pub = nh.advertise<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10);
+    odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/odom_state", 10);
     // 定时任务
     timer_task = nh.createTimer(ros::Duration(0.2), &ExternalFusion::timer_callback, this);
 
@@ -248,10 +248,21 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     {
         Logger::warning("Warning: The error between external state and px4 state is too large!");
     }
+    external_odom.header.stamp = ros::Time::now();
+    external_odom.external_source = external_source;
+    external_odom.odom_valid = external_position->position_state.valid;
+    external_odom.position[0] = external_position->position_state.px;
+    external_odom.position[1] = external_position->position_state.py;
+    external_odom.position[2] = external_position->position_state.pz;
+    external_odom.velocity[0] = external_position->position_state.vx;
+    external_odom.velocity[1] = external_position->position_state.vy;
+    external_odom.velocity[2] = external_position->position_state.vz;
+    external_odom.attitude_q.w = external_position->position_state.qw;
+    external_odom.attitude_q.x = external_position->position_state.qx;
+    external_odom.attitude_q.y = external_position->position_state.qy;
+    external_odom.attitude_q.z = external_position->position_state.qz;
 
-    std_msgs::Bool msg;
-    msg.data = external_position->position_state.valid;
-    odom_state_pub.publish(msg);
+    odom_state_pub.publish(external_odom);
 }
 
 void ExternalFusion::timer_rviz(const ros::TimerEvent &e)

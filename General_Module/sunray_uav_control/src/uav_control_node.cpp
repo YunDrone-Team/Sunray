@@ -55,7 +55,7 @@ void UAVControl::init(ros::NodeHandle &nh)
                                                                10, &UAVControl::control_cmd_callback, this);
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup",
                                                     1, &UAVControl::setup_callback, this);
-    odom_state_sub = nh.subscribe<std_msgs::Bool>(topic_prefix + "/sunray/odom_state", 10,
+    odom_state_sub = nh.subscribe<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/odom_state", 10,
                                                   &UAVControl::odom_state_callback, this);
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
                                                       &UAVControl::rc_state_callback, this);
