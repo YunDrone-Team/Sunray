@@ -232,7 +232,7 @@ private:
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
-    void odom_state_callback(const std_msgs::Bool::ConstPtr &msg);
+    void odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg);
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);
     void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);

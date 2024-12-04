@@ -95,10 +95,10 @@ void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::Cons
     px4_state.target_vel[2] = msg->velocity.z;
 }
 
-void UAVControl::odom_state_callback(const std_msgs::Bool::ConstPtr &msg)
+void UAVControl::odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg)
 {
     odom_valid_time = ros::Time::now();
-    odom_valid = msg->data;
+    odom_valid = msg->odom_valid;
 }
 
 void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
@@ -131,7 +131,8 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     if (rc_state.land_state == 1)
     {
         Logger::warning("Switch to LAND_CONTROL mode with rc");
-        set_offboard_control(Control_Mode::LAND_CONTROL);
+        set_land();
+        // set_offboard_control(Control_Mode::LAND_CONTROL);
     }
     if (rc_state.kill_state == 1)
     {
@@ -267,7 +268,8 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         }
         else if (msg->control_state == "LAND_CONTROL")
         {
-            set_offboard_control(Control_Mode::LAND_CONTROL);
+            set_land();
+            // set_offboard_control(Control_Mode::LAND_CONTROL);
         }
         else if (msg->control_state == "WITHOUT_CONTROL")
         {
@@ -462,6 +464,7 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     uav_state.battery_state = px4_state.batt_volt;
     uav_state.battery_percetage = px4_state.batt_perc;
     uav_state.control_mode = control_mode;
+    uav_state.move_mode = control_cmd.cmd;
     uav_state_pub.publish(uav_state);
 }
 
@@ -558,7 +561,6 @@ void UAVControl::set_desired_from_cmd()
                     local_setpoint.velocity.x = control_cmd.desired_vel[0];
                     local_setpoint.velocity.y = control_cmd.desired_vel[1];
                     local_setpoint.velocity.z = control_cmd.desired_vel[2];
-                    std::cout<<local_setpoint.velocity.x<<local_setpoint.velocity.y<<local_setpoint.velocity.z<<std::endl;
                     local_setpoint.acceleration_or_force.x = control_cmd.desired_acc[0];
                     local_setpoint.acceleration_or_force.y = control_cmd.desired_acc[1];
                     local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
@@ -607,6 +609,10 @@ void UAVControl::set_desired_from_rc()
     flight_params.hover_pos[1] += enu_xy[1];
     flight_params.hover_pos[2] += body_z;
     flight_params.hover_yaw += body_yaw;
+
+    // 如果低于起飞点，则悬停点的高度为起飞点高度 这对非回中的遥控控制很重要
+    if (flight_params.hover_pos[2] < flight_params.home_pos[2]+0.2)
+        flight_params.hover_pos[2] = flight_params.home_pos[2]+0.2;
 
     local_setpoint.position.x = flight_params.hover_pos[0];
     local_setpoint.position.y = flight_params.hover_pos[1];
@@ -763,7 +769,7 @@ void UAVControl::set_takeoff()
 
 void UAVControl::set_land()
 {
-    if (control_mode != Control_Mode::LAND_CONTROL)
+    if (control_mode != Control_Mode::LAND_CONTROL && (control_mode == Control_Mode::RC_CONTROL || control_mode == Control_Mode::CMD_CONTROL))
     {
         control_mode = Control_Mode::LAND_CONTROL;
         set_desired_from_land();

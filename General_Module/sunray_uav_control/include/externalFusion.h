@@ -71,7 +71,7 @@ private:
     PX4State px4_state;                                     // 无人机状态集合
     PositionState external_state;                           // 外部定位数据
     PositionState err_state;                                // 状态误差
-
+    sunray_msgs::ExternalOdom external_odom;                 // 外部里程计数据
     ExternalPositioFactory factory;
     std::shared_ptr<ExternalPosition> external_position;
 
