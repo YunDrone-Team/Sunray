@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     setup.cmd = 4;
     setup.control_state = "CMD_CONTROL";
     uav_setup_pub.publish(setup);
-    ros::Duration(1.0).sleep();
+    ros::Duration(1.5).sleep();
 
     // 起飞
     cout << "takeoff" << endl;

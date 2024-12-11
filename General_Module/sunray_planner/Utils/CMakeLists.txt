@@ -58,9 +58,10 @@ add_executable(positionCmd2sunray src/positionCmd2sunray.cpp)
 add_dependencies(positionCmd2sunray ${catkin_EXPORTED_TARGETS})
 target_link_libraries(positionCmd2sunray ${catkin_LIBRARIES})
 
+# sudo apt-get install libyaml-cpp-dev
 add_executable(goal2swarm src/goal2swarm.cpp)
 add_dependencies(goal2swarm ${catkin_EXPORTED_TARGETS})
-target_link_libraries(goal2swarm ${catkin_LIBRARIES})
+target_link_libraries(goal2swarm ${catkin_LIBRARIES} yaml-cpp)
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/

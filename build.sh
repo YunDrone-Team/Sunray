@@ -20,7 +20,8 @@ catkin_make --source ego-planner-swarm --build build/ego-planner
 catkin_make --source FUEL --build build/FUEL
 # 编译simulator_utils模块
 catkin_make --source Simulation/simulator_utils --build build/simulator_utils
-# catkin_make --source orca_planenr --build build/orca_planenr
+# 编译sunray_formation模块
+catkin_make --source sunray_formation --build build/sunray_formation
 
 # catkin_make --source sunray_msgs --build build/sunray_msgs
 # catkin_make --source sunray_comm --build build/sunray_comm
@@ -28,4 +29,3 @@ catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # catkin_make --source turn_on_wheeltec_robot --build build/turn_on_wheeltec_robot
 # catkin_make --source sunray_wheeltec_robot --build build/sunray_wheeltec_robot
 # catkin_make --source sunray_ugv_planning --build build/sunray_ugv_planning
-

@@ -66,7 +66,7 @@ public:
 
         if(msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
         {
-            cmd_.cmd = 102;
+            cmd_.cmd = 4;
         }
         else
         {   
@@ -97,7 +97,7 @@ public:
             cmd_.desired_acc[2] = cmd_value.az;
             cmd_.desired_yaw = cmd_value.yaw;
         }
-        if(last_cmd_.cmd == 102 && cmd_.cmd == 102)
+        if(last_cmd_.cmd == 4 && cmd_.cmd == 4)
         {
            last_cmd_ = cmd_;
            return;
