@@ -490,7 +490,7 @@ void UAVControl::set_desired_from_cmd()
         }
     }
     // 如果无人机未解锁则不执行
-    if (!px4_state.armed)
+    if (!px4_state.armed && use_rc)
     {
         if (new_cmd)
         {

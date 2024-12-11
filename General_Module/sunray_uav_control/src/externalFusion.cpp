@@ -341,48 +341,48 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     meshROS.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
     uav_mesh_pub.publish(meshROS);
 
-    // 发布TF用于RVIZ显示（用于lidar）
-    static tf2_ros::TransformBroadcaster broadcaster;
-    geometry_msgs::TransformStamped tfs;
-    //  |----头设置
-    tfs.header.frame_id = "world";       // 相对于世界坐标系
-    tfs.header.stamp = ros::Time::now(); // 时间戳
-    //  |----坐标系 ID
-    tfs.child_frame_id = uav_name + "/lidar_link"; // 子坐标系，无人机的坐标系
-    // tfs.child_frame_id = "/lidar_link"; //子坐标系，无人机的坐标系
-    //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
-    tfs.transform.translation.x = external_state.pos_x;
-    tfs.transform.translation.y = external_state.pos_y;
-    tfs.transform.translation.z = external_state.pos_z;
-    //  |--------- 四元数设置
-    tfs.transform.rotation.x = external_state.att_x;
-    tfs.transform.rotation.y = external_state.att_y;
-    tfs.transform.rotation.z = external_state.att_z;
-    tfs.transform.rotation.w = external_state.att_w;
-    //  |--------- 广播器发布数据
-    broadcaster.sendTransform(tfs);
+    // // 发布TF用于RVIZ显示（用于lidar）
+    // static tf2_ros::TransformBroadcaster broadcaster;
+    // geometry_msgs::TransformStamped tfs;
+    // //  |----头设置
+    // tfs.header.frame_id = "world";       // 相对于世界坐标系
+    // tfs.header.stamp = ros::Time::now(); // 时间戳
+    // //  |----坐标系 ID
+    // tfs.child_frame_id = uav_prefix + "/lidar_link"; // 子坐标系，无人机的坐标系
+    // // tfs.child_frame_id = "/lidar_link"; //子坐标系，无人机的坐标系
+    // //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
+    // tfs.transform.translation.x = external_state.pos_x;
+    // tfs.transform.translation.y = external_state.pos_y;
+    // tfs.transform.translation.z = external_state.pos_z;
+    // //  |--------- 四元数设置
+    // tfs.transform.rotation.x = external_state.att_x;
+    // tfs.transform.rotation.y = external_state.att_y;
+    // tfs.transform.rotation.z = external_state.att_z;
+    // tfs.transform.rotation.w = external_state.att_w;
+    // //  |--------- 广播器发布数据
+    // broadcaster.sendTransform(tfs);
 
-    // q_orig  是原姿态转换的tf的四元数
-    // q_rot   旋转四元数
-    // q_new   旋转后的姿态四元数
-    tf2::Quaternion q_orig, q_rot, q_new;
+    // // q_orig  是原姿态转换的tf的四元数
+    // // q_rot   旋转四元数
+    // // q_new   旋转后的姿态四元数
+    // tf2::Quaternion q_orig, q_rot, q_new;
 
-    // commanded_pose.pose.orientation  这个比如说 是 订阅的别的节点的topic 是一个  姿态的 msg 四元数
-    // 通过tf2::convert()  转换成 tf 的四元数
-    tf2::convert(tfs.transform.rotation, q_orig);
+    // // commanded_pose.pose.orientation  这个比如说 是 订阅的别的节点的topic 是一个  姿态的 msg 四元数
+    // // 通过tf2::convert()  转换成 tf 的四元数
+    // tf2::convert(tfs.transform.rotation, q_orig);
 
-    // 设置 绕 x 轴 旋转180度
-    double r = -1.57, p = 0, y = -1.57;
-    q_rot.setRPY(r, p, y); // 求得 tf 的旋转四元数
+    // // 设置 绕 x 轴 旋转180度
+    // double r = -1.57, p = 0, y = -1.57;
+    // q_rot.setRPY(r, p, y); // 求得 tf 的旋转四元数
 
-    q_new = q_orig * q_rot; // 通过 姿态的四元数 乘以旋转的四元数 即为 旋转 后的  四元数
-    q_new.normalize();      // 归一化
+    // q_new = q_orig * q_rot; // 通过 姿态的四元数 乘以旋转的四元数 即为 旋转 后的  四元数
+    // q_new.normalize();      // 归一化
 
-    //  将 旋转后的 tf 四元数 转换 为 msg 四元数
-    tf2::convert(q_new, tfs.transform.rotation);
-    tfs.child_frame_id = uav_name + "/camera_link"; // 子坐标系，无人机的坐标系
-    //  |--------- 广播器发布数据
-    broadcaster.sendTransform(tfs);
+    // //  将 旋转后的 tf 四元数 转换 为 msg 四元数
+    // tf2::convert(q_new, tfs.transform.rotation);
+    // tfs.child_frame_id = uav_name + "/camera_link"; // 子坐标系，无人机的坐标系
+    // //  |--------- 广播器发布数据
+    // broadcaster.sendTransform(tfs);
 }
 
 void mySigintHandler(int sig)
