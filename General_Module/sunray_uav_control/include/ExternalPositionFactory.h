@@ -22,6 +22,8 @@ public:
             return std::make_shared<PoseExternalPosition>();
         } else if (type == "MOCAP") {
             return std::make_shared<MocapExternalPosition>();
+        }else if (type == "VIOBOT") {
+            return std::make_shared<MocapExternalPosition>();
         }
         return nullptr;
     }
