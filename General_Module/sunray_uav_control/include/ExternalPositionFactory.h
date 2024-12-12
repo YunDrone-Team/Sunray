@@ -6,7 +6,7 @@
 #include "ExternalPosition/MocapExternalPosition.h"
 #include "ExternalPosition/OdomExternalPosition.h"
 #include "ExternalPosition/PoseExternalPosition.h"
-
+#include "ExternalPosition/ViobotExternalPosition.h"
 // 外部定位工厂类
 class ConcreteFactory {
 public:
@@ -23,7 +23,7 @@ public:
         } else if (type == "MOCAP") {
             return std::make_shared<MocapExternalPosition>();
         }else if (type == "VIOBOT") {
-            return std::make_shared<MocapExternalPosition>();
+            return std::make_shared<ViobotExternalPosition>();
         }
         return nullptr;
     }

@@ -55,6 +55,10 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         {
             external_position->init(uav_id, uav_name, source_topic);
         }
+        else if( external_source == VIOBOT)
+        {
+            external_position->init(uav_id, uav_name, source_topic);
+        }
         external_position->bindTopic(nh);
         Logger::info("external source: [", source_map[external_source], "]");
     }
@@ -215,8 +219,8 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     external_state.vel_x = external_position->position_state.vx;
     external_state.vel_y = external_position->position_state.vy;
     external_state.vel_z = external_position->position_state.vz;
-    external_state.att_x = external_position->position_state.roll;
-    external_state.roll = external_position->position_state.pitch;
+    external_state.roll = external_position->position_state.roll;
+    external_state.pitch = external_position->position_state.pitch;
     external_state.yaw = external_position->position_state.yaw;
     external_state.att_w = external_position->position_state.qw;
     external_state.att_x = external_position->position_state.qx;
