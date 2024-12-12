@@ -1,9 +1,9 @@
 #include "ExternalPosition.h"
 
-class PoseExternalPosition : public ExternalPosition
+class ViobotExternalPosition : public ExternalPosition
 {
 public:
-    PoseExternalPosition()
+    ViobotExternalPosition()
     {
     }
 
@@ -39,30 +39,30 @@ public:
         position_state.roll = 0.0;
         position_state.pitch = 0.0;
         position_state.yaw = 0.0;
+        
     }
 
     // 实现外部定位源话题回调函数
-    void PosCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
+    void ViobotCallback(const nav_msgs::Odometry::ConstPtr &msg)
     {
         // 接收到的外部定位数据
         vision_position.external_time = ros::Time::now();
-        vision_position.external_px = msg->pose.position.x;
-        vision_position.external_py = msg->pose.position.y;
-        vision_position.external_pz = msg->pose.position.z;
-        vision_position.external_qx = msg->pose.orientation.x;
-        vision_position.external_qy = msg->pose.orientation.y;
-        vision_position.external_qz = msg->pose.orientation.z;
-        vision_position.external_qw = msg->pose.orientation.w;
+        vision_position.external_px = msg->pose.pose.position.x;
+        vision_position.external_py = msg->pose.pose.position.y;
+        vision_position.external_pz = msg->pose.pose.position.z;
+        vision_position.external_qx = msg->pose.pose.orientation.x;
+        vision_position.external_qy = msg->pose.pose.orientation.y;
+        vision_position.external_qz = msg->pose.pose.orientation.z;
+        vision_position.external_qw = msg->pose.pose.orientation.w;
         //external_mavros.updateExternalPosition(vision_position);
         
-        
-
         // 四元素转rpy
         tf2::Quaternion quaternion;
-        tf2::fromMsg(msg->pose.orientation, quaternion);
+        tf2::fromMsg(msg->pose.pose.orientation, quaternion);
         double roll, pitch, yaw;
         double roll_tf,pitch_tf,yaw_tf;
         tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
+
         // 将欧拉角从弧度转换为角度
         roll_tf = roll * 180.0 / M_PI;
         pitch_tf = pitch * 180.0 / M_PI;
@@ -71,7 +71,6 @@ public:
         roll=pitch_tf;
         pitch=-normalize(roll_tf);
         yaw=normalize(yaw_tf);
-
 
         roll= roll * M_PI /180.0;
         pitch= pitch * M_PI /180.0;
@@ -82,15 +81,20 @@ public:
 
         tf2::Quaternion quaternion_tf;
         rot_matrix.getRotation(quaternion_tf);  // 获取对应的四元数
-        vision_position.external_qx = quaternion_tf.x;
-        vision_position.external_qy = quaternion_tf.y;
-        vision_position.external_qz = quaternion_tf.z;
-        vision_position.external_qw = quaternion_tf.w;
+        vision_position.external_qx = quaternion_tf.x();
+        vision_position.external_qy = quaternion_tf.y();
+        vision_position.external_qz = quaternion_tf.z();
+        vision_position.external_qw = quaternion_tf.w();
+        //std::cout<<"roll  "<< roll<<"  pitch  "<< pitch<<"  yaw  "<<yaw<<std::endl;
         external_mavros.updateExternalPosition(vision_position);
+
 
         position_state.px = vision_position.external_px;
         position_state.py = vision_position.external_py;
         position_state.pz = vision_position.external_pz;
+        position_state.vx = msg->twist.twist.linear.x;
+        position_state.vy = msg->twist.twist.linear.y;
+        position_state.vz = msg->twist.twist.linear.z;
         position_state.qx = vision_position.external_qx;
         position_state.qy = vision_position.external_qy;
         position_state.qz = vision_position.external_qz;
@@ -98,8 +102,8 @@ public:
         position_state.roll = roll;
         position_state.pitch = pitch;
         position_state.yaw = yaw;
+        
     }
-
     void timerCallback(const ros::TimerEvent &event) override
     {
         position_state.valid = external_mavros.getTimeoutFlag();
@@ -113,9 +117,9 @@ public:
     {
         nh_ = nh;
         // 【订阅】pose
-        pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(source_topic_name, 1, &PoseExternalPosition::PosCallback, this);
+        pos_sub =  nh.subscribe<nav_msgs::Odometry>(source_topic_name, 1, &ViobotExternalPosition::ViobotCallback, this);
         // 【定时器】定时任务
-        task_timer = nh.createTimer(ros::Duration(0.05), &PoseExternalPosition::timerCallback, this);
+        task_timer = nh.createTimer(ros::Duration(0.05), &ViobotExternalPosition::timerCallback, this);
         // 给vision mavros节点也绑定话题
         external_mavros.bindTopic(nh);
     }
