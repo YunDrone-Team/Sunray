@@ -6,98 +6,46 @@
 void GroundControl::init(ros::NodeHandle &nh)
 {
 
-    nh.param<int>("uav_num", uav_num, 1);
-
+    nh.param<int>("uav_num", uav_num, 3);
+    nh.param<int>("uav_id", uav_id, 1);
     nh.param<string>("uav_name", uav_name, "uav");
     nh.param<string>("tcp_ip", tcp_ip, "0.0.0.0");
     nh.param<string>("udp_ip", udp_ip, "127.0.0.1");
     nh.param<string>("tcp_port", tcp_port, "8969");
-    nh.param<string>("udp_port", udp_port, "9898");
-    State_Message state_msg;
-    state_msg.head = 0;
-    state_msg.length = 0;
-    state_msg.msg_id = 0;
-    state_msg.robot_id = 0;
-    state_msg.payload.time_stamp = 0;
-    state_msg.payload.uav_id = 0;
-    state_msg.payload.connected = false;
-    state_msg.payload.armed = false;
-    state_msg.payload.mode = "";
-    state_msg.payload.location_source = 0;
-    state_msg.payload.odom_valid = false;
-    state_msg.payload.position = {0, 0, 0};
-    state_msg.payload.velocity = {0, 0, 0};
-    state_msg.payload.attitude = {0, 0, 0};
-    state_msg.payload.pos_setpoint = {0, 0, 0};
-    state_msg.payload.vel_setpoint = {0, 0, 0};
-    state_msg.payload.att_setpoint = {0, 0, 0};
-    state_msg.payload.attitude_rate = {0, 0, 0};
-    state_msg.payload.battery_state = 0;
-    state_msg.payload.battery_percentage = 0;
-    state_msg.payload.control_mode = 0;
-    state_msg.check = 0;
+    nh.param<int>("udp_port", udp_port, 9696);
 
-    for (int i = 1; i < uav_num + 1; i++)
+    
+    for (int i = uav_id; i < uav_id + uav_num; i++)
     {
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(
             topic_prefix + "/sunray/uav_control_cmd", 1));
 
         uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(
-            topic_prefix + "/sunray/uav_state_cmd", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
+            topic_prefix + "/sunray/uav_state", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
 
         uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(
             topic_prefix + "/sunray/setup", 1));
 
-        stateMessage.push_back(state_msg);
+        udpData[i-1].state.init();
     }
 
-    recvMsgTimer = nh.createTimer(ros::Duration(0.02), &GroundControl::recvMsgCb, this);
     sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
-
-    // tcp_server.m_strIp = tcp_ip;
-    // tcp_server.m_uPort = stoul(tcp_port);
-    // while(!tcp_server.InitServer() && ros::ok())
-    // {
-    //     std::cout << "TCP网络服务端初始化失败！\n";
-    //     std::cout << "正在重试...";
-    //     ros::Duration(5).sleep();
-    // }
-    // tcp_server.startListening();
-    // tcp_server.startWaitForClient();
-    // std::cout << "TCP网络服务端初始化成功！\n";
+    HeartbeatTimer = nh.createTimer(ros::Duration(0.5), &GroundControl::HeartRate, this);
 
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
     // qDebug()<<"TCPServer绑定端口号结果： "<<back;
+    HeartbeatState = false; // 心跳包
+
     tcpServer.Listen(30);
     tcpServer.sigTCPServerReadData.connect(boost::bind(&GroundControl::TCPServerCallBack, this, _1));
     tcpServer.setRunState(true);
 
-    // if (tcp_server.InitServer())
-    // {
-    //     std::cout << "TCP网络服务端初始化成功！\n";
-    //     tcp_server.startListening();
-    //     tcp_server.startWaitForClient();
-    // }
-    // else
-    // {
-    //     std::cout << "TCP网络服务端初始化失败！\n";
-    // }
-
     udpSocket = CommunicationUDPSocket::getInstance();
-    // udpSocket->Bind(static_cast<unsigned short>(std::stoi(udp_port)));
-    udpSocket->InitSocket();
+    udpSocket->Bind(static_cast<unsigned short>(udp_port));
+    udpSocket->sigUDPUnicastReadData.connect(boost::bind(&GroundControl::UDPCallBack, this, _1));
+    // udpSocket->InitSocket();
     udpSocket->setRunState(true);
-
-    // udp_server.m_strIp = udp_ip;
-    // udp_server.m_uPort = stoul(udp_port);
-    // while (!udp_server.InitUDPClient() && ros::ok())
-    // {
-    //     std::cout << "UDP网络服务端初始化失败！\n";
-    //     std::cout << "正在重试...";
-    //     ros::Duration(5).sleep();
-    // }
-    // std::cout << "UDP网络服务端初始化成功！\n";
 }
 
 uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
@@ -132,6 +80,36 @@ uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
     return back;
 }
 
+void GroundControl::UDPCallBack(ReceivedParameter readData)
+{
+    int back;
+    std::cout << "readData.communicationType: " << (int)readData.communicationType << "  " << readData.messageID << std::endl;
+    switch (readData.messageID)
+    {
+    case MessageID::SearchMessageID:
+    { /* code */
+        std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
+        unionData backData;
+        for (int i = uav_id; i < uav_id + uav_num; i++)
+        {
+            backData.ack.init();
+            backData.ack.robotID = i;
+            backData.ack.uavID = i;
+            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
+            std::lock_guard<std::mutex> lock(_mutexUDP);
+            udp_port = readData.data.search.port;
+            udp_ip = readData.ip;
+            std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void GroundControl::TCPServerCallBack(ReceivedParameter readData)
 {
     // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
@@ -139,14 +117,9 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
     //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.length() << std::endl;
     //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
-    float x;
-    float y;
-    float z;
-    float yaw;
+    
     float roll;
     float pitch;
-    uint8_t frame;
-    float yaw_rate;
     uint32_t time_stamp;
     uint8_t robot_id;
 
@@ -156,6 +129,9 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     case MessageID::HeartbeatMessageID:
         std::cout << "TCPServer心跳包接收到机器人id： " << (int)readData.data.heartbeat.robotID << std::endl;
         std::cout << "TCPServer心跳包接收到时间戳 " << readData.data.heartbeat.timestamp << std::endl;
+        std::cout << "TCPServer心跳包接收到IP " << readData.ip << std::endl;
+
+        HeartbeatState = true; // 心跳包
 
         break;
     case MessageID::ControlMessageID:
@@ -172,77 +148,27 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
 
         time_stamp = readData.data.contro.timestamp;
-        x = readData.data.contro.position.x;
-        y = readData.data.contro.position.y;
-        z = readData.data.contro.position.z;
-        yaw = readData.data.contro.yaw;
+       
         roll = readData.data.contro.roll;
         pitch = readData.data.contro.pitch;
-        yaw_rate = readData.data.contro.yawRate;
         robot_id = readData.data.contro.robotID;
-        std::cout << "time_stamp: " << time_stamp << " x: " << x << " y: " << y << " z: " << z << " yaw: " << yaw << " roll: " << roll << " pitch: " << pitch << " frame: " << static_cast<int>(frame) << " yaw_rate: " << yaw_rate << std::endl;
 
-        // uav_cmd.cmd = readData.data.contro.controlMode;
-        // uav_cmd.header.stamp = ros::Time::now();
-        // uav_cmd.desired_pos[0] = x;
-        // uav_cmd.desired_pos[1] = y;
-        // uav_cmd.desired_pos[2] = z;
-        // uav_cmd.desired_yaw = yaw;
-        // uav_cmd.enable_yawRate = yaw_rate;
-        // uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-        // // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY;
-
-        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = readData.data.contro.controlMode;
 
-        uav_cmd.desired_pos[0] = x;
-        uav_cmd.desired_pos[1] = y;
-        uav_cmd.desired_pos[2] = z;
+        uav_cmd.desired_pos[0] = readData.data.contro.position.x;
+        uav_cmd.desired_pos[1] = readData.data.contro.position.y;
+        uav_cmd.desired_pos[2] = readData.data.contro.position.z;
 
         uav_cmd.desired_vel[0] = readData.data.contro.velocity.x;
         uav_cmd.desired_vel[1] = readData.data.contro.velocity.y;
         uav_cmd.desired_vel[2] = readData.data.contro.velocity.z;
 
-        uav_cmd.desired_yaw = yaw;
-        uav_cmd.enable_yawRate = yaw_rate;
-        uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+        uav_cmd.desired_yaw = readData.data.contro.yaw;
+        uav_cmd.desired_yaw_rate = readData.data.contro.yawRate;
 
-        control_cmd_pub[robot_id - 1].publish(uav_cmd);
-
-        // 解锁
-        // cout<<"arm"<<endl;
-        // setup.cmd = 1;
-        // uav_setup_pub.at(robot_id - 1).publish(setup);
-        // ros::Duration(1.0).sleep();
-
-        // // 切换到指令控制模式
-        // cout<<"switch CMD_CONTROL"<<endl;
-        // setup.cmd = 4;
-        // setup.control_state = "CMD_CONTROL";
-        // uav_setup_pub.at(robot_id - 1).publish(setup);
-        // ros::Duration(1.0).sleep();
-
-        // 起飞
-        // cout << "takeoff" << endl;
-        // uav_cmd.cmd = 1;
-        // uav_cmd.cmd_id = 0;
-        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
-        // ros::Duration(10).sleep();
-
-        // // 悬停
-        // cout << "hover" << endl;
-        // uav_cmd.cmd = 2;
-        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
-        // ros::Duration(5).sleep();
-
-        // // 降落
-        // cout << "land" << endl;
-        // uav_cmd.cmd = 3;
-        // control_cmd_pub[robot_id - 1].publish(uav_cmd);
-        // // 关键
-        // ros::Duration(0.5).sleep();
-
+        control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
+        
         break;
     case MessageID::VehicleMessageID:
         std::cout << "TCPServer模式切换接收到机器人id： " << (int)readData.data.vehicle.robotID << std::endl;
@@ -258,13 +184,11 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
             setup.control_state = "CMD_CONTROL";
         }
         setup.cmd = readData.data.vehicle.sunray_mode;
-        uav_setup_pub.at(robot_id - 1).publish(setup);
+        std::cout << "uav_setup_pub " << uav_setup_pub.size()<<" robot_id -uav_id "<<(robot_id -uav_id)<<" robot_id:"<<(int)robot_id<<" uav_id "<<uav_id<< std::endl;
 
-        // // 解锁
-        // cout<<"arm"<<endl;
-        // setup.cmd = 1;
-        // uav_setup_pub.at(robot_id - 1).publish(setup);
-        // ros::Duration(1.0).sleep();
+        uav_setup_pub.at(robot_id -uav_id).publish(setup);
+
+        
 
         break;
     default:
@@ -273,242 +197,38 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     std::cout << "GroundControl::TCPServerCallBack end" << std::endl;
 }
 
-void GroundControl::parseTcpMessage(char *message)
-{
-    // char *msg = message;
-    uint16_t head;
-    uint32_t length;
-    uint8_t msg_id;
-    uint8_t robot_id;
-    uint16_t check;
-
-    float x;
-    float y;
-    float z;
-    float yaw;
-    float roll;
-    float pitch;
-    uint8_t frame;
-    float yaw_rate;
-
-    extract_message_header(message, &head, &length, &msg_id, &robot_id, &check);
-    std::cout << "head: " << head << " length: " << length << " msg_id: " << static_cast<int>(msg_id) << " robot_id: " << static_cast<int>(robot_id) << " check: " << check << std::endl;
-    if (msg_id == 1)
-    {
-        Heartbeat_Message heartbeat_msg;
-        unpack_Heartbeat_Message(message, &heartbeat_msg);
-        last_time_stamp = heartbeat_msg.time_stamp;
-    }
-
-    else if (msg_id == 101)
-    {
-    }
-
-    else if (msg_id == CONTROL_MESSAGE)
-    {
-        Control_Message control_msg;
-        unpack_Control_Message(message, &control_msg);
-        std::cout << "check:" << calculate_checksum_Control_Message(&control_msg) << std::endl;
-        if (control_msg.check == calculate_checksum_Control_Message(&control_msg))
-        {
-            uint32_t time_stamp = control_msg.payload.time_stamp;
-            x = control_msg.payload.x;
-            y = control_msg.payload.y;
-            z = control_msg.payload.z;
-            yaw = control_msg.payload.yaw;
-            roll = control_msg.payload.roll;
-            pitch = control_msg.payload.pitch;
-            frame = control_msg.payload.frame;
-            yaw_rate = control_msg.payload.yaw_rate;
-            std::cout << "time_stamp: " << time_stamp << " x: " << x << " y: " << y << " z: " << z << " yaw: " << yaw << " roll: " << roll << " pitch: " << pitch << " frame: " << static_cast<int>(frame) << " yaw_rate: " << yaw_rate << std::endl;
-            if (control_msg.payload.type == CONTROL_TYPE_XYZ_POS)
-            {
-                std::cout << "xyz_pos" << std::endl;
-                if (frame == 0)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_POS;
-                }
-                else if (frame == 1)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_POS_BODY;
-                }
-                else
-                {
-                    return;
-                }
-                uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.desired_pos[0] = x;
-                uav_cmd.desired_pos[1] = y;
-                uav_cmd.desired_pos[2] = z;
-                uav_cmd.desired_yaw = yaw;
-                uav_cmd.enable_yawRate = yaw_rate;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                control_cmd_pub[robot_id - 1].publish(uav_cmd);
-            }
-            else if (control_msg.payload.type == CONTROL_TYPE_XYZ_VEL)
-            {
-                std::cout << "xyz_vel" << std::endl;
-                if (frame == 0)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL;
-                }
-                else if (frame == 1)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
-                }
-                else
-                {
-                    return;
-                }
-                uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.desired_vel[0] = x;
-                uav_cmd.desired_vel[1] = y;
-                uav_cmd.desired_vel[2] = z;
-                uav_cmd.desired_yaw = yaw;
-                uav_cmd.enable_yawRate = yaw_rate;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                control_cmd_pub[robot_id - 1].publish(uav_cmd);
-            }
-
-            else if (control_msg.payload.type == CONTROL_TYPE_XY_VEL_Z_POS)
-            {
-                std::cout << "xy_vel_z_pos" << std::endl;
-                if (frame == 0)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS;
-                }
-                else if (frame == 1)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY;
-                }
-                else
-                {
-                    return;
-                }
-                uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XY_VEL_Z_POS_BODY;
-                uav_cmd.desired_vel[0] = x;
-                uav_cmd.desired_vel[1] = y;
-                uav_cmd.desired_pos[2] = z;
-                uav_cmd.desired_yaw = yaw;
-                uav_cmd.enable_yawRate = yaw_rate;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                control_cmd_pub[robot_id - 1].publish(uav_cmd);
-            }
-            else if (control_msg.payload.type == CONTROL_TYPE_XYZ_ATT)
-            {
-            }
-            else if (control_msg.payload.type == CONTROL_TYPE_TRAJECTORY)
-            {
-            }
-        }
-    }
-    else if (msg_id == MODE_MESSAGE)
-    {
-        Mode_Message mode_msg;
-
-        unpack_Mode_Message(message, &mode_msg);
-        std::cout << "check:" << calculate_checksum_Mode_Message(&mode_msg) << std::endl;
-        if (mode_msg.check == calculate_checksum_Mode_Message(&mode_msg))
-        {
-            uint32_t time_stamp = mode_msg.payload.time_stamp;
-            if (mode_msg.payload.uav_mode == MODE_TYPE_OFFBOARD)
-            {
-                setup.cmd = 4;
-                setup.control_state = "CMD_CONTROL";
-                uav_setup_pub.at(robot_id - 1).publish(setup);
-            }
-        }
-    }
-    else if (msg_id == VEHICLE_MESSAGE)
-    {
-        Vehicle_Message vehicle_msg;
-        unpack_Vehicle_Message(message, &vehicle_msg);
-        if (vehicle_msg.check == calculate_checksum_Vehicle_Message(&vehicle_msg))
-        {
-            uint32_t time_stamp = vehicle_msg.payload.time_stamp;
-            if (vehicle_msg.payload.type == VEHICLE_DISARM)
-            {
-                std::cout << "disarm" << std::endl;
-                setup.cmd = 0;
-                uav_setup_pub[robot_id - 1].publish(setup);
-            }
-            else if (vehicle_msg.payload.type == VEHICLE_ARM)
-            {
-                std::cout << "arm" << std::endl;
-                setup.cmd = 1;
-                uav_setup_pub[robot_id - 1].publish(setup);
-            }
-            else if (vehicle_msg.payload.type == VEHICLE_TAKEOFF)
-            {
-                std::cout << "takeoff" << std::endl;
-                uav_cmd.cmd = 1;
-                uav_cmd.cmd_id = 0;
-                control_cmd_pub[robot_id - 1].publish(uav_cmd);
-            }
-            else if (vehicle_msg.payload.type == VEHICLE_LAND)
-            {
-                std::cout << "land" << std::endl;
-                uav_cmd.cmd = 3;
-                control_cmd_pub[robot_id - 1].publish(uav_cmd);
-            }
-            else if (vehicle_msg.payload.type == VEHICLE_HOVER)
-            {
-                std::cout << "hover" << std::endl;
-                uav_cmd.cmd = 2;
-                control_cmd_pub[robot_id - 1].publish(uav_cmd);
-            }
-            else if (vehicle_msg.payload.type == VEHICLE_KILL)
-            {
-                std::cout << "kill" << std::endl;
-                setup.cmd = 5;
-                uav_setup_pub[robot_id - 1].publish(setup);
-            }
-        }
-    }
-}
-
-void GroundControl::recvMsgCb(const ros::TimerEvent &e)
-{
-    // if (tcp_server.HasMsg())
-    // {
-    //     std::cout << "has msg" << std::endl;
-    //     char *msg = tcp_server.GetMsg();
-    //     if (msg != nullptr)
-    //     {
-    //         parseTcpMessage(msg);
-    //         delete[] msg;
-    //     }
-    // }
-}
-
 void GroundControl::sendMsgCb(const ros::TimerEvent &e)
 {
-    // std::cout << "send msg" << std::endl;
-    std::string ip = "192.168.0.82";
-    for (int i = 0; i < uav_num; i++)
+    //  std::cout << "send msg" << std::endl;
+    for (int i = uav_id; i < uav_id + uav_num; i++)
     {
-        // std::cout << "send msg to " << i << std::endl;
-        // if ((ros::Time::now() - ros::Time::fromSec(static_cast<double>(stateMessage.at(i).payload.time_stamp))).toSec() > 3.0)
-        // {
-        //     stateMessage.at(i).payload.connected = false;
-        // }
-        // char *msg = encode_State_Message(&stateMessage.at(i));
+        
+        std::lock_guard<std::mutex> lock(_mutexUDP);
+        // std::cout << "UDP目的ip： " << udp_ip << " UDP目的端口： "<<udp_port<< std::endl;
+        //  std::cout << "udpData[i] " << (int)udpData[i].state.uavID << " i "<<i<< std::endl;
 
-        udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i]), udp_ip, std::stoi(udp_port));
+        int back = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_port);
+        //std::cout << "udp状态发送结果： " << back << std::endl;
     }
-    // // std::cout << "send msg" << std::endl;
-    // for (int i = 0; i < uav_num; i++)
-    // {
-    //     // std::cout << "send msg to " << i << std::endl;
-    //     // if ((ros::Time::now() - ros::Time::fromSec(static_cast<double>(stateMessage.at(i).payload.time_stamp))).toSec() > 3.0)
-    //     // {
-    //     //     stateMessage.at(i).payload.connected = false;
-    //     // }
-    //     // char *msg = encode_State_Message(&stateMessage.at(i));
-    //     char *msg = pack_State_Message(stateMessage.at(i).head, stateMessage.at(i).length, stateMessage.at(i).msg_id, stateMessage.at(i).robot_id, stateMessage.at(i).check, stateMessage.at(i).payload);
-    //     udp_server.SendUDPMsg(msg);
-    // }
+  
+}
+
+void GroundControl::HeartRate(const ros::TimerEvent &e)
+{
+    // std::cout << "GroundControl::HeartRate: "<<HeartbeatState << std::endl;
+    if (HeartbeatState)
+    {
+
+        unionData Heartbeatdata;
+
+        for (int i = uav_id; i < uav_num + uav_id; i++)
+        {
+            Heartbeatdata.state.robotID = i;
+            tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
+        }
+        // Heartbeatdata.state.robotID = uav_id;
+        // tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
+    }
 }
 
 void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
@@ -519,7 +239,7 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     udpData[index].state.robotID = robot_id;
     udpData[index].state.uavID = robot_id;
     udpData[index].state.connected = msg->connected;
-    ;
+    //std::cout << "uav_state_cb udpData[i] " << (int)udpData[index].state.uavID << " index "<<index<< std::endl;
     udpData[index].state.armed = msg->armed;
     udpData[index].state.mode = getPX4ModeEnum(msg->mode);
     udpData[index].state.locationSource = msg->location_source;
@@ -560,6 +280,7 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     udpData[index].state.batteryState = msg->battery_state;
     udpData[index].state.batteryPercentage = msg->battery_percetage;
     udpData[index].state.controlMode = msg->control_mode;
+    udpData[index].state.moveMode = msg->move_mode;
 
     std::string mode = msg->mode;
     if (mode.length() > 15)
@@ -570,37 +291,4 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     {
         mode.append(15 - mode.length(), ' ');
     }
-    // stateMessage.at(index).payload.mode = mode;
-
-    //  int index = robot_id - 1;
-    // stateMessage.at(index).head = 0xAD21;
-    // stateMessage.at(index).length = 72;
-    // stateMessage.at(index).msg_id = STATE_MESSAGE;
-    // stateMessage.at(index).robot_id = robot_id;
-    // stateMessage.at(index).payload.time_stamp = static_cast<uint32_t>(ros::Time::now().toSec());
-    // stateMessage.at(index).payload.uav_id = robot_id;
-    // stateMessage.at(index).payload.connected = msg->connected;
-    // stateMessage.at(index).payload.armed = msg->armed;
-    // std::string mode = msg->mode;
-    // if (mode.length() > 15)
-    // {
-    //     mode = mode.substr(0, 15);
-    // }
-    // else if (mode.length() < 15)
-    // {
-    //     mode.append(15 - mode.length(), ' ');
-    // }
-    // stateMessage.at(index).payload.mode = mode;
-    // stateMessage.at(index).payload.location_source = msg->location_source;
-    // stateMessage.at(index).payload.odom_valid = msg->odom_valid;
-    // stateMessage.at(index).payload.position = {msg->position[0], msg->position[1], msg->position[2]};
-    // stateMessage.at(index).payload.velocity = {msg->velocity[0], msg->velocity[1], msg->velocity[2]};
-    // stateMessage.at(index).payload.attitude = {msg->attitude[0], msg->attitude[1], msg->attitude[2]};
-    // stateMessage.at(index).payload.pos_setpoint = {msg->pos_setpoint[0], msg->pos_setpoint[1], msg->pos_setpoint[2]};
-    // stateMessage.at(index).payload.vel_setpoint = {msg->vel_setpoint[0], msg->vel_setpoint[1], msg->vel_setpoint[2]};
-    // stateMessage.at(index).payload.att_setpoint = {msg->att_setpoint[0], msg->att_setpoint[1], msg->att_setpoint[2]};
-    // stateMessage.at(index).payload.battery_state = msg->battery_state;
-    // stateMessage.at(index).payload.battery_percentage = msg->battery_percetage;
-    // stateMessage.at(index).payload.control_mode = msg->control_mode;
-    // stateMessage.at(index).check = calculate_checksum_State_Message(&stateMessage.at(index));
 }

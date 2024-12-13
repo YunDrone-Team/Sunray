@@ -22,6 +22,7 @@ public:
 
     boost::signals2::signal<void(ConnectStr)> sigCreateTCPClientResult;
 
+
     TCPClient();
     ~TCPClient();
     void createClient(unsigned short listeningPort,std::string ip=nullptr,unsigned short targetPort=9696);

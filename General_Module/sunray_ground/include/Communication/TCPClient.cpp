@@ -109,9 +109,9 @@ void TCPClient::setRunState(int state)
 int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp)
 {
     int sendResult = 0;
-
-
-std::cout << "TCPClient::clientSendTCPData clientVector"<<clientVector.size()<<std::endl;
+//std::cout << "TCPClient::clientSendTCPData clientVector"<<clientVector.size()<<std::endl;
+    if(sendData.size()<=0)
+        return -1;
     for (const auto& item : clientVector)
     {
         std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
@@ -234,7 +234,7 @@ void TCPClient::createThread()
 
 
 void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigned short targetPort)
-{   //端口占用没处理，重新连接服务器没处理
+{   //重新连接服务器没处理
 
         std::cout << "TCPClient::createClient "<<std::endl;
         ConnectStr connectData;
@@ -247,11 +247,6 @@ void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigne
         WaitConnectVector.push_back(connectData);
         lock.unlock();
         std::cout << "TCPClient::createClient end"<<std::endl;
-
-
-
-
-
 
 
 //       for(int i=0;i<ClientNumber;++i)
