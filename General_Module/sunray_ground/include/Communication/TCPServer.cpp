@@ -32,7 +32,7 @@ void TCPServer::setRunState(bool state)
     runState=state;
 }
 
-void TCPServer::allSendData(std::vector<char> data)
+void TCPServer::allSendData(std::vector<uint8_t> data)
 {
     for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
     {
@@ -122,6 +122,7 @@ void TCPServer::readResultDisposal(int result,char* readData,SOCKET sock,fd_set&
     if(result<0)
     {
         //错误处理,关闭对应的socket,清除储存的ip和socket的键值对
+        sigTCPServerError(errno);
         FD_CLR(sock,&temp);
 #ifdef _WIN32
         closesocket(sock);
@@ -158,6 +159,7 @@ void TCPServer::readResultDisposal(int result,char* readData,SOCKET sock,fd_set&
 #ifdef _WIN32
         //closesocket(sock);
 #else
+        sigTCPServerError(errno);
         close(sock);
 //        auto itDelete = ipSocketMap.find(ip);
 //        if (itDelete  != ipSocketMap.end())
@@ -247,6 +249,7 @@ bool TCPServer::TCPServerOnRun()
         if (ret < 0)
         {
             //select出问题了
+            sigTCPServerError(errno);
             std::cout << "select出问题了 "<<ret<<" "<<maxSock + 1<<std::endl;
             bool fl=false;
             if (errno == EBADF)
