@@ -19,6 +19,8 @@ public:
      boost::signals2::signal<void(std::vector<uint8_t>, std::string)> sigReadData;
      boost::signals2::signal<void(ReceivedParameter)> sigUDPUnicastReadData;
 
+     boost::signals2::signal<void(int)> sigUDPError;
+
     SOCKET InitSocket();                                        //初始化Socket
     int Bind(unsigned short port=9898);                         //绑定监听端口号
 
@@ -31,6 +33,7 @@ public:
 
     //发送数据接口,souIp是源IP地址，linuxPort是在Linux下源端口，winPort是在Windows下的源端口
     int sendUDPData(std::vector<uint8_t> sendData,std::string targetIp=nullptr,uint16_t targetPort=9898);              //发送数据接口
+    int sendUDPBroadcastData(std::vector<uint8_t> sendData,uint16_t targetPort=9696);
     void setUDPReadState(bool state);   //设置UDP是否循环读取
 
 //    void sendUDPData(std::vector<char> sendData,std::string targetIp,unsigned short targetPort);
@@ -45,7 +48,7 @@ private:
     CommunicationUDPSocket();
 
 
-    void UDPUnicastManagingData(std::vector<uint8_t>& data,std::string IP);
+    void UDPUnicastManagingData(std::vector<uint8_t>& data,std::string IP,uint16_t port);
 
     std::vector<uint8_t> UDPUnicastCacheData;//UDPUnicast缓存数据，用于缓存数据未收全的情况
 

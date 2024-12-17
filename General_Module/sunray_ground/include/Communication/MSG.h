@@ -14,24 +14,34 @@
 
 
 /* 需要根据这个补充枚举值
-uint8 Takeoff = 1               ## home点上方悬停
-uint8 Hover = 2                 ## 当前位置上方悬停
-uint8 Land = 3                  ## 原地降落
-uint8 XYZ_POS = 4               ## 惯性系定点控制
-uint8 XY_VEL_Z_POS = 5          ## 惯性系定高速度控制
-uint8 XYZ_VEL = 6               ## 惯性系速度控制
-uint8 XYZ_POS_BODY = 7          ## 机体系位置控制
-uint8 XYZ_VEL_BODY = 8          ## 机体系速度控制
-uint8 XY_VEL_Z_POS_BODY = 9     ## 机体系定高速度控制
-uint8 TRAJECTORY = 10           ## 轨迹追踪控制
-uint8 XYZ_ATT = 11              ## 姿态控制（来自外部控制器）
-uint8 LAT_LON_ALT = 12          ## 绝对坐标系下的经纬度
+    uint8 XyzPos            = 1             # XYZ位置 不带偏航角
+    uint8 XyzVel            = 2             # XYZ速度 不带偏航角
+    uint8 XyVelZPos         = 3             # XY速度 Z位置 不带偏航角
+    uint8 XyzPosYaw         = 4             # XYZ位置 带偏航角
+    uint8 XyzPosYawrate     = 5             # XYZ位置 带偏航角速率
+    uint8 XyzVelYaw         = 6             # XYZ速度 带偏航角
+    uint8 XyzVelYawrate     = 7             # XYZ速度 带偏航角速率
+    uint8 XyVelZPosYaw      = 8             # XY速度 Z位置 带偏航角
+    uint8 XyVelZPosYawrate  = 9             # XY速度 Z位置 带偏航角速率
+    uint8 XyzPosVelYaw      = 10            # XYZ位置速度 带偏航角
+    uint8 XyzPosVelYawrate  = 11            # XYZ位置速度 带偏航角速率
+    uint8 PosVelAccYaw      = 12            # XYZ位置速度加速度 带偏航角        地面站不需要支持
+    uint8 PosVelAccYawrate  = 13            # XYZ位置速度加速度 带偏航角速率     地面站不需要支持
+    uint8 XyzPosYawBody     = 14            # XYZ位置 带偏航角 机体坐标系
+    uint8 XyzVelYawBody     = 15            # XYZ速度 带偏航角 机体坐标系
+    uint8 XyVelZPosYawBody  = 16            # XY速度 Z位置 带偏航角 机体坐标系
+    uint8 GlobalPos         = 17            # 全局坐标(绝对坐标系下的经纬度)
+
+    uint8 Takeoff           = 100           # 起飞
+    uint8 Land              = 101           # 降落
+    uint8 Hover             = 102           # 悬停
+    uint8 Waypoint          = 103           # 航点        特殊模式 需要传入多个航点 后续再适配
+    uint8 Return            = 104           # 返航
 */
 
-//takeoff hover land
-enum ControlType
-{
-    TakeoffControlType = 1  ,           //home点上方悬停
+
+/*旧
+ TakeoffControlType = 1  ,           //home点上方悬停
     HoverControlType = 2,               //当前位置上方悬停
     LandControlType = 3 ,               //原地降落
     XYZ_POSControlType = 4  ,           //惯性系定点控制
@@ -43,8 +53,45 @@ enum ControlType
     TRAJECTORYControlType = 10 ,        //轨迹追踪控制
     XYZ_ATTControlType = 11 ,           //姿态控制（来自外部控制器）
     LAT_LON_ALTControlType = 12 ,       //绝对坐标系下的经纬度
+*/
+
+//takeoff hover land
+enum ControlType
+{
+    XyzPos                      =1,           //XYZ位置 不带偏航角
+    XyzVel                      =2,           //XYZ速度 不带偏航角
+    XyVelZPos                   =3,           //XY速度 Z位置 不带偏航角
+    XyzPosYaw                   =4,           //XYZ位置 带偏航角
+    XyzPosYawrate               =5,           //XYZ位置 带偏航角速率
+    XyzVelYaw                   =6,           //XYZ速度 带偏航角
+    XyzVelYawrate               =7,           //XYZ速度 带偏航角速率
+    XyVelZPosYaw                =8,           //XY速度 Z位置 带偏航角
+    XyVelZPosYawrate            =9,           //XY速度 Z位置 带偏航角速率
+    XyzPosVelYaw                =10,          //XYZ位置速度 带偏航角
+    XyzPosVelYawrate            =11,          //XYZ位置速度 带偏航角速率          地面站不需要支持（待定）
+    PosVelAccYaw                =12,          //XYZ位置速度加速度 带偏航角        地面站不需要支持
+    PosVelAccYawrate            =13,          //XYZ位置速度加速度 带偏航角速率     地面站不需要支持
+    XyzPosYawBody               =14,          //XYZ位置 带偏航角 机体坐标系
+    XyzVelYawBody               =15,          //XYZ速度 带偏航角 机体坐标系
+    XyVelZPosYawBody            =16,          //XY速度 Z位置 带偏航角 机体坐标系
+    GlobalPos                   =17,          //全局坐标(绝对坐标系下的经纬度)
+
+    TakeoffControlType                     =100,         //起飞
+    LandControlType                        =101,         //降落
+    HoverControlType                       =102,         //悬停
+    WaypointControlType                    =103,         //航点        特殊模式 需要传入多个航点 后续再适配
+    ReturnControlType                      =104,         //返航
 };
 
+
+enum ControlMode // 无人机控制模式
+{
+  INIT              = 0,     // 初始模式
+  RC_CONTROL        = 1,     // 遥控器控制模式
+  CMD_CONTROL       = 2,     // 外部指令控制模式
+  LAND_CONTROL      = 3,     // 降落
+  WITHOUT_CONTROL   = 4,     // 无控制
+};
 
 /*
     Vehicle control type
@@ -118,6 +165,8 @@ enum MessageID
     ControlMessageID   = 102,
 //    ModeMessage      = 103,
     VehicleMessageID   = 103,
+    SearchMessageID    = 200,
+    ACKMessageID       = 201,
 };
 
 
@@ -156,6 +205,14 @@ enum PX4ModeType
     ReturnType          =10,
     FollowMeType        =11,
     PrecisionLandType   =12,
+};
+
+enum TCPClientState
+{
+    ConnectionSuccessful    =1,
+    ConnectionFail          =2,
+    ConnectionBreak         =3,
+    ConnectionTimeout       =4,
 };
 
 //uint8_t getPX4ModeEnum(std::string modeStr)
@@ -327,7 +384,7 @@ struct StateData
     float batteryPercentage; // [0-1]
 
     uint8_t controlMode;
-
+    uint8_t moveMode;
 
     void init()
     {
@@ -371,6 +428,7 @@ struct StateData
         batteryPercentage=0;
 
         controlMode=0;
+        moveMode=0;
     }
 
 };
@@ -389,6 +447,40 @@ struct HeartbeatData
         msgType=0;
         timestamp=0;
         count=0;
+    }
+};
+
+struct SearchData
+{
+    uint8_t robotID;
+    uint8_t msgType;
+    uint64_t timestamp; /**< @param head message header */
+    uint64_t port;
+
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        timestamp=0;
+        port=0;
+    }
+};
+
+struct ACKData
+{
+    uint8_t robotID;
+    uint8_t msgType;
+    uint64_t timestamp; /**< @param head message header */
+    uint8_t uavID;
+    uint16_t port;
+
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        timestamp=0;
+        uavID=0;
+        port=0;
     }
 };
 
@@ -468,6 +560,8 @@ union unionData
     VehicleData vehicle;
     ControlData contro;
     StateData state;
+    SearchData search;
+    ACKData ack;
 };
 
 //接受到的数据参数结构体
@@ -477,6 +571,24 @@ struct ReceivedParameter
     unionData data;
     std::string ip;
     uint8_t communicationType;//通信类型
+    unsigned short port;
 };
+
+//UDP设备参数
+struct DeviceData
+{
+    int UAVID;
+    std::string ip;
+    unsigned short port;
+};
+
+struct CommunicationState
+{
+    int sock;
+    std::string ip;
+    int state;
+    unsigned short port;
+};
+
 
 #endif // MSG_H

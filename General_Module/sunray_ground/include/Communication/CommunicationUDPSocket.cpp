@@ -48,6 +48,7 @@ SOCKET CommunicationUDPSocket::InitSocket()                                     
         {
             //套接字错误
             std::cout << "UDP套接字错误 "<<_sock<<std::endl;
+            sigUDPError(errno);
 
         }
         else {
@@ -91,6 +92,7 @@ int CommunicationUDPSocket::Bind(unsigned short port)                           
         //绑定端口号失败，端口号占用之类的原因
         std::cout << "UDP绑定端口号失败 "<<_sock<<" "<<port<<std::endl;
         perror("bind failed");
+        sigUDPError(errno);
 
     }
     else {
@@ -124,7 +126,7 @@ int CommunicationUDPSocket::findStdVectorComponent(uint8_t a,uint8_t b,std::vect
 }
 
 
-void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,std::string IP)
+void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,std::string IP,uint16_t port)
 {
     //std::cout << "UDP准备解码数据 "<<std::endl;
 
@@ -135,6 +137,10 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
         if(copyData.size()<19)
             break;
         int index=findStdVectorComponent(0Xab,0X65,copyData);
+        if(index<0)
+            index=findStdVectorComponent(0Xad,0X21,copyData);
+        if(index<0)
+            index=findStdVectorComponent(0Xfd,0X32,copyData);
          //std::cout << "UDP查找帧头 "<<index<<std::endl;
         if( index>=0 )
         {
@@ -185,8 +191,9 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             //清除已处理数据
             data.erase(data.begin()+index, data.begin() +index+size);
             copyData.erase(copyData.begin()+index, copyData.begin()+index+size);//待测试
-
-
+            if(readData.messageID==MessageID::SearchMessageID)
+                readData.communicationType=CommunicationType::UDPBroadcastCommunicationType;
+            readData.port=port;
             readData.ip=IP;
             sigUDPUnicastReadData(readData);
 //            std::cout <<std::endl;
@@ -254,7 +261,8 @@ void CommunicationUDPSocket::OnRun()
                 FD_CLR(_sock, &fdRead);
                 char szRecv[4096] = {};
                 std::string ip;
-                int len=ReadData(_sock,szRecv,4096,ip);
+                uint16_t port;
+                int len=ReadData(_sock,szRecv,4096,ip,&port);
                 if(len<0)
                 {
                     //拿到数据后？
@@ -282,7 +290,7 @@ void CommunicationUDPSocket::OnRun()
 
 //                    std::cout << "信号 来源ip "<<ip<<std::endl;
                     UDPUnicastCacheData.insert(UDPUnicastCacheData.end(), data.begin(), data.end());
-                    UDPUnicastManagingData(UDPUnicastCacheData,ip);
+                    UDPUnicastManagingData(UDPUnicastCacheData,ip,port);
 
                 }
 
@@ -318,18 +326,18 @@ int CommunicationUDPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize,std
 
     if(nLen>0)
     {
-        std::string str(buffer); // 使用C风格字符串初始化std::string
-        std::vector<uint8_t> data(str.begin(), str.end());
-        std::string ip(inet_ntoa(client_addr.sin_addr));
-        sigReadData(data,ip);
+//        std::string str(buffer); // 使用C风格字符串初始化std::string
+//        std::vector<uint8_t> data(str.begin(), str.end());
+//        std::string ip(inet_ntoa(client_addr.sin_addr));
+//        sigReadData(data,ip);
 
-        uint8_t hexValue=*buffer;
-        uint8_t  two=*(buffer+1);
+//        uint8_t hexValue=*buffer;
+//        uint8_t  two=*(buffer+1);
         //std::cout << "udp读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
         //std::cout << "udp读取到的数据 来源ip "<<souIp<<std::endl;
     }else {
         std::cout << "udp读取数据失败 "<<_sock<<" "<<nLen<<std::endl;
-
+        sigUDPError(errno);
     }
 
     return nLen;
@@ -359,6 +367,21 @@ void CommunicationUDPSocket::setUDPReadState(bool state)    //设置UDP是否循
 //}
 
 
+int CommunicationUDPSocket::sendUDPBroadcastData(std::vector<uint8_t> sendData,uint16_t targetPort)
+{
+    int broadcastEnable = 1;
+    int result = setsockopt(_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+       if (result < 0) {
+           perror("setsockopt(SO_BROADCAST) failed");
+           close(_sock);
+           exit(EXIT_FAILURE);
+       }
+
+    return sendUDPData(sendData,"255.255.255.255",targetPort);
+}
+
+
+
 int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::string targetIp,uint16_t targetPort)              //发送数据接口
 {
     int sendResult = 0;
@@ -376,6 +399,11 @@ int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::strin
         unsigned int addrlen = sizeof(target_addr);
         //发送数据
         sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+    }
+    if(sendResult<0)
+    {
+        perror("sendto failed");
+        sigUDPError(errno);
     }
     return sendResult;
 }

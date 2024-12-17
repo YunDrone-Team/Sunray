@@ -93,7 +93,7 @@ SOCKET CommunicationTCPSocket::InitSocket() //初始化Socket
         {
             //套接字错误
             std::cout << "TCP初始化套接字错误 "<<_sock<<std::endl;
-
+            sigTCPError(errno);
         }
         else {
             //套接字正常
@@ -105,6 +105,7 @@ SOCKET CommunicationTCPSocket::InitSocket() //初始化Socket
             {
                 perror("setsockopt");
                 // 处理错误
+                sigTCPError(errno);
             }
 
         }
@@ -114,13 +115,13 @@ SOCKET CommunicationTCPSocket::InitSocket() //初始化Socket
 
 int CommunicationTCPSocket::Listen(int n)
 {
-    // 3 listen 监听网络端口
+    // listen函数用于将套接字设置为监听模式,n(backlog): 指定了系统应该为相应套接字排队的最大连接数。
     int ret = listen(_sock, n);
     if (SOCKET_ERROR == ret)
     {
         //监听网络端口失败
         std::cout << "TCP监听网络端口失败 "<<_sock<<std::endl;
-
+        sigTCPError(errno);
     }
     else {
         //监听网络端口成功
@@ -152,6 +153,7 @@ SocketIP CommunicationTCPSocket::Accept(uint16_t* linuxPort,unsigned short* winP
     if (INVALID_SOCKET == cSock)
     {
         std::cout << "TCP接收客户端链接失败 "<<cSock<<std::endl;
+        sigTCPError(errno);
 
         //接收客户端链接失败
         auto it = ipSocketMap.find(AccIp);
@@ -196,16 +198,18 @@ int CommunicationTCPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize)
     int nLen = recv(Sock, buffer, bufferSize, 0);
     if(nLen>0)
     {
-        uint8_t hexValue=*buffer;
-        uint8_t  two=*(buffer+1);
-        std::cout << "TCP读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
+//        uint8_t hexValue=*buffer;
+//        uint8_t  two=*(buffer+1);
+        //std::cout << "TCP读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
     }else if(nLen==0)
     {
         std::cout << "TCP读取数据0 "<<nLen<<std::endl;
+        sigTCPError(errno);
 //        perror("recv");
     }else{
          std::cout << "TCP读取数据失败 "<<nLen<<std::endl;
           perror("recv failed"); // 打印错误消息到stderr，并包含errno的值
+          sigTCPError(errno);
     }
     return nLen;
 }
@@ -324,6 +328,7 @@ bool CommunicationTCPSocket::TCPClientOnRun()
     {
         //select出问题了
         Close();
+        sigTCPError(errno);
     }else if (ret ==0) {
         //超时，限定时间内没有IO操作
     }else{
@@ -339,6 +344,7 @@ bool CommunicationTCPSocket::TCPClientOnRun()
 #ifdef _WIN32
                 closesocket(_sock);
 #else
+                sigTCPError(errno);
                 close(_sock);
 #endif
                 //重连？
@@ -352,6 +358,7 @@ bool CommunicationTCPSocket::TCPClientOnRun()
 #ifdef _WIN32
                 //closesocket(_sock);
 #else
+                sigTCPError(errno);
                 close(_sock);
 #endif
                 return false;
@@ -377,6 +384,10 @@ bool CommunicationTCPSocket::TCPClientOnRun()
 
 int  CommunicationTCPSocket::sendTCPData(std::vector<uint8_t> sendData,std::string targetIp)
 {
+
+    if(sendData.size()<=0)
+        return -1;
+
     int sendResult = 0;
     SOCKET targetSocket=INVALID_SOCKET;
     //int totalSent = 0; // 总共已发送的字节数
@@ -389,6 +400,8 @@ int  CommunicationTCPSocket::sendTCPData(std::vector<uint8_t> sendData,std::stri
     {
         //发送数据
         sendResult = send(targetSocket, sendData.data(), sendData.size(), 0);
+        if(sendResult<0)
+            sigTCPError(errno);
 
         /*数据分包发送，待启用*/
 //        const int MAX_PACKET_SIZE = 1000; // 每个数据包的最大大小
@@ -437,7 +450,10 @@ int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)        
 //    printf("<socket=%d>正在连接服务器<%s:%d>...\n", _sock, ip, port);
     std::cout << "正在连接服务器"<<std::endl;
     setSocketNonblocking(_sock);
-
+    CommunicationState back;
+    back.sock=_sock;
+    back.ip=ip;
+    back.port=port;
     int ret = connect(_sock, (sockaddr*)&_sin, sizeof(sockaddr_in));
     setSocketBlocking(_sock);
     if (SOCKET_ERROR == ret)
@@ -457,19 +473,26 @@ int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)        
         if(ret>0)
         {
             std::cout << "select连接服务器成功..."<<std::endl;
+            back.state=TCPClientState::ConnectionSuccessful;
+            sigTCPClientState(back);
             connectIP=ip;
         }else if (SOCKET_ERROR == ret){
             std::cout << "错误，连接服务器失败..."<<std::endl;
+            back.state=TCPClientState::ConnectionFail;
+            sigTCPClientState(back);
+
         }else if (ret==0) {
             std::cout << "错误，连接服务器超时..."<<std::endl;
             ret=SOCKET_ERROR;
-
+            back.state=TCPClientState::ConnectionTimeout;
+            sigTCPClientState(back);
         }
     }
     else {
 //        printf("<socket=%d>连接服务器<%s:%d>成功...\n",_sock, ip, port);
         std::cout << "连接服务器成功..."<<std::endl;
-
+        back.state=TCPClientState::ConnectionSuccessful;
+        sigTCPClientState(back);
         connectIP=ip;
     }
     return ret;
@@ -545,6 +568,7 @@ int CommunicationTCPSocket::Bind( unsigned short port,const char* ip) //绑定IP
     {
         //绑定端口号失败，端口号占用之类的原因
         std::cout << "TCP绑定端口号失败 "<<_sock<<" "<<port<<" "<<ip<<std::endl;
+        sigTCPError(errno);
     }
     else {
         //绑定端口号成功
