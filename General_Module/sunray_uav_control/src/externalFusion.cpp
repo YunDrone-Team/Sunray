@@ -338,9 +338,9 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     meshROS.scale.y = 1.0;
     meshROS.scale.z = 1.0;
     meshROS.color.a = 1.0;
-    meshROS.color.r = 1.0;
-    meshROS.color.g = 0.0;
-    meshROS.color.b = 0.0;
+    meshROS.color.r = static_cast<float>((uav_id * 123) % 256) / 255.0;
+    meshROS.color.g = static_cast<float>((uav_id * 456) % 256) / 255.0;
+    meshROS.color.b = static_cast<float>((uav_id * 789) % 256) / 255.0;
     meshROS.mesh_use_embedded_materials = false;
     meshROS.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
     uav_mesh_pub.publish(meshROS);

@@ -20,8 +20,10 @@
     <arg name="check_cmd_timeout" default="false" />
     <arg name="cmd_timeout" default="5.0" />
 
+    <arg name="uav_num" default="8"/>
+
     <!-- uav1 -->
-    <node name="uav_control_1" pkg="sunray_uav_control" type="uav_control_node" output="screen">
+    <node name="uav_control_node_$(arg uav_id)" pkg="sunray_uav_control" type="uav_control_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="uav_name" value="$(arg uav_name)" />
         <!-- 起飞高度 降落第一阶段高度 降落速度 -->
@@ -51,4 +53,9 @@
         <param name="check_cmd_timeout" value="$(arg check_cmd_timeout)" />
         <param name="cmd_timeout" value="$(arg cmd_timeout)" />
     </node>
+
+    <!-- Recursively generate UAV nodes -->
+    <include file="$(find sunray_uav_control)/launch/sunray_control_node_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">
+        <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
+    </include>
 </launch>

@@ -322,7 +322,7 @@ void UAVControl::print_state(const ros::TimerEvent &event)
     {
         Logger::color_no_del(int(LogColor::green), "Move Mode [", LOG_BLUE, moveModeMapStr[control_cmd.cmd], LOG_GREEN, "]");
         Logger::print_color(int(LogColor::blue), "PX4 TARGET (receive)");
-        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
                             px4_state.target_pos[0],
                             px4_state.target_pos[1],
                             px4_state.target_pos[2],
@@ -331,6 +331,11 @@ void UAVControl::print_state(const ros::TimerEvent &event)
                             px4_state.target_vel[0],
                             px4_state.target_vel[1],
                             px4_state.target_vel[2],
+                            "[m/s]");
+        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                            px4_state.target_att[0],
+                            px4_state.target_att[1],
+                            px4_state.target_att[2],
                             "[m/s]");
     }
 }
