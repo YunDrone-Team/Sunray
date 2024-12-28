@@ -77,6 +77,7 @@ public:
     void updateExternalPosition(VisionPosition ep)
     {
         external_position = ep;
+        external_position.external_time = ros::Time::now();
     }
 
     // 话题绑定
@@ -159,7 +160,7 @@ private:
         {
             pose_msg.header.stamp = ros::Time::now();
             pose_msg.header.frame_id = "odom";
-            // 如果初始存在偏移量（默认0） 赋值加上偏移量
+            // 赋值
             pose_msg.pose.position.x = external_position.external_px;
             pose_msg.pose.position.y = external_position.external_py;
             pose_msg.pose.position.z = external_position.external_pz;

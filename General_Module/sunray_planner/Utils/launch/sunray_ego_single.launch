@@ -54,14 +54,14 @@
     </node>
 
     <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 将其转为多个平行的目标点发送到ego中的每个规划器-->
-    <!-- <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
+    <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
         <param name="uav_num" value="$(arg uav_num)" />
         <param name="goal_type" value="1" />
         <param name="offset" value="$(arg offset_dis)" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="$(arg use_hight)" />
         <param name="z_hight" value="$(arg z_hight)" />
-    </node> -->
+    </node>
 
     <!-- 如果使用mid360且数据格式不为pointcloud的话需要进行转换 -->
     <!-- <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include> -->
@@ -87,6 +87,6 @@
         <arg name="goal_name_" value="$(arg goal_tipic_1)"/>
     </include>
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" />
+    <!-- <node name="rviz_ego" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" /> -->
 
 </launch>

@@ -18,6 +18,7 @@ public:
         std::string vision_topic = topic_prefix + "/mavros/vision_pose/pose";
         external_mavros.initParameters(vision_topic, 0.35, 0.1, true, true, 50, 20);
 
+        // 初始化位置状态
         position_state.px = -0.01;
         position_state.py = -0.01;
         position_state.pz = -0.01;
@@ -39,6 +40,7 @@ public:
         vision_position.external_qy = msg->pose.orientation.y;
         vision_position.external_qz = msg->pose.orientation.z;
         vision_position.external_qw = msg->pose.orientation.w;
+        // 重要！ 更新外部定位数据
         external_mavros.updateExternalPosition(vision_position);
 
         // 四元素转rpy

@@ -93,6 +93,8 @@ void UAVControl::init(ros::NodeHandle &nh)
     advancedModeFuncMap[Waypoint] = std::bind(&UAVControl::waypoint_mission, this);
     advancedModeFuncMap[Return] = std::bind(&UAVControl::return_to_home, this);
 }
+
+// 检查当前模式 并进入对应的处理函数中
 void UAVControl::mainLoop()
 {
     switch (control_mode)
@@ -128,11 +130,12 @@ void UAVControl::mainLoop()
 
 int main(int argc, char **argv)
 {
+    // 设置日志
     Logger::init_default();
     Logger::setPrintLevel(false);
     Logger::setPrintTime(false);
     Logger::setPrintToFile(false);
-    Logger::setFilename("/home/yundrone/Sunray/General_Module/sunray_uav_control/test/log.txt");
+    Logger::setFilename("~/Documents/Sunray_log.txt");
 
     ros::init(argc, argv, "UAVControl");
     ros::NodeHandle nh("~");

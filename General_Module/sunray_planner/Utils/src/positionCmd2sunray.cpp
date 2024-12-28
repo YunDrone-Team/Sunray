@@ -18,10 +18,10 @@ struct CmdValue
     double yaw;
 };
 
-class Ego2Sunray
+class positionCmd2sunray
 {
 public:
-    Ego2Sunray(ros::NodeHandle& nh): nh_(nh)
+    positionCmd2sunray(ros::NodeHandle& nh): nh_(nh)
     {
         nh_.param<std::string>("cmd_sub_topic", cmd_sub_topic_, "/position_cmd");
         nh_.param<std::string>("control_pub_topic", control_pub_topic, "/sunray/uav_control_cmd");
@@ -30,13 +30,13 @@ public:
 
         std::cout << "cmd_sub_topic: " << cmd_sub_topic_ << std::endl;
         std::cout << "control_pub_topic: " << control_pub_topic << std::endl;
-        // 订阅ego-planner消息
-        ego_sub_ = nh_.subscribe(cmd_sub_topic_, 1, &Ego2Sunray::egoCallback, this);
+        // 订阅PositionCommand消息
+        cmd_sub_ = nh_.subscribe(cmd_sub_topic_, 1, &positionCmd2sunray::cmdCallback, this);
         // 发布控制到sunray
         cmd_pub_ = nh_.advertise<sunray_msgs::UAVControlCMD>(control_pub_topic, 1);
     }
 
-    void egoCallback(const sunray_msgs::PositionCommand::ConstPtr &msg)
+    void cmdCallback(const sunray_msgs::PositionCommand::ConstPtr &msg)
     {
         // double x = msg->position.x;
         // double y = msg->position.y;
@@ -113,7 +113,7 @@ public:
 
 private:
     ros::NodeHandle nh_;
-    ros::Subscriber ego_sub_;
+    ros::Subscriber cmd_sub_;
     ros::Publisher cmd_pub_;
     sunray_msgs::UAVControlCMD cmd_;
     sunray_msgs::UAVControlCMD last_cmd_;
@@ -131,9 +131,9 @@ private:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "ego2sunray");
+    ros::init(argc, argv, "cmd2sunray");
     ros::NodeHandle nh("~");
-    Ego2Sunray ego2sunray(nh);
+    positionCmd2sunray cmd2sunray(nh);
     ros::Rate loop_rate(20);
     while(ros::ok())
     {

@@ -11,24 +11,24 @@ public:
 	float ch[4];
 	float last_ch[4];
 	RC_Input() {};
-	void init(ros::NodeHandle& nh);
+	void init(ros::NodeHandle &nh);
 	void handle_rc_data(const mavros_msgs::RCIn::ConstPtr &pMsg);
 	void printf_info();
 	void set_last_rc_data();
 
 private:
-	int uav_id;
-	int channel_arm;
-	int channel_mode;
-	int channel_land;
-	int channel_kill;
-	float value_arm;
-	float value_disarm;
-	float value_mode_init;
-	float value_mode_rc;
-	float value_mode_cmd;
-	float value_land;
-	float value_kill;
+	int uav_id;			   // 无人机编号
+	int channel_arm;	   // 解锁通道
+	int channel_mode;	   // 模式通道
+	int channel_land;	   // 降落通道
+	int channel_kill;	   // 紧急停桨通道
+	float value_arm;	   // 解锁通道的档位值 二档（-1 1） 三档（-1 0 1） 对应（1000 2000）（1000  1500 2000）
+	float value_disarm;	   // 上锁通道的档位值
+	float value_mode_init; // INIT模式通道的初始档位值
+	float value_mode_rc;   // RC_CONTRIL模式通道的档位值
+	float value_mode_cmd;  // CMD模式通道的档位值
+	float value_land;	   // 降落通道的档位值
+	float value_kill;	   // 紧急停桨通道的档位值
 	float arm_channel_value;
 	float mode_channel_value;
 	float land_channel_value;
@@ -37,16 +37,16 @@ private:
 	float last_mode_channel_value;
 	float last_land_channel_value;
 	float last_kill_channel_value;
-	bool value_init;
-	std::string rc_topic;
-	std::string uav_name;
+	bool value_init;	  // 是否已经初始化 接收到数据后置为true
+	std::string rc_topic; // 遥控器话题
+	std::string uav_name; // 无人机名称
 	sunray_msgs::RcState rc_state_msg;
 
 	mavros_msgs::RCIn msg;
 	ros::NodeHandle nh_;
-	ros::Time rcv_stamp; // 收到遥控器消息的时间
-	ros::Subscriber rc_sub;
-	ros::Publisher rc_state_pub;
+	ros::Time rcv_stamp;		 // 收到遥控器消息的时间
+	ros::Subscriber rc_sub;		 // 【订阅】遥控器话题
+	ros::Publisher rc_state_pub; // 【发布】遥控器状态话题
 
 	bool check_validity();
 };
@@ -60,6 +60,7 @@ void RC_Input::handle_rc_data(const mavros_msgs::RCIn::ConstPtr &pMsg)
 	ch[2] = msg.channels[2];
 	ch[3] = msg.channels[3];
 
+	// 归一化数据【-1 1】
 	arm_channel_value = (msg.channels[channel_arm - 1] - 1500) / 500.0;
 	mode_channel_value = (msg.channels[channel_mode - 1] - 1500) / 500.0;
 	land_channel_value = (msg.channels[channel_land - 1] - 1500) / 500.0;
@@ -87,6 +88,7 @@ void RC_Input::handle_rc_data(const mavros_msgs::RCIn::ConstPtr &pMsg)
 
 	if (check_validity())
 	{
+		// 【0.25】作为检测通道变化的阈值 变化超过0.25则认为通道变化
 		if (abs(arm_channel_value - last_arm_channel_value) > 0.25)
 		{
 			if (abs(arm_channel_value - value_arm) < 0.25)
@@ -158,10 +160,10 @@ bool RC_Input::check_validity()
 	}
 }
 
-void RC_Input::init(ros::NodeHandle& nh)
+void RC_Input::init(ros::NodeHandle &nh)
 {
 	nh_ = nh;
-	nh.param<int>("uav_id", uav_id, 1); 
+	nh.param<int>("uav_id", uav_id, 1);
 	nh.param<int>("channel_arm", channel_arm, 5);
 	nh.param<int>("channel_mode", channel_mode, 6);
 	nh.param<int>("channel_land", channel_land, 7);

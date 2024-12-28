@@ -1,3 +1,18 @@
+/*
+本程序功能：
+    1.订阅外部定位数据处理并转发到mavros/vision_pose/pos话题中 用于给无人机做位姿估计
+    2.订阅无人机相关信息 并显示
+    3.检查外部定位数据超时、跳变、异常情况
+    4.发布外定为系统状态
+    5.发布相关轨迹等用于rviz显示
+
+添加自定义外部定位数据：
+    1.参考相关程序在 【include/ExternalPosition】 中实现自己的解析类
+    2.在 【ExternalPositionFactory.h】中引入自定义的解析类的头文件 并在工厂类中注册
+    3.在source_map中添加对应的定位名称
+    4.在init中添加对应的订阅回调函数
+*/
+
 #include "externalFusion.h"
 #include "printf_format.h"
 #include <signal.h>
@@ -7,6 +22,9 @@ using namespace sunray_logger;
 
 ExternalFusion::ExternalFusion()
 {
+    /*
+        如果自定义消息 需要在这里添加对应的定位名称 通过名称去检索对应的解析类
+    */
     source_map[ODOM] = "ODOM";
     source_map[POSE] = "POSE";
     source_map[GAZEBO] = "GAZEBO";
@@ -40,22 +58,26 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     uav_prefix = uav_name + std::to_string(uav_id);
     string topic_prefix = "/" + uav_prefix;
 
+    // 检查数据解析类是否存在
     if (source_map.find(external_source) != source_map.end())
     {
+        /*
+            如果自定义消息 需要在这里添加对应的初始化函数和参数传递
+        */
         external_position = factory.create(source_map[external_source]);
-        if (external_source == MOCAP)
+        if (external_source == MOCAP) // 动捕 vrpn 【参数】 topic_prefix刚体名称
         {
             external_position->init(uav_id, uav_name, topic_prefix);
         }
-        else if (external_source == POSE)
+        else if (external_source == POSE) // PoseStamped 消息类型 【参数】 source_topic 数据来源话题名称
         {
             external_position->init(uav_id, uav_name, source_topic);
         }
-        else if( external_source == ODOM || external_source == GAZEBO)
+        else if (external_source == ODOM || external_source == GAZEBO) // Odometry 消息类型 【参数】 source_topic 数据来源话题名称
         {
             external_position->init(uav_id, uav_name, source_topic);
         }
-        else if( external_source == VIOBOT)
+        else if (external_source == VIOBOT) // VIOBOT 【参数】 source_topic 数据来源话题名称
         {
             external_position->init(uav_id, uav_name, source_topic);
         }
@@ -69,9 +91,13 @@ void ExternalFusion::init(ros::NodeHandle &nh)
 
     if (listen_uav_state || flag_printf)
     {
+        // 【订阅】无人机状态
         px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
+        // 【订阅】无人机电量
         px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
+        // 【订阅】无人机当前位置 NED
         px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
+        // 【订阅】无人机姿态 imu
         px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
     }
 
@@ -86,9 +112,10 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         // 【定时器】定时发布 rviz显示,保证1Hz以上
         timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &ExternalFusion::timer_rviz, this);
     }
-    
+
+    // 【发布】外部定位状态
     odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/odom_state", 10);
-    // 定时任务
+    // 定时任务 检查超时等任务以及发布状态
     timer_task = nh.createTimer(ros::Duration(0.2), &ExternalFusion::timer_callback, this);
 
     // 初始化变量
@@ -100,6 +127,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     Logger::info("external fusion node init");
 }
 
+// 无人机odom回调函数
 void ExternalFusion::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
     px4_state.position_state.pos_x = msg->pose.pose.position.x;
@@ -110,6 +138,7 @@ void ExternalFusion::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     px4_state.position_state.vel_z = msg->twist.twist.linear.z;
 }
 
+// 无人机状态回调函数
 void ExternalFusion::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
     px4_state.connected = msg->connected;
@@ -117,12 +146,14 @@ void ExternalFusion::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
     px4_state.mode = msg->mode;
 }
 
+// 无人机电量回调函数
 void ExternalFusion::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
 {
     px4_state.battery = msg->voltage;
     px4_state.battery_percentage = msg->percentage * 100;
 }
 
+// 无人机姿态回调函数
 void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     px4_state.position_state.att_x = msg->orientation.x;
@@ -140,6 +171,7 @@ void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.position_state.yaw = yaw;
 }
 
+// 打印状态
 void ExternalFusion::show_px4_state()
 {
     Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_prefix, "<<<<<<<<<<<<<<<");
@@ -167,9 +199,9 @@ void ExternalFusion::show_px4_state()
                         external_state.vel_z,
                         "[m/s]");
     Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                        external_state.roll/M_PI*180,
-                        external_state.pitch/M_PI*180,
-                        external_state.yaw/M_PI*180,
+                        external_state.roll / M_PI * 180,
+                        external_state.pitch / M_PI * 180,
+                        external_state.yaw / M_PI * 180,
                         "[deg]");
 
     if (px4_state.connected)
@@ -186,9 +218,9 @@ void ExternalFusion::show_px4_state()
                             px4_state.position_state.vel_z,
                             "[m/s]");
         Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                            px4_state.position_state.roll/M_PI*180,
-                            px4_state.position_state.pitch/M_PI*180,
-                            px4_state.position_state.yaw/M_PI*180,
+                            px4_state.position_state.roll / M_PI * 180,
+                            px4_state.position_state.pitch / M_PI * 180,
+                            px4_state.position_state.yaw / M_PI * 180,
                             "[deg]");
 
         Logger::print_color(int(LogColor::blue), "ERR POS(send - receive)");
@@ -203,9 +235,9 @@ void ExternalFusion::show_px4_state()
                             err_state.vel_z,
                             "[m/s]");
         Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                            err_state.roll/M_PI*180,
-                            err_state.pitch/M_PI*180,
-                            err_state.yaw/M_PI*180,
+                            err_state.roll / M_PI * 180,
+                            err_state.pitch / M_PI * 180,
+                            err_state.yaw / M_PI * 180,
                             "[deg]");
     }
 }
@@ -213,6 +245,7 @@ void ExternalFusion::show_px4_state()
 // 定时器回调函数
 void ExternalFusion::timer_callback(const ros::TimerEvent &event)
 {
+    // 获取外部定位数据
     external_state.pos_x = external_position->position_state.px;
     external_state.pos_y = external_position->position_state.py;
     external_state.pos_z = external_position->position_state.pz;
@@ -227,7 +260,7 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     external_state.att_y = external_position->position_state.qy;
     external_state.att_z = external_position->position_state.qz;
 
-
+    // 计算差值
     err_state.pos_x = external_state.pos_x - px4_state.position_state.pos_x;
     err_state.pos_y = external_state.pos_y - px4_state.position_state.pos_y;
     err_state.pos_z = external_state.pos_z - px4_state.position_state.pos_z;
@@ -265,10 +298,11 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     external_odom.attitude_q.x = external_position->position_state.qx;
     external_odom.attitude_q.y = external_position->position_state.qy;
     external_odom.attitude_q.z = external_position->position_state.qz;
-
+    // 发布外部定位状态
     odom_state_pub.publish(external_odom);
 }
 
+// 定时器回调函数，用于发布无人机当前轨迹等
 void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
 {
     if (!external_position->position_state.valid)
@@ -389,6 +423,7 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     // broadcaster.sendTransform(tfs);
 }
 
+// 中断信号
 void mySigintHandler(int sig)
 {
     ROS_INFO("[external_fusion_node] exit...");
@@ -399,29 +434,31 @@ void mySigintHandler(int sig)
 int main(int argc, char **argv)
 {
 
+    // 设置日志
     Logger::init_default();
     Logger::setPrintLevel(false);
     Logger::setPrintTime(false);
     Logger::setPrintToFile(false);
-    Logger::setFilename("/home/yundrone/Sunray/General_Module/sunray_uav_control/test/log.txt");
+    Logger::setFilename("~/Documents/Sunray_log.txt");
 
     ros::init(argc, argv, "external_fusion");
     ros::NodeHandle nh("~");
     ros::Rate rate(50);
 
+    // 中断信号注册
     signal(SIGINT, mySigintHandler);
     ExternalFusion external_fusion;
     external_fusion.init(nh);
     ros::Time now = ros::Time::now();
+    // 主循环
     while (ros::ok)
     {
         ros::spinOnce();
-        if( ros::Time::now() - now > ros::Duration(1.0))
+        if (ros::Time::now() - now > ros::Duration(1.0))
         {
             external_fusion.show_px4_state();
             now = ros::Time::now();
         }
-        
         rate.sleep();
     }
 
