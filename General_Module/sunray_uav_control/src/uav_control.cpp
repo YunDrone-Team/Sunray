@@ -1,5 +1,6 @@
 #include "UAVControl.h"
 
+// 安全检查 是否超出地理围栏 外部定位是否有效
 int UAVControl::safetyCheck()
 {
     if (px4_state.pos[0] < uav_geo_fence.x_min ||
@@ -31,6 +32,7 @@ int UAVControl::safetyCheck()
     }
 }
 
+// 无人机odom回调
 void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
     px4_state.pos[0] = msg->pose.pose.position.x;
@@ -41,6 +43,7 @@ void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     px4_state.vel[2] = msg->twist.twist.linear.z;
 }
 
+// 无人机状态回调
 void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
     if (!px4_state.armed && msg->armed)
@@ -62,12 +65,14 @@ void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
     }
 }
 
+// 无人机电量回调
 void UAVControl::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
 {
     px4_state.batt_volt = msg->voltage;
     px4_state.batt_perc = msg->percentage * 100;
 }
 
+// 无人机姿态回调
 void UAVControl::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     px4_state.att_q[0] = msg->orientation.x;
@@ -85,6 +90,7 @@ void UAVControl::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.att[2] = yaw;
 }
 
+// 无人机目标位置回调
 void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg)
 {
     px4_state.target_pos[0] = msg->position.x;
@@ -95,12 +101,14 @@ void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::Cons
     px4_state.target_vel[2] = msg->velocity.z;
 }
 
+// 外部定位状态回调
 void UAVControl::odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg)
 {
     odom_valid_time = ros::Time::now();
     odom_valid = msg->odom_valid;
 }
 
+// 遥控器状态回调
 void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
 {
     rcState_cb = true;
@@ -141,6 +149,7 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     }
 }
 
+// 设置模式
 void UAVControl::setMode(std::string mode)
 {
     mavros_msgs::SetMode mode_cmd;
@@ -148,6 +157,7 @@ void UAVControl::setMode(std::string mode)
     px4_set_mode_client.call(mode_cmd);
 }
 
+// 紧急停止
 void UAVControl::emergencyStop()
 {
     mavros_msgs::CommandLong emergency_srv;
@@ -167,6 +177,7 @@ void UAVControl::emergencyStop()
     Logger::error("Emergency Stop!");
 }
 
+// 重启飞控
 void UAVControl::reboot()
 {
     // https://mavlink.io/en/messages/common.html, MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN(#246)
@@ -180,6 +191,7 @@ void UAVControl::reboot()
     Logger::error("Reboot!");
 }
 
+// 解锁
 void UAVControl::setArm(bool arm)
 {
     mavros_msgs::CommandBool arm_cmd;
@@ -211,12 +223,14 @@ void UAVControl::setArm(bool arm)
     arm_cmd.request.value = arm;
 }
 
+// 控制指令回调
 void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
     control_cmd.header.stamp = ros::Time::now();
     control_cmd = *msg;
 }
 
+// 模式设置回调
 void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
 {
     if (msg->cmd == sunray_msgs::UAVSetup::ARM)
@@ -287,6 +301,7 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     }
 }
 
+// 打印状态
 void UAVControl::print_state(const ros::TimerEvent &event)
 {
     Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_prefix, "<<<<<<<<<<<<<<<");
@@ -340,12 +355,14 @@ void UAVControl::print_state(const ros::TimerEvent &event)
     }
 }
 
+// 设置悬停位置
 void UAVControl::set_hover_pos()
 {
     flight_params.hover_pos = px4_state.pos;
     flight_params.hover_yaw = px4_state.att[2];
 }
 
+// 发布目标点
 void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
@@ -354,6 +371,7 @@ void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTar
     px4_setpoint_local_pub.publish(setpoint);
 }
 
+// 设置默认目标点
 void UAVControl::set_default_setpoint()
 {
     local_setpoint.header.stamp = ros::Time::now();
@@ -373,6 +391,7 @@ void UAVControl::set_default_setpoint()
     local_setpoint.yaw_rate = 0;
 }
 
+// 检查进入offboard模式
 void UAVControl::set_offboard_control(int mode)
 {
     // 如果不使用遥控器不允许进入RC_CONTROL模式
@@ -401,6 +420,7 @@ void UAVControl::set_offboard_control(int mode)
     control_mode = mode;
 }
 
+// 设置offboard模式
 void UAVControl::set_offboard_mode()
 {
     // 使用遥控器时 未解锁则不允许进入OFFBOARD模式
@@ -419,6 +439,7 @@ void UAVControl::set_offboard_mode()
     setMode("OFFBOARD");
 }
 
+// 任务定时器回调函数
 void UAVControl::task_timer_callback(const ros::TimerEvent &event)
 {
     // 安全检查
@@ -473,12 +494,14 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     uav_state_pub.publish(uav_state);
 }
 
+// 坐标系转换
 void UAVControl::body2ned(double body_xy[2], double ned_xy[2], double yaw)
 {
     ned_xy[0] = cos(yaw) * body_xy[0] - sin(yaw) * body_xy[1];
     ned_xy[1] = sin(yaw) * body_xy[0] + cos(yaw) * body_xy[1];
 }
 
+// 从指令中获取期望位置
 void UAVControl::set_desired_from_cmd()
 {
     // 判断是否是新的指令
@@ -589,6 +612,7 @@ void UAVControl::set_desired_from_cmd()
     last_control_cmd = control_cmd;
 }
 
+// 从遥控器状态中获取并计算期望值
 void UAVControl::set_desired_from_rc()
 {
     if ((ros::Time::now() - rc_state.header.stamp).toSec() > 1.5)
@@ -628,6 +652,7 @@ void UAVControl::set_desired_from_rc()
     setpoint_local_pub(flight_params.type_mask, local_setpoint);
 }
 
+// 计算降落的期望值
 void UAVControl::set_desired_from_land()
 {
     bool new_cmd = control_mode != last_control_mode ||
@@ -682,6 +707,7 @@ void UAVControl::set_desired_from_land()
     setpoint_local_pub(flight_params.type_mask, local_setpoint);
 }
 
+// 获取悬停的期望值
 void UAVControl::set_desired_from_hover()
 {
     // 判断是否是新的指令
@@ -700,6 +726,7 @@ void UAVControl::set_desired_from_hover()
     }
 }
 
+// 高级模式-返航模式的实现函数
 void UAVControl::return_to_home()
 {
     // 判断是否是新的指令
@@ -736,10 +763,12 @@ void UAVControl::return_to_home()
     }
 }
 
+// 高级模式-航点模式的实现函数
 void UAVControl::waypoint_mission()
 {
 }
 
+// 设置起飞的期望值
 void UAVControl::set_takeoff()
 {
     // 判断是否是新的指令
@@ -772,6 +801,7 @@ void UAVControl::set_takeoff()
     }
 }
 
+// 进入降落模式
 void UAVControl::set_land()
 {
     if (control_mode != Control_Mode::LAND_CONTROL && (control_mode == Control_Mode::RC_CONTROL || control_mode == Control_Mode::CMD_CONTROL))

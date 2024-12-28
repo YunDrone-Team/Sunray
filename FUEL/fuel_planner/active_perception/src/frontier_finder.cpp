@@ -258,12 +258,12 @@ bool FrontierFinder::isInBoxes(
 }
 
 void FrontierFinder::updateFrontierCostMatrix() {
-  std::cout << "cost mat size before remove: " << std::endl;
-  for (auto ftr : frontiers_)
-    std::cout << "(" << ftr.costs_.size() << "," << ftr.paths_.size() << "), ";
-  std::cout << "" << std::endl;
+  // std::cout << "cost mat size before remove: " << std::endl;
+  // for (auto ftr : frontiers_)
+  //   std::cout << "(" << ftr.costs_.size() << "," << ftr.paths_.size() << "), ";
+  // std::cout << "" << std::endl;
 
-  std::cout << "cost mat size remove: " << std::endl;
+  // std::cout << "cost mat size remove: " << std::endl;
   if (!removed_ids_.empty()) {
     // Delete path and cost for removed clusters
     for (auto it = frontiers_.begin(); it != first_new_ftr_; ++it) {
@@ -280,14 +280,14 @@ void FrontierFinder::updateFrontierCostMatrix() {
         cost_iter = it->costs_.erase(cost_iter);
         path_iter = it->paths_.erase(path_iter);
       }
-      std::cout << "(" << it->costs_.size() << "," << it->paths_.size() << "), ";
+      // std::cout << "(" << it->costs_.size() << "," << it->paths_.size() << "), ";
     }
     removed_ids_.clear();
   }
-  std::cout << "" << std::endl;
+  // std::cout << "" << std::endl;
 
   auto updateCost = [](const list<Frontier>::iterator& it1, const list<Frontier>::iterator& it2) {
-    std::cout << "(" << it1->id_ << "," << it2->id_ << "), ";
+    // std::cout << "(" << it1->id_ << "," << it2->id_ << "), ";
     // Search path from old cluster's top viewpoint to new cluster'
     Viewpoint& vui = it1->viewpoints_.front();
     Viewpoint& vuj = it2->viewpoints_.front();
@@ -302,7 +302,7 @@ void FrontierFinder::updateFrontierCostMatrix() {
     it2->paths_.push_back(path_ij);
   };
 
-  std::cout << "cost mat add: " << std::endl;
+  // std::cout << "cost mat add: " << std::endl;
   // Compute path and cost between old and new clusters
   for (auto it1 = frontiers_.begin(); it1 != first_new_ftr_; ++it1)
     for (auto it2 = first_new_ftr_; it2 != frontiers_.end(); ++it2)
@@ -312,17 +312,17 @@ void FrontierFinder::updateFrontierCostMatrix() {
   for (auto it1 = first_new_ftr_; it1 != frontiers_.end(); ++it1)
     for (auto it2 = it1; it2 != frontiers_.end(); ++it2) {
       if (it1 == it2) {
-        std::cout << "(" << it1->id_ << "," << it2->id_ << "), ";
+        // std::cout << "(" << it1->id_ << "," << it2->id_ << "), ";
         it1->costs_.push_back(0);
         it1->paths_.push_back({});
       } else
         updateCost(it1, it2);
     }
-  std::cout << "" << std::endl;
-  std::cout << "cost mat size final: " << std::endl;
-  for (auto ftr : frontiers_)
-    std::cout << "(" << ftr.costs_.size() << "," << ftr.paths_.size() << "), ";
-  std::cout << "" << std::endl;
+  // std::cout << "" << std::endl;
+  // std::cout << "cost mat size final: " << std::endl;
+  // for (auto ftr : frontiers_)
+  //   std::cout << "(" << ftr.costs_.size() << "," << ftr.paths_.size() << "), ";
+  // std::cout << "" << std::endl;
 }
 
 void FrontierFinder::mergeFrontiers(Frontier& ftr1, const Frontier& ftr2) {

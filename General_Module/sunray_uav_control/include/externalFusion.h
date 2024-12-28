@@ -12,6 +12,7 @@
 #define VIOBOT_TIMEOUT 0.35
 #define ODOM_TIMEOUT 0.35
 
+// 外部定位数据来源枚举
 enum external_source
 {
     ODOM = 0,
@@ -41,7 +42,8 @@ struct PositionState
     double yaw = 0.0;
 };
 
-struct PX4State // 无人机状态集合
+// 无人机状态集合
+struct PX4State 
 {
     bool connected;
     bool armed;

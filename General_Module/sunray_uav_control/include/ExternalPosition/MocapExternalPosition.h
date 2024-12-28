@@ -37,6 +37,7 @@ public:
         vision_position.external_qy = msg->pose.orientation.y;
         vision_position.external_qz = msg->pose.orientation.z;
         vision_position.external_qw = msg->pose.orientation.w;
+        // 重要！ 更新外部定位数据
         external_mavros.updateExternalPosition(vision_position);
         // 四元素转rpy
         tf2::Quaternion quaternion;
