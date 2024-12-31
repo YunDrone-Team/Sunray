@@ -1,0 +1,30 @@
+std_msgs/Header header
+# 航点数
+uint8 wp_num
+# 航点类型 NED 或 经纬
+uint8 wp_type
+# 结束时是否降落
+bool wp_land
+# 最后是否返回起飞点并降落
+bool wp_return
+# 任务是否包含起飞过程
+bool wp_takeoff
+# 是否固定偏航角
+bool wp_fix_yaw
+# 航点间移动速度
+float32 move_vel
+# 飞行高度
+float32 z_height
+# 偏航角
+float32 yaw_angle
+# 航点 xyz 或 经纬高
+float64[3] wp_point_1
+float64[3] wp_point_2
+float64[3] wp_point_3
+float64[3] wp_point_4
+float64[3] wp_point_5
+float64[3] wp_point_6
+float64[3] wp_point_7
+float64[3] wp_point_8
+float64[3] wp_point_9
+float64[3] wp_point_10
