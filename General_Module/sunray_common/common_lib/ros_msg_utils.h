@@ -12,6 +12,7 @@
 #include <sunray_msgs/UAVState.h>
 #include <sunray_msgs/UAVSetup.h>
 #include <sunray_msgs/TextInfo.h>
+#include <sunray_msgs/UAVWayPoint.h>
 
 // #include <sunray_msgs/FMTState.h>
 #include <sunray_msgs/Heartbeat.h>

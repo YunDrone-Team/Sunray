@@ -59,6 +59,8 @@ void UAVControl::init(ros::NodeHandle &nh)
                                                   &UAVControl::odom_state_callback, this);
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
                                                       &UAVControl::rc_state_callback, this);
+    uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1,
+                                                      &UAVControl::waypoint_callback, this);
 
     px4_setpoint_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
     px4_setpoint_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(topic_prefix + "/mavros/setpoint_raw/global", 1);

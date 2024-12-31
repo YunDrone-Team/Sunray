@@ -47,6 +47,7 @@ private:
     ros::Subscriber px4_att_sub;        // 【订阅】无人机imu姿态订阅
     ros::Subscriber px4_pos_target_sub; // 【订阅】px4目标订阅 位置 速度加 速度
     ros::Subscriber px4_att_target_sub; // 【订阅】无人机姿态订阅
+    ros::Subscriber uav_waypoint_sub;   // 【订阅】无人机航点订阅
 
     // 发布节点
     ros::Publisher uav_control_pub;           // 【发布】控制指令发布
@@ -111,6 +112,26 @@ private:
         ros::Time last_rc_time;                   // 上一个rc控制时间点
     };
     FlightParams flight_params;
+
+    struct Waypoint_Params
+    {
+        bool wp_init = false;                         // 是否初始化
+        bool wp_land = true;                          // 是否降落
+        bool wp_return = false;                       // 是否返回
+        bool wp_takeoff = false;                      // 是否起飞
+        bool wp_fix_yaw = false;                      // 是否固定偏航角
+        int wp_num = 0;                               // 航点数量 【最大数量10】
+        int wp_type = 0;                              // 航点类型 【0：NED 1：经纬】
+        int wp_index = 0;                             // 当前航点索引
+        int wp_state = 0;                             // 航点状态 【1：起飞中 2：航点执行中 3:返航中 4:降落中 5: 结束】
+        float move_vel = 0.5;                         // 最大水平速度
+        float z_height = 1.0;                         // 飞行高度
+        float yaw_angle = 0.0;                        // 偏航角
+        double wp_point_takeoff[3] = {0.0, 0.0, 0.0}; // 起飞点
+        double wp_point_return[3] = {0.0, 0.0, 0.0};  // 返航点
+        std::map<int, double[3]> wp_points;
+    };
+    Waypoint_Params wp_params;
 
     enum Control_Mode // 无人机控制模式
     {
@@ -232,6 +253,7 @@ private:
     void waypoint_mission();                                                           // 航点任务实现
     void set_takeoff();                                                                // 起飞模式实现
     void set_land();                                                                   // 降落模式实现
+    float get_yaw_from_waypoint();                                                     // 获取航点航向
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
@@ -242,6 +264,7 @@ private:
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
     void px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg);
     void px4_att_target_callback(const mavros_msgs::AttitudeTarget::ConstPtr &msg);
+    void waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg);
 
 public:
     UAVControl() {};
