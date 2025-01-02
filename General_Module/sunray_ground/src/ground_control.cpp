@@ -14,7 +14,6 @@ void GroundControl::init(ros::NodeHandle &nh)
     nh.param<string>("tcp_port", tcp_port, "8969");
     nh.param<int>("udp_port", udp_port, 9696);
 
-    
     for (int i = uav_id; i < uav_id + uav_num; i++)
     {
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
@@ -27,8 +26,10 @@ void GroundControl::init(ros::NodeHandle &nh)
         uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(
             topic_prefix + "/sunray/setup", 1));
 
-        udpData[i-1].state.init();
+        udpData[i - 1].state.init();
     }
+
+    // executiveDemo();
 
     sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
     HeartbeatTimer = nh.createTimer(ros::Duration(0.5), &GroundControl::HeartRate, this);
@@ -83,12 +84,12 @@ uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
 void GroundControl::UDPCallBack(ReceivedParameter readData)
 {
     int back;
-    std::cout << "readData.communicationType: " << (int)readData.communicationType << "  " << readData.messageID << std::endl;
+    // std::cout << "readData.communicationType: " << (int)readData.communicationType << "  " << readData.messageID << std::endl;
     switch (readData.messageID)
     {
     case MessageID::SearchMessageID:
     { /* code */
-        std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
+        // td::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         unionData backData;
         for (int i = uav_id; i < uav_id + uav_num; i++)
         {
@@ -110,6 +111,86 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
     }
 }
 
+pid_t GroundControl::OrderCourse(std::string orderStr)
+{
+    pid_t pid = fork();
+    if (pid == -1)
+    {
+        perror("fork failed");
+        // return EXIT_FAILURE;
+    }else if (pid == 0){
+        
+        std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
+        temp += orderStr;
+        std::cout << "OrderCourse： " << temp << std::endl;
+
+        // const char *command = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && roslaunch sunray_tutorial run_demo.launch\"";
+        const char *command = temp.c_str();
+        execlp("bash", "bash", "-c", command, (char *)NULL);
+        // 如果execlp返回，说明执行失败
+        perror("OrderCourse Error!");
+        _exit(EXIT_FAILURE);
+    }else{
+       
+        demoPID = pid;
+        printf("This is the parent process. Child PID: %d\n", pid);
+        // if(pid>0)
+        //     nodeMap.insert(std::make_pair(orderStr,pid));
+
+        
+    }
+    return pid;
+}
+
+
+void GroundControl::executiveDemo(std::string orderStr)
+{
+    pid_t pid = fork();
+    if (pid == -1)
+    {
+        perror("fork failed");
+        // return EXIT_FAILURE;
+        return;
+    }
+    else if (pid == 0)
+    {
+        // 子进程
+        // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
+        // 由于source是bash的内建命令，我们不能直接在execlp中调用它
+        // 但是，我们可以使用. (点命令) 来代替source
+        // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
+        // 而是需要将它们放在一个bash -c参数中
+
+        std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
+        temp += orderStr;
+        std::cout << "executiveDemo： " << temp << std::endl;
+
+        // const char *command = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && roslaunch sunray_tutorial run_demo.launch\"";
+        const char *command = temp.c_str();
+        execlp("bash", "bash", "-c", command, (char *)NULL);
+        // 如果execlp返回，说明执行失败
+        perror("execlp failed");
+        _exit(EXIT_FAILURE);
+    }
+    else
+    {
+        // 父进程
+        // 在这里，你可以等待子进程结束，或者做其他事情
+        int status;
+        // 注意：waitpid只能等待一个特定的子进程结束
+        // 你需要一种更复杂的机制来跟踪和关闭这些进程
+        demoPID = pid;
+        printf("This is the parent process. Child PID: %d\n", pid);
+
+        // waitpid(pid, &status, 0);
+        //  if (WIFEXITED(status)) {
+        //      std::cout << "Bash script exited with status " << WEXITSTATUS(status) << std::endl;
+        //  } else {
+        //      std::cerr << "Bash script did not exit normally" << std::endl;
+        //  }
+    }
+}
+
 void GroundControl::TCPServerCallBack(ReceivedParameter readData)
 {
     // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
@@ -117,7 +198,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
     //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.length() << std::endl;
     //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
-    
+
     float roll;
     float pitch;
     uint32_t time_stamp;
@@ -148,7 +229,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
 
         time_stamp = readData.data.contro.timestamp;
-       
+
         roll = readData.data.contro.roll;
         pitch = readData.data.contro.pitch;
         robot_id = readData.data.contro.robotID;
@@ -168,7 +249,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         uav_cmd.desired_yaw_rate = readData.data.contro.yawRate;
 
         control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
-        
+
         break;
     case MessageID::VehicleMessageID:
         std::cout << "TCPServer模式切换接收到机器人id： " << (int)readData.data.vehicle.robotID << std::endl;
@@ -184,12 +265,117 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
             setup.control_state = "CMD_CONTROL";
         }
         setup.cmd = readData.data.vehicle.sunray_mode;
-        std::cout << "uav_setup_pub " << uav_setup_pub.size()<<" robot_id -uav_id "<<(robot_id -uav_id)<<" robot_id:"<<(int)robot_id<<" uav_id "<<uav_id<< std::endl;
+        // if(readData.data.vehicle.sunray_mode == VehicleControlType::ArmControlType)
+        // {
+        //     if(demoPID<=0)
+        //         executiveDemo();
+        // }
+        // if(readData.data.vehicle.sunray_mode == VehicleControlType::DisarmControlType)
+        // {
+        //     if(demoPID > 0)
+        //     {
+        //         if (kill(demoPID, SIGTERM) != 0) {
+        //         perror("kill failed");
+        //         } else {
+        //         printf("Sent SIGTERM to child process %d\n", demoPID);
+        //         }
+        //         //  if (kill(demoPID, SIGINT) != 0) {
+        //         // perror("kill failed");
+        //         // } else {
+        //         // printf("Sent SIGINT to child process %d\n", demoPID);
+        //         // }
+        //     }
 
-        uav_setup_pub.at(robot_id -uav_id).publish(setup);
+        // }
+        std::cout << "uav_setup_pub " << uav_setup_pub.size() << " robot_id -uav_id " << (robot_id - uav_id) << " robot_id:" << (int)robot_id << " uav_id " << uav_id << std::endl;
 
-        
+        uav_setup_pub.at(robot_id - uav_id).publish(setup);
+        break;
+    case MessageID::DemoMessageID:
+        std::cout << "TCPServer Demo接收到机器人id： " << (int)readData.data.demo.robotID << std::endl;
+        std::cout << "TCPServer Demo： " << readData.data.demo.demoStr << std::endl;
+        std::cout << "TCPServer Demo size： " << readData.data.demo.demoSize << std::endl;
 
+        if (readData.data.demo.demoState == true)
+        {
+            // if (demoPID <= 0 && readData.data.demo.demoSize > 0)
+            //     executiveDemo(readData.data.demo.demoStr);
+
+            if ( readData.data.demo.demoSize > 0)
+            {
+                auto it=nodeMap.find(readData.data.demo.demoStr);
+                if(it!=nodeMap.end())
+                {
+                    std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
+                }else {
+                    pid_t back= OrderCourse(readData.data.demo.demoStr);
+                    if(back>0)
+                        nodeMap.insert(std::make_pair(readData.data.demo.demoStr,back));
+                }
+            }
+                
+        }else{
+            if (readData.data.demo.demoSize > 0)
+            {
+                std::cout << "TCPServer 关闭Demo： " << std::endl;
+
+                // if (kill(demoPID, SIGTERM) != 0)
+                // {
+                //     perror("kill failed");
+                // }else{
+                //     printf("Sent SIGTERM to child process %d\n", demoPID);
+                //     demoPID = -1;
+                // }
+
+                auto it=nodeMap.find(readData.data.demo.demoStr);
+                if(it!=nodeMap.end())
+                {
+                    pid_t temp=it->second;
+                     if (kill(temp, SIGTERM) != 0)
+                    {
+                        perror("kill failed!");
+                    }else{
+                        printf("Sent SIGTERM to child process %d\n",temp);
+                        nodeMap.erase(readData.data.demo.demoStr);
+                    }
+                }else{
+                    std::cout << "该节点未启动： "<<readData.data.demo.demoStr << std::endl;
+                }
+
+                //  if (kill(demoPID, SIGINT) != 0) {
+                // perror("kill failed");
+                // } else {
+                // printf("Sent SIGINT to child process %d\n", demoPID);
+                // }
+            }
+        }
+
+        //  if(readData.data.demo.demo == demoLaunch::runDemo && readData.data.demo.demoState==true)
+        // {
+        //     std::cout << "TCPServer 开启Demo： "<< std::endl;
+
+        //     if(demoPID<=0)
+        //         executiveDemo();
+        // }
+        // else if(readData.data.demo.demo == demoLaunch::runDemo && readData.data.demo.demoState==false)
+        // {
+        //     if(demoPID > 0)
+        //     {
+        //         std::cout << "TCPServer 关闭Demo： "<< std::endl;
+
+        //         if (kill(demoPID, SIGTERM) != 0) {
+        //         perror("kill failed");
+        //         } else {
+        //         printf("Sent SIGTERM to child process %d\n", demoPID);
+        //         }
+        //         //  if (kill(demoPID, SIGINT) != 0) {
+        //         // perror("kill failed");
+        //         // } else {
+        //         // printf("Sent SIGINT to child process %d\n", demoPID);
+        //         // }
+        //     }
+
+        // }
         break;
     default:
         break;
@@ -202,15 +388,14 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
     //  std::cout << "send msg" << std::endl;
     for (int i = uav_id; i < uav_id + uav_num; i++)
     {
-        
+
         std::lock_guard<std::mutex> lock(_mutexUDP);
         // std::cout << "UDP目的ip： " << udp_ip << " UDP目的端口： "<<udp_port<< std::endl;
         //  std::cout << "udpData[i] " << (int)udpData[i].state.uavID << " i "<<i<< std::endl;
 
         int back = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_port);
-        //std::cout << "udp状态发送结果： " << back << std::endl;
+        // std::cout << "udp状态发送结果： " << back << std::endl;
     }
-  
 }
 
 void GroundControl::HeartRate(const ros::TimerEvent &e)
@@ -239,7 +424,7 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     udpData[index].state.robotID = robot_id;
     udpData[index].state.uavID = robot_id;
     udpData[index].state.connected = msg->connected;
-    //std::cout << "uav_state_cb udpData[i] " << (int)udpData[index].state.uavID << " index "<<index<< std::endl;
+    // std::cout << "uav_state_cb udpData[i] " << (int)udpData[index].state.uavID << " index "<<index<< std::endl;
     udpData[index].state.armed = msg->armed;
     udpData[index].state.mode = getPX4ModeEnum(msg->mode);
     udpData[index].state.locationSource = msg->location_source;

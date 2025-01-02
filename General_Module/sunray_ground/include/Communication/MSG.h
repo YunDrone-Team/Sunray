@@ -167,6 +167,7 @@ enum MessageID
     VehicleMessageID   = 103,
     SearchMessageID    = 200,
     ACKMessageID       = 201,
+    DemoMessageID      = 202,
 };
 
 
@@ -213,6 +214,12 @@ enum TCPClientState
     ConnectionFail          =2,
     ConnectionBreak         =3,
     ConnectionTimeout       =4,
+};
+
+enum demoLaunch
+{
+  runDemo= 0,           // run_demo.launch
+
 };
 
 //uint8_t getPX4ModeEnum(std::string modeStr)
@@ -484,6 +491,27 @@ struct ACKData
     }
 };
 
+struct DemoData
+{
+    uint8_t robotID;
+    uint8_t msgType;
+    uint64_t timestamp; /**< @param head message header */
+    uint8_t uavID;
+    bool demoState;
+    uint16_t demoSize;
+//    std::string demoStr;
+    char demoStr[250];
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        uavID=0;
+        demoState=false;
+        demoSize=0;
+
+    }
+};
+
 //// Message structures
 //struct TakeoffMessage   //停用
 //{
@@ -506,32 +534,32 @@ struct ACKData
 //};
 
 // Vehicle_Message
-struct VehicleMessage
-{
-    uint16_t head;       /**< @param head message header */
-    uint32_t length;     /**< @param length message length */
-    uint8_t msgID;      /**< @param msg_id message ID */
-    VehicleData payload; /**< @param payload vehicle message payload */
-    uint16_t check;      /**< @param check checksum */
-};
+//struct VehicleMessage
+//{
+//    uint16_t head;       /**< @param head message header */
+//    uint32_t length;     /**< @param length message length */
+//    uint8_t msgID;      /**< @param msg_id message ID */
+//    VehicleData payload; /**< @param payload vehicle message payload */
+//    uint16_t check;      /**< @param check checksum */
+//};
 
-struct ControlMessage
-{
-    uint16_t head;       /**< @param head message header */
-    uint32_t length;     /**< @param length message length */
-    uint8_t msgID;      /**< @param msg_id message ID */
-    ControlData payload; /**< @param payload control message payload */
-    uint16_t check;      /**< @param check checksum */
-};
+//struct ControlMessage
+//{
+//    uint16_t head;       /**< @param head message header */
+//    uint32_t length;     /**< @param length message length */
+//    uint8_t msgID;      /**< @param msg_id message ID */
+//    ControlData payload; /**< @param payload control message payload */
+//    uint16_t check;      /**< @param check checksum */
+//};
 
-struct StateMessage
-{
-    uint16_t head;     /**< @param head message header */
-    uint32_t length;   /**< @param length message length */
-    uint8_t msgID;    /**< @param msg_id message ID */
-    StateData payload; /**< @param payload state message payload */
-    uint16_t check;    /**< @param check checksum */
-};
+//struct StateMessage
+//{
+//    uint16_t head;     /**< @param head message header */
+//    uint32_t length;   /**< @param length message length */
+//    uint8_t msgID;    /**< @param msg_id message ID */
+//    StateData payload; /**< @param payload state message payload */
+//    uint16_t check;    /**< @param check checksum */
+//};
 
 //CommunicationType
 
@@ -562,6 +590,7 @@ union unionData
     StateData state;
     SearchData search;
     ACKData ack;
+    DemoData demo;
 };
 
 //接受到的数据参数结构体

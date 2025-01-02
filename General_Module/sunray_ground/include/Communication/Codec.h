@@ -22,6 +22,7 @@ public:
     void coderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat); //编码无人机心跳包数据帧
     void coderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //编码搜索在线无人机数据帧
     void coderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //编码无人机应答数据帧
+    void coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //编码无人机demo数据帧
 
 
     void decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat); //解码无人机心跳包数据帧
@@ -30,6 +31,7 @@ public:
     void decoderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle);//编码模式切换数据帧
     void decoderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //解码搜索在线无人机数据帧
     void decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //解码无人机应答数据帧
+    void decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //解码无人机demo数据帧
 
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳

@@ -144,7 +144,7 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
          //std::cout << "UDP查找帧头 "<<index<<std::endl;
         if( index>=0 )
         {
-//            std::cout << "udp读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
+//           std::cout << "udp读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
 
             // 定义要复制的范围（例如，从索引2到索引5，但不包括索引5）
             auto start = copyData.begin() + index+2;
@@ -176,7 +176,7 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 
             if(checksum!=BackChecksum)
             {
-                std::cout << "UDP校验和错误 计算的校验和： "<<checksum<<" "<<" 接收到校验和 "<<BackChecksum<<" 下标 "<<index+size-2<<" 校验和第一个字节 "<<(int)copyData[index+size-2]<<" 校验和第二个字节 "<<(int)copyData[index+size-1]<<std::endl;
+                //std::cout << "UDP校验和错误 计算的校验和： "<<checksum<<" "<<" 接收到校验和 "<<BackChecksum<<" 下标 "<<index+size-2<<" 校验和第一个字节 "<<(int)copyData[index+size-2]<<" 校验和第二个字节 "<<(int)copyData[index+size-1]<<std::endl;
 
                 //清除帧头
                 copyData.erase(copyData.begin()+index, copyData.begin() + 6);//待测试
@@ -214,7 +214,7 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 //            codec.uint8tArrayToFloat(test,two);
 //            std::cout << "解码后float 数据 "<<two<<std::endl;
 
-//            std::cout << "UDP数据处理完成，发送处理好的数据"<<std::endl;
+            //std::cout << "UDP数据处理完成，发送处理好的数据"<<std::endl;
 
             if(data.size()<19)
                 break;
@@ -288,7 +288,7 @@ void CommunicationUDPSocket::OnRun()
                     //同时接收不同ip的udp数据可能导致错误数据
                     std::vector<uint8_t> data(szRecv, szRecv + len);
 
-//                    std::cout << "信号 来源ip "<<ip<<std::endl;
+                    //std::cout << "信号 来源ip "<<ip<<std::endl;
                     UDPUnicastCacheData.insert(UDPUnicastCacheData.end(), data.begin(), data.end());
                     UDPUnicastManagingData(UDPUnicastCacheData,ip,port);
 

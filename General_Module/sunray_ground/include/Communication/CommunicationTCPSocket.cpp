@@ -203,7 +203,7 @@ int CommunicationTCPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize)
         //std::cout << "TCP读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
     }else if(nLen==0)
     {
-        std::cout << "TCP读取数据0 "<<nLen<<std::endl;
+        //std::cout << "TCP读取数据0 "<<nLen<<std::endl;
         sigTCPError(errno);
 //        perror("recv");
     }else{
@@ -238,7 +238,7 @@ int CommunicationTCPSocket::findStdVectorComponent(uint8_t a,uint8_t b,std::vect
 
 void CommunicationTCPSocket::TCPClientManagingData(std::vector<uint8_t>& data,std::string IP)
 {
-    std::cout << "TCPClient准备校验数据 "<<data.size()<<" ip: "<<IP<<std::endl;
+    //std::cout << "TCPClient准备校验数据 "<<data.size()<<" ip: "<<IP<<std::endl;
 
     std::vector<uint8_t> copyData=data;
     while(true)
@@ -246,7 +246,7 @@ void CommunicationTCPSocket::TCPClientManagingData(std::vector<uint8_t>& data,st
         if(copyData.size()<19)
             break;
         int index=findStdVectorComponent(0Xac,0X43,copyData);
-        std::cout << "查找TCPClient帧头 "<<index<<std::endl;
+        //std::cout << "查找TCPClient帧头 "<<index<<std::endl;
 
         if( index>=0 )
         {
@@ -262,7 +262,7 @@ void CommunicationTCPSocket::TCPClientManagingData(std::vector<uint8_t>& data,st
             for (int i = 0; i < 4; ++i)
                 size |= static_cast<uint32_t>(sizeVector[i]) << (i * 8);
 
-            std::cout << "TCPClient数据长度 "<<size<<" "<<"实际数据长度 "<<data.size()<<std::endl;
+            //std::cout << "TCPClient数据长度 "<<size<<" "<<"实际数据长度 "<<data.size()<<std::endl;
 
 
             if(data.size()<size)
@@ -298,7 +298,7 @@ void CommunicationTCPSocket::TCPClientManagingData(std::vector<uint8_t>& data,st
 
             readData.ip=IP;
             sigTCPClientReadData(readData);
-            std::cout << "TCPClient接收数据正确，处理完成。： "<<std::endl;
+            //std::cout << "TCPClient接收数据正确，处理完成。： "<<std::endl;
 
             if(data.size()<19)
                 break;
@@ -429,10 +429,10 @@ int  CommunicationTCPSocket::sendTCPData(std::vector<uint8_t> sendData,std::stri
 
 int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)           //连接服务器
 {
-    std::cout << "CommunicationTCPSocket::Connect "<<ip<<std::endl;
+    //std::cout << "CommunicationTCPSocket::Connect "<<ip<<std::endl;
     if(ip==nullptr)
         return SOCKET_ERROR;
-    std::cout << "CommunicationTCPSocket::Connect 2 : "<<_sock<<std::endl;
+    //std::cout << "CommunicationTCPSocket::Connect 2 : "<<_sock<<std::endl;
 
     if (INVALID_SOCKET == _sock)
     {

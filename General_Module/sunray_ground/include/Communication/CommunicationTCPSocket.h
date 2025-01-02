@@ -26,14 +26,11 @@ public:
     std::weak_ptr<CommunicationTCPSocket> next;
     CommunicationTCPSocket();
 
-
     boost::signals2::signal<void(std::vector<uint8_t>, std::string)> sigReadData;
-
     boost::signals2::signal<void(ReceivedParameter)> sigTCPClientReadData;
-
     boost::signals2::signal<void(int)> sigTCPError;
-
     boost::signals2::signal<void(CommunicationState)> sigTCPClientState;
+
     SOCKET InitSocket();                                                     //初始化Socket
     int Bind(unsigned short port=9696,const char* ip=nullptr);              //绑定IP和端口号
     int Listen(int n);                                                       //监听socket号，n是套接字排队的最大连接数
@@ -82,7 +79,6 @@ private:
 
     */
     void TCPClientManagingData(std::vector<uint8_t>& data,std::string IP);
-
 
     std::vector<uint8_t> TCPClientCacheData;//TCPClient缓存数据，用于缓存数据未收全的情况
 
