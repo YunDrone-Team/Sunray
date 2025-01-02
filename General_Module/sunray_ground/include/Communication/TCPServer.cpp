@@ -44,14 +44,14 @@ void TCPServer::allSendData(std::vector<uint8_t> data)
 
 void TCPServer::TCPServerManagingData(std::vector<uint8_t>& data,std::string IP)
 {
-    std::cout << "准备校验数据 "<<data.size()<<" ip: "<<IP<<std::endl;
+    //std::cout << "准备校验数据 "<<data.size()<<" ip: "<<IP<<std::endl;
     std::vector<uint8_t> copyData=data;
     while(true)
     {
         if(copyData.size()<19)
             break;
         int index=findStdVectorComponent(0Xac,0X43,copyData);
-        std::cout << "查找TCPServer帧头 "<<index<<std::endl;
+        //std::cout << "查找TCPServer帧头 "<<index<<std::endl;
 
         if( index>=0 )
         {
@@ -67,7 +67,7 @@ void TCPServer::TCPServerManagingData(std::vector<uint8_t>& data,std::string IP)
             for (int i = 0; i < 4; ++i)
                 size |= static_cast<uint32_t>(sizeVector[i]) << (i * 8);
 
-            std::cout << "TCPServer数据长度 "<<size<<" "<<"实际数据长度 "<<data.size()<<std::endl;
+            //std::cout << "TCPServer数据长度 "<<size<<" "<<"实际数据长度 "<<data.size()<<std::endl;
 
             if(data.size()<size)
                 break;

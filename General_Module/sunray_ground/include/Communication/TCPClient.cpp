@@ -101,6 +101,50 @@ void TCPClient::onRun()
     lockRun.unlock();
 }
 
+
+
+void TCPClient::closeLine(std::string ip)
+{
+    std::vector<CommunicationTCPSocket*> temp;
+
+    std::unique_lock<std::mutex> lockRun(mutexRun);
+    if(clientVector.size()>0)
+    {
+        for (const auto& item : clientVector)
+        {
+            if(item->getTCPClientTargetIP()==ip)
+            {
+                item->Close();
+                temp.push_back(item);
+            }
+        }
+    }
+    lockRun.unlock();
+
+
+    if(temp.size()>0)
+    {
+        for (const auto& itDelete : temp)
+        {
+            std::unique_lock<std::mutex> lockDelete(mutexRun);
+
+            auto it =std::find(clientVector.begin(), clientVector.end(), itDelete);
+            if (it != clientVector.end())
+            {
+                // 删除元素之前，先释放内存（如果使用原始指针的话）
+                delete *it; // 注意是delete *it，因为it是指向指针的指针
+                clientVector.erase(it);
+            }
+            lockDelete.unlock();
+        }
+        temp.clear();
+    }
+
+
+}
+
+
+
 void TCPClient::setRunState(int state)
 {
     runState=state;
@@ -112,9 +156,10 @@ int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targ
 //std::cout << "TCPClient::clientSendTCPData clientVector"<<clientVector.size()<<std::endl;
     if(sendData.size()<=0)
         return -1;
+
     for (const auto& item : clientVector)
     {
-        std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
+        //std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
 
         if(targetIp!=item->getTCPClientTargetIP())
                    continue;
@@ -126,11 +171,8 @@ int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targ
             {
                 perror("send failed"); // 使用perror打印错误消息，它会自动使用errno
                 std::cout << "send failed "<<sendData.size()<<std::endl;
-
-
             }
         }
-
 
     }
 
@@ -205,6 +247,15 @@ void TCPClient::createThread()
                     // 将接收到的参数传递给 sigAllTCPClientReadData
                     sigAllTCPClientReadData(param);
                 });
+                std::string ip=temp.TargetIP;
+                TCPSocket->sigTCPError.connect([this,ip](const int& error)
+                {
+                    // 将接收到的参数传递给 sigTCPClientError
+                    TCPClientErrorStr temp;
+                    temp.error=error;
+                    temp.targetIP=ip;
+                    sigTCPClientError(temp);
+                });
 
                  std::unique_lock<std::mutex> lockRun(mutexRun);
                  if(TCPSocket!=nullptr)
@@ -214,7 +265,7 @@ void TCPClient::createThread()
                  temp.State=true;
                  sigCreateTCPClientResult(temp);
 
-                std::cout << "创建客户端成功 "<<back<<std::endl;
+                //std::cout << "创建客户端成功 "<<back<<std::endl;
 
 
             }
@@ -236,7 +287,7 @@ void TCPClient::createThread()
 void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigned short targetPort)
 {   //重新连接服务器没处理
 
-        std::cout << "TCPClient::createClient "<<std::endl;
+        //std::cout << "TCPClient::createClient "<<std::endl;
         ConnectStr connectData;
         connectData.ListeningPort=listeningPort;
         connectData.TargetIP=ip;
@@ -246,7 +297,7 @@ void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigne
         std::unique_lock<std::mutex> lock(mutexConnect);
         WaitConnectVector.push_back(connectData);
         lock.unlock();
-        std::cout << "TCPClient::createClient end"<<std::endl;
+        //std::cout << "TCPClient::createClient end"<<std::endl;
 
 
 //       for(int i=0;i<ClientNumber;++i)

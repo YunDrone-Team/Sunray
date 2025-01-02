@@ -14,6 +14,12 @@ struct ConnectStr
     bool State;
 };
 
+struct TCPClientErrorStr
+{
+    int error;
+    std::string targetIP;
+    unsigned short targetPort;
+};
 
 class TCPClient
 {
@@ -22,6 +28,8 @@ public:
 
     boost::signals2::signal<void(ConnectStr)> sigCreateTCPClientResult;
 
+    boost::signals2::signal<void(TCPClientErrorStr)> sigTCPClientError;
+
 
     TCPClient();
     ~TCPClient();
@@ -29,7 +37,7 @@ public:
     void setRunState(int state);
 
     int  clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp);      //服务端发送数据接口,目的ip
-
+    void closeLine(std::string ip);//新功能，待测
     CommunicationTCPSocket* client[ClientNumber]={nullptr};
     void createThread();
     void onRun();
