@@ -123,13 +123,17 @@ private:
         int wp_num = 0;                               // 航点数量 【最大数量10】
         int wp_type = 0;                              // 航点类型 【0：NED 1：经纬】
         int wp_index = 0;                             // 当前航点索引
-        int wp_state = 0;                             // 航点状态 【1：起飞中 2：航点执行中 3:返航中 4:降落中 5: 结束】
-        float move_vel = 0.5;                         // 最大水平速度
+        int wp_state = 0;                             // 航点状态 【1：解锁 2：起飞中 3：航点执行中 4:返航中 5:降落中 6: 结束】
+        float wp_move_vel = 0.5;                      // 最大水平速度
         float z_height = 1.0;                         // 飞行高度
         float yaw_angle = 0.0;                        // 偏航角
         double wp_point_takeoff[3] = {0.0, 0.0, 0.0}; // 起飞点
         double wp_point_return[3] = {0.0, 0.0, 0.0};  // 返航点
-        std::map<int, double[3]> wp_points;
+        std::map<int, double[3]> wp_points;           // 航点
+        float wp_x_vel = 0.0;                         // 水平速度
+        float wp_y_vel = 0.0;                         // 水平速度
+        float wp_vel_p = 1;                           // 速度比例
+        ros::Time start_wp_time;                       // 上一个动作时间点
     };
     Waypoint_Params wp_params;
 
@@ -254,6 +258,7 @@ private:
     void set_takeoff();                                                                // 起飞模式实现
     void set_land();                                                                   // 降落模式实现
     float get_yaw_from_waypoint();                                                     // 获取航点航向
+    float get_vel_from_waypoint(float point_x, float point_y);                         // 获取航点速度
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);

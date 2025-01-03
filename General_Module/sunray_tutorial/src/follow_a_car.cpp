@@ -113,7 +113,6 @@ int main(int argc, char **argv)
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
-    uav_cmd.cmd_id = 0;
     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     uav_cmd.desired_pos[0] = 0.0;
     uav_cmd.desired_pos[1] = 0.0;
@@ -121,15 +120,8 @@ int main(int argc, char **argv)
     uav_cmd.desired_vel[0] = 0.0;
     uav_cmd.desired_vel[1] = 0.0;
     uav_cmd.desired_vel[2] = 0.0;
-    uav_cmd.desired_acc[0] = 0.0;
-    uav_cmd.desired_acc[1] = 0.0;
-    uav_cmd.desired_acc[2] = 0.0;
-    uav_cmd.desired_att[0] = 0.0;
-    uav_cmd.desired_att[1] = 0.0;
-    uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-    uav_cmd.enable_yawRate = false;
 
     // 固定的浮点显示
     cout.setf(ios::fixed);
@@ -176,8 +168,7 @@ int main(int argc, char **argv)
         if (stop_flag)
         {
             cout << "land" << endl;
-            uav_cmd.cmd = 3;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             control_cmd_pub.publish(uav_cmd);
             break;
         }
@@ -198,12 +189,11 @@ int main(int argc, char **argv)
                 yaw = yaw_rel/180.0*M_PI;   // 转为弧度制
                 
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYawBody;
                 uav_cmd.desired_vel[0] = x_vel;
                 uav_cmd.desired_vel[1] = y_vel;
                 uav_cmd.desired_vel[2] = z_vel;
                 uav_cmd.desired_yaw = yaw;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
                 control_cmd_pub.publish(uav_cmd);
             }
             continue;
@@ -214,16 +204,15 @@ int main(int argc, char **argv)
             landing_point_num = 0;
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
             // 程序结束太快会导致消息没有发送出去 因此要停止一段时间
             ros::Duration(0.5).sleep();
             break;
         }
-        if((ros::Time::now() - last_time).toSec() > 1)
+        if((ros::Time::now() - last_time).toSec() > 2)
         {
             cout << "降落点丢失，进入悬停" << endl;
-            uav_cmd.cmd = 2;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             control_cmd_pub.publish(uav_cmd);
             continue;
         } 

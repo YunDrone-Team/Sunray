@@ -33,38 +33,39 @@ MovingAverageFilter z_filter(5);
 MovingAverageFilter ang_filter(5);
 ros::Time last_time{0};
 
-double get_roll_pitch(double yaw, double& roll, double& pitch) {
+double get_roll_pitch(double yaw, double &roll, double &pitch)
+{
     //  将 yaw 转换到 0 到 360 度之间
     yaw = int(yaw);
-    if( -180 < yaw && yaw < 0)
+    if (-180 < yaw && yaw < 0)
     {
-        yaw += 360;  // 将负角度转换为正角度
+        yaw += 360; // 将负角度转换为正角度
     }
-    if(0 <= yaw && yaw < 45)
+    if (0 <= yaw && yaw < 45)
     {
         return roll;
     }
-    else if(45 <= yaw && yaw < 135)
+    else if (45 <= yaw && yaw < 135)
     {
-        if(-180 < pitch && pitch < 0)
+        if (-180 < pitch && pitch < 0)
         {
-            return -(pitch+180);
+            return -(pitch + 180);
         }
         return 180 - pitch;
     }
-    else if(135 <= yaw && yaw < 225)
+    else if (135 <= yaw && yaw < 225)
     {
         return -roll;
     }
-    else if(225 <= yaw && yaw < 315)
+    else if (225 <= yaw && yaw < 315)
     {
-        if(-180 < pitch && pitch < 0)
+        if (-180 < pitch && pitch < 0)
         {
-            return (pitch+180);
+            return (pitch + 180);
         }
         return pitch - 180;
     }
-    else if(315 <= yaw && yaw < 360)
+    else if (315 <= yaw && yaw < 360)
     {
         return roll;
     }
@@ -88,7 +89,7 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 // 回调函数，用于获取目标二的位置和朝向
 void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
 {
-    
+
     if (msg->targets.size() > 0)
     {
         tag_flag = true;
@@ -143,7 +144,6 @@ int main(int argc, char **argv)
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
-    uav_cmd.cmd_id = 0;
     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     uav_cmd.desired_pos[0] = 0.0;
     uav_cmd.desired_pos[1] = 0.0;
@@ -151,15 +151,8 @@ int main(int argc, char **argv)
     uav_cmd.desired_vel[0] = 0.0;
     uav_cmd.desired_vel[1] = 0.0;
     uav_cmd.desired_vel[2] = 0.0;
-    uav_cmd.desired_acc[0] = 0.0;
-    uav_cmd.desired_acc[1] = 0.0;
-    uav_cmd.desired_acc[2] = 0.0;
-    uav_cmd.desired_att[0] = 0.0;
-    uav_cmd.desired_att[1] = 0.0;
-    uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-    uav_cmd.enable_yawRate = false;
 
     // 固定的浮点显示
     cout.setf(ios::fixed);
@@ -181,7 +174,7 @@ int main(int argc, char **argv)
 
     ros::Duration(0.5).sleep();
     ros::spinOnce();
-    
+
     double x_vel = 0.0;
     double y_vel = 0.0;
     double z_vel = 0.0;
@@ -212,19 +205,19 @@ int main(int argc, char **argv)
         if (stop_flag)
         {
             cout << "land" << endl;
-            uav_cmd.cmd = 3;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             control_cmd_pub.publish(uav_cmd);
             break;
         }
-        ang = get_roll_pitch(yaw_rel,roll_rel, pitch_rel);
+        ang = get_roll_pitch(yaw_rel, roll_rel, pitch_rel);
         ang = ang_filter.filter(ang);
-        if(((ros::Time::now() - last_time).toSec()) < 0.5){
-            landing_point_num  += 1;
-            
-            if(landing_point_num>10)
+        if (((ros::Time::now() - last_time).toSec()) < 0.5)
+        {
+            landing_point_num += 1;
+
+            if (landing_point_num > 10)
             {
-                if(ang < 2 && ang > -2)
+                if (ang < 2 && ang > -2)
                 {
                     ang = 0;
                 }
@@ -236,7 +229,7 @@ int main(int argc, char **argv)
                 // else if (abs(ang) < 10){
                 //     max_yaw = 0.05;
                 // }
-                
+
                 x_vel = (z_rel - 2) * k_p_xy;
                 y_vel = y_rel * k_p_xy;
                 z_vel = x_rel * k_p_z;
@@ -244,40 +237,38 @@ int main(int argc, char **argv)
                 x_vel = min(max(x_vel, -max_vel), max_vel);
                 y_vel = min(max(y_vel, -max_vel), max_vel);
                 z_vel = min(max(z_vel, -max_vel_z), max_vel_z);
-                // ang = min(max(ang, -max_yaw), max_yaw);
-                yaw = ang/180.0*M_PI;   // 转为弧度制
-                
-                
+                ang = min(max(ang, -max_yaw), max_yaw);
+                yaw = ang / 180.0 * M_PI; // 转为弧度制
+
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYawBody;
                 uav_cmd.desired_vel[0] = x_vel;
                 uav_cmd.desired_vel[1] = y_vel;
                 uav_cmd.desired_vel[2] = z_vel;
-                uav_cmd.desired_yaw = ang;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+                uav_cmd.desired_yaw = yaw;
 
-                cout<<"x_rel: "<<z_rel<<" y_rel: "<<y_rel<<" z_rel: "<<x_rel<<" yaw_rel: "<< ang <<endl;
-                cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
+                cout << "x_rel: " << z_rel << " y_rel: " << y_rel << " z_rel: " << x_rel << " yaw_rel: " << ang << endl;
+                cout << "x_vel: " << x_vel << " y_vel: " << y_vel << " z_vel: " << z_vel << " yaw: " << yaw << endl;
                 control_cmd_pub.publish(uav_cmd);
             }
             continue;
         }
-        if((ros::Time::now() - last_time).toSec() > 10)
+        if ((ros::Time::now() - last_time).toSec() > 10)
         {
             cout << "降落点丢失超时，直接降落" << endl;
             landing_point_num = 0;
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
             break;
         }
-        if((ros::Time::now() - last_time).toSec() > 1)
+        if ((ros::Time::now() - last_time).toSec() > 1)
         {
             cout << "降落点丢失，进入悬停" << endl;
-            uav_cmd.cmd = 2;
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             control_cmd_pub.publish(uav_cmd);
             continue;
-        } 
+        }
     }
 }

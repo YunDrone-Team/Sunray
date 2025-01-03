@@ -13,6 +13,7 @@ int main(int argc, char **argv)
     bool wp_takeoff = true;
     bool wp_fix_yaw = false;
     float move_vel = 1.0;
+    float vel_p = 1.0;
     float z_height = 10.0;
     float yaw_angle = 0.0;
     std::string uav_name;
@@ -25,6 +26,7 @@ int main(int argc, char **argv)
     nh.param<bool>("wp_takeoff", wp_takeoff, true);
     nh.param<bool>("wp_fix_yaw", wp_fix_yaw, false);
     nh.param<float>("move_vel", move_vel, 1.0);
+    nh.param<float>("vel_p", vel_p, 1.0);
     nh.param<float>("z_height", z_height, 1.0);
     nh.param<float>("yaw_angle", yaw_angle, 0.0);
     nh.param<std::string>("uav_name", uav_name, "uav");
@@ -80,6 +82,7 @@ int main(int argc, char **argv)
     std::cout << "wp_takeoff: " << wp_takeoff << std::endl;
     std::cout << "wp_fix_yaw: " << wp_fix_yaw << std::endl;
     std::cout << "move_vel: " << move_vel << std::endl;
+    std::cout << "vel_p: " << vel_p << std::endl;
     std::cout << "z_height: " << z_height << std::endl;
     std::cout << "yaw_angle: " << yaw_angle << std::endl;
     std::cout << "uav_name: " << uav_name << std::endl;
@@ -107,7 +110,8 @@ int main(int argc, char **argv)
     waypoint_msg.wp_return = wp_return;
     waypoint_msg.wp_takeoff = wp_takeoff;
     waypoint_msg.wp_fix_yaw = wp_fix_yaw;
-    waypoint_msg.move_vel = move_vel;
+    waypoint_msg.wp_move_vel = move_vel;
+    waypoint_msg.wp_vel_p = vel_p;
     waypoint_msg.z_height = z_height;
     waypoint_msg.yaw_angle = yaw_angle;
     waypoint_msg.wp_point_1 = {wp_point_1[0], wp_point_1[1], wp_point_1[2]};

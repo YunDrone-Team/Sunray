@@ -153,7 +153,6 @@ int main(int argc, char **argv)
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
-    uav_cmd.cmd_id = 0;
     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     uav_cmd.desired_pos[0] = 0.0;
     uav_cmd.desired_pos[1] = 0.0;
@@ -161,15 +160,8 @@ int main(int argc, char **argv)
     uav_cmd.desired_vel[0] = 0.0;
     uav_cmd.desired_vel[1] = 0.0;
     uav_cmd.desired_vel[2] = 0.0;
-    uav_cmd.desired_acc[0] = 0.0;
-    uav_cmd.desired_acc[1] = 0.0;
-    uav_cmd.desired_acc[2] = 0.0;
-    uav_cmd.desired_att[0] = 0.0;
-    uav_cmd.desired_att[1] = 0.0;
-    uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-    uav_cmd.enable_yawRate = false;
 
     // 固定的浮点显示
     cout.setf(ios::fixed);
@@ -216,8 +208,7 @@ int main(int argc, char **argv)
         if (stop_flag)
         {
             cout << "land" << endl;
-            uav_cmd.cmd = 3;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             control_cmd_pub.publish(uav_cmd);
             break;
         }
@@ -227,12 +218,11 @@ int main(int argc, char **argv)
             while((ros::Time::now() - stop_time).toSec() < land_time)
             {
                     uav_cmd.header.stamp = ros::Time::now();
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
+                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYawBody;
                     uav_cmd.desired_vel[0] = 0;
                     uav_cmd.desired_vel[1] = 0;
                     uav_cmd.desired_vel[2] = land_v;
                     uav_cmd.desired_yaw = yaw;
-                    uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
                     control_cmd_pub.publish(uav_cmd);
                     ros::Duration(0.1).sleep();
             }
@@ -267,12 +257,11 @@ int main(int argc, char **argv)
                 }
 
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYawBody;
                 uav_cmd.desired_vel[0] = x_vel;
                 uav_cmd.desired_vel[1] = y_vel;
                 uav_cmd.desired_vel[2] = z_vel;
                 uav_cmd.desired_yaw = yaw;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
                 
                 cout<<"x_rel: "<<x_rel<<" y_rel: "<<y_rel<<" z_rel: "<<z_rel<<" yaw_rel: "<<yaw_rel<<endl;
                 cout<<"x_vel: "<<x_vel<<" y_vel: "<<y_vel<<" z_vel: "<<z_vel<<" yaw: " << yaw << endl;
@@ -286,7 +275,6 @@ int main(int argc, char **argv)
             landing_point_num = 0;
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
             break;
         }
@@ -294,12 +282,11 @@ int main(int argc, char **argv)
         {
             cout << "降落点丢失，向上移动扩大视野搜索" << endl;
             uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_VEL_BODY;
-            uav_cmd.desired_vel[0] = 0;
-            uav_cmd.desired_vel[1] = 0;
-            uav_cmd.desired_vel[2] = 0.05;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
+            uav_cmd.desired_pos[0] = 0;
+            uav_cmd.desired_pos[1] = 0;
+            uav_cmd.desired_pos[2] = 0.05;
             uav_cmd.desired_yaw = 0;
-            uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
             control_cmd_pub.publish(uav_cmd);
             continue;
         }
