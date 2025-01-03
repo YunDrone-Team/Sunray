@@ -26,20 +26,6 @@ material sunray_world_2
    }
  }
 }
-material sunray_world_3
-{
- technique
- {
-   pass
-   {
-     texture_unit
-     {
-       texture prometheus_logo_square3.png
-       scale 1.0 1.0
-     }
-   }
- }
-}
 material tag_0
 {
  technique

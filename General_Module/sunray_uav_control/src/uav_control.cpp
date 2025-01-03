@@ -226,8 +226,8 @@ void UAVControl::setArm(bool arm)
 // 控制指令回调
 void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
-    control_cmd.header.stamp = ros::Time::now();
     control_cmd = *msg;
+    control_cmd.header.stamp = ros::Time::now();
     // 特殊模式单独判断 （如：紧急停止 航点任务）
     // 航点模式直接自动切换到CMD_CONTROL模式
     if (control_cmd.cmd == Waypoint)
@@ -318,7 +318,7 @@ void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg
     // 如果当前模式处于航点模式则不允许赋值
     if (control_cmd.cmd == Waypoint)
     {
-        Logger::warning("Waypoint mode is not allowed to be set when the current mode is waypoint mode!");
+        Logger::error("Waypoint mode is not allowed to be set when the current mode is waypoint mode!");
         return;
     }
     wp_params.wp_land = msg->wp_land;
@@ -326,6 +326,8 @@ void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg
     wp_params.wp_return = msg->wp_return;
     wp_params.wp_fix_yaw = msg->wp_fix_yaw;
     wp_params.yaw_angle = msg->yaw_angle;
+    wp_params.wp_move_vel = msg->wp_move_vel;
+    wp_params.wp_vel_p = msg->wp_vel_p;
     wp_params.z_height = msg->z_height;
     wp_params.wp_type = msg->wp_type;
     wp_params.wp_num = msg->wp_num;
@@ -359,12 +361,6 @@ void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg
     wp_params.wp_points[9][0] = msg->wp_point_10[0];
     wp_params.wp_points[9][1] = msg->wp_point_10[1];
     wp_params.wp_points[9][2] = msg->wp_point_10[2];
-
-    if (wp_params.wp_takeoff)
-    {
-        wp_params.wp_point_takeoff[0] = px4_state.pos[0];
-        wp_params.wp_point_takeoff[1] = px4_state.pos[1];
-    }
 
     wp_params.wp_init = true;
     Logger::warning("Waypoint setup success!");
@@ -507,6 +503,7 @@ void UAVControl::set_offboard_mode()
     local_setpoint.velocity.z = 0.0;
     setpoint_local_pub(TypeMask::XYZ_VEL, local_setpoint);
     control_cmd.cmd = Hover;
+    set_hover_pos();
     control_cmd.header.stamp = ros::Time::now();
     setMode("OFFBOARD");
 }
@@ -649,6 +646,8 @@ void UAVControl::set_desired_from_cmd()
                     local_setpoint.velocity.y = ned_vel[1];
                     local_setpoint.velocity.z = control_cmd.desired_vel[2];
 
+                    local_setpoint.yaw = control_cmd.desired_yaw + px4_state.att[2];
+
                     // 设置控制模式
                     flight_params.type_mask = moveModeMap[control_cmd.cmd];
                 }
@@ -784,18 +783,18 @@ void UAVControl::set_desired_from_hover()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
-    if (new_cmd)
+    if (new_cmd && last_control_cmd.cmd != Hover)
     {
         control_cmd.cmd = Hover;
         control_cmd.header.stamp = ros::Time::now();
         set_default_setpoint();
         set_hover_pos();
-        local_setpoint.position.x = flight_params.hover_pos[0];
-        local_setpoint.position.y = flight_params.hover_pos[1];
-        local_setpoint.position.z = flight_params.hover_pos[2];
-        local_setpoint.yaw = flight_params.hover_yaw;
-        flight_params.type_mask = TypeMask::XYZ_POS_YAW;
     }
+    local_setpoint.position.x = flight_params.hover_pos[0];
+    local_setpoint.position.y = flight_params.hover_pos[1];
+    local_setpoint.position.z = flight_params.hover_pos[2];
+    local_setpoint.yaw = flight_params.hover_yaw;
+    flight_params.type_mask = TypeMask::XYZ_POS_YAW;
 }
 
 // 高级模式-返航模式的实现函数
@@ -844,7 +843,27 @@ float UAVControl::get_yaw_from_waypoint()
     }
     float yaw = atan2(wp_params.wp_points[wp_params.wp_index][1] - px4_state.pos[1],
                       wp_params.wp_points[wp_params.wp_index][0] - px4_state.pos[0]);
+    // 如果航点距离较近，则不改变yaw值
+    if ((abs(px4_state.pos[0] - flight_params.home_pos[0]) < 0.2) &&
+        (abs(px4_state.pos[1] - flight_params.home_pos[1]) < 0.2) && wp_params.wp_state != 4)
+    {
+        yaw = px4_state.att[2];
+    }
     return yaw;
+}
+
+// 计算航点需要的速度
+float UAVControl::get_vel_from_waypoint(float point_x, float point_y)
+{
+    wp_params.wp_x_vel = (point_x - px4_state.pos[0]) * wp_params.wp_vel_p;
+    wp_params.wp_y_vel = (point_y - px4_state.pos[1]) * wp_params.wp_vel_p;
+    // 如果合速度大于最大速度，则重新计算为最大速度
+    if (sqrt(wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel) > wp_params.wp_move_vel * wp_params.wp_move_vel)
+    {
+        float ratio = sqrt(wp_params.wp_move_vel * wp_params.wp_move_vel / (wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel));
+        wp_params.wp_x_vel *= ratio;
+        wp_params.wp_y_vel *= ratio;
+    }
 }
 // 高级模式-航点模式的实现函数
 void UAVControl::waypoint_mission()
@@ -862,37 +881,54 @@ void UAVControl::waypoint_mission()
         Logger::warning("Waypoint mission started!");
         wp_params.wp_index = 0;
         wp_params.wp_state = 0;
+        wp_params.start_wp_time = ros::Time::now();
+        wp_params.wp_point_takeoff[0] = px4_state.pos[0];
+        wp_params.wp_point_takeoff[1] = px4_state.pos[1];
     }
     // 如果过程包含起飞过程，则先解锁起飞
-    if (wp_params.wp_takeoff && wp_params.wp_state == 0)
+    if (wp_params.wp_takeoff && (wp_params.wp_state == 0 || wp_params.wp_state == 1))
     {
         // 判断是否已经解锁 未解锁则先解锁
-        if (!px4_state.armed)
+        if (!px4_state.armed && wp_params.wp_state == 0)
         {
             setArm(true);
+            wp_params.wp_state = 1;
         }
         else
         {
-            // 切入指令模式
-            set_offboard_control(Control_Mode::CMD_CONTROL);
-            // set_offboard_control会重置状态 所以需要手动重新赋值为Waypoint
-            control_cmd.cmd = Waypoint;
-            // 更新为新状态
-            wp_params.wp_state = 1;
+            if ((ros::Time::now() - wp_params.start_wp_time).toSec() > 10)
+            {
+                // 解锁超时
+                Logger::error("Takeoff timeout! Cannot start waypoint mission!");
+                set_desired_from_hover();
+            }
+            if (px4_state.armed)
+            {
+                // 切入指令模式
+                set_offboard_control(Control_Mode::CMD_CONTROL);
+                // set_offboard_control会重置状态 所以需要手动重新赋值为Waypoint
+                control_cmd.cmd = Waypoint;
+                // 更新为新状态
+                wp_params.wp_state = 2;
+            }
         }
+    }
+    else
+    {
+        wp_params.start_wp_time = ros::Time::now();
     }
 
     switch (wp_params.wp_state)
     {
     case 0:
         break;
-    case 1:
+    case 2:
         // 判断是否到达起飞点
-        if ((abs(px4_state.pos[0] - wp_params.wp_point_takeoff[0]) < 0.1) &&
-            (abs(px4_state.pos[1] - wp_params.wp_point_takeoff[1]) < 0.1) &&
-            (abs(px4_state.pos[2] - wp_params.z_height) < 0.1))
+        if ((abs(px4_state.pos[0] - wp_params.wp_point_takeoff[0]) < 0.15) &&
+            (abs(px4_state.pos[1] - wp_params.wp_point_takeoff[1]) < 0.15) &&
+            (abs(px4_state.pos[2] - wp_params.z_height) < 0.15))
         {
-            wp_params.wp_state = 2;
+            wp_params.wp_state = 3;
             Logger::warning("Reached takeoff point!");
             Logger::warning("next point:", wp_params.wp_points[wp_params.wp_index][0], wp_params.wp_points[wp_params.wp_index][1], wp_params.z_height);
         }
@@ -905,11 +941,11 @@ void UAVControl::waypoint_mission()
             flight_params.type_mask = TypeMask::XYZ_POS;
         }
         break;
-    case 2:
+    case 3:
         // 判断是否达到航点
-        if ((abs(px4_state.pos[0] - wp_params.wp_points[wp_params.wp_index][0]) < 0.1) &&
-            (abs(px4_state.pos[1] - wp_params.wp_points[wp_params.wp_index][1]) < 0.1) &&
-            (abs(px4_state.pos[2] - wp_params.wp_points[wp_params.wp_index][2]) < 0.1))
+        if ((abs(px4_state.pos[0] - wp_params.wp_points[wp_params.wp_index][0]) < 0.15) &&
+            (abs(px4_state.pos[1] - wp_params.wp_points[wp_params.wp_index][1]) < 0.15) &&
+            (abs(px4_state.pos[2] - wp_params.wp_points[wp_params.wp_index][2]) < 0.15))
         {
             wp_params.wp_index++;
             Logger::warning("next point: ", wp_params.wp_points[wp_params.wp_index][0], wp_params.wp_points[wp_params.wp_index][1],
@@ -917,7 +953,7 @@ void UAVControl::waypoint_mission()
             // 如果到达最后一个航点，判断是否需要返航, 不返航且需要降落则降落
             if (wp_params.wp_index >= wp_params.wp_num)
             {
-                wp_params.wp_state = 3;
+                wp_params.wp_state = 4;
                 break;
             }
         }
@@ -927,24 +963,63 @@ void UAVControl::waypoint_mission()
             if (wp_params.wp_type == 0)
             {
                 set_default_setpoint();
-                local_setpoint.position.x = wp_params.wp_points[wp_params.wp_index][0];
-                local_setpoint.position.y = wp_params.wp_points[wp_params.wp_index][1];
+                get_vel_from_waypoint(wp_params.wp_points[wp_params.wp_index][0], wp_params.wp_points[wp_params.wp_index][1]);
+                // local_setpoint.position.x = wp_params.wp_points[wp_params.wp_index][0];
+                // local_setpoint.position.y = wp_params.wp_points[wp_params.wp_index][1];
                 local_setpoint.position.z = wp_params.wp_points[wp_params.wp_index][2];
+                local_setpoint.velocity.x = wp_params.wp_x_vel;
+                local_setpoint.velocity.y = wp_params.wp_y_vel;
+
                 local_setpoint.yaw = get_yaw_from_waypoint();
-                flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+                // flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+                flight_params.type_mask = TypeMask::XY_VEL_Z_POS_YAW;
             }
         }
         break;
-    case 3:
+    case 4:
         // 如果航点结束需要返航
         if (wp_params.wp_return)
         {
             // 到达返航点后降落
-            if ((abs(px4_state.pos[0] - flight_params.home_pos[0]) < 0.1) &&
-                (abs(px4_state.pos[1] - flight_params.home_pos[1]) < 0.1) &&
-                (abs(px4_state.pos[2] - wp_params.z_height) < 0.1))
+            if ((abs(px4_state.pos[0] - flight_params.home_pos[0]) < 0.15) &&
+                (abs(px4_state.pos[1] - flight_params.home_pos[1]) < 0.15) &&
+                (abs(px4_state.pos[2] - wp_params.z_height) < 0.15))
             {
-                wp_params.wp_state = 4;
+                wp_params.wp_state = 5;
+            }
+            else
+            {
+                set_default_setpoint();
+                get_vel_from_waypoint(flight_params.home_pos[0], flight_params.home_pos[1]);
+                // local_setpoint.position.x = flight_params.home_pos[0];
+                // local_setpoint.position.y = flight_params.home_pos[1];
+                local_setpoint.position.z = wp_params.z_height;
+                local_setpoint.yaw = get_yaw_from_waypoint();
+                flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+            }
+        }
+        else
+        {
+            wp_params.wp_state = 5;
+        }
+
+        break;
+
+    case 5:
+        // 降落
+        if (wp_params.wp_return)
+        {
+            // 偏航角正负0.0872弧度，即5度
+            if ((abs(px4_state.att[2] - flight_params.home_yaw) < 0.0872) &&
+                (abs(px4_state.pos[0] - flight_params.home_pos[0]) < 0.15) &&
+                (abs(px4_state.pos[1] - flight_params.home_pos[1]) < 0.15) &&
+                (abs(px4_state.pos[2] - wp_params.z_height) < 0.15))
+            {
+                Logger::warning("Mission completed! waiting for landing");
+                control_cmd.cmd = Land;
+                control_cmd.header.stamp = ros::Time::now();
+                wp_params.wp_state = 6;
+                break;
             }
             else
             {
@@ -956,41 +1031,18 @@ void UAVControl::waypoint_mission()
                 flight_params.type_mask = TypeMask::XYZ_POS_YAW;
             }
         }
-        else
+        else if (wp_params.wp_land)
         {
-            wp_params.wp_state = 4;
-        }
-
-        break;
-
-    case 4:
-        // 降落
-        if ((wp_params.wp_return || wp_params.wp_land))
-        {
-            // 偏航角正负0.0872弧度，即5度
-            if ((abs(px4_state.att[2] - flight_params.home_pos[2]) < 0.0872))
-            {
-                Logger::info("Mission completed! waiting for landing");
-                control_cmd.cmd = Land;
-                control_cmd.header.stamp = ros::Time::now();
-                wp_params.wp_state = 5;
-                return;
-            }
-            else
-            {
-                set_default_setpoint();
-                local_setpoint.position.x = flight_params.home_pos[0];
-                local_setpoint.position.y = flight_params.home_pos[1];
-                local_setpoint.position.z = flight_params.home_pos[2];
-                local_setpoint.yaw = flight_params.home_yaw;
-                flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-            }
+            Logger::warning("Mission completed! waiting for landing");
+            control_cmd.cmd = Land;
+            control_cmd.header.stamp = ros::Time::now();
+            wp_params.wp_state = 6;
         }
         else
         {
             // 航点任务结束
-            Logger::info("Mission completed!");
-            wp_params.wp_state = 5;
+            Logger::warning("Mission completed!");
+            wp_params.wp_state = 6;
             set_desired_from_hover();
         }
         break;

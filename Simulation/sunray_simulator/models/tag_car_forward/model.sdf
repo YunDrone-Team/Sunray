@@ -7,7 +7,7 @@
     </include>
 
     <link name='tag'>
-      <pose frame=''> 0.05 0.0 1.2 0 1.57 0</pose>
+      <pose frame=''> 0.05 0.0 1.2 0 1.57 3.14</pose>
       <!-- <pose frame=''> 0.05 0.0 1.2 1.57 0 1.57</pose> -->
       <!-- <pose frame=''> -0.05 0.0 1.2 -1.57 0 -1.57</pose> -->
       <inertial>

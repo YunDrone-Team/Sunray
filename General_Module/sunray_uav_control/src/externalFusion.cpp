@@ -96,7 +96,10 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         // 【订阅】无人机电量
         px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
         // 【订阅】无人机当前位置 NED
-        px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
+        // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
+        px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 10, &ExternalFusion::px4_pose_callback, this);
+        // 【订阅】无人机速度 NED
+        px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
         // 【订阅】无人机姿态 imu
         px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
     }
@@ -128,14 +131,30 @@ void ExternalFusion::init(ros::NodeHandle &nh)
 }
 
 // 无人机odom回调函数
-void ExternalFusion::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
+// void ExternalFusion::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
+// {
+//     px4_state.position_state.pos_x = msg->pose.pose.position.x;
+//     px4_state.position_state.pos_y = msg->pose.pose.position.y;
+//     px4_state.position_state.pos_z = msg->pose.pose.position.z;
+//     px4_state.position_state.vel_x = msg->twist.twist.linear.x;
+//     px4_state.position_state.vel_y = msg->twist.twist.linear.y;
+//     px4_state.position_state.vel_z = msg->twist.twist.linear.z;
+// }
+
+// 无人机位置回调函数
+void ExternalFusion::px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
-    px4_state.position_state.pos_x = msg->pose.pose.position.x;
-    px4_state.position_state.pos_y = msg->pose.pose.position.y;
-    px4_state.position_state.pos_z = msg->pose.pose.position.z;
-    px4_state.position_state.vel_x = msg->twist.twist.linear.x;
-    px4_state.position_state.vel_y = msg->twist.twist.linear.y;
-    px4_state.position_state.vel_z = msg->twist.twist.linear.z;
+    px4_state.position_state.pos_x = msg->pose.position.x;
+    px4_state.position_state.pos_y = msg->pose.position.y;
+    px4_state.position_state.pos_z = msg->pose.position.z;
+}
+
+// 无人机速度回调函数
+void ExternalFusion::px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg)
+{
+    px4_state.position_state.vel_x = msg->twist.linear.x;
+    px4_state.position_state.vel_y = msg->twist.linear.y;
+    px4_state.position_state.vel_z = msg->twist.linear.z;
 }
 
 // 无人机状态回调函数

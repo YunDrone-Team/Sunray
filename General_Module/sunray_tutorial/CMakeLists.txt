@@ -80,17 +80,17 @@ target_link_libraries(circle_vel ${catkin_LIBRARIES})
 # add_dependencies(vel_body_z_pos_follow_car sunray_tutorial_gencpp)
 # target_link_libraries(vel_body_z_pos_follow_car ${catkin_LIBRARIES})
 
-# add_executable(auto_land src/auto_land.cpp)
-# add_dependencies(auto_land sunray_tutorial_gencpp)
-# target_link_libraries(auto_land ${catkin_LIBRARIES})
+add_executable(auto_land src/auto_land.cpp)
+add_dependencies(auto_land sunray_tutorial_gencpp)
+target_link_libraries(auto_land ${catkin_LIBRARIES})
 
-# add_executable(follow_a_car src/follow_a_car.cpp)
-# add_dependencies(follow_a_car sunray_tutorial_gencpp)
-# target_link_libraries(follow_a_car ${catkin_LIBRARIES})
+add_executable(follow_a_car src/follow_a_car.cpp)
+add_dependencies(follow_a_car sunray_tutorial_gencpp)
+target_link_libraries(follow_a_car ${catkin_LIBRARIES})
 
-# add_executable(follow_a_tag src/follow_a_tag.cpp)
-# add_dependencies(follow_a_tag sunray_tutorial_gencpp)
-# target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
+add_executable(follow_a_tag src/follow_a_tag.cpp)
+add_dependencies(follow_a_tag sunray_tutorial_gencpp)
+target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
 
 
 catkin_install_python(PROGRAMS
