@@ -12,7 +12,9 @@ bool wp_takeoff
 # 是否固定偏航角
 bool wp_fix_yaw
 # 航点间移动速度
-float32 move_vel
+float32 wp_move_vel
+# 速度计算比例
+float32 wp_vel_p
 # 飞行高度
 float32 z_height
 # 偏航角
