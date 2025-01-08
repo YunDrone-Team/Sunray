@@ -137,7 +137,7 @@ void calculateGravityAndTilt()
                                         sin(X_R / 2) * cos(-Y_R / 2) * cos(Z_R / 2) - cos(X_R / 2) * sin(-Y_R / 2) * sin(Z_R / 2),
                                         cos(X_R / 2) * sin(-Y_R / 2) * cos(Z_R / 2) + sin(X_R / 2) * cos(-Y_R / 2) * sin(Z_R / 2),
                                         cos(X_R / 2) * cos(-Y_R / 2) * sin(Z_R / 2) - sin(X_R / 2) * sin(-Y_R / 2) * cos(Z_R / 2));
-        std::cout<<"q_rotation:"<<q_rotation[0]<<q_rotation[1]<<q_rotation[2]<<q_rotation[3]<<std::endl;
+        // std::cout<<"q_rotation:"<<q_rotation[0]<<q_rotation[1]<<q_rotation[2]<<q_rotation[3]<<std::endl;
         // 生成旋转矩阵
         rotation_matrix = Eigen::AngleAxisd(Z_R, Eigen::Vector3d::UnitZ()) *
                           Eigen::AngleAxisd(Y_R, Eigen::Vector3d::UnitY()) *
@@ -186,9 +186,9 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
                             cos(roll_2 / 2) * sin(pitch_2 / 2) * cos(yaw_2 / 2) + sin(roll_2 / 2) * cos(pitch_2 / 2) * sin(yaw_2 / 2),
                             cos(roll_2 / 2) * cos(pitch_2 / 2) * sin(yaw_2 / 2) - sin(roll_2 / 2) * sin(pitch_2 / 2) * cos(yaw_2 / 2));
         
-        // Eigen::Quaterniond q(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z);
-        // // 四元素转欧拉角
-        // tf::Quaternion tf_q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+        Eigen::Quaterniond q(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z);
+        // 四元素转欧拉角
+        tf::Quaternion tf_q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
         // tf::Matrix3x3 m(tf_q);
         // double roll, pitch, yaw;
         // m.getRPY(roll, pitch, yaw);
@@ -200,17 +200,20 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
         // std::cout << "yaw_C: " << yaw / M_PI * 180 << " pitch_C: " << pitch / M_PI * 180 << " roll_C: " << roll / M_PI * 180 << std::endl;
         
         // 计算平移
-        Eigen::Matrix3d R = q.toRotationMatrix();
-        // 更新旋转矩阵
-        Eigen::Matrix3d rotation = R * rotation_matrix;
-        Eigen::Vector3d t(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z);
+        // Eigen::Matrix3d R = q_rotation.toRotationMatrix();
+        // // 更新旋转矩阵
+        // Eigen::Matrix3d rotation = R * rotation_matrix;
+        Eigen::Vector3d t(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
         // 平移矫正
-        t = rotation * t;
-        // std::cout << "x_O: " << odom_msg->pose.pose.position.x << " y_O: " << odom_msg->pose.pose.position.y << " z_O: " << odom_msg->pose.pose.position.z << std::endl;
-        // std::cout << "x_C: " << t[0] << " y_C: " << t[1] << " z_C: " << t[2] << std::endl;
+        t = rotation_matrix * t;
+        // std::cout<<"**********"<<std::endl;
+        // std::cout<<msg->pose.pose.position.x<<" "<< msg->pose.pose.position.y<<" "<< msg->pose.pose.position.z<<std::endl;
+        // std::cout<<"x:"<<t[0]<<std::endl;
+        // std::cout<<"y:"<<t[1]<<std::endl;
+        // std::cout<<"z:"<<t[2]<<std::endl;
         // 发布矫正后的odom
         nav_msgs::Odometry odom_msg_convert;
-        odom_msg_convert.header = odom_msg->header;
+        odom_msg_convert.header = msg->header;
         odom_msg_convert.pose.pose.orientation.w = q4[0];
         odom_msg_convert.pose.pose.orientation.x = q4[1];
         odom_msg_convert.pose.pose.orientation.y = q4[2];

@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   pcl_ros
   laser_geometry
+  tf2_eigen
+  # livox_ros_driver2
 )
 
 ## System dependencies are found with CMake's conventions
@@ -62,6 +64,10 @@ target_link_libraries(positionCmd2sunray ${catkin_LIBRARIES})
 add_executable(goal2swarm src/goal2swarm.cpp)
 add_dependencies(goal2swarm ${catkin_EXPORTED_TARGETS})
 target_link_libraries(goal2swarm ${catkin_LIBRARIES} yaml-cpp)
+
+# add_executable(livox2Point src/livox2Point.cpp)
+# add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
+# target_link_libraries(livox2Point ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
