@@ -320,6 +320,14 @@ struct SpaceCoordinates
     float z;//y
 };
 
+struct QuaternionData
+{
+    float w;
+    float x;
+    float y;
+    float z;
+};
+
 struct ControlData
 {
     uint8_t robotID;    /**< @param robot_id robot ID */
@@ -380,7 +388,7 @@ struct StateData
     bool odom_valid;                  // 0: invalid, 1: valid
     SpaceCoordinates position;      // [m]
     SpaceCoordinates velocity;      // [m/s]
-    SpaceCoordinates accelerometer;     //加速度
+    QuaternionData attitudeQuaternion; //四元数
     SpaceCoordinates attitude;      // [rad]
     SpaceCoordinates attitudeRate; // [rad/s]
     SpaceCoordinates posSetpoint;      // [m]
@@ -427,9 +435,10 @@ struct StateData
         attSetpoint.x=0;
         attSetpoint.y=0;
         attSetpoint.z=0;
-        accelerometer.x=0;
-        accelerometer.y=0;
-        accelerometer.z=0;
+        attitudeQuaternion.w=0;
+        attitudeQuaternion.x=0;
+        attitudeQuaternion.y=0;
+        attitudeQuaternion.z=0;
 
         batteryState=0;
         batteryPercentage=0;

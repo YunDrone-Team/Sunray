@@ -34,13 +34,14 @@ public:
     //发送数据接口,souIp是源IP地址，linuxPort是在Linux下源端口，winPort是在Windows下的源端口
     int sendUDPData(std::vector<uint8_t> sendData,std::string targetIp=nullptr,uint16_t targetPort=9898);              //发送数据接口
     int sendUDPBroadcastData(std::vector<uint8_t> sendData,uint16_t targetPort=9696);
+    int sendUDPMulticastData(std::vector<uint8_t> sendData,uint16_t targetPort=9898);
+
     void setUDPReadState(bool state);   //设置UDP是否循环读取
 
 //    void sendUDPData(std::vector<char> sendData,std::string targetIp,unsigned short targetPort);
 
     void setRunState(bool state);
     int findStdVectorComponent(uint8_t a,uint8_t b,std::vector<uint8_t> Data);
-
 
     void Close();
     ~CommunicationUDPSocket();
@@ -66,6 +67,7 @@ private:
     uint16_t* _linuxPort;
     unsigned short* _winPort;
     Codec codec;
+    std::string multicastIP;
 };
 
 #endif // COMMUNICATIONUDPSOCKET_H

@@ -45,6 +45,7 @@ public:
 private:
     uint32_t last_time_stamp;
     int uav_num;
+    int simulation_num;
     int uav_id;
     string tcp_port;
     int udp_port;
@@ -60,6 +61,8 @@ private:
     std::vector<ros::Publisher> control_cmd_pub;
     std::vector<ros::Publisher> uav_setup_pub;
     std::vector<ros::Subscriber> uav_state_sub;
+    std::map<int,ros::Publisher> uav_state_pub;
+
 
     ros::Timer recvMsgTimer;
     ros::Timer sendMsgTimer;
@@ -85,5 +88,6 @@ private:
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);
     void executiveDemo(std::string orderStr);
+    bool SynchronizationUAVState(StateData Data);
     pid_t OrderCourse(std::string orderStr);
 };

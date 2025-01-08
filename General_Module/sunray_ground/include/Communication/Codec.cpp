@@ -144,9 +144,12 @@ void Codec::coderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state
     floatCopyToUint8tArray(dataFrame,state.velocity.y);
     floatCopyToUint8tArray(dataFrame,state.velocity.z);
 
-    floatCopyToUint8tArray(dataFrame,state.accelerometer.x);
-    floatCopyToUint8tArray(dataFrame,state.accelerometer.y);
-    floatCopyToUint8tArray(dataFrame,state.accelerometer.z);
+
+    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.w);
+    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.x);
+    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.y);
+    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.z);
+
 
     floatCopyToUint8tArray(dataFrame,state.attitude.x);
     floatCopyToUint8tArray(dataFrame,state.attitude.y);
@@ -216,10 +219,10 @@ void Codec::decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& sta
     uint8tArrayToFloat(dataFrame,state.velocity.y);
     uint8tArrayToFloat(dataFrame,state.velocity.z);
 
-    uint8tArrayToFloat(dataFrame,state.accelerometer.x);
-    uint8tArrayToFloat(dataFrame,state.accelerometer.y);
-    uint8tArrayToFloat(dataFrame,state.accelerometer.z);
-
+    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.w);
+    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.x);
+    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.y);
+    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.z);
 
     uint8tArrayToFloat(dataFrame,state.attitude.x);
     uint8tArrayToFloat(dataFrame,state.attitude.y);
