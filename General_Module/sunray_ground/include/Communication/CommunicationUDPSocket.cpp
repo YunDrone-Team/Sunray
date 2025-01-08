@@ -404,6 +404,7 @@ int CommunicationUDPSocket::sendUDPBroadcastData(std::vector<uint8_t> sendData,u
 //           close(_sock);
 //           exit(EXIT_FAILURE);
 //       }
+//    std::cout << "udp targetPort  "<<targetPort<<std::endl;
 
     return sendUDPData(sendData,"255.255.255.255",targetPort);
 }

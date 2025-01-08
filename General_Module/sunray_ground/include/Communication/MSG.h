@@ -76,6 +76,8 @@ enum ControlType
     XyVelZPosYawBody            =16,          //XY速度 Z位置 带偏航角 机体坐标系
     GlobalPos                   =17,          //全局坐标(绝对坐标系下的经纬度)
 
+    Point                       =30,          //规划点
+
     TakeoffControlType                     =100,         //起飞
     LandControlType                        =101,         //降落
     HoverControlType                       =102,         //悬停
