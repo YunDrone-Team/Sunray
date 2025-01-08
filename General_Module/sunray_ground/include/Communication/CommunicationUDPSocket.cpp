@@ -16,7 +16,7 @@ CommunicationUDPSocket::CommunicationUDPSocket()
      _sock = INVALID_SOCKET;
      UDPReadState=true;
      runState=false;
-
+     multicastIP="224.1.1.1";
      //线程
      std::thread t(std::mem_fn(&CommunicationUDPSocket::OnRun), this);
      t.detach();
@@ -24,6 +24,7 @@ CommunicationUDPSocket::CommunicationUDPSocket()
 
 SOCKET CommunicationUDPSocket::InitSocket()                                        //初始化Socket
 {
+    std::cout << "CommunicationUDPSocket::InitSocket() "<<std::endl;
 #ifdef _WIN32
         //启动Windows socket 2.x环境
         WORD ver = MAKEWORD(2, 2);
@@ -35,7 +36,7 @@ SOCKET CommunicationUDPSocket::InitSocket()                                     
         //if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         //	return (1);
         //忽略异常信号，默认情况会导致进程终止
-        signal(SIGPIPE, SIG_IGN);
+//        signal(SIGPIPE, SIG_IGN);
 #endif
 
         if (INVALID_SOCKET != _sock)
@@ -50,11 +51,10 @@ SOCKET CommunicationUDPSocket::InitSocket()                                     
             std::cout << "UDP套接字错误 "<<_sock<<std::endl;
             sigUDPError(errno);
 
-        }
-        else {
+        }else {
             //套接字正常
             std::cout << "UDP套接字正常 "<<_sock<<std::endl;
-            /*设置SO_REUSEADDR SO_REUSEADDR套接字选项允许在同一本地地址和端口上启动监听套接字，
+            /*设置SO_REUSEADDR SO_REUSEADDR套接字选项允许在同一本地地址和端口上启动监听套接字，SO_REUSEPORT
              * 即使之前的套接字仍在TIME_WAIT状态。这对于快速重启服务器特别有用，因为它可以避免等待TIME_WAIT状态结束。*/
             int reuse = 1;
             if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) < 0)
@@ -62,16 +62,45 @@ SOCKET CommunicationUDPSocket::InitSocket()                                     
                 perror("setsockopt");
                 // 处理错误
             }
+
+            //广播配置
+            int broadcastEnable = 1;
+            int result = setsockopt(_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+            if (result < 0) {
+                perror("setsockopt(SO_BROADCAST) failed");
+                close(_sock);
+                exit(EXIT_FAILURE);
+            }
+
+            // 添加组播设置
+            struct ip_mreq mreq;
+            // 组播组地址
+            inet_pton(AF_INET, multicastIP.c_str(), &mreq.imr_multiaddr);
+            // 本地接口地址，使用INADDR_ANY表示任意接口
+            mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+
+            if (setsockopt(_sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char *)&mreq, sizeof(mreq)) < 0) {
+                perror("setsockopt for multicast");
+                // 处理错误
+            }
+
+            // 禁止组播环回
+            const int loop = 0;
+            if (setsockopt(_sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) < 0) {
+                perror("setsockopt for disabling multicast loop");
+            }
         }
+        std::cout << "CommunicationUDPSocket::InitSocket() end"<<std::endl;
         return _sock;
 }
 
 int CommunicationUDPSocket::Bind(unsigned short port)                               //绑定监听端口号
 {
-    if (INVALID_SOCKET == _sock)
-    {
+//    if (INVALID_SOCKET == _sock)
         InitSocket();
-    }
+
+    if(_sock==INVALID_SOCKET)
+        return SOCKET_ERROR;
 
     sockaddr_in _sin= {};
 
@@ -94,8 +123,7 @@ int CommunicationUDPSocket::Bind(unsigned short port)                           
         perror("bind failed");
         sigUDPError(errno);
 
-    }
-    else {
+    }else {
         //绑定端口号成功
         std::cout << "UDP绑定端口号成功 "<<_sock<<std::endl;
 
@@ -369,17 +397,41 @@ void CommunicationUDPSocket::setUDPReadState(bool state)    //设置UDP是否循
 
 int CommunicationUDPSocket::sendUDPBroadcastData(std::vector<uint8_t> sendData,uint16_t targetPort)
 {
-    int broadcastEnable = 1;
-    int result = setsockopt(_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
-       if (result < 0) {
-           perror("setsockopt(SO_BROADCAST) failed");
-           close(_sock);
-           exit(EXIT_FAILURE);
-       }
+//    int broadcastEnable = 1;
+//    int result = setsockopt(_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+//       if (result < 0) {
+//           perror("setsockopt(SO_BROADCAST) failed");
+//           close(_sock);
+//           exit(EXIT_FAILURE);
+//       }
 
     return sendUDPData(sendData,"255.255.255.255",targetPort);
 }
 
+int CommunicationUDPSocket::sendUDPMulticastData(std::vector<uint8_t> sendData,uint16_t targetPort)
+{
+    int sendResult = 0;
+    if ( INVALID_SOCKET != _sock && sendData.data() != nullptr && sendData.size() >0)
+    {
+        struct sockaddr_in target_addr={};
+        target_addr.sin_family= AF_INET;
+        target_addr.sin_port= htons(targetPort);
+#ifdef _WIN32
+    target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp);
+#else
+    target_addr.sin_addr.s_addr = inet_addr(multicastIP.c_str());
+#endif
+        unsigned int addrlen = sizeof(target_addr);
+        //发送数据
+        sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+    }
+    if(sendResult<0)
+    {
+        perror("Multicast sendto failed");
+        sigUDPError(errno);
+    }
+    return sendResult;
+}
 
 
 int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::string targetIp,uint16_t targetPort)              //发送数据接口
@@ -410,6 +462,8 @@ int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::strin
 
 void CommunicationUDPSocket::Close()
 {
+    std::cout << "CommunicationUDPSocket::Close() "<<std::endl;
+
     if (_sock != INVALID_SOCKET)
     {
 
