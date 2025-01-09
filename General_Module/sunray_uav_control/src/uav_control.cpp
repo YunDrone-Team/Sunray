@@ -232,12 +232,17 @@ void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr
     // 航点模式直接自动切换到CMD_CONTROL模式
     if (control_cmd.cmd == Waypoint)
     {
+        allow_lock = true;
         control_mode = Control_Mode::CMD_CONTROL;
     }
     else if (control_cmd.cmd == Point)
     {
         publish_goal();
         control_cmd = last_control_cmd;
+    }
+    else
+    {
+        allow_lock = false; // 其他模式需要手动解锁
     }
 }
 
@@ -269,7 +274,7 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         }
         else if (msg->control_state == "CMD_CONTROL")
         {
-            if (safety_state == 0 && control_mode != Control_Mode::CMD_CONTROL)
+            if (safety_state == 0 && (control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
             {
                 Logger::warning("Switch to CMD_CONTROL mode with cmd");
                 set_offboard_control(Control_Mode::CMD_CONTROL);
@@ -282,7 +287,7 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
                 }
             }
         }
-        else if (msg->control_state == "RC_CONTROL" && control_mode != Control_Mode::RC_CONTROL)
+        else if (msg->control_state == "RC_CONTROL" && (control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
         {
             if (safety_state == 0)
             {
@@ -603,7 +608,7 @@ void UAVControl::set_desired_from_cmd()
         }
     }
     // 如果无人机未解锁则不执行
-    if (!px4_state.armed && use_rc)
+    if (!allow_lock && !px4_state.armed && use_rc)
     {
         if (new_cmd)
         {
@@ -941,8 +946,14 @@ void UAVControl::waypoint_mission()
     }
     else
     {
+        if (!wp_params.wp_takeoff && !px4_state.armed)
+        {
+            Logger::error("UAV not armed! Cannot start waypoint mission!");
+            set_desired_from_hover();
+            return;
+        }
         wp_params.start_wp_time = ros::Time::now();
-        if (!wp_params.wp_takeoff)
+        if (!wp_params.wp_takeoff && (wp_params.wp_state == 0 || wp_params.wp_state == 1))
         {
             wp_params.wp_state = 3;
             Logger::warning("next point:", wp_params.wp_points[wp_params.wp_index][0], wp_params.wp_points[wp_params.wp_index][1], wp_params.z_height);

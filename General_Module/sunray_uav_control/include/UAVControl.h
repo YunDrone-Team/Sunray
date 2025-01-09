@@ -22,6 +22,7 @@ private:
     bool check_cmd_timeout;                            // 是否检查指令超时
     bool odom_valid;                                   // 外部定位是否有效
     bool use_rc;                                       // 是否使用遥控器
+    bool allow_lock;                                   // 允许临时解锁 特殊模式下允许跳过解锁检查
     bool rcState_cb;                                   // 遥控器状态回调
     std::string uav_name;                              // 无人机名称
     std::string uav_ns;                                // 节点命名空间
@@ -175,7 +176,7 @@ private:
         Waypoint = 103,
         Return = 104,
     };
-    
+
     enum OtherMode // 其他模式
     {
         Point = 30,
