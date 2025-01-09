@@ -86,6 +86,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     safety_state = -1;
     odom_valid_time = ros::Time(0);
     rcState_cb = false;
+    allow_lock = false;
     flight_params.home_pos[0] = default_home_x;
     flight_params.home_pos[1] = default_home_y;
     flight_params.home_pos[2] = default_home_z;
