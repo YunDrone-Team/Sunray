@@ -1,21 +1,22 @@
-## parameter for uav_control
+uav_id: 1
 uav_name: "uav"
-sim_mode: true
-flag_printf: true
-
-uav_control:
-  ## 起飞高度
-  Takeoff_height : 0.6
-  ## 降落速度
-  Land_speed : 0.2
-  ##　上锁高度
-  Disarm_height : 0.2
-
-##　地理围栏
 geo_fence:
-  x_min: -30.0
-  x_max: 30.0
-  y_min: -30.0
-  y_max: 30.0
-  z_min: -0.5
-  z_max: 30
+  x_min: -20.0
+  x_max: 20.0
+  y_min: -20.0
+  y_max: 20.0
+  z_min: -1.0
+  z_max: 6.0
+flight_param:
+  land_end_time: 1.0
+  land_end_speed: 0.3
+  Takeoff_height: 0.6
+  Disarm_height: 0.2
+  Land_speed: 0.2
+  home_x: 0.0
+  home_y: 0.0
+  home_z: 0.0
+home_yaw: 0.0
+use_rc_control: true
+check_cmd_timeout: false
+cmd_timeout: 5.0

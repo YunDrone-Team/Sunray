@@ -21,6 +21,8 @@ uint8 XyzVelYawBody = 15        # XYZ速度 带偏航角 机体坐标系
 uint8 XyVelZPosYawBody = 16     # XY速度 Z位置 带偏航角 机体坐标系
 uint8 GlobalPos = 17            # 全局坐标 经纬度海拔
 
+uint8 Point = 30                # 规划点
+
 uint8 Takeoff = 100             # 起飞
 uint8 Land = 101                # 降落
 uint8 Hover = 102               # 悬停

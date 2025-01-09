@@ -6,12 +6,12 @@
     <arg name="y_min" default="-20.0" />
     <arg name="y_max" default="20.0" />
     <arg name="z_min" default="-1.0" />
-    <arg name="z_max" default="3.0" />
-    <arg name="flight_param/land_end_time" default="1.0" />
+    <arg name="z_max" default="6.0" />
+    <arg name="land_end_time" default="1.0" />
     <arg name="land_end_speed" default="0.3" />
-    <arg name="uav_control/Takeoff_height" default="0.6" />
-    <arg name="uav_control/Disarm_height" default="0.2" />
-    <arg name="uav_control/Land_speed" default="0.2" />
+    <arg name="Takeoff_height" default="0.6" />
+    <arg name="Disarm_height" default="0.2" />
+    <arg name="Land_speed" default="0.2" />
     <arg name="home_x" default="0.0" />
     <arg name="home_y" default="0.0" />
     <arg name="home_z" default="0.0" />
@@ -25,9 +25,9 @@
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="uav_name" value="$(arg uav_name)" />
         <!-- 起飞高度 降落第一阶段高度 降落速度 -->
-        <param name="uav_control/Takeoff_height" value="$(arg uav_control/Takeoff_height)" />
-        <param name="uav_control/Disarm_height" value="$(arg uav_control/Disarm_height)" />
-        <param name="uav_control/Land_speed" value="$(arg uav_control/Land_speed)" />
+        <param name="uav_control/Takeoff_height" value="$(arg Takeoff_height)" />
+        <param name="uav_control/Disarm_height" value="$(arg Disarm_height)" />
+        <param name="uav_control/Land_speed" value="$(arg Land_speed)" />
         <!-- 安全围栏 超出会降落 -->
         <param name="geo_fence/x_min" value="$(arg x_min)" />
         <param name="geo_fence/x_max" value="$(arg x_max)" />
@@ -36,15 +36,15 @@
         <param name="geo_fence/z_min" value="$(arg z_min)" />
         <param name="geo_fence/z_max" value="$(arg z_max)" />
         <!-- 降落最后一阶段需要的时间和速度 -->
-        <param name="flight_param/land_end_time" value="$(arg flight_param/land_end_time)" />
-        <param name="land_end_speed" value="$(arg land_end_speed)" />
+        <param name="flight_param/land_end_time" value="$(arg land_end_time)" />
+        <param name="flight_param/land_end_speed" value="$(arg land_end_speed)" />
         <!-- 定位超时警告和降落时间 -->
-        <param name="odom_valid_timeout" value="0.5" />
-        <param name="odom_valid_warming_time" value="0.3" />
+        <param name="flight_param/odom_valid_timeout" value="0.5" />
+        <param name="flight_param/odom_valid_warming_time" value="0.3" />
         <!-- 默认home点 -->
-        <param name="default/home_x" value="$(arg home_x)" />
-        <param name="default/home_y" value="$(arg home_y)" />
-        <param name="default/home_z" value="$(arg home_z)" />
+        <param name="flight_param/home_x" value="$(arg home_x)" />
+        <param name="flight_param/home_y" value="$(arg home_y)" />
+        <param name="flight_param/home_z" value="$(arg home_z)" />
         <!-- 是否使用遥控器控制 如果不使用则不允许进入RC_CONTROL模式，允许在解锁前切换到offboard模式再解锁-->
         <param name="use_rc_control" value="$(arg use_rc_control)" />
         <!-- 是否检测指令超时 允许两条指令之间的时长 超时后进入悬停-->

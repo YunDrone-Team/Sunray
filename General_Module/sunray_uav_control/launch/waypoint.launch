@@ -1,56 +1,69 @@
 <launch>
     <node name="uav_waypoint_publisher" pkg="sunray_uav_control" type="waypoint_pub" output="screen">
         <param name="uav_id" value="1" />
-        <param name="wp_num" value="5" />
+        <param name="wp_num" value="3" />
         <param name="wp_type" value="0" />
-        <param name="wp_land" value="true" />
-        <param name="wp_return" value="false" />
+        <!-- # 结束事件 1: 悬停 2: 降落 3: 返航 -->
+        <param name="wp_end_type" value="3" />
+        <!-- # 偏航角类型 1: 固定值 2: 朝向下一个航点 3: 指向环绕点 -->
+        <param name="wp_yaw_type" value="1" />
         <param name="wp_takeoff" value="true" />
-        <param name="wp_fix_yaw" value="false" />
         <param name="wp_move_vel" value="2" />
         <param name="wp_vel_p" value="1.5" />
         <param name="z_height" value="2.0" />
-        <param name="yaw_angle" value="0.0" />
         <param name="uav_name" value="uav" />
+
+        <param name="wp_circle_point_x" value="0.0" />
+        <param name="wp_circle_point_y" value="0.0" />
 
         <param name="wp_point_1_x" value="2.0" />
         <param name="wp_point_1_y" value="-2.0" />
         <param name="wp_point_1_z" value="2.0" />
+        <param name="wp_point_1_yaw" value="0.0" />
 
         <param name="wp_point_2_x" value="2.0" />
         <param name="wp_point_2_y" value="2.0" />
         <param name="wp_point_2_z" value="2.0" />
+        <param name="wp_point_2_yaw" value="0.0" />
 
         <param name="wp_point_3_x" value="-2.0" />
         <param name="wp_point_3_y" value="2.0" />
         <param name="wp_point_3_z" value="2.0" />
+        <param name="wp_point_3_yaw" value="0.0" />
         
         <param name="wp_point_4_x" value="-2.0" />
         <param name="wp_point_4_y" value="-2.0" />
         <param name="wp_point_4_z" value="2.0" />
+        <param name="wp_point_4_yaw" value="0.0" />
 
         <param name="wp_point_5_x" value="2.0" />
         <param name="wp_point_5_y" value="-2.0" />
         <param name="wp_point_5_z" value="2.0" />
+        <param name="wp_point_5_yaw" value="0.0" />
 
         <param name="wp_point_6_x" value="0.0" />
         <param name="wp_point_6_y" value="0.0" />
         <param name="wp_point_6_z" value="0.0" />
+        <param name="wp_point_6_yaw" value="0.0" />
 
         <param name="wp_point_7_x" value="0.0" />
         <param name="wp_point_7_y" value="0.0" />
         <param name="wp_point_7_z" value="0.0" />
+        <param name="wp_point_7_yaw" value="0.0" />
 
         <param name="wp_point_8_x" value="0.0" />
         <param name="wp_point_8_y" value="0.0" />
         <param name="wp_point_8_z" value="0.0" />
+        <param name="wp_point_8_yaw" value="0.0" />
 
         <param name="wp_point_9_x" value="0.0" />
         <param name="wp_point_9_y" value="0.0" />
         <param name="wp_point_9_z" value="0.0" />
+        <param name="wp_point_9_yaw" value="0.0" />
 
         <param name="wp_point_10_x" value="0.0" />
         <param name="wp_point_10_y" value="0.0" />
         <param name="wp_point_10_z" value="0.0" />
+        <param name="wp_point_10_yaw" value="0.0" />
     </node>
 </launch>

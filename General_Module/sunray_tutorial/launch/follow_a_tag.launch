@@ -6,9 +6,9 @@
     <arg name="k_p_xy" default="1.5" />
     <arg name="k_p_z" default="0.5" />
     <arg name="k_p_yaw" default="0.01" />
-    <arg name="max_vel" default="0.5" />
+    <arg name="max_vel" default="0.2" />
     <arg name="max_vel_z" default="0.2" />
-    <arg name="max_yaw" default="0.1" />
+    <arg name="max_yaw" default="5" />
 	
     
 	<node pkg="sunray_tutorial" type="follow_a_tag" name="follow_a_tag_$(arg uav_id)" output="screen">

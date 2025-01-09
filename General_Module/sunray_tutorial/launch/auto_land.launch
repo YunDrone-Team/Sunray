@@ -3,8 +3,8 @@
     <arg name="sim_mode" default="false"/>
     <arg name="flag_printf" default="true"/>
     <arg name="uav_name" default="uav" />
-    <arg name="k_p_xy" default="0.6" />
-    <arg name="k_p_z" default="0.3" />
+    <arg name="k_p_xy" default="0.9" />
+    <arg name="k_p_z" default="0.5" />
     <arg name="k_p_yaw" default="0.04" />
     <arg name="max_vel" default="0.5" />
     <arg name="max_vel_z" default="0.2" />
