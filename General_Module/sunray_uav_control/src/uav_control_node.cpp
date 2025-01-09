@@ -19,18 +19,18 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);
 
     // 【参数】是否检测命令超时 超时后进入指令悬停模式
-    nh.param<bool>("check_cmd_timeout", check_cmd_timeout,true);
+    nh.param<bool>("check_cmd_timeout", check_cmd_timeout, true);
     nh.param<float>("cmd_timeout", cmd_timeout, 2.0);
 
     // 【参数】其他参数
-    nh.param<float>("flight_param/land_end_time", land_end_time, 1.0);        // 【参数】降落最后一阶段时间
-    nh.param<float>("land_end_speed", land_end_speed, 0.3);                   // 【参数】降落最后一阶段速度
-    nh.param<float>("odom_valid_timeout", odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
-    nh.param<float>("odom_valid_warming_time", odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
-    nh.param<float>("default/home_x", default_home_x, 0.0);                   // 【参数】默认home点 在起飞后运行程序时需要
-    nh.param<float>("default/home_y", default_home_y, 0.0);                   // 【参数】默认home点 在起飞后运行程序时需要
-    nh.param<float>("default/home_z", default_home_z, 0.0);                   // 【参数】默认home点 在起飞后运行程序时需要
-    nh.param<bool>("use_rc_control", use_rc, true);                           // 【参数】是否使用遥控器控制
+    nh.param<float>("flight_param/land_end_time", land_end_time, 1.0);                     // 【参数】降落最后一阶段时间
+    nh.param<float>("flight_param/land_end_speed", land_end_speed, 0.3);                   // 【参数】降落最后一阶段速度
+    nh.param<float>("flight_param/odom_valid_timeout", odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
+    nh.param<float>("flight_param/odom_valid_warming_time", odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
+    nh.param<float>("flight_param/home_x", default_home_x, 0.0);                           // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("flight_param/home_y", default_home_y, 0.0);                           // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("flight_param/home_z", default_home_z, 0.0);                           // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<bool>("use_rc_control", use_rc, true);                                        // 【参数】是否使用遥控器控制
 
     uav_prefix = uav_name + std::to_string(uav_id);
     topic_prefix = "/" + uav_prefix;
@@ -56,16 +56,17 @@ void UAVControl::init(ros::NodeHandle &nh)
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup",
                                                     1, &UAVControl::setup_callback, this);
     odom_state_sub = nh.subscribe<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/odom_state", 10,
-                                                  &UAVControl::odom_state_callback, this);
+                                                             &UAVControl::odom_state_callback, this);
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 1,
                                                       &UAVControl::rc_state_callback, this);
     uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1,
-                                                      &UAVControl::waypoint_callback, this);
+                                                              &UAVControl::waypoint_callback, this);
 
     px4_setpoint_local_pub = nh.advertise<mavros_msgs::PositionTarget>(topic_prefix + "/mavros/setpoint_raw/local", 1);
     px4_setpoint_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(topic_prefix + "/mavros/setpoint_raw/global", 1);
     px4_setpoint_attitude_pub = nh.advertise<mavros_msgs::AttitudeTarget>(topic_prefix + "/mavros/setpoint_raw/attitude", 1);
     uav_state_pub = nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1);
+    goal_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_" + std::to_string(uav_id), 1);
 
     // 【服务】解锁/上锁 -- 本节点->飞控
     px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(topic_prefix + "/mavros/cmd/arming");

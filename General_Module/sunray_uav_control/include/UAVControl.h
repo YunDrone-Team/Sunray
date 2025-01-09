@@ -55,6 +55,7 @@ private:
     ros::Publisher px4_setpoint_local_pub;    // 【发布】无人机指令发布 NED
     ros::Publisher px4_setpoint_global_pub;   // 【发布】无人机指令发布 经纬度+海拔
     ros::Publisher px4_setpoint_attitude_pub; // 【发布】无人机指令发布 姿态+推力
+    ros::Publisher goal_pub;                  // 【发布】发布一个目标点 来自外部控制指令
     // 服务节点
     ros::ServiceClient px4_arming_client;    // 【服务】px4解锁
     ros::ServiceClient px4_set_mode_client;  // 【服务】px4模式设置
@@ -116,24 +117,22 @@ private:
     struct Waypoint_Params
     {
         bool wp_init = false;                         // 是否初始化
-        bool wp_land = true;                          // 是否降落
-        bool wp_return = false;                       // 是否返回
         bool wp_takeoff = false;                      // 是否起飞
-        bool wp_fix_yaw = false;                      // 是否固定偏航角
         int wp_num = 0;                               // 航点数量 【最大数量10】
         int wp_type = 0;                              // 航点类型 【0：NED 1：经纬】
+        int wp_end_type = 0;                          // 航点结束类型 【1: 悬停 2: 降落 3: 返航】
+        int wp_yaw_type = 0;                          // 航点航向类型 【1: 固定值 1: 朝向下一个航点 2: 指向环绕点】
         int wp_index = 0;                             // 当前航点索引
         int wp_state = 0;                             // 航点状态 【1：解锁 2：起飞中 3：航点执行中 4:返航中 5:降落中 6: 结束】
         float wp_move_vel = 0.5;                      // 最大水平速度
-        float z_height = 1.0;                         // 飞行高度
-        float yaw_angle = 0.0;                        // 偏航角
+        float z_height = 1.0;                         // 起飞和返航高度
         double wp_point_takeoff[3] = {0.0, 0.0, 0.0}; // 起飞点
         double wp_point_return[3] = {0.0, 0.0, 0.0};  // 返航点
         std::map<int, double[3]> wp_points;           // 航点
         float wp_x_vel = 0.0;                         // 水平速度
         float wp_y_vel = 0.0;                         // 水平速度
         float wp_vel_p = 1;                           // 速度比例
-        ros::Time start_wp_time;                       // 上一个动作时间点
+        ros::Time start_wp_time;                      // 上一个动作时间点
     };
     Waypoint_Params wp_params;
 
@@ -173,8 +172,13 @@ private:
         Takeoff = 100,
         Land = 101,
         Hover = 102,
-        Waypoint,
-        Return
+        Waypoint = 103,
+        Return = 104,
+    };
+    
+    enum OtherMode // 其他模式
+    {
+        Point = 30,
     };
 
     // 添加每个基础移动模式对应的 typemask的映射
@@ -257,8 +261,9 @@ private:
     void waypoint_mission();                                                           // 航点任务实现
     void set_takeoff();                                                                // 起飞模式实现
     void set_land();                                                                   // 降落模式实现
-    float get_yaw_from_waypoint();                                                     // 获取航点航向
+    float get_yaw_from_waypoint(int type, float point_x, float point_y);               // 获取航点航向
     float get_vel_from_waypoint(float point_x, float point_y);                         // 获取航点速度
+    void publish_goal();                                                               // 发布规划点
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
