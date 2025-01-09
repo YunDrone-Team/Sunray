@@ -245,11 +245,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         std::cout << "pitch " << readData.data.contro.pitch << std::endl;
         std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
 
-        //规划点
-        if(readData.data.contro.controlMode==ControlType::Point)
-        {
-            
-        }
+       
 
         time_stamp = readData.data.contro.timestamp;
 
