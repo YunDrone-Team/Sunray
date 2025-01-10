@@ -49,6 +49,8 @@ private:
     int uav_id;
     string tcp_port;
     int udp_port;
+    int udp_ground_port;
+
     string uav_name;
     string tcp_ip;
     string udp_ip;

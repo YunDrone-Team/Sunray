@@ -4,9 +4,10 @@
     <arg name="uav_name" default="uav" />
     <arg name="uav_id" default="1" />  <!-- 新增的整数型参数，默认值为1 -->
     <arg name="tcp_ip" default="192.168.0.29" />    <!-- 无人机IP地址 0.0.0.0 则监听所有ip-->
-    <arg name="udp_ip" default="192.168.0.115" />   <!-- UDP单播目标IP-->
+    <arg name="udp_ip" default="192.168.0.115" />   <!-- UDP单播地面站目标IP-->
     <arg name="tcp_port" default="8969" />
-    <arg name="udp_port" default="9898" />           <!-- UDP本通信包绑定监听、组播单播目标端口，地面站和机载端口要一致-->
+    <arg name="udp_port" default="9898" />           <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->
+    <arg name="udp_ground_port" default="9999" />    <!-- UDP通信、单播地面站目标端口-->
 
     <node name="ground_control" pkg="sunray_ground" type="ground_control_node" output="screen">
         <param name="uav_num" value="$(arg uav_num)" />
@@ -17,5 +18,7 @@
         <param name="udp_ip" value="$(arg udp_ip)" />
         <param name="tcp_port" value="$(arg tcp_port)" />
         <param name="udp_port" value="$(arg udp_port)" />
+        <param name="udp_ground_port" value="$(arg udp_ground_port)" />
+
     </node>
 </launch>
