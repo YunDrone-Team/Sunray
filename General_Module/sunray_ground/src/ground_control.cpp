@@ -14,6 +14,9 @@ void GroundControl::init(ros::NodeHandle &nh)
     nh.param<string>("udp_ip", udp_ip, "127.0.0.1");
     nh.param<string>("tcp_port", tcp_port, "8969");
     nh.param<int>("udp_port", udp_port, 9696);
+    nh.param<int>("udp_ground_port", udp_ground_port, 9999);
+
+    
 
     for (int i = uav_id; i < uav_id + simulation_num; i++)
     {
@@ -117,7 +120,7 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
             backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            //udp_port = readData.data.search.port;
+            udp_ground_port = readData.data.search.port;
             udp_ip = readData.ip;
             std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
         }
@@ -410,7 +413,9 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
         //  int back = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_port);
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_port);
 
-        //std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl;
+        udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_ground_port);
+
+        //std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl; 
     }
 }
 
