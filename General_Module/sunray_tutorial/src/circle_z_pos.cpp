@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace std;
 
@@ -20,6 +21,15 @@ void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
     stop_flag = true;
 }
 
+void mySigintHandler(int sig)
+{
+    std::cout<<"[circle_z_pos] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
+}
+
 // pose_cb：从MAVROS主题更新current_pose，获取无人机的当前位置。
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
@@ -34,6 +44,10 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
+
     string uav_name;
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);

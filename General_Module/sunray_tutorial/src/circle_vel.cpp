@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace std;
 
@@ -16,6 +17,15 @@ geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
 sunray_msgs::UAVSetup setup;
+
+void mySigintHandler(int sig)
+{
+    std::cout<<"[circle_vel] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
+}
 
 bool stop_flag{false};
 // 处理停止指令的回调。
@@ -39,6 +49,10 @@ int main(int argc, char **argv)
     // 声明变量，用于无人机 ID、名称、目标话题名、模拟模式和打印标志。
 
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
+
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
 

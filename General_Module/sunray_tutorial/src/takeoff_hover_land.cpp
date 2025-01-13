@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
-
+#include <csignal>
 using namespace std;
 
 /*
@@ -17,6 +17,16 @@ sunray_msgs::UAVSetup setup;
 
 bool stop_flag{false};
 
+void mySigintHandler(int sig)
+{
+    //ROS_INFO("[takeoff_hover_land] exit...");
+    std::cout<<"[takeoff_hover_land] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
+}
+
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
@@ -30,6 +40,9 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
     // 获取 ROS 参数，设置默认值。如果没有在参数服务器上找到这些参数，会使用默认值。
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
     string uav_name, target_tpoic_name;
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
