@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace  std;
 
@@ -22,6 +23,15 @@ void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
 {
     uav_control_state = *msg;
+}
+
+void mySigintHandler(int sig)
+{
+    std::cout<<"[vel_body_z_pos_follow_car] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
 }
 
 void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
@@ -66,6 +76,10 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
+
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);

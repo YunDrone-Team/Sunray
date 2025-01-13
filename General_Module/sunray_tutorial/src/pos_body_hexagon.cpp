@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace  std;
 
@@ -13,6 +14,15 @@ sunray_msgs::UAVSetup setup;
 
 float target_yaw;
 bool stop_flag{false};
+
+void mySigintHandler(int sig)
+{
+    std::cout<<"[pos_body_hexagon] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
+}
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
@@ -48,6 +58,10 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
+
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);

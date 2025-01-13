@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace std;
 
@@ -30,6 +31,15 @@ void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     current_pose = *msg;
 }
 
+void mySigintHandler(int sig)
+{
+    std::cout<<"[block_pos] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
+}
+
 /*
 参数读取：通过 ros::NodeHandle::param 读取参数，如无人机编号 uav_id、无人机名称 uav_name、是否为仿真模式 sim_mode 等。
 话题订阅：
@@ -47,6 +57,10 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
+
     string uav_name;
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);

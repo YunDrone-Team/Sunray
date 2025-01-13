@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace  std;
 
@@ -15,6 +16,15 @@ float target_yaw;
 bool stop_flag{false};
 // 全局变量存储无人机和车的坐标和朝向
 double x_1, y_1, z_1, yaw_1, x_2, y_2, z_2, yaw_2;
+
+void mySigintHandler(int sig)
+{
+    std::cout<<"[vel_body_follow_car] exit..."<<std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+
+}
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
@@ -68,6 +78,9 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     int uav_id;
+
+    signal(SIGINT, mySigintHandler);
+
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);
