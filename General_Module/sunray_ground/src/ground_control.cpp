@@ -110,7 +110,7 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
     {
     case MessageID::SearchMessageID:
     { /* code */
-         std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
+        //std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         unionData backData;
         for (int i = uav_id; i < uav_id + simulation_num; i++)
         {
@@ -122,13 +122,13 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
             std::lock_guard<std::mutex> lock(_mutexUDP);
             udp_ground_port = readData.data.search.port;
             udp_ip = readData.ip;
-            std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
+            //std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
         }
 
         break;
     }
     case MessageID::StateMessageID:
-    std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
+        //std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
         if (uav_id==readData.data.state.uavID  )
             return;
         std::cout << "uav_id: " << uav_id << " readData.data.state.uavID " << (int)readData.data.state.uavID<<" readData.messageID "<<readData.messageID << std::endl;
@@ -224,29 +224,29 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     uint32_t time_stamp;
     uint8_t robot_id;
 
-    std::cout << "GroundControl::TCPServerCallBack" << std::endl;
+    std::cout << "GroundControl::TCPServerCallBack:"<<readData.messageID<< std::endl;
     switch (readData.messageID)
     {
     case MessageID::HeartbeatMessageID:
-        std::cout << "TCPServer心跳包接收到机器人id： " << (int)readData.data.heartbeat.robotID << std::endl;
-        std::cout << "TCPServer心跳包接收到时间戳 " << readData.data.heartbeat.timestamp << std::endl;
-        std::cout << "TCPServer心跳包接收到IP " << readData.ip << std::endl;
+        // std::cout << "TCPServer心跳包接收到机器人id： " << (int)readData.data.heartbeat.robotID << std::endl;
+        // std::cout << "TCPServer心跳包接收到时间戳 " << readData.data.heartbeat.timestamp << std::endl;
+        // std::cout << "TCPServer心跳包接收到IP " << readData.ip << std::endl;
 
         HeartbeatState = true; // 心跳包
 
         break;
     case MessageID::ControlMessageID:
-        std::cout << "TCPServer参数控制接收到机器人id： " << (int)readData.data.contro.robotID << std::endl;
-        std::cout << "TCPServer接收到参数控制数据" << std::endl;
-        std::cout << "TCPServer参数控制接收到时间戳 " << readData.data.contro.timestamp << std::endl;
-        std::cout << "TCPServer控制模式 " << (int)readData.data.contro.controlMode << std::endl;
-        std::cout << "x " << readData.data.contro.position.x << std::endl;
-        std::cout << "y " << readData.data.contro.position.y << std::endl;
-        std::cout << "z " << readData.data.contro.position.z << std::endl;
-        std::cout << "yaw " << readData.data.contro.yaw << std::endl;
-        std::cout << "roll " << readData.data.contro.roll << std::endl;
-        std::cout << "pitch " << readData.data.contro.pitch << std::endl;
-        std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
+        // std::cout << "TCPServer参数控制接收到机器人id： " << (int)readData.data.contro.robotID << std::endl;
+        // std::cout << "TCPServer接收到参数控制数据" << std::endl;
+        // std::cout << "TCPServer参数控制接收到时间戳 " << readData.data.contro.timestamp << std::endl;
+        // std::cout << "TCPServer控制模式 " << (int)readData.data.contro.controlMode << std::endl;
+        // std::cout << "x " << readData.data.contro.position.x << std::endl;
+        // std::cout << "y " << readData.data.contro.position.y << std::endl;
+        // std::cout << "z " << readData.data.contro.position.z << std::endl;
+        // std::cout << "yaw " << readData.data.contro.yaw << std::endl;
+        // std::cout << "roll " << readData.data.contro.roll << std::endl;
+        // std::cout << "pitch " << readData.data.contro.pitch << std::endl;
+        // std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
 
        
 
@@ -274,12 +274,12 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
 
         break;
     case MessageID::VehicleMessageID:
-        std::cout << "TCPServer模式切换接收到机器人id： " << (int)readData.data.vehicle.robotID << std::endl;
+        // std::cout << "TCPServer模式切换接收到机器人id： " << (int)readData.data.vehicle.robotID << std::endl;
 
-        std::cout << "TCPServer接收到模式切换数据" << std::endl;
-        std::cout << "TCPServer模式切换接收到时间戳 " << readData.data.vehicle.timestamp << std::endl;
-        std::cout << "TCPServersunray控制模式 " << (int)readData.data.vehicle.sunray_mode << std::endl;
-        std::cout << "TCPServerpx4控制模式 " << (int)readData.data.vehicle.px4_mode << std::endl;
+        // std::cout << "TCPServer接收到模式切换数据" << std::endl;
+        // std::cout << "TCPServer模式切换接收到时间戳 " << readData.data.vehicle.timestamp << std::endl;
+        // std::cout << "TCPServersunray控制模式 " << (int)readData.data.vehicle.sunray_mode << std::endl;
+        // std::cout << "TCPServerpx4控制模式 " << (int)readData.data.vehicle.px4_mode << std::endl;
         robot_id = readData.data.vehicle.robotID;
         setup.header.stamp = ros::Time::now();
         if (readData.data.vehicle.sunray_mode == VehicleControlType::SetControlMode)
@@ -288,14 +288,14 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         }
         setup.cmd = readData.data.vehicle.sunray_mode;
         
-        std::cout << "uav_setup_pub " << uav_setup_pub.size() << " robot_id -uav_id " << (robot_id - uav_id) << " robot_id:" << (int)robot_id << " uav_id " << uav_id << std::endl;
+        //std::cout << "uav_setup_pub " << uav_setup_pub.size() << " robot_id -uav_id " << (robot_id - uav_id) << " robot_id:" << (int)robot_id << " uav_id " << uav_id << std::endl;
 
         uav_setup_pub.at(robot_id - uav_id).publish(setup);
         break;
     case MessageID::DemoMessageID:
-        std::cout << "TCPServer Demo接收到机器人id： " << (int)readData.data.demo.robotID << std::endl;
-        std::cout << "TCPServer Demo： " << readData.data.demo.demoStr << std::endl;
-        std::cout << "TCPServer Demo size： " << readData.data.demo.demoSize << std::endl;
+        // std::cout << "TCPServer Demo接收到机器人id： " << (int)readData.data.demo.robotID << std::endl;
+        // std::cout << "TCPServer Demo： " << readData.data.demo.demoStr << std::endl;
+        // std::cout << "TCPServer Demo size： " << readData.data.demo.demoSize << std::endl;
 
         if (readData.data.demo.demoState == true)
         {
@@ -343,7 +343,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     default:
         break;
     }
-    std::cout << "GroundControl::TCPServerCallBack end" << std::endl;
+    //std::cout << "GroundControl::TCPServerCallBack end" << std::endl;
 }
 
 bool GroundControl::SynchronizationUAVState(StateData Data)
