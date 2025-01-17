@@ -35,6 +35,17 @@ void Codec::floatArrayCopyToUint8tArray(std::vector<uint8_t>& data,std::vector<f
     }
 }
 
+
+void Codec::doubleCopyToUint8tArray(std::vector<uint8_t>& data,double& value)
+{
+    // 将 double 类型数据的地址转换为 uint8_t 指针
+    uint8_t* bytePtr = reinterpret_cast<uint8_t*>(&value);
+    // 由于 double 通常是 8 个字节，遍历 8 次
+    for (size_t i = 0; i < sizeof(double); ++i)
+        data.push_back(bytePtr[i]);
+
+}
+
 void Codec::floatCopyToUint8tArray(std::vector<uint8_t>& data,float& value)
 {
     uint8_t floatBytes[sizeof(float)];
@@ -44,6 +55,21 @@ void Codec::floatCopyToUint8tArray(std::vector<uint8_t>& data,float& value)
     for (int j = 0; j < (int)sizeof(float); ++j)
         data.push_back(floatBytes[j]);
 }
+
+void Codec::uint8tArrayToDouble(std::vector<uint8_t>& data, double& value)
+{
+    if (data.size() < sizeof(double))
+    {
+        std::cerr << "Error: The vector size is less than sizeof(double)" << std::endl;
+        return;
+    }
+    // 将 vector 中的字节复制到 double 的内存空间
+    std::memcpy(&value, data.data(), sizeof(double));
+    // 移除已经处理过的字节
+    data.erase(data.begin(), data.begin() + sizeof(double));
+}
+
+
 
 void Codec::uint8tArrayToFloat(std::vector<uint8_t>& data, float& value)
 {
@@ -289,6 +315,142 @@ void Codec::decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData&
     uint8tArrayToFloat(dataFrame,control.yawRate);
 
 }
+
+void Codec::coderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypoint)
+{
+    dataFrame.push_back(static_cast<uint8_t>(MessageID::WaypointMessageID));
+    waypoint.timestamp=getTimestamp();
+    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((waypoint.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+    dataFrame.push_back(static_cast<uint8_t>(waypoint.uavID));
+    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpType));
+    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpNum));
+    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpEndType));
+    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpTakeoff));
+    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpYawType));
+
+    floatCopyToUint8tArray(dataFrame,waypoint.wpMoveVel);
+    floatCopyToUint8tArray(dataFrame,waypoint.wpVelP);
+    floatCopyToUint8tArray(dataFrame,waypoint.wpHeight);
+
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.Yaw);
+
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.Yaw);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.X);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.Y);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.Z);
+    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.Yaw);
+
+    doubleCopyToUint8tArray(dataFrame,waypoint.wpCirclePointX);
+    doubleCopyToUint8tArray(dataFrame,waypoint.wpCirclePointY);
+
+}
+
+void Codec::decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypointData)
+{
+    //时间戳赋值
+    waypointData.timestamp=0;
+    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    int i;
+    for (i = 0; i <(int)sizeof(uint64_t); ++i)
+        waypointData.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+
+    waypointData.uavID=static_cast<uint8_t>(dataFrame[i++]);
+    waypointData.wpType=static_cast<uint8_t>(dataFrame[i++]);
+    waypointData.wpNum=static_cast<uint8_t>(dataFrame[i++]);
+    waypointData.wpEndType=static_cast<uint8_t>(dataFrame[i++]);
+    waypointData.wpTakeoff=static_cast<uint8_t>(dataFrame[i++]);
+    waypointData.wpYawType=static_cast<uint8_t>(dataFrame[i++]);
+
+    //去除开头的消息帧头2个字节，消息大小4个字节，消息序号1个字节，2+4+1=7
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+
+    uint8tArrayToFloat(dataFrame,waypointData.wpMoveVel);
+    uint8tArrayToFloat(dataFrame,waypointData.wpVelP);
+    uint8tArrayToFloat(dataFrame,waypointData.wpHeight);
+
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.Yaw);
+
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.Yaw);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.X);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.Y);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.Z);
+    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.Yaw);
+
+    uint8tArrayToDouble(dataFrame,waypointData.wpCirclePointX);
+    uint8tArrayToDouble(dataFrame,waypointData.wpCirclePointY);
+
+}
+
 
 void Codec::coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo) //编码无人机demo数据帧
 {
@@ -547,6 +709,12 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData&
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
         decoderDemoDataFrame(undecodedData,decoderData.demo);
         break;
+    case MessageID::WaypointMessageID:
+        decoderData.demo.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        //去掉之前已经读出的两个元素
+        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
+        decoderWaypointDataFrame(undecodedData,decoderData.waypointData);
+        break;
     default:break;
     }
 
@@ -755,6 +923,25 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
         coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
 
         break;
+    case MessageID::WaypointMessageID:
+        //TCP帧头 0xac43
+        coderData.push_back(0xac);
+        coderData.push_back(0x43);
+        coderWaypointDataFrame(tempData,codelessData.waypointData);
+        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
+            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
+        coderData.push_back(static_cast<uint8_t>(codelessData.waypointData.robotID));//获取机器人ID
+        //将整个数据帧从尾部加入数据里面
+        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
+
+        checksum=getChecksum(coderData);//获取校验值
+
+        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
+        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
     default:break;
 
 

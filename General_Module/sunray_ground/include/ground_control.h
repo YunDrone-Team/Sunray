@@ -64,6 +64,7 @@ private:
     std::vector<ros::Publisher> uav_setup_pub;
     std::vector<ros::Subscriber> uav_state_sub;
     std::map<int,ros::Publisher> uav_state_pub;
+    std::vector<ros::Publisher> uav_waypoint_pub;
 
 
     ros::Timer recvMsgTimer;
