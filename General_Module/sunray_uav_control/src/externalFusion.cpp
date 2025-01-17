@@ -75,6 +75,10 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         }
         else if (external_source == ODOM || external_source == GAZEBO) // Odometry 消息类型 【参数】 source_topic 数据来源话题名称
         {
+            if(external_source == GAZEBO)
+            {
+                source_topic = topic_prefix + "/sunray/gazebo_pose";
+            }
             external_position->init(uav_id, uav_name, source_topic);
         }
         else if (external_source == VIOBOT) // VIOBOT 【参数】 source_topic 数据来源话题名称
