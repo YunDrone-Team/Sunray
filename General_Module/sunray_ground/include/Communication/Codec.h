@@ -23,22 +23,27 @@ public:
     void coderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //编码搜索在线无人机数据帧
     void coderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //编码无人机应答数据帧
     void coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //编码无人机demo数据帧
+    void coderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypoint); //编码无人机航点数据帧
 
 
     void decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat); //解码无人机心跳包数据帧
-    void decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state);//编码状态数据帧
-    void decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control);//编码控制数据帧
-    void decoderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle);//编码模式切换数据帧
+    void decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state);//解码状态数据帧
+    void decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control);//解码控制数据帧
+    void decoderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle);//解码模式切换数据帧
     void decoderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //解码搜索在线无人机数据帧
     void decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //解码无人机应答数据帧
     void decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //解码无人机demo数据帧
+    void decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypointData);//解码无人机航点数据帧
 
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
 
     void floatArrayCopyToUint8tArray(std::vector<uint8_t>& data,std::vector<float>& value);//std::vector<float>数据加入std::vector<uint8_t>
     void floatCopyToUint8tArray(std::vector<uint8_t>& data,float& value);//float数据加入std::vector<uint8_t>
+    void doubleCopyToUint8tArray(std::vector<uint8_t>& data,double& value);//double数据加入std::vector<uint8_t>
     void uint8tArrayToFloat(std::vector<uint8_t>& data, float& value);
+    void uint8tArrayToDouble(std::vector<uint8_t>& data, double& value);
+
 
     void safeConvertToUint32(size_t originalSize, uint32_t& convertedSize);//将size_t值安全转换为uint32_t的值
 

@@ -165,8 +165,8 @@ enum MessageID
     StateMessageID     = 2,
 //    TakeoffMessageID   = 101,
     ControlMessageID   = 102,
-//    ModeMessage      = 103,
     VehicleMessageID   = 103,
+    WaypointMessageID  = 104,
     SearchMessageID    = 200,
     ACKMessageID       = 201,
     DemoMessageID      = 202,
@@ -222,6 +222,27 @@ enum demoLaunch
 {
   runDemo= 0,           // run_demo.launch
 
+};
+
+
+enum WaypointType
+{
+    NEDType     =0,           //
+    LonLatType  =1,
+};
+
+enum WaypointEndType
+{
+    HoverEndType     =1,           //
+    LandEndType      =2,
+    ReturnFlight     =3,
+};
+
+enum WaypointYawType
+{
+    FixedValue      =1,
+    NextWaypoint    =2,
+    CirclePoint     =3,
 };
 
 //uint8_t getPX4ModeEnum(std::string modeStr)
@@ -523,6 +544,90 @@ struct DemoData
     }
 };
 
+struct WaypointSingleData
+{
+    double X;//经度Lon
+    double Y;//纬度Lat
+    double Z;//高
+    double Yaw;
+};
+
+struct WaypointData
+{
+    uint8_t robotID;
+    uint8_t msgType;
+    uint64_t timestamp; /**< @param time_stamp timestamp */
+    uint8_t uavID;    /**< @param robot_id robot ID */
+    uint8_t wpType;
+    uint8_t wpNum;
+    uint8_t wpEndType;
+    bool wpTakeoff;
+    uint8_t wpYawType;
+    float wpMoveVel;
+    float wpVelP;
+    float wpHeight;
+    WaypointSingleData Waypoint1;
+    WaypointSingleData Waypoint2;
+    WaypointSingleData Waypoint3;
+    WaypointSingleData Waypoint4;
+    WaypointSingleData Waypoint5;
+    WaypointSingleData Waypoint6;
+    WaypointSingleData Waypoint7;
+    WaypointSingleData Waypoint8;
+    WaypointSingleData Waypoint9;
+    WaypointSingleData Waypoint10;
+    double wpCirclePointX;//环绕点X或经度
+    double wpCirclePointY;//环绕点Y或纬度
+
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        timestamp=0;
+        uavID=0;
+        wpType=0;
+        wpNum=0;
+        wpEndType=0;
+        wpTakeoff=true;
+        wpYawType=1;
+        wpMoveVel=1;
+        wpVelP=1;
+        wpHeight=0;
+        Waypoint1.X=0;
+        Waypoint2.X=0;
+        Waypoint3.X=0;
+        Waypoint4.X=0;
+        Waypoint5.X=0;
+        Waypoint6.X=0;
+        Waypoint7.X=0;
+        Waypoint8.X=0;
+        Waypoint9.X=0;
+        Waypoint10.X=0;
+        Waypoint1.Y=0;
+        Waypoint2.Y=0;
+        Waypoint3.Y=0;
+        Waypoint4.Y=0;
+        Waypoint5.Y=0;
+        Waypoint6.Y=0;
+        Waypoint7.Y=0;
+        Waypoint8.Y=0;
+        Waypoint9.Y=0;
+        Waypoint10.Y=0;
+        Waypoint1.Yaw=0;
+        Waypoint2.Yaw=0;
+        Waypoint3.Yaw=0;
+        Waypoint4.Yaw=0;
+        Waypoint5.Yaw=0;
+        Waypoint6.Yaw=0;
+        Waypoint7.Yaw=0;
+        Waypoint8.Yaw=0;
+        Waypoint9.Yaw=0;
+        Waypoint10.Yaw=0;
+        wpCirclePointX=0;
+        wpCirclePointY=0;
+    }
+};
+
 //// Message structures
 //struct TakeoffMessage   //停用
 //{
@@ -602,6 +707,7 @@ union unionData
     SearchData search;
     ACKData ack;
     DemoData demo;
+    WaypointData waypointData;
 };
 
 //接受到的数据参数结构体

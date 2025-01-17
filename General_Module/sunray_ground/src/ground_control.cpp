@@ -30,6 +30,9 @@ void GroundControl::init(ros::NodeHandle &nh)
         uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(
             topic_prefix + "/sunray/setup", 1));
 
+        uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(
+            topic_prefix + "/sunray/uav_waypoint", 1));
+
         udpData[i - 1].state.init();
     }
 
@@ -103,7 +106,7 @@ uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
 void GroundControl::UDPCallBack(ReceivedParameter readData)
 {
     int back;
-    std::cout << " GroundControl::UDPCallBack: " << (int)readData.messageID << std::endl;
+    //std::cout << " GroundControl::UDPCallBack: " << (int)readData.messageID << std::endl;
 
     // std::cout << "readData.communicationType: " << (int)readData.communicationType << "  " << readData.messageID << std::endl;
     switch (readData.messageID)
@@ -131,7 +134,7 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
         //std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
         if (uav_id==readData.data.state.uavID  )
             return;
-        std::cout << "uav_id: " << uav_id << " readData.data.state.uavID " << (int)readData.data.state.uavID<<" readData.messageID "<<readData.messageID << std::endl;
+        //std::cout << "uav_id: " << uav_id << " readData.data.state.uavID " << (int)readData.data.state.uavID<<" readData.messageID "<<readData.messageID << std::endl;
         SynchronizationUAVState(readData.data.state);
         break;
     default:
@@ -340,6 +343,54 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         }
         
         break;
+    case MessageID::WaypointMessageID:
+    {
+        robot_id = readData.data.waypointData.robotID;
+
+        // std::cout << "MessageID::WaypointMessageID 1 "<< std::endl;
+        sunray_msgs::UAVWayPoint waypoint_msg;
+        waypoint_msg.header.stamp = ros::Time::now();
+        waypoint_msg.wp_num=readData.data.waypointData.wpNum;
+        waypoint_msg.wp_type = readData.data.waypointData.wpType;
+        waypoint_msg.wp_end_type =readData.data.waypointData.wpEndType;
+        waypoint_msg.wp_yaw_type = readData.data.waypointData.wpYawType;
+        waypoint_msg.wp_takeoff = readData.data.waypointData.wpTakeoff;
+        waypoint_msg.wp_move_vel = readData.data.waypointData.wpMoveVel;
+        waypoint_msg.wp_vel_p = readData.data.waypointData.wpVelP;
+        waypoint_msg.z_height = readData.data.waypointData.wpHeight; 
+
+        // std::cout << "MessageID::WaypointMessageID 2 "<<readData.data.waypointData.Waypoint1.X<< std::endl;
+
+       
+        waypoint_msg.wp_point_1 = {readData.data.waypointData.Waypoint1.X,readData.data.waypointData.Waypoint1.Y, 
+                                   readData.data.waypointData.Waypoint1.Z,readData.data.waypointData.Waypoint1.Yaw};
+        waypoint_msg.wp_point_2 = {readData.data.waypointData.Waypoint2.X,readData.data.waypointData.Waypoint2.Y, 
+                                   readData.data.waypointData.Waypoint2.Z,readData.data.waypointData.Waypoint2.Yaw};
+        waypoint_msg.wp_point_3 = {readData.data.waypointData.Waypoint3.X,readData.data.waypointData.Waypoint3.Y, 
+                                   readData.data.waypointData.Waypoint3.Z,readData.data.waypointData.Waypoint3.Yaw};
+        waypoint_msg.wp_point_4 = {readData.data.waypointData.Waypoint4.X,readData.data.waypointData.Waypoint4.Y, 
+                                   readData.data.waypointData.Waypoint4.Z,readData.data.waypointData.Waypoint4.Yaw};
+        waypoint_msg.wp_point_5 = {readData.data.waypointData.Waypoint5.X,readData.data.waypointData.Waypoint5.Y, 
+                                   readData.data.waypointData.Waypoint5.Z,readData.data.waypointData.Waypoint5.Yaw};
+        waypoint_msg.wp_point_6 = {readData.data.waypointData.Waypoint6.X,readData.data.waypointData.Waypoint6.Y, 
+                                   readData.data.waypointData.Waypoint6.Z,readData.data.waypointData.Waypoint6.Yaw};
+        waypoint_msg.wp_point_7 = {readData.data.waypointData.Waypoint7.X,readData.data.waypointData.Waypoint7.Y, 
+                                   readData.data.waypointData.Waypoint7.Z,readData.data.waypointData.Waypoint7.Yaw};
+        waypoint_msg.wp_point_8 = {readData.data.waypointData.Waypoint8.X,readData.data.waypointData.Waypoint8.Y, 
+                                   readData.data.waypointData.Waypoint8.Z,readData.data.waypointData.Waypoint8.Yaw};
+        waypoint_msg.wp_point_9 = {readData.data.waypointData.Waypoint9.X,readData.data.waypointData.Waypoint9.Y, 
+                                   readData.data.waypointData.Waypoint9.Z,readData.data.waypointData.Waypoint9.Yaw};
+        waypoint_msg.wp_point_10 ={readData.data.waypointData.Waypoint10.X,readData.data.waypointData.Waypoint10.Y, 
+                                   readData.data.waypointData.Waypoint10.Z,readData.data.waypointData.Waypoint10.Yaw};
+        waypoint_msg.wp_circle_point = {readData.data.waypointData.wpCirclePointX,readData.data.waypointData.wpCirclePointY};
+
+        uav_waypoint_pub[robot_id - uav_id].publish(waypoint_msg);
+
+        // std::cout << "MessageID::WaypointMessageID end "<< std::endl;
+
+        //uav_waypoint_pub          control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
+        break;
+    }
     default:
         break;
     }
@@ -458,7 +509,6 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     udpData[index].state.velocity.x = msg->velocity[0];
     udpData[index].state.velocity.y = msg->velocity[1];
     udpData[index].state.velocity.z = msg->velocity[2];
-
     udpData[index].state.attitude.x = msg->attitude[0];
     udpData[index].state.attitude.y = msg->attitude[1];
     udpData[index].state.attitude.z = msg->attitude[2];
@@ -475,6 +525,10 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     udpData[index].state.posSetpoint.y = msg->pos_setpoint[1];
     udpData[index].state.posSetpoint.z = msg->pos_setpoint[2];
 
+    // udpData[index].state.posSetpoint.x = std::nan("");
+    // udpData[index].state.posSetpoint.y = std::nan("");
+    // udpData[index].state.posSetpoint.z = std::nan("");
+
     udpData[index].state.velSetpoint.x = msg->vel_setpoint[0];
     udpData[index].state.velSetpoint.y = msg->vel_setpoint[1];
     udpData[index].state.velSetpoint.z = msg->vel_setpoint[2];
@@ -482,6 +536,10 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     udpData[index].state.attSetpoint.x = msg->att_setpoint[0];
     udpData[index].state.attSetpoint.y = msg->att_setpoint[1];
     udpData[index].state.attSetpoint.z = msg->att_setpoint[2];
+
+    // udpData[index].state.attSetpoint.x = std::nan("");
+    // udpData[index].state.attSetpoint.y = std::nan("");
+    // udpData[index].state.attSetpoint.z = std::nan("");
 
     udpData[index].state.attitudeQuaternion.w=msg->attitude_q.w;
     udpData[index].state.attitudeQuaternion.x=msg->attitude_q.x;
