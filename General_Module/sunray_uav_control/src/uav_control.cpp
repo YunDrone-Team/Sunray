@@ -43,6 +43,22 @@ void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     px4_state.vel[2] = msg->twist.twist.linear.z;
 }
 
+// 无人机pose回调
+void UAVControl::px4_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+    px4_state.pos[0] = msg->pose.position.x;
+    px4_state.pos[1] = msg->pose.position.y;
+    px4_state.pos[2] = msg->pose.position.z;
+}
+
+// 无人机vel回调
+void UAVControl::px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg)
+{
+    px4_state.vel[0] = msg->twist.linear.x;
+    px4_state.vel[1] = msg->twist.linear.y;
+    px4_state.vel[2] = msg->twist.linear.z;
+}
+
 // 无人机状态回调
 void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
@@ -106,6 +122,7 @@ void UAVControl::odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &
 {
     odom_valid_time = ros::Time::now();
     odom_valid = msg->odom_valid;
+    location_source = msg->external_source;
 }
 
 // 遥控器状态回调
@@ -563,6 +580,7 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     uav_state.connected = px4_state.connected;
     uav_state.armed = px4_state.armed;
     uav_state.mode = px4_state.mode;
+    uav_state.location_source = location_source;
     uav_state.odom_valid = odom_valid;
     for (int i = 0; i < 3; i++)
     {

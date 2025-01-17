@@ -11,6 +11,7 @@ private:
     int control_mode;                                  // 控制模式
     int last_control_mode;                             // 控制模式
     int safety_state;                                  // 安全标志
+    int location_source;                               // 定位来源
     float takeoff_height;                              // 起飞高度
     float disarm_height;                               // 锁桨高度
     float land_speed;                                  // 降落速度
@@ -45,6 +46,8 @@ private:
     ros::Subscriber px4_state_sub;      // 【订阅】无人机状态订阅
     ros::Subscriber px4_battery_sub;    // 【订阅】无人机电池状态订阅
     ros::Subscriber px4_odom_sub;       // 【订阅】无人机里程计订阅
+    ros::Subscriber px4_pos_sub;       // 【订阅】无人机位置订阅
+    ros::Subscriber px4_vel_sub;        // 【订阅】无人机速度订阅
     ros::Subscriber px4_att_sub;        // 【订阅】无人机imu姿态订阅
     ros::Subscriber px4_pos_target_sub; // 【订阅】px4目标订阅 位置 速度加 速度
     ros::Subscriber px4_att_target_sub; // 【订阅】无人机姿态订阅
@@ -271,6 +274,8 @@ private:
     void odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg);
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);
     void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
+    void px4_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
+    void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
     void px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg);

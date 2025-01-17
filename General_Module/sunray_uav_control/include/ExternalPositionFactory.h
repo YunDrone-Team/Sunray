@@ -16,7 +16,7 @@ public:
 class ExternalPositioFactory : public ConcreteFactory {
 public:
     std::shared_ptr<ExternalPosition> create(const std::string& type) override {
-        if (type == "ODOM") {
+        if (type == "ODOM" || type == "GAZEBO") {
             return std::make_shared<OdomExternalPosition>();
         } else if (type == "POSE") {
             return std::make_shared<PoseExternalPosition>();

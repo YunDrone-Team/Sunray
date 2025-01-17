@@ -39,8 +39,12 @@ void UAVControl::init(ros::NodeHandle &nh)
                                                      10, &UAVControl::px4_state_callback, this);
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery",
                                                               10, &UAVControl::px4_battery_callback, this);
-    px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom",
-                                                    10, &UAVControl::px4_odom_callback, this);
+    // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom",
+    //                                                 10, &UAVControl::px4_odom_callback, this);
+    px4_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose",
+                                                    10, &UAVControl::px4_pos_callback, this);
+    px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local",
+                                                           10, &UAVControl::px4_vel_callback, this);
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1,
                                                  &UAVControl::px4_att_callback, this);
     px4_pos_target_sub =
