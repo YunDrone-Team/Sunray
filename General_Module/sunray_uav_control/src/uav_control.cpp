@@ -44,11 +44,25 @@ void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 }
 
 // 无人机pose回调
-void UAVControl::px4_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
+void UAVControl::px4_local_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
-    px4_state.pos[0] = msg->pose.position.x;
-    px4_state.pos[1] = msg->pose.position.y;
-    px4_state.pos[2] = msg->pose.position.z;
+    if (location_source != 5 || location_source != 6)
+    {
+        px4_state.pos[0] = msg->pose.position.x;
+        px4_state.pos[1] = msg->pose.position.y;
+        px4_state.pos[2] = msg->pose.position.z;
+    }
+}
+
+// 无人机pose回调
+void UAVControl::px4_global_pos_callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    if (location_source == 5 || location_source == 6)
+    {
+        px4_state.pos[0] = msg->pose.pose.position.x;
+        px4_state.pos[1] = msg->pose.pose.position.y;
+        px4_state.pos[2] = msg->pose.pose.position.z;
+    }
 }
 
 // 无人机vel回调
@@ -465,7 +479,7 @@ void UAVControl::set_hover_pos()
     flight_params.hover_yaw = px4_state.att[2];
 }
 
-// 发布目标点
+// 发布NED目标点
 void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
@@ -473,12 +487,19 @@ void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTar
     setpoint.type_mask = type_mask;
     px4_setpoint_local_pub.publish(setpoint);
 }
+// 发布Global目标点
+void UAVControl::setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint)
+{
+    setpoint.header.stamp = ros::Time::now();
+    setpoint.header.frame_id = "map";
+    setpoint.type_mask = type_mask;
+    px4_setpoint_global_pub.publish(setpoint);
+}
 
 // 设置默认目标点
-void UAVControl::set_default_setpoint()
+void UAVControl::set_default_local_setpoint()
 {
     local_setpoint.header.stamp = ros::Time::now();
-    local_setpoint.header.frame_id = "map";
     local_setpoint.coordinate_frame = mavros_msgs::PositionTarget::FRAME_LOCAL_NED;
     local_setpoint.type_mask = TypeMask::NONE_TYPE;
     local_setpoint.position.x = 0;
@@ -492,6 +513,25 @@ void UAVControl::set_default_setpoint()
     local_setpoint.acceleration_or_force.z = 0;
     local_setpoint.yaw = 0;
     local_setpoint.yaw_rate = 0;
+}
+
+// 设置默认目标点
+void UAVControl::set_default_global_setpoint()
+{
+    global_setpoint.header.stamp = ros::Time::now();
+    global_setpoint.coordinate_frame = mavros_msgs::GlobalPositionTarget::FRAME_GLOBAL_REL_ALT; // 相对高度
+    global_setpoint.type_mask = TypeMask::GLOBAL_POSITION;
+    global_setpoint.latitude = 0;
+    global_setpoint.longitude = 0;
+    global_setpoint.altitude = 0;
+    global_setpoint.velocity.x = 0;
+    global_setpoint.velocity.y = 0;
+    global_setpoint.velocity.z = 0;
+    global_setpoint.acceleration_or_force.x = 0;
+    global_setpoint.acceleration_or_force.y = 0;
+    global_setpoint.acceleration_or_force.z = 0;
+    global_setpoint.yaw = 0;
+    global_setpoint.yaw_rate = 0;
 }
 
 // 检查进入offboard模式
@@ -535,7 +575,7 @@ void UAVControl::set_offboard_mode()
         Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
         return;
     }
-    set_default_setpoint();
+    set_default_local_setpoint();
     local_setpoint.velocity.x = 0.0;
     local_setpoint.velocity.y = 0.0;
     local_setpoint.velocity.z = 0.0;
@@ -642,10 +682,21 @@ void UAVControl::set_desired_from_cmd()
         // 调用对应的函数
         // std::cout<<"advancedMode"<<std::endl;
         advancedModeFuncMap[control_cmd.cmd]();
+        setpoint_local_pub(flight_params.type_mask, local_setpoint);
     }
     else if (control_cmd.cmd == GlobalPos)
     {
+
         // 经纬度海拔控制模式
+        // std::cout<<"globalPos"<<std::endl;
+        set_default_global_setpoint();
+        global_setpoint.latitude = control_cmd.latitude;
+        global_setpoint.longitude = control_cmd.longitude;
+        global_setpoint.altitude = control_cmd.altitude;
+        global_setpoint.yaw = control_cmd.desired_yaw;
+        flight_params.type_mask = TypeMask::GLOBAL_POSITION;
+
+        setpoint_global_pub(flight_params.type_mask, global_setpoint);
     }
     else if (control_cmd.cmd == Att)
     {
@@ -667,7 +718,7 @@ void UAVControl::set_desired_from_cmd()
                     control_cmd.cmd == XyVelZPosYawBody)
                 {
                     // Body系的需要转换到NED下
-                    set_default_setpoint();
+                    set_default_local_setpoint();
                     double body_pos[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
                     double ned_pos[2] = {0.0, 0.0};
                     UAVControl::body2ned(body_pos, ned_pos, px4_state.att[2]); // 偏航角 px4_state.att[2]
@@ -692,7 +743,6 @@ void UAVControl::set_desired_from_cmd()
                 }
                 else
                 {
-                    set_default_setpoint();
                     local_setpoint.position.x = control_cmd.desired_pos[0];
                     local_setpoint.position.y = control_cmd.desired_pos[1];
                     local_setpoint.position.z = control_cmd.desired_pos[2];
@@ -716,9 +766,9 @@ void UAVControl::set_desired_from_cmd()
                 }
             }
         }
+        setpoint_local_pub(flight_params.type_mask, local_setpoint);
     }
 
-    setpoint_local_pub(flight_params.type_mask, local_setpoint);
     last_control_cmd = control_cmd;
 }
 
@@ -771,7 +821,7 @@ void UAVControl::set_desired_from_land()
     if (new_cmd)
     {
         flight_params.last_land_time = ros::Time(0);
-        set_default_setpoint();
+        set_default_local_setpoint();
         flight_params.land_pos[0] = px4_state.pos[0];
         flight_params.land_pos[1] = px4_state.pos[1];
         flight_params.land_pos[2] = flight_params.home_pos[2];
@@ -793,7 +843,7 @@ void UAVControl::set_desired_from_land()
             flight_params.last_land_time = ros::Time::now();
         }
         // 到达制定高度后向下移动land_end_time 防止其直接锁桨掉落
-        set_default_setpoint();
+        set_default_local_setpoint();
         if ((ros::Time::now() - flight_params.last_land_time).toSec() < land_end_time)
         {
             local_setpoint.velocity.z = -land_end_speed;
@@ -827,7 +877,7 @@ void UAVControl::set_desired_from_hover()
     {
         control_cmd.cmd = Hover;
         control_cmd.header.stamp = ros::Time::now();
-        set_default_setpoint();
+        set_default_local_setpoint();
         set_hover_pos();
     }
     local_setpoint.position.x = flight_params.hover_pos[0];
@@ -853,7 +903,7 @@ void UAVControl::return_to_home()
         }
         else
         {
-            set_default_setpoint();
+            set_default_local_setpoint();
             local_setpoint.position.x = flight_params.home_pos[0];
             local_setpoint.position.y = flight_params.home_pos[1];
             local_setpoint.position.z = px4_state.pos[2];
@@ -994,7 +1044,7 @@ void UAVControl::waypoint_mission()
         }
         else
         {
-            set_default_setpoint();
+            set_default_local_setpoint();
             local_setpoint.position.x = wp_params.wp_point_takeoff[0];
             local_setpoint.position.y = wp_params.wp_point_takeoff[1];
             local_setpoint.position.z = wp_params.z_height;
@@ -1007,8 +1057,8 @@ void UAVControl::waypoint_mission()
             (abs(px4_state.pos[1] - wp_params.wp_points[wp_params.wp_index][1]) < 0.15) &&
             (abs(px4_state.pos[2] - wp_params.wp_points[wp_params.wp_index][2]) < 0.15))
         {
-            wp_params.wp_index+= 1;
-            
+            wp_params.wp_index += 1;
+
             // 如果到达最后一个航点，判断是否需要返航, 不返航且需要降落则降落
             if (wp_params.wp_index >= wp_params.wp_num)
             {
@@ -1023,7 +1073,7 @@ void UAVControl::waypoint_mission()
             // 如果未到达航点，则设置航点
             if (wp_params.wp_type == 0)
             {
-                set_default_setpoint();
+                set_default_local_setpoint();
                 get_vel_from_waypoint(wp_params.wp_points[wp_params.wp_index][0], wp_params.wp_points[wp_params.wp_index][1]);
                 // local_setpoint.position.x = wp_params.wp_points[wp_params.wp_index][0];
                 // local_setpoint.position.y = wp_params.wp_points[wp_params.wp_index][1];
@@ -1052,7 +1102,7 @@ void UAVControl::waypoint_mission()
             }
             else
             {
-                set_default_setpoint();
+                set_default_local_setpoint();
                 get_vel_from_waypoint(flight_params.home_pos[0], flight_params.home_pos[1]);
                 // local_setpoint.position.x = flight_params.home_pos[0];
                 // local_setpoint.position.y = flight_params.home_pos[1];
@@ -1090,7 +1140,7 @@ void UAVControl::waypoint_mission()
             }
             else
             {
-                set_default_setpoint();
+                set_default_local_setpoint();
                 local_setpoint.position.x = flight_params.home_pos[0];
                 local_setpoint.position.y = flight_params.home_pos[1];
                 local_setpoint.position.z = wp_params.z_height;
@@ -1141,7 +1191,7 @@ void UAVControl::set_takeoff()
         }
         else
         {
-            set_default_setpoint();
+            set_default_local_setpoint();
             local_setpoint.position.x = flight_params.home_pos[0];
             local_setpoint.position.y = flight_params.home_pos[1];
             local_setpoint.position.z = flight_params.home_pos[2] + takeoff_height;

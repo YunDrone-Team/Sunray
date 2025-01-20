@@ -75,7 +75,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         }
         else if (external_source == ODOM || external_source == GAZEBO) // Odometry 消息类型 【参数】 source_topic 数据来源话题名称
         {
-            if(external_source == GAZEBO)
+            if (external_source == GAZEBO)
             {
                 source_topic = topic_prefix + "/sunray/gazebo_pose";
             }
@@ -83,6 +83,11 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         }
         else if (external_source == VIOBOT) // VIOBOT 【参数】 source_topic 数据来源话题名称
         {
+            external_position->init(uav_id, uav_name, source_topic);
+        }
+        else if (external_source == GPS || external_source == RTK) // GPS 【参数】 source_topic 数据来源话题名称
+        {
+            source_topic = topic_prefix + "/mavros/global_position/local";
             external_position->init(uav_id, uav_name, source_topic);
         }
         external_position->bindTopic(nh);
@@ -106,6 +111,12 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
         // 【订阅】无人机姿态 imu
         px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
+        // 【订阅】无人机GPS卫星数量
+        px4_gps_satellites_sub = nh.subscribe<std_msgs::UInt32>(topic_prefix + "/mavros/global_position/raw/satellites", 10, &ExternalFusion::px4_gps_satellites_callback, this);
+        // 【订阅】无人机GPS状态
+        px4_gps_state_sub = nh.subscribe<sensor_msgs::NavSatFix>(topic_prefix + "/mavros/global_position/global", 10, &ExternalFusion::px4_gps_state_callback, this);
+        // 【订阅】无人机GPS原始数据
+        px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(topic_prefix + "/mavros/gpsstatus/gps1/raw", 10, &ExternalFusion::px4_gps_raw_callback, this);
     }
 
     if (enable_rviz)
@@ -194,6 +205,27 @@ void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.position_state.yaw = yaw;
 }
 
+// 无人机卫星数量回调函数
+void ExternalFusion::px4_gps_satellites_callback(const std_msgs::UInt32::ConstPtr &msg)
+{
+    satellites = msg->data;
+}
+
+// 无人机卫星状态回调函数
+void ExternalFusion::px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
+{
+    gps_status = msg->status.status;
+    gps_service = msg->status.service;
+}
+
+// 无人机gps原始数据回调函数
+void ExternalFusion::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg)
+{
+    latitude = msg->lat;
+    longitude = msg->lon;
+    altitude = msg->alt;
+}
+
 // 打印状态
 void ExternalFusion::show_px4_state()
 {
@@ -210,7 +242,18 @@ void ExternalFusion::show_px4_state()
     else
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
 
-    Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
+    if (external_source == GPS || external_source == RTK)
+    {
+        Logger::print_color(int(LogColor::green), "GPS STATUS:", gps_status, "SERVICE:", gps_service);
+        Logger::print_color(int(LogColor::green), "GPS SATS:", satellites);
+        Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(latitude), int(longitude), int(altitude));
+        Logger::print_color(int(LogColor::blue), "EXTERNAL GLOBAL POS(receive)");
+    }
+    else
+    {
+        Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
+    }
+
     Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
                         external_state.pos_x,
                         external_state.pos_y,
@@ -229,39 +272,42 @@ void ExternalFusion::show_px4_state()
 
     if (px4_state.connected)
     {
-        Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
-        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-                            px4_state.position_state.pos_x,
-                            px4_state.position_state.pos_y,
-                            px4_state.position_state.pos_z,
-                            "[m]");
-        Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
-                            px4_state.position_state.vel_x,
-                            px4_state.position_state.vel_y,
-                            px4_state.position_state.vel_z,
-                            "[m/s]");
-        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                            px4_state.position_state.roll / M_PI * 180,
-                            px4_state.position_state.pitch / M_PI * 180,
-                            px4_state.position_state.yaw / M_PI * 180,
-                            "[deg]");
+        if (external_source != GPS && external_source != RTK)
+        {
+            Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
+            Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                                px4_state.position_state.pos_x,
+                                px4_state.position_state.pos_y,
+                                px4_state.position_state.pos_z,
+                                "[m]");
+            Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                                px4_state.position_state.vel_x,
+                                px4_state.position_state.vel_y,
+                                px4_state.position_state.vel_z,
+                                "[m/s]");
+            Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                                px4_state.position_state.roll / M_PI * 180,
+                                px4_state.position_state.pitch / M_PI * 180,
+                                px4_state.position_state.yaw / M_PI * 180,
+                                "[deg]");
 
-        Logger::print_color(int(LogColor::blue), "ERR POS(send - receive)");
-        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-                            err_state.pos_x,
-                            err_state.pos_y,
-                            err_state.pos_z,
-                            "[m]");
-        Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
-                            err_state.vel_x,
-                            err_state.vel_y,
-                            err_state.vel_z,
-                            "[m/s]");
-        Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                            err_state.roll / M_PI * 180,
-                            err_state.pitch / M_PI * 180,
-                            err_state.yaw / M_PI * 180,
-                            "[deg]");
+            Logger::print_color(int(LogColor::blue), "ERR POS(send - receive)");
+            Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                                err_state.pos_x,
+                                err_state.pos_y,
+                                err_state.pos_z,
+                                "[m]");
+            Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
+                                err_state.vel_x,
+                                err_state.vel_y,
+                                err_state.vel_z,
+                                "[m/s]");
+            Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
+                                err_state.roll / M_PI * 180,
+                                err_state.pitch / M_PI * 180,
+                                err_state.yaw / M_PI * 180,
+                                "[deg]");
+        }
     }
 }
 
@@ -283,30 +329,40 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     external_state.att_y = external_position->position_state.qy;
     external_state.att_z = external_position->position_state.qz;
 
-    // 计算差值
-    err_state.pos_x = external_state.pos_x - px4_state.position_state.pos_x;
-    err_state.pos_y = external_state.pos_y - px4_state.position_state.pos_y;
-    err_state.pos_z = external_state.pos_z - px4_state.position_state.pos_z;
-    err_state.vel_x = external_state.vel_x - px4_state.position_state.vel_x;
-    err_state.vel_y = external_state.vel_y - px4_state.position_state.vel_y;
-    err_state.vel_z = external_state.vel_z - px4_state.position_state.vel_z;
-    err_state.roll = external_state.roll - px4_state.position_state.roll;
-    err_state.pitch = external_state.pitch - px4_state.position_state.pitch;
-    err_state.yaw = external_state.yaw - px4_state.position_state.yaw;
-
-    // 检查超时
-    if (!external_position->position_state.valid)
+    if (external_source != GPS && external_source != RTK)
     {
-        Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
+        // 计算差值
+        err_state.pos_x = external_state.pos_x - px4_state.position_state.pos_x;
+        err_state.pos_y = external_state.pos_y - px4_state.position_state.pos_y;
+        err_state.pos_z = external_state.pos_z - px4_state.position_state.pos_z;
+        err_state.vel_x = external_state.vel_x - px4_state.position_state.vel_x;
+        err_state.vel_y = external_state.vel_y - px4_state.position_state.vel_y;
+        err_state.vel_z = external_state.vel_z - px4_state.position_state.vel_z;
+        err_state.roll = external_state.roll - px4_state.position_state.roll;
+        err_state.pitch = external_state.pitch - px4_state.position_state.pitch;
+        err_state.yaw = external_state.yaw - px4_state.position_state.yaw;
+
+        // 检查超时
+        if (!external_position->position_state.valid)
+        {
+            Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
+        }
+
+        // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
+        if (abs(err_state.pos_x) > 0.1 ||
+            abs(err_state.pos_y) > 0.1 ||
+            abs(err_state.pos_z) > 0.1)
+        // abs(err_state.yaw) > 10) // deg
+        {
+            Logger::warning("Warning: The error between external state and px4 state is too large!");
+        }
     }
-
-    // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
-    if (abs(err_state.pos_x) > 0.1 ||
-        abs(err_state.pos_y) > 0.1 ||
-        abs(err_state.pos_z) > 0.1)
-    // abs(err_state.yaw) > 10) // deg
+    else
     {
-        Logger::warning("Warning: The error between external state and px4 state is too large!");
+        if (gps_status != -1)
+        {
+            external_position->position_state.valid = true;
+        }
     }
     external_odom.header.stamp = ros::Time::now();
     external_odom.external_source = external_source;

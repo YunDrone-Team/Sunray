@@ -64,8 +64,14 @@ private:
     std::string uav_prefix{""};                             // 无人机前缀 uav_name+uav_id
     int uav_id;                                             // 无人机编号
     int external_source;                                    // 外部定位数据来源
+    int satellites;                                         // gps卫星数量
+    int gps_status;                                         // gps状态
+    int gps_service;                                        // gps服务
     double range_hight;                                     // 激光定位数据
     double source_timeout;                                  // 外部定位数据超时时间
+    double latitude;                                        // 纬度
+    double longitude;                                       // 经度
+    double altitude;                                        // 海拔
     bool listen_uav_state;                                  // 是否订阅无人机状态
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
     sunray_msgs::UAVState uav_state;                        // 无人机状态信息
@@ -77,13 +83,16 @@ private:
     ExternalPositioFactory factory;
     std::shared_ptr<ExternalPosition> external_position;
 
-    ros::NodeHandle nh_;             // ros节点句柄
-    ros::Subscriber px4_state_sub;   // 无人机状态订阅
-    ros::Subscriber px4_battery_sub; // 无人机电池状态订阅
-    ros::Subscriber px4_odom_sub;    // 无人机里程计订阅
-    ros::Subscriber px4_pose_sub;    // 无人机位置订阅
-    ros::Subscriber px4_vel_sub;     // 无人机速度订阅
-    ros::Subscriber px4_att_sub;     // 无人机姿态订阅
+    ros::NodeHandle nh_;                    // ros节点句柄
+    ros::Subscriber px4_state_sub;          // 无人机状态订阅
+    ros::Subscriber px4_battery_sub;        // 无人机电池状态订阅
+    ros::Subscriber px4_odom_sub;           // 无人机里程计订阅
+    ros::Subscriber px4_pose_sub;           // 无人机位置订阅
+    ros::Subscriber px4_vel_sub;            // 无人机速度订阅
+    ros::Subscriber px4_att_sub;            // 无人机姿态订阅
+    ros::Subscriber px4_gps_satellites_sub; // 无人机gps卫星状态订阅
+    ros::Subscriber px4_gps_state_sub;      // 无人机gps状态订阅
+    ros::Subscriber px4_gps_raw_sub;        // 无人机gps原始数据订阅
 
     ros::Publisher odom_state_pub;     // 发布定位状态
     ros::Publisher uav_odom_pub;       // 无人机里程计发布
@@ -108,9 +117,12 @@ public:
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);              // 无人机姿态回调函数 从imu获取解析
     void timer_callback(const ros::TimerEvent &event);                         // 定时器回调函数
     void timer_rviz(const ros::TimerEvent &e);                                 // 定时发布rviz显示消息
+    void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);   // 无人机位置回调函数
+    void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);   // 无人机位置回调函数
+    void px4_gps_satellites_callback(const std_msgs::UInt32::ConstPtr &msg);   // 无人机gps卫星状态回调函数
+    void px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstPtr &msg);  // 无人机gps状态回调函数
+    void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);  // 无人机gps原始数据回调函数
     // void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);           // 无人机里程计回调函数（同时包含了位置和速度 但是是机体系）
-    void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg); // 无人机位置回调函数
-    void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);  // 无人机位置回调函数
 };
 
 ExternalFusion::~ExternalFusion()

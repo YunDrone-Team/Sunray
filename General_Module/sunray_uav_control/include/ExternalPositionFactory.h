@@ -7,6 +7,7 @@
 #include "ExternalPosition/OdomExternalPosition.h"
 #include "ExternalPosition/PoseExternalPosition.h"
 #include "ExternalPosition/ViobotExternalPosition.h"
+#include "ExternalPosition/GPSExternalPosition.h"
 // 外部定位工厂类
 class ConcreteFactory {
 public:
@@ -24,6 +25,9 @@ public:
             return std::make_shared<MocapExternalPosition>();
         }else if (type == "VIOBOT") {
             return std::make_shared<ViobotExternalPosition>();
+        }
+        else if (type == "GPS" || type == "RTK") {
+            return std::make_shared<GPSExternalPosition>();
         }
         return nullptr;
     }
