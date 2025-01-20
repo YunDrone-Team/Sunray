@@ -7,7 +7,7 @@
     <arg name="udp_ip" default="192.168.0.115" />   <!-- UDP单播地面站目标IP-->
     <arg name="tcp_port" default="8969" />
     <arg name="udp_port" default="9898" />           <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->
-    <arg name="udp_ground_port" default="9999" />    <!-- UDP通信、单播地面站目标端口-->
+    <arg name="udp_ground_port" default="9696" />    <!-- UDP通信、组播地面站目标端口-->
 
     <node name="ground_control" pkg="sunray_ground" type="ground_control_node" output="screen">
         <param name="uav_num" value="$(arg uav_num)" />

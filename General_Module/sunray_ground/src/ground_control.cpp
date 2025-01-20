@@ -123,7 +123,7 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
             backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            udp_ground_port = readData.data.search.port;
+            // udp_ground_port = readData.data.search.port;
             udp_ip = readData.ip;
             //std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
         }
@@ -462,9 +462,15 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
         //  std::cout << "udpData[i] " << (int)udpData[i].state.uavID << " i "<<i<< std::endl;
 
         //  int back = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_port);
+        
+        // 无人机机间组播链路发送
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_port);
 
-        udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_ground_port);
+        //地面站组播链路发送
+         udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ground_port);
+
+        //UDP单播地面站发送
+        // udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_ground_port);
 
         //std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl; 
     }
