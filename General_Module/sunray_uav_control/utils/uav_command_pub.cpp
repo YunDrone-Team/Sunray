@@ -128,7 +128,8 @@ int main(int argc, char **argv)
                  << YELLOW << " 7 " << GREEN << "(XyzVelYawrate),"
                  << YELLOW << " 8 " << GREEN << "(XyVelZPosYaw),"
                  << YELLOW << " 14 " << GREEN << "(XyzPosYawBody),"
-                 << YELLOW << " 15 " << GREEN << "(XyzVelYawBody)" << TAIL << endl;
+                 << YELLOW << " 15 " << GREEN << "(XyzVelYawBody),"
+                 << YELLOW << " 17 " << GREEN << "(GlobalPos)" << TAIL << endl;
             cin >> CMD;
         }
 
@@ -347,6 +348,36 @@ int main(int argc, char **argv)
             uav_command_pub[0].publish(uav_cmd);
 
             cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
+            cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
+
+            break;
+        }
+
+        case 17:
+        {
+            cout << BLUE << "XyVelZPosYawBody" << endl;
+            cout << BLUE << "latitude:" << endl;
+            cin >> state_desired[0];
+            cout << BLUE << "longitude:" << endl;
+            cin >> state_desired[1];
+            // 高度为相对高度
+            cout << BLUE << "altitude: --- z [m]" << endl;
+            cin >> state_desired[2]; // 高度（Z轴）
+            cout << BLUE << "desired state: --- yaw [deg]:" << endl;
+            cin >> state_desired[3];                            // 固定yaw
+            state_desired[3] = state_desired[3] / 180.0 * M_PI; // 转换为弧度
+
+            // 
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::GlobalPos;
+            uav_cmd.latitude = state_desired[0];
+            uav_cmd.longitude = state_desired[1];
+            uav_cmd.altitude = state_desired[2];
+            uav_cmd.desired_yaw = state_desired[3];
+            uav_cmd.desired_yaw_rate = 0.0;
+            uav_command_pub[0].publish(uav_cmd);
+
+            cout << BLUE << "latitude longitude altitude: " << state_desired[0] << " " << state_desired[1] << " " << state_desired[2] << " " << endl;
             cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
 
             break;

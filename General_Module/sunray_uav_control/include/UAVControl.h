@@ -46,7 +46,8 @@ private:
     ros::Subscriber px4_state_sub;      // 【订阅】无人机状态订阅
     ros::Subscriber px4_battery_sub;    // 【订阅】无人机电池状态订阅
     ros::Subscriber px4_odom_sub;       // 【订阅】无人机里程计订阅
-    ros::Subscriber px4_pos_sub;       // 【订阅】无人机位置订阅
+    ros::Subscriber px4_local_pos_sub;  // 【订阅】无人机位置订阅
+    ros::Subscriber px4_global_pos_sub; // 【订阅】无人机位置订阅
     ros::Subscriber px4_vel_sub;        // 【订阅】无人机速度订阅
     ros::Subscriber px4_att_sub;        // 【订阅】无人机imu姿态订阅
     ros::Subscriber px4_pos_target_sub; // 【订阅】px4目标订阅 位置 速度加 速度
@@ -243,38 +244,41 @@ private:
 
     std::map<int, std::function<void()>> advancedModeFuncMap;
 
-    int safetyCheck();                                                                 // 安全检查
-    void setArm(bool arm);                                                             // 设置解锁 0:上锁 1:解锁
-    void reboot();                                                                     // 重启
-    void emergencyStop();                                                              // 紧急停止出来
-    void setMode(std::string mode);                                                    // 设置模式
-    void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint); // 【发布】发送控制指令
-    void set_desired_from_cmd();                                                       // CMD_CONTROL模式下获取期望值
-    void set_desired_from_rc();                                                        // RC_CONTROL模式下获取期望值
-    void set_desired_from_land();                                                      // LAND_CONTROL模式下获取期望值
-    void set_desired_from_hover();                                                     // Hover模式下获取期望值
-    void print_state(const ros::TimerEvent &event);                                    // 打印状态
-    void task_timer_callback(const ros::TimerEvent &event);                            // 任务定时器回调函数
-    void set_hover_pos();                                                              // 设置悬停位置
-    void set_default_setpoint();                                                       // 设置默认期望值
-    void set_offboard_mode();                                                          // 设置offboard模式
-    void body2ned(double body_xy[2], double ned_xy[2], double yaw);                    // body坐标系转ned坐标系
-    void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);                 // 遥控器状态回调函数
-    void set_offboard_control(int mode);                                               // 设置offboard控制模式
-    void return_to_home();                                                             // 返航模式实现
-    void waypoint_mission();                                                           // 航点任务实现
-    void set_takeoff();                                                                // 起飞模式实现
-    void set_land();                                                                   // 降落模式实现
-    float get_yaw_from_waypoint(int type, float point_x, float point_y);               // 获取航点航向
-    float get_vel_from_waypoint(float point_x, float point_y);                         // 获取航点速度
-    void publish_goal();                                                               // 发布规划点
+    int safetyCheck();                                                                        // 安全检查
+    void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
+    void reboot();                                                                            // 重启
+    void emergencyStop();                                                                     // 紧急停止出来
+    void setMode(std::string mode);                                                           // 设置模式
+    void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);        // 【发布】发送控制指令
+    void setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint); // 【发布】发送控制指令
+    void set_desired_from_cmd();                                                              // CMD_CONTROL模式下获取期望值
+    void set_desired_from_rc();                                                               // RC_CONTROL模式下获取期望值
+    void set_desired_from_land();                                                             // LAND_CONTROL模式下获取期望值
+    void set_desired_from_hover();                                                            // Hover模式下获取期望值
+    void print_state(const ros::TimerEvent &event);                                           // 打印状态
+    void task_timer_callback(const ros::TimerEvent &event);                                   // 任务定时器回调函数
+    void set_hover_pos();                                                                     // 设置悬停位置
+    void set_default_local_setpoint();                                                        // 设置默认期望值
+    void set_default_global_setpoint();                                                       // 设置默认期望值
+    void set_offboard_mode();                                                                 // 设置offboard模式
+    void body2ned(double body_xy[2], double ned_xy[2], double yaw);                           // body坐标系转ned坐标系
+    void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);                        // 遥控器状态回调函数
+    void set_offboard_control(int mode);                                                      // 设置offboard控制模式
+    void return_to_home();                                                                    // 返航模式实现
+    void waypoint_mission();                                                                  // 航点任务实现
+    void set_takeoff();                                                                       // 起飞模式实现
+    void set_land();                                                                          // 降落模式实现
+    float get_yaw_from_waypoint(int type, float point_x, float point_y);                      // 获取航点航向
+    float get_vel_from_waypoint(float point_x, float point_y);                                // 获取航点速度
+    void publish_goal();                                                                      // 发布规划点
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
     void odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg);
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);
     void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
-    void px4_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
+    void px4_local_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
+    void px4_global_pos_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);

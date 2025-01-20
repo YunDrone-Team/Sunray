@@ -123,4 +123,14 @@ namespace TypeMask
         mavros_msgs::PositionTarget::IGNORE_AFZ |
         mavros_msgs::PositionTarget::IGNORE_YAW |
         mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+
+    uint16_t GLOBAL_POSITION = 
+        mavros_msgs::GlobalPositionTarget::IGNORE_VX |
+        mavros_msgs::GlobalPositionTarget::IGNORE_VY |
+        mavros_msgs::GlobalPositionTarget::IGNORE_VZ |
+        mavros_msgs::GlobalPositionTarget::IGNORE_AFX |
+        mavros_msgs::GlobalPositionTarget::IGNORE_AFY |
+        mavros_msgs::GlobalPositionTarget::IGNORE_AFZ |
+        mavros_msgs::GlobalPositionTarget::IGNORE_YAW_RATE;
+
 };
