@@ -124,7 +124,7 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
             back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
             // udp_ground_port = readData.data.search.port;
-            udp_ip = readData.ip;
+            //udp_ip = readData.ip;
             //std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
         }
 
