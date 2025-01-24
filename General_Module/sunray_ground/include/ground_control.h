@@ -93,4 +93,5 @@ private:
     void executiveDemo(std::string orderStr);
     bool SynchronizationUAVState(StateData Data);
     pid_t OrderCourse(std::string orderStr);
+    pid_t CheckChildProcess(pid_t pid); // 检查子进程是否已经结束
 };
