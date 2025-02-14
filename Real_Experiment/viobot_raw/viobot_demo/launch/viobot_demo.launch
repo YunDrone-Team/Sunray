@@ -1,4 +1,0 @@
-<launch>
-    <node name="viobot_demo" pkg="viobot_demo" type="viobot_demo" output="screen" respawn="true">
-    </node>
-</launch>

@@ -6,8 +6,8 @@
         <!-- # 结束事件 1: 悬停 2: 降落 3: 返航 -->
         <param name="wp_end_type" value="3" />
         <!-- # 偏航角类型 1: 固定值 2: 朝向下一个航点 3: 指向环绕点 -->
-        <param name="wp_yaw_type" value="1" />
-        <param name="wp_takeoff" value="true" />
+        <param name="wp_yaw_type" value="3" />
+        <param name="wp_takeoff" value="false" />
         <param name="wp_move_vel" value="2" />
         <param name="wp_vel_p" value="1.5" />
         <param name="z_height" value="2.0" />

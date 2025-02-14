@@ -7,30 +7,29 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
     nh.param<std::string>("uav_name", uav_name, "uav"); // 【参数】无人机名称
     uav_ns = ros::this_node::getName();
-    nh.param<float>("uav_control/Takeoff_height", takeoff_height, 1.0); // 【参数】默认起飞高度
-    nh.param<float>("uav_control/Disarm_height", disarm_height, 0.2);   // 【参数】降落时自动上锁高度
-    nh.param<float>("uav_control/Land_speed", land_speed, 0.2);         // 【参数】降落速度
+    // 【参数】飞行相关参数
+    nh.param<float>("flight_param/Takeoff_height", flight_params.takeoff_height, 1.0); // 【参数】默认起飞高度
+    nh.param<float>("flight_param/Disarm_height", flight_params.disarm_height, 0.2);   // 【参数】降落时自动上锁高度
+    nh.param<float>("flight_param/Land_speed", flight_params.land_speed, 0.2);         // 【参数】降落速度
+    nh.param<float>("flight_param/land_end_time", flight_params.land_end_time, 1.0);   // 【参数】降落最后一阶段时间
+    nh.param<float>("flight_param/land_end_speed", flight_params.land_end_speed, 0.3); // 【参数】降落最后一阶段速度
+    nh.param<int>("flight_param/land_type", flight_params.land_type, 0);             // 【参数】降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
+    nh.param<float>("flight_param/home_x", default_home_x, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("flight_param/home_y", default_home_y, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("flight_param/home_z", default_home_z, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
     // 【参数】地理围栏
-    nh.param<float>("geo_fence/x_min", uav_geo_fence.x_min, -10.0);
-    nh.param<float>("geo_fence/x_max", uav_geo_fence.x_max, 10.0);
-    nh.param<float>("geo_fence/y_min", uav_geo_fence.y_min, -10.0);
-    nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);
-    nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);
-    nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);
-
-    // 【参数】是否检测命令超时 超时后进入指令悬停模式
-    nh.param<bool>("check_cmd_timeout", check_cmd_timeout, true);
-    nh.param<float>("cmd_timeout", cmd_timeout, 2.0);
-
-    // 【参数】其他参数
-    nh.param<float>("flight_param/land_end_time", land_end_time, 1.0);                     // 【参数】降落最后一阶段时间
-    nh.param<float>("flight_param/land_end_speed", land_end_speed, 0.3);                   // 【参数】降落最后一阶段速度
-    nh.param<float>("flight_param/odom_valid_timeout", odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
-    nh.param<float>("flight_param/odom_valid_warming_time", odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
-    nh.param<float>("flight_param/home_x", default_home_x, 0.0);                           // 【参数】默认home点 在起飞后运行程序时需要
-    nh.param<float>("flight_param/home_y", default_home_y, 0.0);                           // 【参数】默认home点 在起飞后运行程序时需要
-    nh.param<float>("flight_param/home_z", default_home_z, 0.0);                           // 【参数】默认home点 在起飞后运行程序时需要
-    nh.param<bool>("use_rc_control", use_rc, true);                                        // 【参数】是否使用遥控器控制
+    nh.param<float>("geo_fence/x_min", uav_geo_fence.x_min, -10.0); // 【参数】地理围栏最小x坐标
+    nh.param<float>("geo_fence/x_max", uav_geo_fence.x_max, 10.0);  // 【参数】地理围栏最大x坐标
+    nh.param<float>("geo_fence/y_min", uav_geo_fence.y_min, -10.0); // 【参数】地理围栏最小y坐标
+    nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);  // 【参数】地理围栏最大y坐标
+    nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);  // 【参数】地理围栏最小z坐标
+    nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);   // 【参数】地理围栏最大z坐标
+    // 【参数】运行系统相关参数
+    nh.param<bool>("system_params/check_cmd_timeout", system_params.check_cmd_timeout, true);             // 【参数】是否检查命令超时
+    nh.param<float>("system_params/cmd_timeout", system_params.cmd_timeout, 2.0);                         // 【参数】命令超时时间
+    nh.param<float>("system_params/odom_valid_timeout", system_params.odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
+    nh.param<float>("system_params/odom_valid_warming_time", system_params.odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
+    nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);                           // 【参数】是否使用遥控器控制
 
     uav_prefix = uav_name + std::to_string(uav_id);
     topic_prefix = "/" + uav_prefix;
@@ -43,8 +42,8 @@ void UAVControl::init(ros::NodeHandle &nh)
     //                                                 10, &UAVControl::px4_odom_callback, this);
     px4_local_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose",
                                                                  10, &UAVControl::px4_local_pos_callback, this);
-    px4_global_pos_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/global_position/local",
-                                                          10, &UAVControl::px4_global_pos_callback, this);
+    // px4_global_pos_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/global_position/local",
+    //                                                       10, &UAVControl::px4_global_pos_callback, this);
     px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local",
                                                             10, &UAVControl::px4_vel_callback, this);
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 1,
@@ -87,16 +86,18 @@ void UAVControl::init(ros::NodeHandle &nh)
     task_timer = nh.createTimer(ros::Duration(0.05), &UAVControl::task_timer_callback, this);
 
     // 初始化各个部分参数
-    control_mode = Control_Mode::INIT;
-    last_control_mode = Control_Mode::INIT;
-    safety_state = -1;
-    odom_valid_time = ros::Time(0);
+    system_params.control_mode = Control_Mode::INIT;
+    system_params.last_control_mode = Control_Mode::INIT;
+    system_params.type_mask = 0;
+    system_params.safety_state = -1;
+    system_params.odom_valid_time = ros::Time(0);
     rcState_cb = false;
     allow_lock = false;
     flight_params.home_pos[0] = default_home_x;
     flight_params.home_pos[1] = default_home_y;
     flight_params.home_pos[2] = default_home_z;
 
+    // 绑定高级模式对应的实现函数
     advancedModeFuncMap[Takeoff] = std::bind(&UAVControl::set_takeoff, this);
     advancedModeFuncMap[Land] = std::bind(&UAVControl::set_land, this);
     advancedModeFuncMap[Hover] = std::bind(&UAVControl::set_desired_from_hover, this);
@@ -107,7 +108,7 @@ void UAVControl::init(ros::NodeHandle &nh)
 // 检查当前模式 并进入对应的处理函数中
 void UAVControl::mainLoop()
 {
-    switch (control_mode)
+    switch (system_params.control_mode)
     {
         // 检查无人机是否位于定点模式，否则切换至定点模式safety_state
     case Control_Mode::INIT:
@@ -135,7 +136,7 @@ void UAVControl::mainLoop()
         set_desired_from_hover();
         break;
     }
-    last_control_mode = control_mode;
+    system_params.last_control_mode = system_params.control_mode;
 }
 
 int main(int argc, char **argv)

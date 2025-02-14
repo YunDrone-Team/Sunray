@@ -13,16 +13,16 @@ int UAVControl::safetyCheck()
         return 1;
     }
 
-    float time_diff = (ros::Time::now() - odom_valid_time).toSec();
-    if (odom_valid_time == ros::Time(0))
+    float time_diff = (ros::Time::now() - system_params.odom_valid_time).toSec();
+    if (system_params.odom_valid_time == ros::Time(0))
     {
         return 0;
     }
-    else if (time_diff > odom_valid_timeout || !odom_valid)
+    else if (time_diff > system_params.odom_valid_timeout || !system_params.odom_valid)
     {
         return 2;
     }
-    else if (time_diff < odom_valid_timeout && odom_valid && time_diff > odom_valid_warming_time)
+    else if (time_diff < system_params.odom_valid_timeout && system_params.odom_valid && time_diff > system_params.odom_valid_warming_time)
     {
         return 3;
     }
@@ -46,7 +46,8 @@ void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 // 无人机pose回调
 void UAVControl::px4_local_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
-    if (location_source != 5 || location_source != 6)
+    // if (system_params.location_source != 5 || system_params.location_source != 6)
+    if (true)
     {
         px4_state.pos[0] = msg->pose.position.x;
         px4_state.pos[1] = msg->pose.position.y;
@@ -57,7 +58,7 @@ void UAVControl::px4_local_pos_callback(const geometry_msgs::PoseStamped::ConstP
 // 无人机pose回调
 void UAVControl::px4_global_pos_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
-    if (location_source == 5 || location_source == 6)
+    if (system_params.location_source == 5 || system_params.location_source == 6)
     {
         px4_state.pos[0] = msg->pose.pose.position.x;
         px4_state.pos[1] = msg->pose.pose.position.y;
@@ -134,9 +135,9 @@ void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::Cons
 // 外部定位状态回调
 void UAVControl::odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg)
 {
-    odom_valid_time = ros::Time::now();
-    odom_valid = msg->odom_valid;
-    location_source = msg->external_source;
+    system_params.odom_valid_time = ros::Time::now();
+    system_params.odom_valid = msg->odom_valid;
+    system_params.location_source = msg->external_source;
 }
 
 // 遥控器状态回调
@@ -154,7 +155,7 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     }
     if (rc_state.mode_state == 1)
     {
-        control_mode = Control_Mode::INIT;
+        system_params.control_mode = Control_Mode::INIT;
         Logger::warning("Switch to INIT mode with rc");
     }
     else if (rc_state.mode_state == 2)
@@ -204,7 +205,7 @@ void UAVControl::emergencyStop()
     emergency_srv.request.param7 = 0.0;
     px4_emergency_client.call(emergency_srv);
 
-    control_mode = Control_Mode::INIT; // 紧急停止后，切换到初始化模式
+    system_params.control_mode = Control_Mode::INIT; // 紧急停止后，切换到初始化模式
     Logger::error("Emergency Stop!");
 }
 
@@ -254,6 +255,12 @@ void UAVControl::setArm(bool arm)
     arm_cmd.request.value = arm;
 }
 
+void UAVControl::set_auto_land()
+{
+
+    setMode("AUTO.LAND");
+}
+
 // 控制指令回调
 void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg)
 {
@@ -264,7 +271,7 @@ void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr
     if (control_cmd.cmd == Waypoint)
     {
         allow_lock = true;
-        control_mode = Control_Mode::CMD_CONTROL;
+        system_params.control_mode = Control_Mode::CMD_CONTROL;
     }
     else if (control_cmd.cmd == Point)
     {
@@ -298,49 +305,49 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     }
     else if (msg->cmd == sunray_msgs::UAVSetup::SET_CONTROL_MODE)
     {
-        if (msg->control_state == "INIT" && control_mode != Control_Mode::INIT)
+        if (msg->control_state == "INIT" && system_params.control_mode != Control_Mode::INIT)
         {
-            control_mode = Control_Mode::INIT;
+            system_params.control_mode = Control_Mode::INIT;
             Logger::warning("Switch to INIT mode with cmd");
         }
         else if (msg->control_state == "CMD_CONTROL")
         {
-            if (safety_state == 0 && (control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
+            if (system_params.safety_state == 0 && (system_params.control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
             {
                 Logger::warning("Switch to CMD_CONTROL mode with cmd");
                 set_offboard_control(Control_Mode::CMD_CONTROL);
             }
             else
             {
-                if (safety_state != 0)
+                if (system_params.safety_state != 0)
                 {
                     Logger::error("Safety state error, cannot switch to CMD_CONTROL mode");
                 }
             }
         }
-        else if (msg->control_state == "RC_CONTROL" && (control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
+        else if (msg->control_state == "RC_CONTROL" && (system_params.control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
         {
-            if (safety_state == 0)
+            if (system_params.safety_state == 0)
             {
                 Logger::warning("Switch to RC_CONTROL mode with cmd");
                 set_offboard_control(Control_Mode::RC_CONTROL);
             }
             else
             {
-                if (safety_state != 0)
+                if (system_params.safety_state != 0)
                 {
                     Logger::error("Safety state error, cannot switch to RC_CONTROL mode!");
                 }
             }
         }
-        else if (msg->control_state == "LAND_CONTROL" && control_mode != Control_Mode::LAND_CONTROL)
+        else if (msg->control_state == "LAND_CONTROL" && system_params.control_mode != Control_Mode::LAND_CONTROL)
         {
             set_land();
             // set_offboard_control(Control_Mode::LAND_CONTROL);
         }
-        else if (msg->control_state == "WITHOUT_CONTROL" && control_mode != Control_Mode::WITHOUT_CONTROL)
+        else if (msg->control_state == "WITHOUT_CONTROL" && system_params.control_mode != Control_Mode::WITHOUT_CONTROL)
         {
-            control_mode = Control_Mode::WITHOUT_CONTROL;
+            system_params.control_mode = Control_Mode::WITHOUT_CONTROL;
         }
         else
         {
@@ -350,7 +357,7 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     else if (msg->cmd == sunray_msgs::UAVSetup::EMERGENCY_KILL)
     {
         emergencyStop();
-        control_mode = Control_Mode::INIT;
+        system_params.control_mode = Control_Mode::INIT;
     }
 }
 
@@ -449,8 +456,8 @@ void UAVControl::print_state(const ros::TimerEvent &event)
     }
     else
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
-    Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[control_mode], LOG_GREEN, "]");
-    if (control_mode == Control_Mode::CMD_CONTROL || control_mode == Control_Mode::RC_CONTROL)
+    Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[system_params.control_mode], LOG_GREEN, "]");
+    if (system_params.control_mode ==  Control_Mode::CMD_CONTROL || system_params.control_mode ==  Control_Mode::RC_CONTROL)
     {
         Logger::color_no_del(int(LogColor::green), "Move Mode [", LOG_BLUE, moveModeMapStr[control_cmd.cmd], LOG_GREEN, "]");
         Logger::print_color(int(LogColor::blue), "PX4 TARGET (receive)");
@@ -538,7 +545,7 @@ void UAVControl::set_default_global_setpoint()
 void UAVControl::set_offboard_control(int mode)
 {
     // 如果不使用遥控器不允许进入RC_CONTROL模式
-    if (mode == Control_Mode::RC_CONTROL && !use_rc)
+    if (mode == Control_Mode::RC_CONTROL && !system_params.use_rc)
     {
         Logger::error("RC not enabled, cannot enter RC_CONTROL mode!");
         return;
@@ -548,7 +555,7 @@ void UAVControl::set_offboard_control(int mode)
         Logger::error("RC callback error, cannot enter RC_CONTROL mode!");
         return;
     }
-    if (!px4_state.armed && use_rc)
+    if (!px4_state.armed && system_params.use_rc)
     {
         Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
         return;
@@ -560,9 +567,9 @@ void UAVControl::set_offboard_control(int mode)
     {
         set_offboard_mode();
     }
-    if (control_mode != mode)
+    if (system_params.control_mode != mode)
     {
-        control_mode = mode;
+        system_params.control_mode = mode;
     }
 }
 
@@ -570,7 +577,7 @@ void UAVControl::set_offboard_control(int mode)
 void UAVControl::set_offboard_mode()
 {
     // 使用遥控器时 未解锁则不允许进入OFFBOARD模式
-    if (!px4_state.armed && use_rc)
+    if (!px4_state.armed && system_params.use_rc)
     {
         Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
         return;
@@ -590,26 +597,26 @@ void UAVControl::set_offboard_mode()
 void UAVControl::task_timer_callback(const ros::TimerEvent &event)
 {
     // 安全检查
-    safety_state = safetyCheck();
-    if (safety_state == 1)
+    system_params.safety_state = safetyCheck();
+    if (system_params.safety_state == 1)
     {
         // 超出安全范围 进入降落模式
-        if (px4_state.armed && control_mode != Control_Mode::LAND_CONTROL)
+        if (px4_state.armed && system_params.control_mode != Control_Mode::LAND_CONTROL)
         {
-            control_mode = Control_Mode::LAND_CONTROL;
+            system_params.control_mode = Control_Mode::LAND_CONTROL;
             Logger::error("Out of safe range, landing...");
         }
     }
-    else if (safety_state == 2) // 定位数据失效
+    else if (system_params.safety_state == 2) // 定位数据失效
     {
         // 定位失效要要进入降落模式
-        if (control_mode == Control_Mode::RC_CONTROL || control_mode == Control_Mode::CMD_CONTROL)
+        if (system_params.control_mode ==  Control_Mode::RC_CONTROL || system_params.control_mode ==  Control_Mode::CMD_CONTROL)
         {
-            control_mode = Control_Mode::LAND_CONTROL;
+            system_params.control_mode = Control_Mode::LAND_CONTROL;
             Logger::error("Lost odom, landing...");
         }
     }
-    else if (safety_state == 3) // 定位数据没有失效但是延迟较高
+    else if (system_params.safety_state == 3) // 定位数据没有失效但是延迟较高
     {
         // 预留暂不做任何事情
         Logger::warning("Odom delay too high!");
@@ -620,8 +627,8 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     uav_state.connected = px4_state.connected;
     uav_state.armed = px4_state.armed;
     uav_state.mode = px4_state.mode;
-    uav_state.location_source = location_source;
-    uav_state.odom_valid = odom_valid;
+    uav_state.location_source = system_params.location_source;
+    uav_state.odom_valid = system_params.odom_valid;
     for (int i = 0; i < 3; i++)
     {
         uav_state.position[i] = px4_state.pos[i];
@@ -637,7 +644,7 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     uav_state.attitude_q.w = px4_state.att_q[3];
     uav_state.battery_state = px4_state.batt_volt;
     uav_state.battery_percetage = px4_state.batt_perc;
-    uav_state.control_mode = control_mode;
+    uav_state.control_mode = system_params.control_mode;
     uav_state.move_mode = control_cmd.cmd;
     uav_state_pub.publish(uav_state);
 }
@@ -654,9 +661,9 @@ void UAVControl::set_desired_from_cmd()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
-    if (check_cmd_timeout && !new_cmd && control_cmd.cmd != Hover && control_cmd.cmd != Takeoff)
+    if (system_params.check_cmd_timeout && !new_cmd && control_cmd.cmd != Hover && control_cmd.cmd != Takeoff)
     {
-        if ((ros::Time::now() - last_control_cmd.header.stamp).toSec() > cmd_timeout)
+        if ((ros::Time::now() - last_control_cmd.header.stamp).toSec() > system_params.cmd_timeout)
         {
             Logger::error("Command timeout, change to hover mode");
             control_cmd.cmd = Hover;
@@ -666,7 +673,7 @@ void UAVControl::set_desired_from_cmd()
         }
     }
     // 如果无人机未解锁则不执行
-    if (!allow_lock && !px4_state.armed && use_rc)
+    if (!allow_lock && !px4_state.armed && system_params.use_rc)
     {
         if (new_cmd)
         {
@@ -682,7 +689,7 @@ void UAVControl::set_desired_from_cmd()
         // 调用对应的函数
         // std::cout<<"advancedMode"<<std::endl;
         advancedModeFuncMap[control_cmd.cmd]();
-        setpoint_local_pub(flight_params.type_mask, local_setpoint);
+        setpoint_local_pub(system_params.type_mask, local_setpoint);
     }
     else if (control_cmd.cmd == GlobalPos)
     {
@@ -694,9 +701,9 @@ void UAVControl::set_desired_from_cmd()
         global_setpoint.longitude = control_cmd.longitude;
         global_setpoint.altitude = control_cmd.altitude;
         global_setpoint.yaw = control_cmd.desired_yaw;
-        flight_params.type_mask = TypeMask::GLOBAL_POSITION;
+        system_params.type_mask = TypeMask::GLOBAL_POSITION;
 
-        setpoint_global_pub(flight_params.type_mask, global_setpoint);
+        setpoint_global_pub(system_params.type_mask, global_setpoint);
     }
     else if (control_cmd.cmd == Att)
     {
@@ -711,7 +718,7 @@ void UAVControl::set_desired_from_cmd()
             auto it = moveModeMap.find(control_cmd.cmd);
             if (it != moveModeMap.end())
             {
-                flight_params.type_mask = it->second;
+                system_params.type_mask = it->second;
 
                 if (control_cmd.cmd == XyzPosYawBody ||
                     control_cmd.cmd == XyzVelYawBody ||
@@ -739,7 +746,7 @@ void UAVControl::set_desired_from_cmd()
                     local_setpoint.yaw = control_cmd.desired_yaw + px4_state.att[2];
 
                     // 设置控制模式
-                    flight_params.type_mask = moveModeMap[control_cmd.cmd];
+                    system_params.type_mask = moveModeMap[control_cmd.cmd];
                 }
                 else
                 {
@@ -754,7 +761,7 @@ void UAVControl::set_desired_from_cmd()
                     local_setpoint.acceleration_or_force.z = control_cmd.desired_acc[2];
                     local_setpoint.yaw = control_cmd.desired_yaw;
                     local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
-                    flight_params.type_mask = moveModeMap[control_cmd.cmd];
+                    system_params.type_mask = moveModeMap[control_cmd.cmd];
                 }
             }
             else
@@ -766,7 +773,7 @@ void UAVControl::set_desired_from_cmd()
                 }
             }
         }
-        setpoint_local_pub(flight_params.type_mask, local_setpoint);
+        setpoint_local_pub(system_params.type_mask, local_setpoint);
     }
 
     last_control_cmd = control_cmd;
@@ -780,18 +787,18 @@ void UAVControl::set_desired_from_rc()
         Logger::error("RC timeout!");
         return;
     }
-    if (last_control_mode != control_mode)
+    if (system_params.last_control_mode != system_params.control_mode)
     {
-        flight_params.last_rc_time = ros::Time::now();
+        system_params.last_rc_time = ros::Time::now();
     }
-    double delta_t = (ros::Time::now() - flight_params.last_rc_time).toSec();
-    flight_params.last_rc_time = ros::Time::now();
+    double delta_t = (ros::Time::now() - system_params.last_rc_time).toSec();
+    system_params.last_rc_time = ros::Time::now();
     double body_xy[2], enu_xy[2], body_z, body_yaw;
     // 允许一定误差(0.2 也就是1400 到 1600)保持悬停
-    body_xy[0] = ((rc_state.channel[1] >= -0.2 && rc_state.channel[1] <= 0.2) ? 0 : rc_state.channel[1]) * flight_params.max_vel_xy * delta_t;
-    body_xy[1] = -((rc_state.channel[0] >= -0.2 && rc_state.channel[0] <= 0.2) ? 0 : rc_state.channel[0]) * flight_params.max_vel_xy * delta_t;
-    body_z = ((rc_state.channel[2] >= -0.2 && rc_state.channel[2] <= 0.2) ? 0 : rc_state.channel[2]) * flight_params.max_vel_z * delta_t;
-    body_yaw = -rc_state.channel[3] * flight_params.max_vel_yaw * delta_t;
+    body_xy[0] = ((rc_state.channel[1] >= -0.2 && rc_state.channel[1] <= 0.2) ? 0 : rc_state.channel[1]) * rc_control_params.max_vel_xy * delta_t;
+    body_xy[1] = -((rc_state.channel[0] >= -0.2 && rc_state.channel[0] <= 0.2) ? 0 : rc_state.channel[0]) * rc_control_params.max_vel_xy * delta_t;
+    body_z = ((rc_state.channel[2] >= -0.2 && rc_state.channel[2] <= 0.2) ? 0 : rc_state.channel[2]) * rc_control_params.max_vel_z * delta_t;
+    body_yaw = -rc_state.channel[3] * rc_control_params.max_vel_yaw * delta_t;
     body2ned(body_xy, enu_xy, px4_state.att[2]);
 
     // 悬停位置 = 前一个悬停位置 + 遥控器数值[-1,1] * 0.01(如果主程序中设定是100Hz的话)
@@ -809,18 +816,22 @@ void UAVControl::set_desired_from_rc()
     local_setpoint.position.z = flight_params.hover_pos[2];
     local_setpoint.yaw = flight_params.hover_yaw;
     // 因为这是一个积分系统，所以即使停杆了，无人机也还会继续移动一段距离
-    flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-    setpoint_local_pub(flight_params.type_mask, local_setpoint);
+    system_params.type_mask = TypeMask::XYZ_POS_YAW;
+    setpoint_local_pub(system_params.type_mask, local_setpoint);
 }
 
 // 计算降落的期望值
 void UAVControl::set_desired_from_land()
 {
-    bool new_cmd = control_mode != last_control_mode ||
+    if(flight_params.land_type && px4_state.mode != "AUTO.LAND")
+    {
+        set_auto_land();
+    }
+    bool new_cmd = system_params.control_mode != system_params.last_control_mode ||
                    (control_cmd.cmd == Land && (control_cmd.header.stamp != last_control_cmd.header.stamp));
     if (new_cmd)
     {
-        flight_params.last_land_time = ros::Time(0);
+        system_params.last_land_time = ros::Time(0);
         set_default_local_setpoint();
         flight_params.land_pos[0] = px4_state.pos[0];
         flight_params.land_pos[1] = px4_state.pos[1];
@@ -831,41 +842,41 @@ void UAVControl::set_desired_from_land()
     local_setpoint.position.x = flight_params.land_pos[0];
     local_setpoint.position.y = flight_params.land_pos[1];
     local_setpoint.position.z = flight_params.land_pos[2];
-    local_setpoint.velocity.z = -land_speed;
+    local_setpoint.velocity.z = -flight_params.land_speed;
     local_setpoint.yaw = flight_params.land_yaw;
-    flight_params.type_mask = TypeMask::XYZ_POS_VEL_YAW;
+    system_params.type_mask = TypeMask::XYZ_POS_VEL_YAW;
 
     // 当无人机位置低于指定高度时，自动上锁
-    if (px4_state.pos[2] < disarm_height)
+    if (px4_state.pos[2] < flight_params.home_pos[2] + flight_params.disarm_height)
     {
-        if (flight_params.last_land_time == ros::Time(0))
+        if (system_params.last_land_time == ros::Time(0))
         {
-            flight_params.last_land_time = ros::Time::now();
+            system_params.last_land_time = ros::Time::now();
         }
         // 到达制定高度后向下移动land_end_time 防止其直接锁桨掉落
         set_default_local_setpoint();
-        if ((ros::Time::now() - flight_params.last_land_time).toSec() < land_end_time)
+        if ((ros::Time::now() - system_params.last_land_time).toSec() < flight_params.land_end_time)
         {
-            local_setpoint.velocity.z = -land_end_speed;
+            local_setpoint.velocity.z = -flight_params.land_end_speed;
             local_setpoint.yaw = flight_params.land_yaw;
-            flight_params.type_mask = TypeMask::XYZ_VEL_YAW;
+            system_params.type_mask = TypeMask::XYZ_VEL_YAW;
         }
         else
         {
             // 停桨降落完成
             emergencyStop();
-            control_mode = Control_Mode::INIT;
+            system_params.control_mode = Control_Mode::INIT;
         }
     }
 
     // 如果无人机已经上锁，代表已经降落结束
     if (!px4_state.armed)
     {
-        control_mode = Control_Mode::INIT;
+        system_params.control_mode = Control_Mode::INIT;
         Logger::warning("Landing finished!");
     }
 
-    setpoint_local_pub(flight_params.type_mask, local_setpoint);
+    setpoint_local_pub(system_params.type_mask, local_setpoint);
 }
 
 // 获取悬停的期望值
@@ -884,7 +895,7 @@ void UAVControl::set_desired_from_hover()
     local_setpoint.position.y = flight_params.hover_pos[1];
     local_setpoint.position.z = flight_params.hover_pos[2];
     local_setpoint.yaw = flight_params.hover_yaw;
-    flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+    system_params.type_mask = TypeMask::XYZ_POS_YAW;
 }
 
 // 高级模式-返航模式的实现函数
@@ -908,7 +919,7 @@ void UAVControl::return_to_home()
             local_setpoint.position.y = flight_params.home_pos[1];
             local_setpoint.position.z = px4_state.pos[2];
             local_setpoint.yaw = flight_params.home_yaw;
-            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+            system_params.type_mask = TypeMask::XYZ_POS_YAW;
         }
     }
     // 达到home点上方后，且速度降低后开始降落
@@ -1048,7 +1059,7 @@ void UAVControl::waypoint_mission()
             local_setpoint.position.x = wp_params.wp_point_takeoff[0];
             local_setpoint.position.y = wp_params.wp_point_takeoff[1];
             local_setpoint.position.z = wp_params.z_height;
-            flight_params.type_mask = TypeMask::XYZ_POS;
+            system_params.type_mask = TypeMask::XYZ_POS;
         }
         break;
     case 3:
@@ -1084,8 +1095,8 @@ void UAVControl::waypoint_mission()
                 local_setpoint.yaw = get_yaw_from_waypoint(wp_params.wp_yaw_type,
                                                            wp_params.wp_points[wp_params.wp_index][0],
                                                            wp_params.wp_points[wp_params.wp_index][1]);
-                // flight_params.type_mask = TypeMask::XYZ_POS_YAW;
-                flight_params.type_mask = TypeMask::XY_VEL_Z_POS_YAW;
+                // system_params.type_mask = TypeMask::XYZ_POS_YAW;
+                system_params.type_mask = TypeMask::XY_VEL_Z_POS_YAW;
             }
         }
         break;
@@ -1112,7 +1123,7 @@ void UAVControl::waypoint_mission()
                 local_setpoint.yaw = get_yaw_from_waypoint(2,
                                                            flight_params.home_pos[0],
                                                            flight_params.home_pos[1]);
-                flight_params.type_mask = TypeMask::XY_VEL_Z_POS_YAW;
+                system_params.type_mask = TypeMask::XY_VEL_Z_POS_YAW;
             }
         }
         else
@@ -1145,7 +1156,7 @@ void UAVControl::waypoint_mission()
                 local_setpoint.position.y = flight_params.home_pos[1];
                 local_setpoint.position.z = wp_params.z_height;
                 local_setpoint.yaw = flight_params.home_yaw;
-                flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+                system_params.type_mask = TypeMask::XYZ_POS_YAW;
             }
         }
         else if (wp_params.wp_end_type == 2)
@@ -1194,9 +1205,9 @@ void UAVControl::set_takeoff()
             set_default_local_setpoint();
             local_setpoint.position.x = flight_params.home_pos[0];
             local_setpoint.position.y = flight_params.home_pos[1];
-            local_setpoint.position.z = flight_params.home_pos[2] + takeoff_height;
+            local_setpoint.position.z = flight_params.home_pos[2] + flight_params.takeoff_height;
             local_setpoint.yaw = flight_params.home_yaw;
-            flight_params.type_mask = TypeMask::XYZ_POS_YAW;
+            system_params.type_mask = TypeMask::XYZ_POS_YAW;
         }
     }
 }
@@ -1204,9 +1215,9 @@ void UAVControl::set_takeoff()
 // 进入降落模式
 void UAVControl::set_land()
 {
-    if (control_mode != Control_Mode::LAND_CONTROL && (control_mode == Control_Mode::RC_CONTROL || control_mode == Control_Mode::CMD_CONTROL))
+    if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode ==  Control_Mode::RC_CONTROL || system_params.control_mode ==  Control_Mode::CMD_CONTROL))
     {
-        control_mode = Control_Mode::LAND_CONTROL;
+        system_params.control_mode = Control_Mode::LAND_CONTROL;
         set_desired_from_land();
     }
 }

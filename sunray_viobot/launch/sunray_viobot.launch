@@ -1,5 +1,0 @@
-<launch>
-    <node pkg="sunray_viobot" type="sunray_viobot_node" name="sunray_viobot_node" output="screen">
-	</node>
-</launch>
-
