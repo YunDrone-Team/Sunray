@@ -156,19 +156,13 @@ pid_t GroundControl::CheckChildProcess(pid_t pid)
         if (WIFEXITED(status))
         {
             std::cout << "Child process (PID: " << pid << ") exited normally with status " << WEXITSTATUS(status) << std::endl;
-        }
-        else if (WIFSIGNALED(status))
-        {
+        }else if (WIFSIGNALED(status)){
             std::cout << "Child process (PID: " << pid << ") was terminated by signal " << WTERMSIG(status) << std::endl;
         }
-    }
-    else if (terminated_pid == 0)
-    {
+    }else if (terminated_pid == 0){
         // 子进程还在运行
         //std::cout << "Child process (PID: " << pid << ") is still running." << std::endl;
-    }
-    else
-    {
+    }else{
         perror("waitpid");
     }
     return terminated_pid;
@@ -181,9 +175,7 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
     {
         perror("fork failed");
         // return EXIT_FAILURE;
-    }
-    else if (pid == 0)
-    {
+    }else if (pid == 0){
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
@@ -195,9 +187,7 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }
-    else
-    {
+    }else{
 
         demoPID = pid;
         printf("This is the parent process. Child PID: %d\n", pid);
@@ -214,13 +204,11 @@ void GroundControl::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }
-    else if (pid == 0)
-    {
+    }else if (pid == 0){
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
-        // 由于source是bash的内建命令，我们不能直接在execlp中调用它
-        // 但是，我们可以使用. (点命令) 来代替source
+        // 由于source是bash的内建命令，不能直接在execlp中调用它
+        // 但是，可以使用. (点命令) 来代替source
         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
         // 而是需要将它们放在一个bash -c参数中
 
@@ -234,9 +222,7 @@ void GroundControl::executiveDemo(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }
-    else
-    {
+    }else{
         // 父进程
         int status;
 
@@ -340,9 +326,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
                 if (it != nodeMap.end())
                 {
                     std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }
-                else
-                {
+                }else{
                     pid_t back = OrderCourse(readData.data.demo.demoStr);
                     if (back > 0)
                         nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
@@ -362,9 +346,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }
-                    else
-                    {
+                    }else{
                         printf("Sent SIGTERM to child process %d\n", temp);
                         nodeMap.erase(readData.data.demo.demoStr);
                     }
