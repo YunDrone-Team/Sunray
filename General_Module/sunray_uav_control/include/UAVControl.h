@@ -8,23 +8,8 @@ class UAVControl
 {
 private:
     int uav_id;                                        // 无人机ID
-    int control_mode;                                  // 控制模式
-    int last_control_mode;                             // 控制模式
-    int safety_state;                                  // 安全标志
-    int location_source;                               // 定位来源
-    float takeoff_height;                              // 起飞高度
-    float disarm_height;                               // 锁桨高度
-    float land_speed;                                  // 降落速度
-    float cmd_timeout;                                 // 指令超时时间
-    float land_end_time;                               // 降落最后一段时间
-    float land_end_speed;                              // 降落最后一段速度
-    float odom_valid_timeout;                          // 外部定位超时时间
-    float odom_valid_warming_time;                     // 外部定位超时警告
-    bool check_cmd_timeout;                            // 是否检查指令超时
-    bool odom_valid;                                   // 外部定位是否有效
-    bool use_rc;                                       // 是否使用遥控器
-    bool allow_lock;                                   // 允许临时解锁 特殊模式下允许跳过解锁检查
     bool rcState_cb;                                   // 遥控器状态回调
+    bool allow_lock;                                   // 允许临时解锁 特殊模式下允许跳过解锁检查
     std::string uav_name;                              // 无人机名称
     std::string uav_ns;                                // 节点命名空间
     std::string topic_prefix;                          // 话题前缀
@@ -37,7 +22,7 @@ private:
     mavros_msgs::PositionTarget local_setpoint;        // px4目标指令
     mavros_msgs::GlobalPositionTarget global_setpoint; // px4目标指令
     mavros_msgs::AttitudeTarget att_setpoint;          // px4目标指令
-    ros::Time odom_valid_time;                         // 外部定位状态订阅时间
+
     // 订阅节点
     ros::Subscriber setup_sub;          // 【订阅】无人机模式设置
     ros::Subscriber control_cmd_sub;    // 【订阅】控制指令订阅
@@ -103,21 +88,49 @@ private:
 
     struct FlightParams
     {
-        uint16_t type_mask = 0;                   // 控制指令类型
+        int land_type = 0;                        // 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
         float home_yaw = 0.0;                     // 起飞点航向
         float hover_yaw = 0.0;                    // 无人机目标航向
         float land_yaw = 0.0;                     // 降落点航向
-        float max_vel_xy = 1.0;                   // 最大水平速度
-        float max_vel_z = 1.0;                    // 最大垂直速度
-        float max_vel_yaw = 1.5;                  // 最大偏航速度
+        float takeoff_height;                     // 起飞高度
+        float disarm_height;                      // 锁桨高度
+        float land_end_time;                      // 降落最后一段时间
+        float land_end_speed;                     // 降落最后一段速度
+        float land_speed;                         // 降落速度
         bool home_set = false;                    // 起飞点是否设置
         Eigen::Vector3d home_pos{0.0, 0.0, 0.0};  // 起飞点
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0}; // 悬停点
         Eigen::Vector3d land_pos{0.0, 0.0, 0.0};  // 降落点
-        ros::Time last_land_time;                 // 最后停止时间
-        ros::Time last_rc_time;                   // 上一个rc控制时间点
     };
     FlightParams flight_params;
+
+    struct RCControlParams
+    {
+        float max_vel_xy = 1.0;  // 最大水平速度
+        float max_vel_z = 1.0;   // 最大垂直速度
+        float max_vel_yaw = 1.5; // 最大偏航速度
+    };
+    RCControlParams rc_control_params;
+
+    struct SystemParams
+    {
+        uint16_t type_mask;            // 控制指令类型
+        int control_mode;              // 控制模式
+        int last_control_mode;         // 上一个控制模式
+        int safety_state;              // 安全标志
+        int location_source;           // 定位来源
+        float cmd_timeout;             // 指令超时时间
+        float odom_valid_timeout;      // 外部定位超时时间
+        float odom_valid_warming_time; // 外部定位超时警告
+        bool check_cmd_timeout;        // 是否检查指令超时
+        bool check_batt_volt;          // 是否检查电池电压
+        bool odom_valid;               // 外部定位是否有效
+        bool use_rc;                   // 是否使用遥控器
+        ros::Time last_land_time;      // 进入降落最后一阶段的时间戳
+        ros::Time last_rc_time;        // 上一个rc控制时间点
+        ros::Time odom_valid_time;     // 外部定位状态订阅时间戳
+    };
+    SystemParams system_params;
 
     struct Waypoint_Params
     {
@@ -131,13 +144,13 @@ private:
         int wp_state = 0;                             // 航点状态 【1：解锁 2：起飞中 3：航点执行中 4:返航中 5:降落中 6: 结束】
         float wp_move_vel = 0.5;                      // 最大水平速度
         float z_height = 1.0;                         // 起飞和返航高度
-        double wp_point_takeoff[3] = {0.0, 0.0, 0.0}; // 起飞点
-        double wp_point_return[3] = {0.0, 0.0, 0.0};  // 返航点
-        std::map<int, double[3]> wp_points;           // 航点
         float wp_x_vel = 0.0;                         // 水平速度
         float wp_y_vel = 0.0;                         // 水平速度
         float wp_vel_p = 1;                           // 速度比例
-        ros::Time start_wp_time;                      // 上一个动作时间点
+        double wp_point_takeoff[3] = {0.0, 0.0, 0.0}; // 起飞点
+        double wp_point_return[3] = {0.0, 0.0, 0.0};  // 返航点
+        std::map<int, double[3]> wp_points;           // 航点
+        ros::Time start_wp_time;                      // 上一个动作时间戳
     };
     Waypoint_Params wp_params;
 
@@ -246,6 +259,7 @@ private:
 
     int safetyCheck();                                                                        // 安全检查
     void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
+    void set_auto_land();                                                                     // 调用px4 auto.land
     void reboot();                                                                            // 重启
     void emergencyStop();                                                                     // 紧急停止出来
     void setMode(std::string mode);                                                           // 设置模式

@@ -1,0 +1,349 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.6">
+  <world name="default">
+    <!-- override the default position of the camera -->
+    <gui>
+      <camera name='gzclient_camera'>
+        <pose>-5.73 3.76 8.10 0 1.1316 -0.4398</pose>
+      </camera>
+    </gui>
+    <physics type='ode'>
+      <gravity>0 0 -9.8066</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>10</iters>
+          <sor>1.3</sor>
+          <use_dynamic_moi_rescaling>0</use_dynamic_moi_rescaling>
+        </solver>
+        <constraints>
+          <cfm>0.00001</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>1000</contact_max_correcting_vel>
+          <contact_surface_layer>0.01</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+      <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
+    </physics>
+
+
+    <model name="AirConditionerC_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_AirConditionerC_01</uri>
+      </include>
+      <pose frame="">7.458202 1.422453 3.290944 0 -0 -1.564217</pose>
+    </model>
+
+    <model name="BookF_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_BookF_01</uri>
+      </include>
+      <pose frame="">2.931779 -1.303250 0.770041 0.003448 -0.000011 0.003114</pose>
+    </model>
+
+    <model name="BookD_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_BookD_01</uri>
+      </include>
+      <pose frame="">5.720048 -5.365876 0.022179 0.003452 -0.000001 0.000652</pose>
+    </model>
+
+    <model name="BookF_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_BookF_01</uri>
+      </include>
+      <pose frame="">2.902979 -4.760748 0.75826 0.003450 0.000006 -0.002250</pose>
+    </model>
+
+    <model name="BookD_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_BookD_01</uri>
+      </include>
+      <pose frame="">-4.509612 -1.312536 0.804482 0 0 -0.000004</pose>
+    </model>
+
+    <model name="BookF_01_003">
+      <include>
+        <uri>model://aws_robomaker_retail_BookF_01</uri>
+      </include>
+      <pose frame="">-4.604931 -4.772141 0.804483 0.000004 0 0</pose>
+    </model>
+
+    <model name="BookD_01_003">
+      <include>
+        <uri>model://aws_robomaker_retail_BookD_01</uri>
+      </include>
+      <pose frame="">-6.235609 -3.785181 1.038157 0.000008 0 1.580378</pose>
+    </model>
+
+    <model name="BookF_01_004">
+      <include>
+        <uri>model://aws_robomaker_retail_BookF_01</uri>
+      </include>
+      <pose frame="">1.261644 0.856469 1.038157 0.000008 0 1.580378</pose>
+    </model>
+
+    <model name="BookD_01_004">
+      <include>
+        <uri>model://aws_robomaker_retail_BookD_01</uri>
+      </include>
+      <pose frame="">2.358626 0.854853 1.038153 0.000006 0 0.001712</pose>
+    </model>
+
+    <model name="BookF_01_005">
+      <include>
+        <uri>model://aws_robomaker_retail_BookF_01</uri>
+      </include>
+      <pose frame="">3.430611 0.856469 1.038157 0.000008 0 1.580378</pose>
+    </model>
+
+    <model name="BookshelfA_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfA_01</uri>
+      </include>
+      <pose frame="">1.405153 -1.449740 0.03755 0.003490 -0.000003 0.000696</pose>
+    </model>
+
+    <model name="BookshelfA_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfA_01</uri>
+      </include>
+      <pose frame="">1.405153 -4.761649 0.003411 0 0 0</pose>
+    </model>
+
+    <model name="BookshelfA_01_003">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfA_01</uri>
+      </include>
+      <pose frame="">-2.554493 -1.487456 0.006337 0.001313 -0.001987 0.031824</pose>
+    </model>
+
+    <model name="BookshelfA_01_004">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfA_01</uri>
+      </include>
+      <pose frame="">-2.608578 -4.761649 0.003411 0 0 0</pose>
+    </model>
+
+    <model name="BookshelfB_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">-6.189675 -6.785646 -0.008942 0.003533 0.000121 -0.032073</pose>
+    </model>
+
+    <model name="BookshelfB_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">-2.209411 -6.971459 0.017074 -0.000128 -0.000252 0.000364</pose>
+    </model>
+
+    <model name="BookshelfB_01_003">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">0.522246 -6.971500 0.017947 -0.003292 0.000000 0.000000</pose>
+    </model>
+
+    <model name="BookshelfB_01_004">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">3.293386 -6.963665 0.017383 0.000008 -0.000002 0.000000</pose>
+    </model>
+
+    <model name="BookshelfB_01_005">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">6.080380 -6.987659 0.017409 0.000174 0.000004 0.000000</pose>
+    </model>
+
+    <model name="BookshelfB_01_006">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">7.478331 -5.298296 0.017443 -0.001974 -0.000211 1.554057</pose>
+    </model>
+
+    <model name="BookshelfB_01_007">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">7.478331 -2.510651 0.017402 0.000010 -0.000013 1.562068</pose>
+    </model>
+
+    <model name="BookshelfB_01_008">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfB_01</uri>
+      </include>
+      <pose frame="">7.478331 0.402539 0.017181 0.000003 -0.000156 1.570798</pose>
+    </model>
+
+    <model name="BookshelfC_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfC_01</uri>
+      </include>
+      <pose frame="">2.911133 -1.310229 0.008469 0.003452 -0.000003 0.000620</pose>
+    </model>
+
+    <model name="BookshelfC_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfC_01</uri>
+      </include>
+      <pose frame="">2.915449 -4.761712 -0.003455 0.003452 0 0.000014</pose>
+    </model>
+
+    <model name="BookshelfC_01_003">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfC_01</uri>
+      </include>
+      <pose frame="">-4.517110 -1.310229 0.045908 0 0 0</pose>
+    </model>
+
+    <model name="BookshelfC_01_004">
+      <include>
+        <uri>model://aws_robomaker_retail_BookshelfC_01</uri>
+      </include>
+      <pose frame="">-4.614360 -4.761649 0.045908 0 0 0</pose>
+    </model>
+
+
+    <!-- Exclude logo, it's just a store -->
+    <!--
+	<model name="BookstoreLogo_01_001">
+        <include>
+            <uri>model://aws_robomaker_retail_BookstoreLogo_01</uri>
+        </include>
+        <pose frame="">2.236470 4.4969866 2.248438 0 0 0</pose>
+	</model>
+    -->
+
+    <!-- Exclude ceiling, easier to view -->
+    <!--
+	<model name="RetailShopCeiling_01_001">
+        <include>
+            <uri>model://aws_robomaker_retail_RetailShopCeiling_01</uri>
+        </include>
+        <pose frame="">0.012365 -0.000353 3.328605 0 -0 0</pose>
+	</model>
+    -->
+
+    <model name="ColumnB_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_ColumnB_01</uri>
+      </include>
+      <pose frame="">-4.076233 -6.860710 0.017511 0.001895 -0.000628 -0.003755</pose>
+    </model>
+
+    <model name="InfoDesk_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_InfoDesk_01</uri>
+      </include>
+      <pose frame="">1.010668 5.032576 0.011585 -0.006739 0.005110 -0.025146</pose>
+    </model>
+
+    <model name="DeskB_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskB_01</uri>
+      </include>
+      <pose frame="">5.622942 -2.475419 -0.181282 0 -0 0</pose>
+    </model>
+
+    <model name="DeskB_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskB_01</uri>
+      </include>
+      <pose frame="">-5.400709 2.580536 -0.181282 0 -0 0</pose>
+    </model>
+
+    <model name="DeskA_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskA_01</uri>
+      </include>
+      <pose frame="">-2.340694 3.200118 0.014921 0.000124 -0.000010 0.000376</pose>
+    </model>
+
+    <model name="DeskA_01_002">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskA_01</uri>
+      </include>
+      <pose frame="">-2.369938 0.836099 0.00876 -0.000772 -0.001938 0.000017</pose>
+    </model>
+
+    <model name="DeskA_01_003">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskA_01</uri>
+      </include>
+      <pose frame="">-6.254654 -3.979197 -0.004603 0.001948 0.001361 -1.569567</pose>
+    </model>
+
+    <model name="DeskA_01_004">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskA_01</uri>
+      </include>
+      <pose frame="">-0.701688 -4.049294 0.014866 0.000000 -0.000000 -1.566097</pose>
+    </model>
+
+    <model name="DeskA_01_005">
+      <include>
+        <uri>model://aws_robomaker_retail_DeskA_01</uri>
+      </include>
+      <pose frame="">2.298197 0.861754 0.014883 -0.000002 0.003451 0.000024</pose>
+    </model>
+
+    <model name="DoorB_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_DoorB_01</uri>
+      </include>
+      <pose frame="">-2.492457 7.219370 -0.035203 0 -0 0</pose>
+    </model>
+
+    <model name="RetailShopFloor_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_RetailShopFloor_01</uri>
+      </include>
+      <pose frame="">-0.002687 0 -0.276618 -0 0 0</pose>
+    </model>
+
+    <model name="Horologe_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_Horologe_01</uri>
+      </include>
+      <pose frame="">2.405124 3.025708 2.525191 0 -0 -1.565582</pose>
+    </model>
+
+    <model name="RetailShopWall_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_RetailShopWall_01</uri>
+      </include>
+      <pose frame="">0 0 -0.281282 0 -0 0</pose>
+    </model>
+
+    <model name="ShopWindow_01_001">
+      <include>
+        <uri>model://aws_robomaker_retail_ShopWindow_01</uri>
+      </include>
+      <pose frame="">-7.738156 0.015960 -0.180092 0 -0 0</pose>
+    </model>
+
+    <light name="sun" type="directional">
+      <cast_shadows>1</cast_shadows>
+      <pose frame="">0 0 10 0 -0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+  </world>
+</sdf>

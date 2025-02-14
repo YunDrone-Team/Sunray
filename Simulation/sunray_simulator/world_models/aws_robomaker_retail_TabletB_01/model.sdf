@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="aws_robomaker_retail_TabletB_01">
+    <link name="link">
+      <inertial>
+        <mass>0.161</mass>
+        <inertia>
+          <ixx>0.346954</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.1772885</iyy>
+          <iyz>0</iyz>
+          <izz>0.5218261</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://aws_robomaker_retail_TabletB_01/meshes/aws_TabletB_01_collision.DAE</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+	    <geometry>
+          <mesh>
+            <uri>model://aws_robomaker_retail_TabletB_01/meshes/aws_TabletB_01_visual.DAE</uri>
+          </mesh>
+        </geometry>
+        <meta>
+          <layer>1</layer>
+        </meta>
+      </visual>
+    </link>
+    <static>1</static>
+  </model>
+</sdf>

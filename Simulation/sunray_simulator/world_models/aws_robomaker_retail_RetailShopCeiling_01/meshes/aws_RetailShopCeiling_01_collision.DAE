@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2018-10-25T06:53:26Z</created><keywords></keywords><modified>2018-10-25T06:53:26Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <library_materials>
+    <material id="MaterialFBXASC032FBXASC035119" name="MaterialFBXASC032FBXASC035119">
+      <instance_effect url="#MaterialFBXASC032FBXASC035119-fx"/>
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="MaterialFBXASC032FBXASC035119-fx" name="MaterialFBXASC032FBXASC035119">
+      <profile_COMMON>
+        <technique sid="standard">
+          <phong>
+            <emission>
+              <color sid="emission">0.000000  0.000000 0.000000 1.000000</color>
+            </emission>
+            <ambient>
+              <color sid="ambient">0.588000  0.588000 0.588000 1.000000</color>
+            </ambient>
+            <diffuse>
+              <color sid="diffuse">0.588000  0.588000 0.588000 1.000000</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0.000000  0.000000 0.000000 1.000000</color>
+            </specular>
+            <shininess>
+              <float sid="shininess">2.000000</float>
+            </shininess>
+            <reflective>
+              <color sid="reflective">0.000000  0.000000 0.000000 1.000000</color>
+            </reflective>
+            <reflectivity>
+              <float sid="reflectivity">1.000000</float>
+            </reflectivity>
+            <transparent opaque="RGB_ZERO">
+              <color sid="transparent">1.000000  1.000000 1.000000 1.000000</color>
+            </transparent>
+            <transparency>
+              <float sid="transparency">0.000000</float>
+            </transparency>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="aws_RetailShopCeiling_01_collision-lib" name="aws_RetailShopCeiling_01_collisionMesh">
+      <mesh>
+        <source id="aws_RetailShopCeiling_01_collision-POSITION">
+          <float_array id="aws_RetailShopCeiling_01_collision-POSITION-array" count="36">
+-773.564636 -721.654663 -9.025195
+773.564575 -721.672729 -9.025195
+773.557739 221.656219 -9.025195
+241.763794 222.687836 -9.025195
+240.734802 721.672729 -9.025195
+-773.564636 721.672729 -9.025195
+-773.564636 -721.654602 0.882397
+773.564575 -721.672668 0.882397
+773.557739 221.656219 0.882397
+241.763794 222.687836 0.882397
+240.734802 721.672729 0.882397
+-773.564636 721.672729 0.882397
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopCeiling_01_collision-POSITION-array" count="12" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_RetailShopCeiling_01_collision-Normal0">
+          <float_array id="aws_RetailShopCeiling_01_collision-Normal0-array" count="180">
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+-0.000012 -1.000000 0.000001
+-0.000012 -1.000000 0.000001
+-0.000012 -1.000000 0.000001
+-0.000012 -1.000000 0.000001
+-0.000012 -1.000000 0.000001
+-0.000012 -1.000000 0.000001
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.001940 0.999998 0.000000
+0.001940 0.999998 0.000000
+0.001940 0.999998 0.000000
+0.001940 0.999998 0.000000
+0.001940 0.999998 0.000000
+0.001940 0.999998 0.000000
+0.999998 0.002062 0.000000
+0.999998 0.002062 0.000000
+0.999998 0.002062 0.000000
+0.999998 0.002062 0.000000
+0.999998 0.002062 0.000000
+0.999998 0.002062 0.000000
+1.000000 0.000007 0.000000
+1.000000 0.000007 0.000000
+1.000000 0.000007 0.000000
+1.000000 0.000007 0.000000
+1.000000 0.000007 0.000000
+1.000000 0.000007 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopCeiling_01_collision-Normal0-array" count="60" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_RetailShopCeiling_01_collision-UV0">
+          <float_array id="aws_RetailShopCeiling_01_collision-UV0-array" count="24">
+0.000500 0.000527
+2.146390 0.000500
+2.146380 1.402992
+1.408775 1.404525
+1.407348 2.146390
+0.000500 2.146390
+2.146390 0.000500
+0.000500 0.000527
+0.000500 2.146390
+1.407348 2.146390
+1.408775 1.404525
+2.146380 1.402992
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopCeiling_01_collision-UV0-array" count="12" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_RetailShopCeiling_01_collision-UV1">
+          <float_array id="aws_RetailShopCeiling_01_collision-UV1-array" count="24">
+0.000500 0.000512
+0.999500 0.000500
+0.999496 0.653418
+0.656110 0.654132
+0.655445 0.999500
+0.000500 0.999500
+0.999500 0.000500
+0.000500 0.000512
+0.000500 0.999500
+0.655445 0.999500
+0.656110 0.654132
+0.999496 0.653418
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopCeiling_01_collision-UV1-array" count="12" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="aws_RetailShopCeiling_01_collision-VERTEX">
+          <input semantic="POSITION" source="#aws_RetailShopCeiling_01_collision-POSITION"/>
+        </vertices>
+        <triangles count="20" material="MaterialFBXASC032FBXASC035119"><input semantic="VERTEX" offset="0" source="#aws_RetailShopCeiling_01_collision-VERTEX"/><input semantic="NORMAL" offset="1" source="#aws_RetailShopCeiling_01_collision-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#aws_RetailShopCeiling_01_collision-UV0"/><input semantic="TEXCOORD" offset="3" set="1" source="#aws_RetailShopCeiling_01_collision-UV1"/><p> 3 0 3 3 0 1 0 0 5 2 5 5 5 3 5 5 4 4 4 4 3 5 3 3 3 6 3 3 2 7 2 2 1 8 1 1 1 9 1 1 0 10 0 0 3 11 3 3 0 12 0 0 1 13 1 1 7 14 6 6 7 15 6 6 6 16 7 7 0 17 0 0 4 18 4 4 5 19 5 5 11 20 8 8 11 21 8 8 10 22 9 9 4 23 4 4 2 24 2 2 3 25 3 3 9 26 10 10 9 27 10 10 8 28 11 11 2 29 2 2 3 30 3 3 4 31 4 4 10 32 9 9 10 33 9 9 9 34 10 10 3 35 3 3 1 36 1 1 2 37 2 2 8 38 11 11 8 39 11 11 7 40 6 6 1 41 1 1 5 42 5 5 0 43 0 0 6 44 7 7 6 45 7 7 11 46 8 8 5 47 5 5 7 48 6 6 8 49 11 11 9 50 10 10 9 51 10 10 10 52 9 9 11 53 8 8 7 54 6 6 9 55 10 10 11 56 8 8 7 57 6 6 11 58 8 8 6 59 7 7</p></triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="aws_RetailShopCeiling_01_collision" name="aws_RetailShopCeiling_01_collision">
+      <node name="aws_RetailShopCeiling_01_collision" id="aws_RetailShopCeiling_01_collision" sid="aws_RetailShopCeiling_01_collision"><matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_RetailShopCeiling_01_collision-lib"><bind_material><technique_common><instance_material symbol="MaterialFBXASC032FBXASC035119" target="#MaterialFBXASC032FBXASC035119"/></technique_common></bind_material></instance_geometry><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
+      <extra><technique profile="MAX3D"><frame_rate>30.000000</frame_rate></technique><technique profile="FCOLLADA"><start_time>0.000000</start_time><end_time>3.333333</end_time></technique></extra>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#aws_RetailShopCeiling_01_collision"></instance_visual_scene>
+  </scene>
+</COLLADA>

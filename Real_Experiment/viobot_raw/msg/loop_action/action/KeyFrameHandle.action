@@ -1,8 +1,0 @@
-# Define the goal
-uint32 function  # 1 for add keyframe, 2 for save map keyframe
----
-# Define the result
-uint32 keyframe_num
----
-# Define a feedback message 
-uint32 saving

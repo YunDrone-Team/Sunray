@@ -20,7 +20,7 @@
     <arg name="check_cmd_timeout" default="false" />
     <arg name="cmd_timeout" default="5.0" />
 
-    <arg name="uav_num" default="8"/>
+    <arg name="uav_num" default="3"/>
 
     <!-- uav1 -->
     <node name="uav_control_node_$(arg uav_id)" pkg="sunray_uav_control" type="uav_control_node" output="screen">

@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="aws_robomaker_retail_SmartSpeakerSmall_01">
+    <link name="link">
+      <inertial>
+        <mass>0.165</mass>
+        <inertia>
+          <ixx>0.0300944</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0300944</iyy>
+          <iyz>0</iyz>
+          <izz>0.01250</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://aws_robomaker_retail_SmartSpeakerSmall_01/meshes/aws_SmartSpeakerSmall_01_collision.DAE</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.85</mu>
+              <mu2>0.85</mu2>
+            </ode>
+          </friction>
+          <bounce>
+            <restitution_coefficient>0.00</restitution_coefficient>
+          </bounce>
+        </surface>
+      </collision>
+
+      <visual name="visual">
+	    <geometry>
+          <mesh>
+            <uri>model://aws_robomaker_retail_SmartSpeakerSmall_01/meshes/aws_SmartSpeakerSmall_01_visual.DAE</uri>
+          </mesh>
+        </geometry>
+        <meta>
+          <layer>1</layer>
+        </meta>
+      </visual>
+
+</link>
+  </model>
+</sdf>

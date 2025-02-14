@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2018-10-25T07:25:14Z</created><keywords></keywords><modified>2018-10-25T07:25:14Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <library_images>
+    <image id="Map #1-image" name="Map #1"><init_from>../materials/textures/aws_ColumnA_01.png</init_from></image>
+  </library_images>
+  <library_materials>
+    <material id="Material #25" name="Material #25">
+      <instance_effect url="#Material #25-fx"/>
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="Material #25-fx" name="Material #25">
+      <profile_COMMON>
+        <technique sid="standard">
+          <phong>
+            <emission>
+              <color sid="emission">0.000000  0.000000 0.000000 1.000000</color>
+            </emission>
+            <ambient>
+              <color sid="ambient">0.588000  0.588000 0.588000 1.000000</color>
+            </ambient>
+            <diffuse>
+              <texture texture="Map #1-image" texcoord="CHANNEL0">
+                <extra>
+                  <technique profile="MAYA">
+                    <wrapU sid="wrapU0">TRUE</wrapU>
+                    <wrapV sid="wrapV0">TRUE</wrapV>
+                    <blend_mode>ADD</blend_mode>
+                  </technique>
+                </extra>
+              </texture>
+            </diffuse>
+            <specular>
+              <color sid="specular">0.000000  0.000000 0.000000 1.000000</color>
+            </specular>
+            <shininess>
+              <float sid="shininess">2.000000</float>
+            </shininess>
+            <reflective>
+              <color sid="reflective">0.000000  0.000000 0.000000 1.000000</color>
+            </reflective>
+            <reflectivity>
+              <float sid="reflectivity">1.000000</float>
+            </reflectivity>
+            <transparent opaque="RGB_ZERO">
+              <color sid="transparent">1.000000  1.000000 1.000000 1.000000</color>
+            </transparent>
+            <transparency>
+              <float sid="transparency">0.000000</float>
+            </transparency>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="aws_ColumnA_01_visual-lib" name="aws_ColumnA_01_visualMesh">
+      <mesh>
+        <source id="aws_ColumnA_01_visual-POSITION">
+          <float_array id="aws_ColumnA_01_visual-POSITION-array" count="66">
+44.497410 -0.078870 0.000000
+-44.497395 -0.078868 0.000000
+-32.088257 -32.342659 0.000000
+0.000068 -45.634033 0.000000
+32.088341 -32.342583 0.000000
+44.755829 -0.130272 434.772797
+-44.755814 -0.130271 434.772797
+-32.088257 -32.342659 435.408905
+0.000068 -45.634033 435.408905
+32.088337 -32.342583 435.408905
+45.379700 45.634048 0.000000
+-45.379684 45.634048 0.000000
+45.379700 45.634048 435.408905
+-45.379684 45.634048 435.408905
+-45.046158 -1.059566 0.000000
+45.046177 -1.059567 0.000000
+-45.032692 -1.092080 435.408905
+45.032707 -1.092081 435.408905
+45.379700 0.617173 0.000000
+-45.379684 0.617174 0.000000
+45.379700 0.617173 435.408905
+-45.379684 0.617174 435.408905
+</float_array>
+          <technique_common>
+            <accessor source="#aws_ColumnA_01_visual-POSITION-array" count="22" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_ColumnA_01_visual-Normal0">
+          <float_array id="aws_ColumnA_01_visual-Normal0-array" count="261">
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+-0.923879 -0.382684 0.000000
+-0.707106 -0.707107 0.000000
+-0.707106 -0.707107 0.000000
+-0.707106 -0.707107 0.000000
+-0.923879 -0.382684 0.000000
+-0.923879 -0.382684 0.000000
+-0.707106 -0.707107 0.000000
+0.000001 -1.000000 0.000000
+0.000001 -1.000000 0.000000
+0.000001 -1.000000 0.000000
+-0.707106 -0.707107 0.000000
+-0.707106 -0.707107 0.000000
+0.707107 -0.707106 0.000000
+0.000001 -1.000000 0.000000
+0.707107 -0.707106 0.000000
+0.000001 -1.000000 0.000000
+0.707107 -0.707106 0.000000
+0.000001 -1.000000 0.000000
+0.923880 -0.382683 0.000000
+0.707107 -0.707106 0.000000
+0.923880 -0.382683 0.000000
+0.707107 -0.707106 0.000000
+0.923880 -0.382683 0.000000
+0.707107 -0.707106 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.551636 0.834085
+0.000000 0.551636 0.834085
+0.000000 0.551636 0.834085
+0.000000 0.551636 0.834085
+0.000000 0.551636 0.834085
+0.000000 0.551636 0.834085
+-0.920344 0.391110 -0.000221
+-0.920344 0.391110 -0.000221
+-0.920344 0.391110 -0.000221
+-0.920344 0.391110 -0.000221
+-0.920344 0.391110 -0.000221
+-0.920344 0.391110 -0.000221
+0.920343 0.391111 -0.000221
+0.920343 0.391111 -0.000221
+0.920343 0.391111 -0.000221
+0.920343 0.391111 -0.000221
+0.920343 0.391111 -0.000221
+0.920343 0.391111 -0.000221
+0.691981 -0.721916 -0.000248
+0.691981 -0.721916 -0.000248
+0.691981 -0.721916 -0.000248
+0.691981 -0.721916 -0.000248
+0.691981 -0.721916 -0.000248
+0.691981 -0.721916 -0.000248
+-0.691981 -0.721916 -0.000248
+-0.691981 -0.721916 -0.000248
+-0.691981 -0.721916 -0.000248
+-0.691981 -0.721916 -0.000248
+-0.691981 -0.721916 -0.000248
+-0.691981 -0.721916 -0.000248
+0.000000 -0.648110 0.761547
+0.000000 -0.648110 0.761547
+0.000000 -0.648110 0.761547
+0.000000 -0.648110 0.761547
+0.000000 -0.648110 0.761547
+0.000000 -0.648110 0.761547
+</float_array>
+          <technique_common>
+            <accessor source="#aws_ColumnA_01_visual-Normal0-array" count="87" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_ColumnA_01_visual-UV0">
+          <float_array id="aws_ColumnA_01_visual-UV0-array" count="66">
+0.947759 0.194478
+0.947759 0.339871
+0.022019 0.339871
+0.022019 0.194478
+0.947759 0.485263
+0.022019 0.485263
+0.947759 0.630656
+0.022019 0.630656
+0.947759 0.799399
+0.022019 0.799399
+0.947759 0.991493
+0.022019 0.991493
+0.022019 0.017952
+0.947759 0.017952
+0.346934 1.130820
+0.076520 1.130820
+0.116121 1.035214
+0.211727 0.995613
+0.307333 1.035214
+0.346934 1.267543
+0.076520 1.267543
+0.947759 0.198127
+0.947759 0.795165
+0.077554 1.128324
+0.022019 0.198274
+0.345900 1.128324
+0.022019 0.794994
+0.947759 0.803048
+0.947759 0.191126
+0.346934 1.133416
+0.022019 0.803048
+0.022019 0.191126
+0.076520 1.133416
+</float_array>
+          <technique_common>
+            <accessor source="#aws_ColumnA_01_visual-UV0-array" count="33" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_ColumnA_01_visual-UV1">
+          <float_array id="aws_ColumnA_01_visual-UV1-array" count="66">
+0.819033 0.156583
+0.819033 0.285139
+0.000500 0.285139
+0.000500 0.156583
+0.819033 0.413693
+0.000500 0.413693
+0.819033 0.542249
+0.000500 0.542249
+0.819033 0.691450
+0.000500 0.691450
+0.819033 0.861299
+0.000500 0.861299
+0.000500 0.000500
+0.819033 0.000500
+0.999500 0.875745
+0.820698 0.875745
+0.846883 0.812529
+0.910099 0.786344
+0.973315 0.812529
+0.999500 0.966149
+0.820698 0.966149
+0.819033 0.159810
+0.819033 0.687707
+0.821382 0.874095
+0.000500 0.159940
+0.998816 0.874095
+0.000500 0.687556
+0.819033 0.694677
+0.819033 0.153619
+0.999500 0.877462
+0.000500 0.694677
+0.000500 0.153619
+0.820698 0.877462
+</float_array>
+          <technique_common>
+            <accessor source="#aws_ColumnA_01_visual-UV1-array" count="33" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="aws_ColumnA_01_visual-VERTEX">
+          <input semantic="POSITION" source="#aws_ColumnA_01_visual-POSITION"/>
+        </vertices>
+        <triangles count="29" material="Material #25"><input semantic="VERTEX" offset="0" source="#aws_ColumnA_01_visual-VERTEX"/><input semantic="NORMAL" offset="1" source="#aws_ColumnA_01_visual-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#aws_ColumnA_01_visual-UV0"/><input semantic="TEXCOORD" offset="3" set="1" source="#aws_ColumnA_01_visual-UV1"/><p> 16 0 23 23 8 1 17 17 17 2 25 25 8 3 17 17 16 4 23 23 7 5 16 16 17 6 25 25 8 7 17 17 9 8 18 18 16 9 24 24 2 10 1 1 7 11 2 2 2 12 1 1 16 13 24 24 14 14 21 21 7 15 2 2 3 16 4 4 8 17 5 5 3 18 4 4 7 19 2 2 2 20 1 1 9 21 7 7 3 22 4 4 4 23 6 6 3 24 4 4 9 25 7 7 8 26 5 5 17 27 26 26 4 28 6 6 15 29 22 22 4 30 6 6 17 31 26 26 9 32 7 7 20 33 30 30 10 34 10 10 12 35 11 11 10 36 10 10 20 37 30 30 18 38 27 27 19 39 28 28 21 40 31 31 13 41 12 12 13 42 12 12 11 43 13 13 19 44 28 28 21 45 32 32 12 46 19 19 13 47 20 20 12 48 19 19 21 49 32 32 20 50 29 29 16 51 23 23 5 52 14 14 6 53 15 15 5 54 14 14 16 55 23 23 17 56 25 25 6 57 3 3 14 58 21 21 16 59 24 24 14 60 21 21 6 61 3 3 1 62 0 0 17 63 26 26 15 64 22 22 5 65 9 9 5 66 9 9 15 67 22 22 0 68 8 8 18 69 27 27 5 70 9 9 0 71 8 8 5 72 9 9 18 73 27 27 20 74 30 30 21 75 31 31 19 76 28 28 6 77 3 3 19 78 28 28 1 79 0 0 6 80 3 3 6 81 15 15 20 82 29 29 21 83 32 32 20 84 29 29 6 85 15 15 5 86 14 14</p></triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="aws_ColumnA_01_visual" name="aws_ColumnA_01_visual">
+      <node name="aws_ColumnA_01_visual" id="aws_ColumnA_01_visual" layer="house" sid="aws_ColumnA_01_visual"><matrix sid="matrix">-0.000000 0.700000 0.000000 0.000000 -0.700000 -0.000000 0.000000 0.000000 0.000000 0.000000 0.700000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_ColumnA_01_visual-lib"><bind_material><technique_common><instance_material symbol="Material #25" target="#Material #25"/></technique_common></bind_material></instance_geometry><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
+      <extra><technique profile="MAX3D"><frame_rate>30.000000</frame_rate></technique><technique profile="FCOLLADA"><start_time>0.000000</start_time><end_time>3.333333</end_time></technique></extra>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#aws_ColumnA_01_visual"></instance_visual_scene>
+  </scene>
+</COLLADA>
