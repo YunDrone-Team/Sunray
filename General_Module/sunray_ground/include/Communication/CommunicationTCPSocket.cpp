@@ -38,34 +38,75 @@ CommunicationTCPSocket::~CommunicationTCPSocket()
 
 int CommunicationTCPSocket::setSocketNonblocking(SOCKET sockfd)
 {
-    int flags = fcntl(sockfd, F_GETFL, 0);
-    if (flags == -1)
-        return -1;
+//    int flags = fcntl(sockfd, F_GETFL, 0);
+//    if (flags == -1)
+//        return -1;
 
-    return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+//    return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+
+#ifdef _WIN32
+    u_long mode = 1;
+    if (ioctlsocket(sockfd, FIONBIO, &mode) == SOCKET_ERROR) {
+        std::cerr << "ioctlsocket FIONBIO failed: " << WSAGetLastError() << std::endl;
+        return -1;
+    }
+#else
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags == -1) {
+        perror("fcntl F_GETFL failed");
+        return -1;
+    }
+    if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        perror("fcntl F_SETFL failed");
+        return -1;
+    }
+#endif
+    return 0;
 }
 
 int CommunicationTCPSocket::setSocketBlocking(SOCKET sockfd)
 {
+//    int flags = fcntl(sockfd, F_GETFL, 0);
+//    if (flags == -1) {
+//        // Error retrieving the current flags
+//        perror("fcntl F_GETFL failed");
+//        return -1;
+//    }
+
+//    // Remove the O_NONBLOCK flag by using the bitwise NOT (~) operator
+//    // and the bitwise AND (&) operator
+//    flags &= ~O_NONBLOCK;
+
+//    // Set the new flags
+//    if (fcntl(sockfd, F_SETFL, flags) == -1) {
+//        // Error setting the new flags
+//        perror("fcntl F_SETFL failed");
+//        return -1;
+//    }
+
+//    return 0; // Success
+
+
+#ifdef _WIN32
+    u_long mode = 0;
+    if (ioctlsocket(sockfd, FIONBIO, &mode) == SOCKET_ERROR) {
+        std::cerr << "ioctlsocket FIONBIO failed: " << WSAGetLastError() << std::endl;
+        return -1;
+    }
+#else
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags == -1) {
-        // Error retrieving the current flags
         perror("fcntl F_GETFL failed");
         return -1;
     }
-
-    // Remove the O_NONBLOCK flag by using the bitwise NOT (~) operator
-    // and the bitwise AND (&) operator
     flags &= ~O_NONBLOCK;
-
-    // Set the new flags
     if (fcntl(sockfd, F_SETFL, flags) == -1) {
-        // Error setting the new flags
         perror("fcntl F_SETFL failed");
         return -1;
     }
+#endif
+    return 0;
 
-    return 0; // Success
 }
 
 SOCKET CommunicationTCPSocket::InitSocket() //初始化Socket
@@ -399,7 +440,16 @@ int  CommunicationTCPSocket::sendTCPData(std::vector<uint8_t> sendData,std::stri
     if ( INVALID_SOCKET != targetSocket && sendData.data() != nullptr && sendData.size() >0)
     {
         //发送数据
+//        sendResult = send(targetSocket, sendData.data(), sendData.size(), 0);
+#ifdef _WIN32
+        //发送数据
+        sendResult = send(targetSocket, reinterpret_cast<const char*>(sendData.data()), sendData.size(), 0);
+#else
+        //发送数据
         sendResult = send(targetSocket, sendData.data(), sendData.size(), 0);
+#endif
+
+
         if(sendResult<0)
             sigTCPError(errno);
 

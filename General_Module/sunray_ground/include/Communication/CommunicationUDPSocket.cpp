@@ -24,6 +24,7 @@ CommunicationUDPSocket::CommunicationUDPSocket()
 
 SOCKET CommunicationUDPSocket::InitSocket()                                        //初始化Socket
 {
+
     std::cout << "CommunicationUDPSocket::InitSocket() "<<std::endl;
 #ifdef _WIN32
         //启动Windows socket 2.x环境
@@ -48,27 +49,64 @@ SOCKET CommunicationUDPSocket::InitSocket()                                     
         if (INVALID_SOCKET == _sock)
         {
             //套接字错误
-            std::cout << "UDP套接字错误 "<<_sock<<std::endl;
+            std::cout<< "UDP Socket Error! Socket:"<<_sock<<std::endl;
             sigUDPError(errno);
 
         }else {
             //套接字正常
-            std::cout << "UDP套接字正常 "<<_sock<<std::endl;
+            std::cout<< "UDP Socket Normal! Socket:"<<_sock<<std::endl;
             /*设置SO_REUSEADDR SO_REUSEADDR套接字选项允许在同一本地地址和端口上启动监听套接字，SO_REUSEPORT
-             * 即使之前的套接字仍在TIME_WAIT状态。这对于快速重启服务器特别有用，因为它可以避免等待TIME_WAIT状态结束。*/
-            int reuse = 1;
-            if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) < 0)
-            {
-                perror("setsockopt");
-                // 处理错误
+             * 即使之前的套接字仍在TIME_WAIT状态。这对于快速重启服务器特别有用，因为它可以避免等待TIME_WAIT状态结束。
+                UDP没有这个TIME_WAIT状态，该配置会导致端口被占用后还能绑定成功，但是功能不太正常，所以屏蔽这个配置，端口被占用后输出提示信号*/
+//            int reuse = 1;
+//            if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) < 0)
+//            {
+//                perror("setsockopt");
+//                // 处理错误
+//            }
+
+#ifdef _WIN32
+            //广播配置
+            int broadcastEnable = 1;
+            int result = setsockopt(_sock, SOL_SOCKET, SO_BROADCAST, reinterpret_cast<const char *>(&broadcastEnable), sizeof(broadcastEnable));
+            if (result < 0) {
+                perror("setsockopt(SO_BROADCAST) failed");
+                Close();
+                exit(EXIT_FAILURE);
             }
 
+
+            // 添加组播设置
+            struct ip_mreq mreqn;
+            // 使用 WSAStringToAddressA 来转换组播组地址
+            SOCKADDR_IN multicastAddr;
+
+            INT addrLen = sizeof(multicastAddr);
+            std::string nonConstMulticastIP = multicastIP;  // 创建非 const 副本，因为 WSAStringToAddressA 第一个参数要求非 const
+            if (WSAStringToAddressA(&nonConstMulticastIP[0], AF_INET, nullptr, reinterpret_cast<sockaddr*>(&multicastAddr), &addrLen) != 0) {
+                std::cerr << "WSAStringToAddressA failed: " << WSAGetLastError() << std::endl;
+            }
+            mreqn.imr_multiaddr.s_addr = multicastAddr.sin_addr.s_addr;
+            // 本地接口地址，使用 INADDR_ANY 表示任意接口
+            mreqn.imr_interface.s_addr = INADDR_ANY;
+
+            if (setsockopt(_sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<const char *>(&mreqn), sizeof(mreqn)) < 0) {
+                perror("setsockopt for multicast");
+                // 处理错误
+            }
+            // 禁止组播环回
+            const int loop = 0;
+            if (setsockopt(_sock, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast<const char *>(&loop), sizeof(loop)) < 0) {
+                perror("setsockopt for disabling multicast loop");
+            }
+
+#else
             //广播配置
             int broadcastEnable = 1;
             int result = setsockopt(_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
             if (result < 0) {
                 perror("setsockopt(SO_BROADCAST) failed");
-                close(_sock);
+                Close();
                 exit(EXIT_FAILURE);
             }
 
@@ -89,6 +127,7 @@ SOCKET CommunicationUDPSocket::InitSocket()                                     
             if (setsockopt(_sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) < 0) {
                 perror("setsockopt for disabling multicast loop");
             }
+#endif
         }
         std::cout << "CommunicationUDPSocket::InitSocket() end"<<std::endl;
         return _sock;
@@ -119,13 +158,17 @@ int CommunicationUDPSocket::Bind(unsigned short port)                           
     if (SOCKET_ERROR == ret)
     {
         //绑定端口号失败，端口号占用之类的原因
-        std::cout << "UDP绑定端口号失败 "<<_sock<<" "<<port<<std::endl;
+        std::cout << "Failed to bind the UDP port number! Socket:"<<_sock<<" "<<port<<std::endl;
         perror("bind failed");
-        sigUDPError(errno);
-
+//        sigUDPError(errno);
+#ifdef _WIN32
+   sigUDPError(WSAGetLastError());
+#else
+   sigUDPError(errno);
+#endif
     }else {
         //绑定端口号成功
-        std::cout << "UDP绑定端口号成功 "<<_sock<<std::endl;
+        std::cout << "The UDP port number is bound successfully! Socket:"<<_sock<<" "<<ret<<std::endl;
 
     }
     return ret;
@@ -334,17 +377,21 @@ int CommunicationUDPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize,std
 {
 
     struct sockaddr_in client_addr={};
-    unsigned int addrlen = sizeof(client_addr);
+    //unsigned int addrlen = sizeof(client_addr);
 
 
     //bzero(buffer, bufferSize);
     //memset(buffer, sizeof(abuffer));
-    int nLen = recvfrom(Sock, buffer, (size_t)bufferSize, 0,(struct sockaddr *)&client_addr,&addrlen);
+    //int nLen = recvfrom(Sock, buffer, (size_t)bufferSize, 0,(struct sockaddr *)&client_addr,&addrlen);
 
 #ifdef _WIN32
+    int addrlen = sizeof(client_addr);
+    int nLen = recvfrom(Sock, buffer, (size_t)bufferSize, 0,(struct sockaddr *)&client_addr,&addrlen);
     if(winPort!=nullptr)
         *winPort=client_addr.sin_port;//这句待测
 #else
+    unsigned int addrlen = sizeof(client_addr);
+    int nLen = recvfrom(Sock, buffer, (size_t)bufferSize, 0,(struct sockaddr *)&client_addr,&addrlen);
     if(linuxPort!=nullptr)
         *linuxPort=client_addr.sin_port;//这句待测
 #endif
@@ -418,13 +465,19 @@ int CommunicationUDPSocket::sendUDPMulticastData(std::vector<uint8_t> sendData,u
         target_addr.sin_family= AF_INET;
         target_addr.sin_port= htons(targetPort);
 #ifdef _WIN32
-    target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp);
+    target_addr.sin_addr.S_un.S_addr = inet_addr(multicastIP.c_str());
+    int addrlen = sizeof(target_addr);
+           // 发送数据，将 unsigned char * 强制转换为 const char *
+    sendResult = sendto(_sock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0, (struct sockaddr*)&target_addr, addrlen);
 #else
     target_addr.sin_addr.s_addr = inet_addr(multicastIP.c_str());
+    unsigned int addrlen = sizeof(target_addr);
+    //发送数据
+    sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
 #endif
-        unsigned int addrlen = sizeof(target_addr);
-        //发送数据
-        sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+//        unsigned int addrlen = sizeof(target_addr);
+//        //发送数据
+//        sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
     }
     if(sendResult<0)
     {
@@ -444,14 +497,21 @@ int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::strin
         target_addr.sin_family= AF_INET;
         target_addr.sin_port= htons(targetPort);
 #ifdef _WIN32
-    target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp);
+    target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp.c_str());
+    int addrlen = sizeof(target_addr);
+    // 发送数据，将 unsigned char * 强制转换为 const char *
+    sendResult = sendto(_sock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
+                        reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
 #else
     target_addr.sin_addr.s_addr = inet_addr(targetIp.c_str());
+    unsigned int addrlen = sizeof(target_addr);
+    //发送数据
+    sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
 #endif
 
-        unsigned int addrlen = sizeof(target_addr);
-        //发送数据
-        sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+//        unsigned int addrlen = sizeof(target_addr);
+//        //发送数据
+//        sendResult = (int)sendto(_sock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
     }
     if(sendResult<0)
     {

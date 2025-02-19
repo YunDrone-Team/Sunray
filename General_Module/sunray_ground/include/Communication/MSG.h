@@ -592,7 +592,7 @@ struct WaypointData
         wpYawType=1;
         wpMoveVel=1;
         wpVelP=1;
-        wpHeight=0;
+        wpHeight=1;
         Waypoint1.X=0;
         Waypoint2.X=0;
         Waypoint3.X=0;
@@ -613,6 +613,16 @@ struct WaypointData
         Waypoint8.Y=0;
         Waypoint9.Y=0;
         Waypoint10.Y=0;
+        Waypoint1.Z=0;
+        Waypoint2.Z=0;
+        Waypoint3.Z=0;
+        Waypoint4.Z=0;
+        Waypoint5.Z=0;
+        Waypoint6.Z=0;
+        Waypoint7.Z=0;
+        Waypoint8.Z=0;
+        Waypoint9.Z=0;
+        Waypoint10.Z=0;
         Waypoint1.Yaw=0;
         Waypoint2.Yaw=0;
         Waypoint3.Yaw=0;
