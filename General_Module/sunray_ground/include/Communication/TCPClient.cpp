@@ -166,7 +166,13 @@ int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targ
 
         if ( INVALID_SOCKET != item->getTCPClientSocket() && sendData.data() != nullptr && sendData.size() >0)
         {
-            sendResult = send(item->getTCPClientSocket(), sendData.data(), sendData.size(), 0);
+//            sendResult = send(item->getTCPClientSocket(), sendData.data(), sendData.size(), 0);
+
+#ifdef _WIN32
+         sendResult = send(item->getTCPClientSocket(), reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0);
+#else
+        sendResult = send(item->getTCPClientSocket(), sendData.data(), sendData.size(), 0);
+#endif
             if(sendResult<=0)
             {
                 perror("send failed"); // 使用perror打印错误消息，它会自动使用errno

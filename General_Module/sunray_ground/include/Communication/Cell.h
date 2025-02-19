@@ -8,9 +8,22 @@
     #define FD_SETSIZE      256
     #define WIN32_LEAN_AND_MEAN
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
-    #include<windows.h>
-    #include<WinSock2.h>
-    #pragma comment(lib,"ws2_32.lib")
+//    #include<windows.h>
+//    #include<WinSock2.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <winsock2.h>
+
+//#include <ws2atm.h>
+//#include <ws2bth.h>
+//#include <ws2def.h>
+//#include <ws2dnet.h>
+//#include <ws2ipdef.h>
+//#include <ws2spi.h>
+
+
+//    #pragma comment(lib,"ws2_32.lib")
 #else
     #include<unistd.h> //uni std
     #include<arpa/inet.h>

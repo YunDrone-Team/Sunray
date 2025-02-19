@@ -37,8 +37,14 @@ void TCPServer::allSendData(std::vector<uint8_t> data)
     for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
     {
 //        writeData(it->second,data);
-        send(it->second, data.data(), data.size(), 0);
+//        send(it->second, data.data(), data.size(), 0);
         //发送结果没处理
+
+#ifdef _WIN32
+        send(it->second, reinterpret_cast<const char*>(data.data()), static_cast<int>(data.size()), 0);
+#else
+        send(it->second, data.data(), data.size(), 0);
+#endif
     }
 }
 
@@ -203,34 +209,80 @@ void TCPServer::readResultDisposal(int result,char* readData,SOCKET sock,fd_set&
 
 bool TCPServer::resetMaxSock()
 {
-    if(fcntl(_sock, F_GETFL, 0)==-1)
-        return false;
-    maxSock=_sock;
-    std::vector<std::string> deleteVector;
-    for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
-    {
-        if(fcntl(it->second, F_GETFL, 0)==-1)
-            deleteVector.push_back(it->first);
-        else
-        {
-            if(maxSock<it->second)
-                maxSock=it->second;
-        }
-    }
+//    if(fcntl(_sock, F_GETFL, 0)==-1)
+//        return false;
+//    maxSock=_sock;
+//    std::vector<std::string> deleteVector;
+//    for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//    {
+//        if(fcntl(it->second, F_GETFL, 0)==-1)
+//            deleteVector.push_back(it->first);
+//        else
+//        {
+//            if(maxSock<it->second)
+//                maxSock=it->second;
+//        }
+//    }
 
-    for (const auto& str : deleteVector)
-    {
-        auto itDelete = ipSocketMap.find(str);
-        if (itDelete  != ipSocketMap.end())
-            ipSocketMap.erase(itDelete->first);
+//    for (const auto& str : deleteVector)
+//    {
+//        auto itDelete = ipSocketMap.find(str);
+//        if (itDelete  != ipSocketMap.end())
+//            ipSocketMap.erase(itDelete->first);
 
-    }
-    deleteVector.clear();
-    FD_ZERO(&fdRead);
-    FD_ZERO(&fdTemp);
-    FD_SET(maxSock, &fdTemp);
+//    }
+//    deleteVector.clear();
+//    FD_ZERO(&fdRead);
+//    FD_ZERO(&fdTemp);
+//    FD_SET(maxSock, &fdTemp);
 
-    return true;
+//    return true;
+
+    #ifdef _WIN32
+            u_long mode;
+            if (ioctlsocket(_sock, FIONBIO, &mode) == SOCKET_ERROR) {
+                return false;
+            }
+    #else
+            if (fcntl(_sock, F_GETFL, 0) == -1) {
+                return false;
+            }
+    #endif
+            maxSock = _sock;
+            std::vector<std::string> deleteVector;
+            for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it) {
+    #ifdef _WIN32
+                if (ioctlsocket(it->second, FIONBIO, &mode) == SOCKET_ERROR) {
+                    deleteVector.push_back(it->first);
+                } else {
+                    if (maxSock < it->second) {
+                        maxSock = it->second;
+                    }
+                }
+    #else
+                if (fcntl(it->second, F_GETFL, 0) == -1) {
+                    deleteVector.push_back(it->first);
+                } else {
+                    if (maxSock < it->second) {
+                        maxSock = it->second;
+                    }
+                }
+    #endif
+            }
+
+            for (const auto& str : deleteVector) {
+                auto itDelete = ipSocketMap.find(str);
+                if (itDelete != ipSocketMap.end()) {
+                    ipSocketMap.erase(itDelete);
+                }
+            }
+            deleteVector.clear();
+            FD_ZERO(&fdRead);
+            FD_ZERO(&fdTemp);
+            FD_SET(maxSock, &fdTemp);
+
+            return true;
+
 }
 
 
