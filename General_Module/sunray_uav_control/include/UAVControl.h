@@ -88,19 +88,20 @@ private:
 
     struct FlightParams
     {
-        int land_type = 0;                        // 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
-        float home_yaw = 0.0;                     // 起飞点航向
-        float hover_yaw = 0.0;                    // 无人机目标航向
-        float land_yaw = 0.0;                     // 降落点航向
-        float takeoff_height;                     // 起飞高度
-        float disarm_height;                      // 锁桨高度
-        float land_end_time;                      // 降落最后一段时间
-        float land_end_speed;                     // 降落最后一段速度
-        float land_speed;                         // 降落速度
-        bool home_set = false;                    // 起飞点是否设置
-        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};  // 起飞点
-        Eigen::Vector3d hover_pos{0.0, 0.0, 0.0}; // 悬停点
-        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};  // 降落点
+        int land_type = 0;                           // 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
+        float home_yaw = 0.0;                        // 起飞点航向
+        float hover_yaw = 0.0;                       // 无人机目标航向
+        float land_yaw = 0.0;                        // 降落点航向
+        float takeoff_height;                        // 起飞高度
+        float disarm_height;                         // 锁桨高度
+        float land_end_time;                         // 降落最后一段时间
+        float land_end_speed;                        // 降落最后一段速度
+        float land_speed;                            // 降落速度
+        bool home_set = false;                       // 起飞点是否设置
+        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 起飞点
+        Eigen::Vector3d hover_pos{0.0, 0.0, 0.0};    // 悬停点
+        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
+        Eigen::Vector3d relative_pos{0.0, 0.0, 0.0}; // 相对位置
     };
     FlightParams flight_params;
 
@@ -126,6 +127,7 @@ private:
         bool check_batt_volt;          // 是否检查电池电压
         bool odom_valid;               // 外部定位是否有效
         bool use_rc;                   // 是否使用遥控器
+        bool use_offset;               // 是否添加偏移
         ros::Time last_land_time;      // 进入降落最后一阶段的时间戳
         ros::Time last_rc_time;        // 上一个rc控制时间点
         ros::Time odom_valid_time;     // 外部定位状态订阅时间戳

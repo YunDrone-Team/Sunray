@@ -242,18 +242,18 @@ void ExternalFusion::show_px4_state()
     else
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
 
-    if (external_source == GPS || external_source == RTK)
-    {
-        Logger::print_color(int(LogColor::green), "GPS STATUS:", gps_status, "SERVICE:", gps_service);
-        Logger::print_color(int(LogColor::green), "GPS SATS:", satellites);
-        Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(latitude), int(longitude), int(altitude));
-        Logger::print_color(int(LogColor::blue), "EXTERNAL GLOBAL POS(receive)");
-    }
-    else
-    {
-        Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
-    }
-
+    // if (external_source == GPS || external_source == RTK)
+    // {
+    //     Logger::print_color(int(LogColor::green), "GPS STATUS:", gps_status, "SERVICE:", gps_service);
+    //     Logger::print_color(int(LogColor::green), "GPS SATS:", satellites);
+    //     Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(latitude), int(longitude), int(altitude));
+    //     Logger::print_color(int(LogColor::blue), "EXTERNAL GLOBAL POS(receive)");
+    // }
+    // else
+    // {
+    //     Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
+    // }
+    Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
     Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
                         external_state.pos_x,
                         external_state.pos_y,
@@ -293,19 +293,19 @@ void ExternalFusion::show_px4_state()
 
             Logger::print_color(int(LogColor::blue), "ERR POS(send - receive)");
             Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-                                err_state.pos_x,
-                                err_state.pos_y,
-                                err_state.pos_z,
+                                external_state.pos_x - px4_state.position_state.pos_x,
+                                external_state.pos_y - px4_state.position_state.pos_y,
+                                external_state.pos_z - px4_state.position_state.pos_z,
                                 "[m]");
             Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
-                                err_state.vel_x,
-                                err_state.vel_y,
-                                err_state.vel_z,
+                                external_state.vel_x - px4_state.position_state.vel_x,
+                                external_state.vel_y - px4_state.position_state.vel_y,
+                                external_state.vel_z - px4_state.position_state.vel_z,
                                 "[m/s]");
             Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                                err_state.roll / M_PI * 180,
-                                err_state.pitch / M_PI * 180,
-                                err_state.yaw / M_PI * 180,
+                                (external_state.roll - px4_state.position_state.roll) / M_PI * 180,
+                                (external_state.pitch - px4_state.position_state.pitch) / M_PI * 180,
+                                (external_state.yaw - px4_state.position_state.yaw) / M_PI * 180,
                                 "[deg]");
         }
     }
