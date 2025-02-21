@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <csignal>
 #include <cstdlib>
+#include <unordered_set>
 
 using namespace std;
 class GroundControl
@@ -81,8 +82,11 @@ private:
 
     std::mutex _mutexUDP;       // 互斥锁
     std::mutex _mutexTCPServer; // 互斥锁
+    std::mutex _mutexTCPLinkState; // 互斥锁
+
 
     std::map<string, pid_t> nodeMap;
+    std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
 
     uint8_t getPX4ModeEnum(std::string modeStr);
     void sendMsgCb(const ros::TimerEvent &e);
@@ -92,6 +96,7 @@ private:
     void UDPCallBack(ReceivedParameter readData);
     void executiveDemo(std::string orderStr);
     bool SynchronizationUAVState(StateData Data);
+    void TCPLinkState(bool state,std::string IP);
     pid_t OrderCourse(std::string orderStr);
     pid_t CheckChildProcess(pid_t pid); // 检查子进程是否已经结束
 };

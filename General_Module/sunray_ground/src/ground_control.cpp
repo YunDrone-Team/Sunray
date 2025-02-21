@@ -54,10 +54,11 @@ void GroundControl::init(ros::NodeHandle &nh)
 
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
     // qDebug()<<"TCPServer绑定端口号结果： "<<back;
-    HeartbeatState = false; // 心跳包
+    HeartbeatState = false; // 心跳包 TCPLinkState
 
     tcpServer.Listen(30);
     tcpServer.sigTCPServerReadData.connect(boost::bind(&GroundControl::TCPServerCallBack, this, _1));
+    tcpServer.sigLinkState.connect(boost::bind(&GroundControl::TCPLinkState, this, _1, _2));
     tcpServer.setRunState(true);
 
     udpSocket = CommunicationUDPSocket::getInstance();
@@ -65,6 +66,15 @@ void GroundControl::init(ros::NodeHandle &nh)
     udpSocket->sigUDPUnicastReadData.connect(boost::bind(&GroundControl::UDPCallBack, this, _1));
     // udpSocket->InitSocket();
     udpSocket->setRunState(true);
+}
+
+void GroundControl::TCPLinkState(bool state, std::string IP)
+{
+    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+    if (state)
+        GSIPHash.insert(IP);
+    else
+        GSIPHash.erase(IP);
 }
 
 uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
@@ -141,12 +151,12 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
 pid_t GroundControl::CheckChildProcess(pid_t pid)
 {
 
-// WIFEXITED(status)：若子进程正常退出，该宏会返回 true。
-// WEXITSTATUS(status)：当 WIFEXITED(status) 为 true 时，此宏用于获取子进程的退出状态码。
-// WIFSIGNALED(status)：若子进程是因为接收到信号而终止，该宏会返回 true。
-// WTERMSIG(status)：当 WIFSIGNALED(status) 为 true 时，此宏用于获取终止子进程的信号编号。
-// WIFSTOPPED(status)：若子进程被暂停，该宏会返回 true。
-// WSTOPSIG(status)：当 WIFSTOPPED(status) 为 true 时，此宏用于获取使子进程暂停的信号编号。
+    // WIFEXITED(status)：若子进程正常退出，该宏会返回 true。
+    // WEXITSTATUS(status)：当 WIFEXITED(status) 为 true 时，此宏用于获取子进程的退出状态码。
+    // WIFSIGNALED(status)：若子进程是因为接收到信号而终止，该宏会返回 true。
+    // WTERMSIG(status)：当 WIFSIGNALED(status) 为 true 时，此宏用于获取终止子进程的信号编号。
+    // WIFSTOPPED(status)：若子进程被暂停，该宏会返回 true。
+    // WSTOPSIG(status)：当 WIFSTOPPED(status) 为 true 时，此宏用于获取使子进程暂停的信号编号。
 
     // 检测子进程状态，
     int status;
@@ -156,13 +166,19 @@ pid_t GroundControl::CheckChildProcess(pid_t pid)
         if (WIFEXITED(status))
         {
             std::cout << "Child process (PID: " << pid << ") exited normally with status " << WEXITSTATUS(status) << std::endl;
-        }else if (WIFSIGNALED(status)){
+        }
+        else if (WIFSIGNALED(status))
+        {
             std::cout << "Child process (PID: " << pid << ") was terminated by signal " << WTERMSIG(status) << std::endl;
         }
-    }else if (terminated_pid == 0){
+    }
+    else if (terminated_pid == 0)
+    {
         // 子进程还在运行
-        //std::cout << "Child process (PID: " << pid << ") is still running." << std::endl;
-    }else{
+        // std::cout << "Child process (PID: " << pid << ") is still running." << std::endl;
+    }
+    else
+    {
         perror("waitpid");
     }
     return terminated_pid;
@@ -175,7 +191,9 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
     {
         perror("fork failed");
         // return EXIT_FAILURE;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
@@ -187,11 +205,12 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
 
         demoPID = pid;
         printf("This is the parent process. Child PID: %d\n", pid);
-       
     }
     return pid;
 }
@@ -204,7 +223,9 @@ void GroundControl::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
         // 由于source是bash的内建命令，不能直接在execlp中调用它
@@ -222,7 +243,9 @@ void GroundControl::executiveDemo(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         // 父进程
         int status;
 
@@ -253,6 +276,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
         // std::cout << "TCPServer心跳包接收到IP " << readData.ip << std::endl;
 
         HeartbeatState = true; // 心跳包
+        GSIPHash.insert(readData.ip);
 
         break;
     case MessageID::ControlMessageID:
@@ -326,7 +350,9 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
                 if (it != nodeMap.end())
                 {
                     std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }else{
+                }
+                else
+                {
                     pid_t back = OrderCourse(readData.data.demo.demoStr);
                     if (back > 0)
                         nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
@@ -346,7 +372,9 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }else{
+                    }
+                    else
+                    {
                         printf("Sent SIGTERM to child process %d\n", temp);
                         nodeMap.erase(readData.data.demo.demoStr);
                     }
@@ -485,6 +513,18 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
         // UDP单播地面站发送
         //  udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_ground_port);
 
+        std::vector<std::string> tempVec;
+        for (const auto &ip : GSIPHash)
+        {
+            int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), ip, udp_ground_port);
+            if (sendBack < 0)
+                tempVec.push_back(ip);
+        }
+
+        for (const auto &ip : tempVec)
+            GSIPHash.erase(ip);
+        tempVec.clear();
+
         // std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl;
     }
 }
@@ -506,19 +546,15 @@ void GroundControl::HeartRate(const ros::TimerEvent &e)
         // tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
 
         std::vector<std::string> keysToRemove;
-        for (const auto& pair : nodeMap)
+        for (const auto &pair : nodeMap)
         {
-            if(pair.second==CheckChildProcess(pair.second))
-                 keysToRemove.push_back(pair.first);
+            if (pair.second == CheckChildProcess(pair.second))
+                keysToRemove.push_back(pair.first);
         }
-        
-        for (const auto& key : keysToRemove) 
+
+        for (const auto &key : keysToRemove)
             nodeMap.erase(key);
-    
-
     }
-
-
 }
 
 void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
