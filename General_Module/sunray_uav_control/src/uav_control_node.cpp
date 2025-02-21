@@ -13,7 +13,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<float>("flight_param/Land_speed", flight_params.land_speed, 0.2);         // 【参数】降落速度
     nh.param<float>("flight_param/land_end_time", flight_params.land_end_time, 1.0);   // 【参数】降落最后一阶段时间
     nh.param<float>("flight_param/land_end_speed", flight_params.land_end_speed, 0.3); // 【参数】降落最后一阶段速度
-    nh.param<int>("flight_param/land_type", flight_params.land_type, 0);             // 【参数】降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
+    nh.param<int>("flight_param/land_type", flight_params.land_type, 0);               // 【参数】降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
     nh.param<float>("flight_param/home_x", default_home_x, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
     nh.param<float>("flight_param/home_y", default_home_y, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
     nh.param<float>("flight_param/home_z", default_home_z, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
@@ -30,6 +30,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<float>("system_params/odom_valid_timeout", system_params.odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
     nh.param<float>("system_params/odom_valid_warming_time", system_params.odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
     nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);                           // 【参数】是否使用遥控器控制
+    nh.param<bool>("system_params/use_offset", system_params.use_offset, false);                          // 【参数】是否使用位置偏移
 
     uav_prefix = uav_name + std::to_string(uav_id);
     topic_prefix = "/" + uav_prefix;
@@ -112,7 +113,8 @@ void UAVControl::mainLoop()
     {
         // 检查无人机是否位于定点模式，否则切换至定点模式safety_state
     case Control_Mode::INIT:
-        if (uav_state.mode != "POSCTL")
+        // 无人机在未解锁状态且处于非定点模式时切换到定点模式 
+        if (!px4_state.armed && uav_state.mode != "POSCTL")
         {
             setMode("POSCTL");
         }

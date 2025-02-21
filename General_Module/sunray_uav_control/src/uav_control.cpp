@@ -46,16 +46,25 @@ void UAVControl::px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 // 无人机pose回调
 void UAVControl::px4_local_pos_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
-    // if (system_params.location_source != 5 || system_params.location_source != 6)
-    if (true)
+    px4_state.pos[0] = msg->pose.position.x;
+    px4_state.pos[1] = msg->pose.position.y;
+    px4_state.pos[2] = msg->pose.position.z;
+
+    if (!px4_state.armed)
     {
-        px4_state.pos[0] = msg->pose.position.x;
-        px4_state.pos[1] = msg->pose.position.y;
-        px4_state.pos[2] = msg->pose.position.z;
+        flight_params.relative_pos[0] = 0;
+        flight_params.relative_pos[1] = 0;
+        flight_params.relative_pos[2] = 0;
+    }
+    else
+    {
+        flight_params.relative_pos[0] = px4_state.pos[0] - flight_params.home_pos[0];
+        flight_params.relative_pos[1] = px4_state.pos[1] - flight_params.home_pos[1];
+        flight_params.relative_pos[2] = px4_state.pos[2] - flight_params.home_pos[2];
     }
 }
 
-// 无人机pose回调
+// 无人机pose回调 未启用
 void UAVControl::px4_global_pos_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
     if (system_params.location_source == 5 || system_params.location_source == 6)
@@ -437,6 +446,7 @@ void UAVControl::print_state(const ros::TimerEvent &event)
         else
             Logger::print_color(int(LogColor::green), "MODE:", LOG_BLUE, px4_state.mode, LOG_RED, "DISARMED");
         Logger::print_color(int(LogColor::green), "BATTERY:", px4_state.batt_volt, "[V]", px4_state.batt_perc, "[%]");
+        // PX4回调位置 ekf数据
         Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
         Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
                             px4_state.pos[0],
@@ -457,7 +467,7 @@ void UAVControl::print_state(const ros::TimerEvent &event)
     else
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
     Logger::color_no_del(int(LogColor::green), "Control Mode [", LOG_BLUE, modeMap[system_params.control_mode], LOG_GREEN, "]");
-    if (system_params.control_mode ==  Control_Mode::CMD_CONTROL || system_params.control_mode ==  Control_Mode::RC_CONTROL)
+    if (system_params.control_mode == Control_Mode::CMD_CONTROL || system_params.control_mode == Control_Mode::RC_CONTROL)
     {
         Logger::color_no_del(int(LogColor::green), "Move Mode [", LOG_BLUE, moveModeMapStr[control_cmd.cmd], LOG_GREEN, "]");
         Logger::print_color(int(LogColor::blue), "PX4 TARGET (receive)");
@@ -476,6 +486,23 @@ void UAVControl::print_state(const ros::TimerEvent &event)
                             px4_state.target_att[1],
                             px4_state.target_att[2],
                             "[m/s]");
+
+        if (system_params.use_offset)
+        {
+            // 相对位置
+            Logger::print_color(int(LogColor::blue), "POS(relative to home)");
+            Logger::print_color(int(LogColor::green), "Relative POS[X Y Z]:",
+                                flight_params.relative_pos[0],
+                                flight_params.relative_pos[1],
+                                flight_params.relative_pos[2],
+                                "[m]");
+            Logger::print_color(int(LogColor::blue), "PX4 TARGET (relative to home)");
+            Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                                px4_state.target_pos[0] - flight_params.home_pos[0],
+                                px4_state.target_pos[1] - flight_params.home_pos[1],
+                                px4_state.target_pos[2] - flight_params.home_pos[2],
+                                "[m]");
+        }
     }
 }
 
@@ -610,7 +637,7 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     else if (system_params.safety_state == 2) // 定位数据失效
     {
         // 定位失效要要进入降落模式
-        if (system_params.control_mode ==  Control_Mode::RC_CONTROL || system_params.control_mode ==  Control_Mode::CMD_CONTROL)
+        if (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL)
         {
             system_params.control_mode = Control_Mode::LAND_CONTROL;
             Logger::error("Lost odom, landing...");
@@ -680,6 +707,8 @@ void UAVControl::set_desired_from_cmd()
             Logger::error("UAV not armed, can't set desired frome cmd");
             last_control_cmd = control_cmd;
         }
+        // 切换回INIT
+        system_params.control_mode = Control_Mode::INIT;
 
         return;
     }
@@ -753,6 +782,12 @@ void UAVControl::set_desired_from_cmd()
                     local_setpoint.position.x = control_cmd.desired_pos[0];
                     local_setpoint.position.y = control_cmd.desired_pos[1];
                     local_setpoint.position.z = control_cmd.desired_pos[2];
+                    if (system_params.use_offset)
+                    {
+                        local_setpoint.position.x = control_cmd.desired_pos[0] + flight_params.home_pos[0];
+                        local_setpoint.position.y = control_cmd.desired_pos[1] + flight_params.home_pos[1];
+                        local_setpoint.position.z = control_cmd.desired_pos[2] + flight_params.home_pos[2];
+                    }
                     local_setpoint.velocity.x = control_cmd.desired_vel[0];
                     local_setpoint.velocity.y = control_cmd.desired_vel[1];
                     local_setpoint.velocity.z = control_cmd.desired_vel[2];
@@ -823,9 +858,20 @@ void UAVControl::set_desired_from_rc()
 // 计算降落的期望值
 void UAVControl::set_desired_from_land()
 {
-    if(flight_params.land_type && px4_state.mode != "AUTO.LAND")
+    // 如果无人机已经上锁，代表已经降落结束
+    if (!px4_state.armed)
+    {
+        system_params.control_mode = Control_Mode::INIT;
+        Logger::warning("Landing finished!");
+    }
+
+    if (flight_params.land_type == 1 && px4_state.mode != "AUTO.LAND")
     {
         set_auto_land();
+    }
+    if (flight_params.land_type == 1 && px4_state.mode == "AUTO.LAND")
+    {
+        return;
     }
     bool new_cmd = system_params.control_mode != system_params.last_control_mode ||
                    (control_cmd.cmd == Land && (control_cmd.header.stamp != last_control_cmd.header.stamp));
@@ -867,13 +913,6 @@ void UAVControl::set_desired_from_land()
             emergencyStop();
             system_params.control_mode = Control_Mode::INIT;
         }
-    }
-
-    // 如果无人机已经上锁，代表已经降落结束
-    if (!px4_state.armed)
-    {
-        system_params.control_mode = Control_Mode::INIT;
-        Logger::warning("Landing finished!");
     }
 
     setpoint_local_pub(system_params.type_mask, local_setpoint);
@@ -1215,7 +1254,7 @@ void UAVControl::set_takeoff()
 // 进入降落模式
 void UAVControl::set_land()
 {
-    if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode ==  Control_Mode::RC_CONTROL || system_params.control_mode ==  Control_Mode::CMD_CONTROL))
+    if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL))
     {
         system_params.control_mode = Control_Mode::LAND_CONTROL;
         set_desired_from_land();
