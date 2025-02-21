@@ -21,6 +21,7 @@ public:
 
      boost::signals2::signal<void(int)> sigUDPError;
 
+
     SOCKET InitSocket();                                        //初始化Socket
     int Bind(unsigned short port=9898);                         //绑定监听端口号
 

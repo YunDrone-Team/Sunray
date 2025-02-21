@@ -30,6 +30,8 @@ public:
     boost::signals2::signal<void(ReceivedParameter)> sigTCPClientReadData;
     boost::signals2::signal<void(int)> sigTCPError;
     boost::signals2::signal<void(CommunicationState)> sigTCPClientState;
+    boost::signals2::signal<void(bool, std::string)> sigLinkState;//连接状态，true表示连接，false表示断开 
+
 
     SOCKET InitSocket();                                                     //初始化Socket
     int Bind(unsigned short port=9696,const char* ip=nullptr);              //绑定IP和端口号

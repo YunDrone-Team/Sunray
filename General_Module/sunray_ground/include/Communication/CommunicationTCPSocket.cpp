@@ -218,6 +218,10 @@ SocketIP CommunicationTCPSocket::Accept(uint16_t* linuxPort,unsigned short* winP
 
         std::vector<uint8_t> temp;
         TCPServerCacheDataMap[cSock]=temp;
+
+        bool linkState=true;
+        std::string clientIP = AccIp;
+        sigLinkState(linkState,clientIP);
     }
     return back;
 }
