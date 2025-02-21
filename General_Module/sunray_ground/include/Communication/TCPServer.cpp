@@ -276,6 +276,9 @@ bool TCPServer::resetMaxSock()
         auto itDelete = ipSocketMap.find(str);
         if (itDelete != ipSocketMap.end())
         {
+            bool linkState = false;
+            std::string clientIP = itDelete->first;
+            sigLinkState(linkState, clientIP);
             ipSocketMap.erase(itDelete);
         }
     }
