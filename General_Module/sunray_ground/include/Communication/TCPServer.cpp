@@ -363,7 +363,7 @@ bool TCPServer::TCPServerOnRun()
                     if (len < 0)
                     {
                         waitClearIP.push_back(it->first);
-                        bool linkState = true;
+                        bool linkState = false;
                         std::string clientIP = it->first;
                         sigLinkState(linkState, clientIP);
                     }else if (len == 0){
@@ -371,7 +371,7 @@ bool TCPServer::TCPServerOnRun()
 
 #else
                         waitClearIP.push_back(it->first);
-                        bool linkState = true;
+                        bool linkState = false;
                         std::string clientIP = it->first;
                         sigLinkState(linkState, clientIP);
 #endif
