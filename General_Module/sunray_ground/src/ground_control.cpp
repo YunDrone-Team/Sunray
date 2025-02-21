@@ -70,6 +70,8 @@ void GroundControl::init(ros::NodeHandle &nh)
 
 void GroundControl::TCPLinkState(bool state, std::string IP)
 {
+    // std::cout << "TCPLinkState: "<<state<<" IP："<<IP << std::endl;
+
     std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
     if (state)
         GSIPHash.insert(IP);
@@ -494,26 +496,29 @@ bool GroundControl::SynchronizationUAVState(StateData Data)
 
 void GroundControl::sendMsgCb(const ros::TimerEvent &e)
 {
-    //  std::cout << "send msg" << std::endl;
+    //   std::cout << "send msg" << std::endl;
+    std::vector<std::string> tempVec;
+
     for (int i = uav_id; i < uav_id + simulation_num; i++)
     {
 
-        std::lock_guard<std::mutex> lock(_mutexUDP);
         // std::cout << "UDP目的ip： " << udp_ip << " UDP目的端口： "<<udp_port<< std::endl;
         //  std::cout << "udpData[i] " << (int)udpData[i].state.uavID << " i "<<i<< std::endl;
 
         //  int back = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_port);
 
-        // 无人机机间组播链路发送
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_port);
+        {
+            std::lock_guard<std::mutex> lock(_mutexUDP);
+            // 无人机机间组播链路发送
+            int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_port);
+        }
 
         // 地面站组播链路发送
-        udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ground_port);
+        // udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ground_port);
 
         // UDP单播地面站发送
         //  udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_ip, udp_ground_port);
-
-        std::vector<std::string> tempVec;
+        std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
         for (const auto &ip : GSIPHash)
         {
             int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), ip, udp_ground_port);
@@ -521,12 +526,12 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
                 tempVec.push_back(ip);
         }
 
-        for (const auto &ip : tempVec)
-            GSIPHash.erase(ip);
-        tempVec.clear();
-
         // std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl;
     }
+    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+    for (const auto &ip : tempVec)
+        GSIPHash.erase(ip);
+    tempVec.clear();
 }
 
 void GroundControl::HeartRate(const ros::TimerEvent &e)
