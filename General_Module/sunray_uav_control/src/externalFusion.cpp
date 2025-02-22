@@ -38,7 +38,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
 {
     nh_ = nh;
     double source_timeout, jump_threshold, pub_rate, task_rate;
-    bool flag_printf, enable_rviz, check_jump;
+    bool  enable_rviz, check_jump;
 
     node_name = ros::this_node::getName();                                        // 【参数】节点名称
     nh.param<int>("uav_id", uav_id, 1);                                           // 【参数】无人机编号
@@ -50,8 +50,6 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     nh.param<double>("pub_rate", pub_rate, 0.02);                                 // 【参数】发布到mavros的频率
     nh.param<double>("task_rate", task_rate, 0.05);                               // 【参数】定时任务的频率
     nh.param<bool>("check_jump", check_jump, false);                              // 【参数】是否检查外部定位数据跳变
-    nh.param<bool>("listen_uav", listen_uav_state, true);                         // 【参数】是否监听无人机状态
-    nh.param<bool>("flag_printf", flag_printf, true);                             // 【参数】是否打印日志
     nh.param<bool>("enable_rviz", enable_rviz, false);                            // 【参数】是否发布到rviz
     // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);               // 【参数】是否使用rangeSensor
 
@@ -98,26 +96,23 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         Logger::error("external source not found,external source id: [ ", external_source, " ]");
     }
 
-    if (listen_uav_state || flag_printf)
-    {
-        // 【订阅】无人机状态
-        px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
-        // 【订阅】无人机电量
-        px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
-        // 【订阅】无人机当前位置 NED
-        // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
-        px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 10, &ExternalFusion::px4_pose_callback, this);
-        // 【订阅】无人机速度 NED
-        px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
-        // 【订阅】无人机姿态 imu
-        px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
-        // 【订阅】无人机GPS卫星数量
-        px4_gps_satellites_sub = nh.subscribe<std_msgs::UInt32>(topic_prefix + "/mavros/global_position/raw/satellites", 10, &ExternalFusion::px4_gps_satellites_callback, this);
-        // 【订阅】无人机GPS状态
-        px4_gps_state_sub = nh.subscribe<sensor_msgs::NavSatFix>(topic_prefix + "/mavros/global_position/global", 10, &ExternalFusion::px4_gps_state_callback, this);
-        // 【订阅】无人机GPS原始数据
-        px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(topic_prefix + "/mavros/gpsstatus/gps1/raw", 10, &ExternalFusion::px4_gps_raw_callback, this);
-    }
+    // 【订阅】无人机状态
+    px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
+    // 【订阅】无人机电量
+    px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
+    // 【订阅】无人机当前位置 NED
+    // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
+    px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 10, &ExternalFusion::px4_pose_callback, this);
+    // 【订阅】无人机速度 NED
+    px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
+    // 【订阅】无人机姿态 imu
+    px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
+    // 【订阅】无人机GPS卫星数量
+    px4_gps_satellites_sub = nh.subscribe<std_msgs::UInt32>(topic_prefix + "/mavros/global_position/raw/satellites", 10, &ExternalFusion::px4_gps_satellites_callback, this);
+    // 【订阅】无人机GPS状态
+    px4_gps_state_sub = nh.subscribe<sensor_msgs::NavSatFix>(topic_prefix + "/mavros/global_position/global", 10, &ExternalFusion::px4_gps_state_callback, this);
+    // 【订阅】无人机GPS原始数据
+    px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(topic_prefix + "/mavros/gpsstatus/gps1/raw", 10, &ExternalFusion::px4_gps_raw_callback, this);
 
     if (enable_rviz)
     {
@@ -309,6 +304,11 @@ void ExternalFusion::show_px4_state()
                                 "[deg]");
         }
     }
+    // 打印报错信息
+    for (int msg : err_msg) {
+        Logger::warning(ERR_MSG[msg]);
+    }
+    err_msg.clear();
 }
 
 // 定时器回调函数
@@ -345,7 +345,8 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
         // 检查超时
         if (!external_position->position_state.valid)
         {
-            Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
+            // Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
+            err_msg.insert(2);
         }
 
         // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
@@ -354,7 +355,8 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
             abs(err_state.pos_z) > 0.1)
         // abs(err_state.yaw) > 10) // deg
         {
-            Logger::warning("Warning: The error between external state and px4 state is too large!");
+            // Logger::warning("Warning: The error between external state and px4 state is too large!");
+            err_msg.insert(1);
         }
     }
     else

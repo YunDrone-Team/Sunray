@@ -353,7 +353,7 @@
     </joint>
     <include>
       <uri>model://gps</uri>
-      <pose>0.0 0 0.15 0 0 0</pose>
+      <pose>0.0 0 0.22 0 0 0</pose>
       <name>gps</name>
     </include>
     <joint name='gps_joint' type='fixed'>

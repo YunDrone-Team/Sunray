@@ -22,12 +22,12 @@
 
     <include>
       <uri>model://camera_front</uri> 
-      <pose>0.08 0 0.11 0 0 0</pose>
+      <pose>0.08 0 0.245 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://camera_down</uri>
-      <pose>0.062 0 0 0 1.5707963 0</pose> <!--位置-->
+      <pose>0.062 0 0.135 0 1.5707963 0</pose> <!--位置-->
     </include>
      <!-- 下视相机关节 -->
     <joint name="Monocular_down_joint" type="fixed">

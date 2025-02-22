@@ -9,8 +9,6 @@
     <arg name="pub_rate" default="0.02" />
     <arg name="task_rate" default="0.05" />
     <arg name="check_jump" default="false" />
-    <arg name="listen_uav" default="true" />
-    <arg name="flag_printf" default="true" />
     <arg name="enable_rviz" default="true" />
     <arg name="server" default="192.168.25.13"/>
 
@@ -26,8 +24,6 @@
         <param name="pub_rate" value="$(arg pub_rate)" />
         <param name="task_rate" value="$(arg task_rate)" />
         <param name="check_jump" value="$(arg check_jump)" />
-        <param name="listen_uav" value="$(arg listen_uav)" />
-        <param name="flag_printf" value="$(arg flag_printf)" />
         <param name="enable_rviz" value="$(arg enable_rviz)" />
     </node>
 

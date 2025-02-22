@@ -21,7 +21,6 @@ sunray_msgs::UAVSetup setup;
 sunray_msgs::UAVState uav_control_state;
 std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
 
-bool is_ground_station_control = false;
 bool flag = false;
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
@@ -53,7 +52,6 @@ int main(int argc, char **argv)
     nh.param("uav_id", uav_id, 1);
     nh.param("uav_num", uav_num, 1);
     nh.param<string>("uav_name", uav_name, "uav");
-    nh.getParam("/communication_bridge/trajectory_ground_control", is_ground_station_control);
 
     uav_name = uav_name + std::to_string(uav_id);
     string topic_prefix = "/" + uav_name;
@@ -100,38 +98,29 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         ros::spinOnce();
-
-        if (uav_control_state.control_mode != 2)
-        {
-            cout << YELLOW << "Please switch to COMMAND_CONTROL mode first" << TAIL << endl;
-        }
-
-        if (!is_ground_station_control)
-        {
-            cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>UAV Terminal Control<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
-            cout << GREEN << "setup: "
-                 << YELLOW << "101 " << GREEN << "arm or dis arm,"
-                 << YELLOW << " 102 " << GREEN << "control_state,"
-                 << YELLOW << " 103 " << GREEN << "takeoff,"
-                 << YELLOW << " 104 " << GREEN << "hover,"
-                 << YELLOW << " 105 " << GREEN << "land,"
-                 << YELLOW << " 106 " << GREEN << "return,"
-                 << YELLOW << " 107 " << GREEN << "waypoint,"
-                 << YELLOW << " 108 " << GREEN << "goalpoint"<< TAIL << endl;
-            cout << GREEN << "CMD: "
-                 << YELLOW << "1 " << GREEN << "(XYZ_POS),"
-                 << YELLOW << " 2 " << GREEN << "(XyzVel),"
-                 << YELLOW << " 3 " << GREEN << "(XyVelZPos),"
-                 << YELLOW << " 4 " << GREEN << "(XyzPosYaw),"
-                 << YELLOW << " 5 " << GREEN << "(XyzPosYawrate),"
-                 << YELLOW << " 6 " << GREEN << "(XyzVelYaw),"
-                 << YELLOW << " 7 " << GREEN << "(XyzVelYawrate),"
-                 << YELLOW << " 8 " << GREEN << "(XyVelZPosYaw),"
-                 << YELLOW << " 14 " << GREEN << "(XyzPosYawBody),"
-                 << YELLOW << " 15 " << GREEN << "(XyzVelYawBody),"
-                 << YELLOW << " 17 " << GREEN << "(GlobalPos)" << TAIL << endl;
-            cin >> CMD;
-        }
+        cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>UAV Terminal Control<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
+        cout << GREEN << "setup: "
+                << YELLOW << "101 " << GREEN << "arm or dis arm,"
+                << YELLOW << " 102 " << GREEN << "control_state,"
+                << YELLOW << " 103 " << GREEN << "takeoff,"
+                << YELLOW << " 104 " << GREEN << "hover,"
+                << YELLOW << " 105 " << GREEN << "land,"
+                << YELLOW << " 106 " << GREEN << "return,"
+                << YELLOW << " 107 " << GREEN << "waypoint,"
+                << YELLOW << " 108 " << GREEN << "goalpoint"<< TAIL << endl;
+        cout << GREEN << "CMD: "
+                << YELLOW << "1 " << GREEN << "(XYZ_POS),"
+                << YELLOW << " 2 " << GREEN << "(XyzVel),"
+                << YELLOW << " 3 " << GREEN << "(XyVelZPos),"
+                << YELLOW << " 4 " << GREEN << "(XyzPosYaw),"
+                << YELLOW << " 5 " << GREEN << "(XyzPosYawrate),"
+                << YELLOW << " 6 " << GREEN << "(XyzVelYaw),"
+                << YELLOW << " 7 " << GREEN << "(XyzVelYawrate),"
+                << YELLOW << " 8 " << GREEN << "(XyVelZPosYaw),"
+                << YELLOW << " 14 " << GREEN << "(XyzPosYawBody),"
+                << YELLOW << " 15 " << GREEN << "(XyzVelYawBody),"
+                << YELLOW << " 17 " << GREEN << "(GlobalPos)" << TAIL << endl;
+        cin >> CMD;
 
         switch (CMD)
         {
