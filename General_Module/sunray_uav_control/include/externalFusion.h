@@ -54,6 +54,10 @@ struct PX4State
     PositionState position_state;
 };
 
+std::map<int, std::string> ERR_MSG = {
+    {1, "Warning: The error between external state and px4 state is too large!"},
+    {2, "Warning: The external position is timeout!"}};
+
 class ExternalFusion
 {
 private:
@@ -72,10 +76,10 @@ private:
     double latitude;                                        // 纬度
     double longitude;                                       // 经度
     double altitude;                                        // 海拔
-    bool listen_uav_state;                                  // 是否订阅无人机状态
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
     sunray_msgs::UAVState uav_state;                        // 无人机状态信息
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
+    std::set<int> err_msg;                                  // 错误信息集合
     PX4State px4_state;                                     // 无人机状态集合
     PositionState external_state;                           // 外部定位数据
     PositionState err_state;                                // 状态误差
@@ -121,7 +125,7 @@ public:
     void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);   // 无人机位置回调函数
     void px4_gps_satellites_callback(const std_msgs::UInt32::ConstPtr &msg);   // 无人机gps卫星状态回调函数
     void px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstPtr &msg);  // 无人机gps状态回调函数
-    void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);  // 无人机gps原始数据回调函数
+    void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);       // 无人机gps原始数据回调函数
     // void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);           // 无人机里程计回调函数（同时包含了位置和速度 但是是机体系）
 };
 
