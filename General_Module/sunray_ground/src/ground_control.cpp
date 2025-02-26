@@ -90,11 +90,11 @@ uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
         back = PX4ModeType::AcroType;
     else if (modeStr == "RATTITUDE")
         back = PX4ModeType::RattitudeType;
-    else if (modeStr == "ALTITUDE")
+    else if (modeStr == "ALTCTL")
         back = PX4ModeType::AltitudeType;
     else if (modeStr == "OFFBOARD")
         back = PX4ModeType::OffboardType;
-    else if (modeStr == "POSITION")
+    else if (modeStr == "POSCTL")
         back = PX4ModeType::PositionType;
     else if (modeStr == "HOLD")
         back = PX4ModeType::HoldType;
