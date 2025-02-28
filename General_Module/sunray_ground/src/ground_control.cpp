@@ -50,7 +50,7 @@ void GroundControl::init(ros::NodeHandle &nh)
     // executiveDemo();
 
     sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
-    HeartbeatTimer = nh.createTimer(ros::Duration(0.5), &GroundControl::HeartRate, this);
+    HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &GroundControl::HeartRate, this);
 
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
     // qDebug()<<"TCPServer绑定端口号结果： "<<back;
