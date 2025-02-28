@@ -91,6 +91,7 @@ void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
         flight_params.home_pos[0] = px4_state.pos[0];
         flight_params.home_pos[1] = px4_state.pos[1];
         flight_params.home_pos[2] = px4_state.pos[2];
+        flight_params.home_yaw = px4_state.att[2];
         flight_params.home_set = true;
         Logger::info("Home position set to: ", flight_params.home_pos[0], flight_params.home_pos[1], flight_params.home_pos[2]);
     }
@@ -977,13 +978,14 @@ void UAVControl::return_to_home()
 // 计算航点需要的yaw值
 float UAVControl::get_yaw_from_waypoint(int type, float point_x, float point_y)
 {
+    // 朝向下一个点
     if (type == 2)
     {
         float yaw = atan2(point_y - px4_state.pos[1],
                           point_x - px4_state.pos[0]);
         // 如果航点距离较近，则不改变yaw值
-        if ((abs(px4_state.pos[0] - flight_params.home_pos[0]) < 0.2) &&
-            (abs(px4_state.pos[1] - flight_params.home_pos[1]) < 0.2) && wp_params.wp_state != 4)
+        if ((abs(px4_state.pos[0] - point_x) < 0.4) &&
+            (abs(px4_state.pos[1] - point_y) < 0.4) && wp_params.wp_state != 4)
         {
             yaw = px4_state.att[2];
         }
@@ -997,6 +999,12 @@ float UAVControl::get_yaw_from_waypoint(int type, float point_x, float point_y)
     }
     else
     {
+        // 如果航点距离较近，则不改变yaw值
+        if ((abs(px4_state.pos[0] - point_x) < 0.4) &&
+            (abs(px4_state.pos[1] - point_y) < 0.4))
+        {
+            return px4_state.att[2];
+        }
         return wp_params.wp_points[wp_params.wp_index][3];
     }
 }
@@ -1159,7 +1167,7 @@ void UAVControl::waypoint_mission()
                 local_setpoint.velocity.x = wp_params.wp_x_vel;
                 local_setpoint.velocity.y = wp_params.wp_y_vel;
                 local_setpoint.position.z = wp_params.z_height;
-                local_setpoint.yaw = get_yaw_from_waypoint(2,
+                local_setpoint.yaw = get_yaw_from_waypoint(wp_params.wp_yaw_type,
                                                            flight_params.home_pos[0],
                                                            flight_params.home_pos[1]);
                 system_params.type_mask = TypeMask::XY_VEL_Z_POS_YAW;

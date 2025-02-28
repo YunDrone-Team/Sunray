@@ -3,7 +3,7 @@
     <!-- MAVROS posix SITL environment launch script -->
     <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
     <!-- vehicle model and world -->
-    <arg name="vehicle" default="sunray300"/>
+    <arg name="vehicle" default="sunray150"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
     
 
