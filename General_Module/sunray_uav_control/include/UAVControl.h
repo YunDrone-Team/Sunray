@@ -140,8 +140,8 @@ private:
         bool wp_takeoff = false;                      // 是否起飞
         int wp_num = 0;                               // 航点数量 【最大数量10】
         int wp_type = 0;                              // 航点类型 【0：NED 1：经纬】
-        int wp_end_type = 0;                          // 航点结束类型 【1: 悬停 2: 降落 3: 返航】
-        int wp_yaw_type = 0;                          // 航点航向类型 【1: 固定值 1: 朝向下一个航点 2: 指向环绕点】
+        int wp_end_type = 3;                          // 航点结束类型 【1: 悬停 2: 降落 3: 返航】
+        int wp_yaw_type = 2;                          // 航点航向类型 【1: 固定值 2: 朝向下一个航点 3: 指向环绕点】
         int wp_index = 0;                             // 当前航点索引
         int wp_state = 0;                             // 航点状态 【1：解锁 2：起飞中 3：航点执行中 4:返航中 5:降落中 6: 结束】
         float wp_move_vel = 0.5;                      // 最大水平速度
