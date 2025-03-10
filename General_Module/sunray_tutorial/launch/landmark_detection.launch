@@ -1,6 +1,6 @@
 <launch>
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find sunray_tutorial)/config/rosconsole.config"/>
-    <arg name="camera_name" default="/sunray/camera/monocular_down" />
+    <arg name="camera_name" default="/usb_cam" />
     <arg name="image_topic" default="image_raw" />
     <arg name="queue_size" default="1" />
 

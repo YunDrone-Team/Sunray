@@ -2,11 +2,11 @@
     <arg name="uav_num" default="1"/>
     <arg name="offset_dis" default="1.0"/>
     <arg name="use_hight" default="true" />
-    <arg name="z_hight" default="1.0" />
+    <arg name="z_hight" default="1" />
 
     <!-- ego地图大小 -->
-    <arg name="map_size_x" value="50.0"/>
-    <arg name="map_size_y" value="50.0"/>
+    <arg name="map_size_x" value="30.0"/>
+    <arg name="map_size_y" value="30.0"/>
     <arg name="map_size_z" value=" 2"/>
 
     <!--  ego的输出指令 -->

@@ -28,11 +28,11 @@
         <param name="uav_name" value="$(arg uav_name)" />
         <!-- 起飞高度 | 降落第一阶段高度 | 降落速度 -->
         <!-- 降落模式 1：调用px4 auto.land 其他：指定高度锁桨 -->
+        <param name="flight_param/Takeoff_height" value="$(arg Takeoff_height)" />
         <param name="flight_param/land_type" value="$(arg land_type)" />
         <param name="flight_param/Disarm_height" value="$(arg Disarm_height)" />
         <param name="flight_param/Land_speed" value="$(arg Land_speed)" />
         <!-- 降落最后一阶段需要的时间和速度 -->
-        <param name="flight_param/land_start_time" value="$(arg land_end_time)" />
         <param name="flight_param/land_end_time" value="$(arg land_end_time)" />
         <param name="flight_param/land_end_speed" value="$(arg land_end_speed)" />
         <!-- 默认home点 -->
