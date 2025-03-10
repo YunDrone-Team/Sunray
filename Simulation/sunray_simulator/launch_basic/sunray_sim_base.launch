@@ -3,7 +3,7 @@
     <!-- MAVROS posix SITL environment launch script -->
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
-    <arg name="vehicle" default="sunray"/>
+    <arg name="vehicle" default="sunray150"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty.world"/>
     
     <!-- px4 1.14之后用 -->

@@ -2,7 +2,7 @@
 <launch>
     <arg name="uav_id" default="1" />
     <arg name="uav_name" default="uav" />
-    <arg name="uav_num" default="3" />
+    <arg name="uav_num" default="1" />
     <arg name="goal_type" default="1" />
     <arg name="offset" default="1.0" />
     <arg name="goal_topic" default="goal" />

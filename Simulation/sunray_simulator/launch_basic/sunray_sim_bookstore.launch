@@ -3,7 +3,7 @@
     <!-- MAVROS posix SITL environment launch script -->
     <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
     <!-- vehicle model and world -->
-    <arg name="vehicle" default="sunray300_with_mid360"/>
+    <arg name="vehicle" default="sunray150_with_mid360"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/bookstore.world"/>
     
 
@@ -24,7 +24,7 @@
 
     <arg name="uav_id" value="1"/>
     <arg name="x" value="0"/>
-    <arg name="y" value="-1"/>
+    <arg name="y" value="0"/>
 
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id)">

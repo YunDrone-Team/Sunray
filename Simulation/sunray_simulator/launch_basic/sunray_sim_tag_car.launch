@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
-    <arg name="vehicle" default="sunray_with_cam"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/move_car_forward.world"/>
+    <arg name="vehicle" default="sunray150_with_cam"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/move_car_land.world"/>
 
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>

@@ -30,8 +30,8 @@
 
     <!-- 世界坐标系下的odom 用于给点云转换提供坐标 -->
     <arg name="odom_topic_1" default="/Odometry"/>
-    
-        <!--  move_base_simple/goal转为三个平行的目标点 输出话题前缀  -->
+
+    <!--  move_base_simple/goal转为三个平行的目标点 输出话题前缀  -->
     <arg name="goal_topic" default="/goal"/>
     <!--  三个平行的目标点 供ego中的每个飞机指明目标点 -->
     <arg name="goal_tipic_1" default="/goal_1"/>
@@ -45,7 +45,8 @@
     </node>
 
     <!-- 点云转换为世界坐标系 -->
-    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+    <node name="point_cloud_transform_1" pkg="sunray_planner_ut
+    ils" type="point_cloud_transform" output="screen">
         <param name="input_point_topic" value="$(arg local_pointcloud_topic_1)" />
         <param name="output_point_topic" value="$(arg world_pointcloud_topic_1)" />
         <param name="odom_topic" value="$(arg odom_topic_1)" />
@@ -53,18 +54,18 @@
         <param name="child_frame_id" value="$(arg child_frame_1)" />
     </node>
 
-    <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 将其转为多个平行的目标点发送到ego中的每个规划器-->
-    <!-- <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
+    <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 并赋值指定高度重新发布-->
+    <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
         <param name="uav_num" value="$(arg uav_num)" />
         <param name="goal_type" value="1" />
         <param name="offset" value="$(arg offset_dis)" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="$(arg use_hight)" />
         <param name="z_hight" value="$(arg z_hight)" />
-    </node> -->
+    </node>
 
     <!-- 如果使用mid360且数据格式不为pointcloud的话需要进行转换 -->
-    <!-- <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include> -->
+    <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include>
 
     <!-- ego-planenr-swarm -->
     <include file="$(find sunray_planner_utils)/launch/run_in_single.launch">
@@ -87,6 +88,6 @@
         <arg name="goal_name_" value="$(arg goal_tipic_1)"/>
     </include>
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" />
+    <node name="ego_rviz" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" />
 
 </launch>

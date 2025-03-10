@@ -22,6 +22,8 @@ catkin_make --source FUEL --build build/FUEL
 catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # 编译sunray_formation模块
 catkin_make --source sunray_formation --build build/sunray_formation
+# 编译sunray_media模块
+catkin_make --source General_Module/sunray_media --build build/sunray_media
 
 # catkin_make --source sunray_msgs --build build/sunray_msgs
 # catkin_make --source sunray_comm --build build/sunray_comm

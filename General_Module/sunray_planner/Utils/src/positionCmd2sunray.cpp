@@ -74,7 +74,7 @@ public:
             if(control_type == 0){
                 cmd_.cmd = 4;
             }
-            // XyzPosVelYaw
+            // XyzVelYaw
             else if(control_type == 1){
                 cmd_.cmd = 6;
             }

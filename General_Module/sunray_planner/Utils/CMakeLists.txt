@@ -19,6 +19,14 @@ find_package(catkin REQUIRED COMPONENTS
   # livox_ros_driver2
 )
 
+# 判断是否有livox_ros_driver2包，如果有则添加
+find_package(livox_ros_driver2)
+if(livox_ros_driver2_FOUND)
+  message(STATUS "Found livox_ros_driver2")
+else()
+  message(STATUS "livox_ros_driver2 not found")
+endif()
+
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 
@@ -40,13 +48,6 @@ include_directories(
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
-# add_executable(set_model_state_example cpp_nodes/set_model_state_example.cpp)
-# add_dependencies(set_model_state_example prometheus_gazebo_gencpp)
-# target_link_libraries(set_model_state_example ${catkin_LIBRARIES})
-
-# add_executable(trajectory_bezier_node src/trajectory_bezier_node.cpp)
-# add_dependencies(trajectory_bezier_node sunray_control_gencpp)
-# target_link_libraries(trajectory_bezier_node ${catkin_LIBRARIES})
 
 add_executable(point_cloud_transform src/point_cloud_transform.cpp)
 add_dependencies(point_cloud_transform ${catkin_EXPORTED_TARGETS})
@@ -65,9 +66,11 @@ add_executable(goal2swarm src/goal2swarm.cpp)
 add_dependencies(goal2swarm ${catkin_EXPORTED_TARGETS})
 target_link_libraries(goal2swarm ${catkin_LIBRARIES} yaml-cpp)
 
-# add_executable(livox2Point src/livox2Point.cpp)
-# add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
-# target_link_libraries(livox2Point ${catkin_LIBRARIES})
+if(livox_ros_driver2_FOUND)
+  add_executable(livox2Point src/livox2Point.cpp)
+  add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(livox2Point ${catkin_LIBRARIES})
+endif()
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
