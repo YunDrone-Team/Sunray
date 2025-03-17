@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(uav_formation)
+project(sunray_formation)
 
 find_package(catkin REQUIRED COMPONENTS
   message_generation  
@@ -15,11 +15,11 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
   sunray_msgs
   tf2_geometry_msgs
-  sunray_orca
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(yaml-cpp REQUIRED)
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -32,7 +32,6 @@ generate_messages(
   nav_msgs
   sensor_msgs
   std_msgs
-
 )
 
 catkin_package(
@@ -44,7 +43,8 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
+  ${YAML_CPP_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/../../General_Module/sunray_common/common_lib
 )
 
 
@@ -53,7 +53,7 @@ include_directories(
 ###############################
 add_library(uav_formation src/uav_formation.cpp)
 add_executable(uav_formation_node src/uav_formation_node.cpp)
-target_link_libraries(uav_formation_node ${catkin_LIBRARIES})
+target_link_libraries(uav_formation_node uav_formation ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES})
 
 # target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
 

@@ -8,6 +8,8 @@ void ORCA::init(ros::NodeHandle &nh)
 	nh.param<int>("agent_type", agent_type, 1);
 	// 【参数】智能体数量
 	nh.param<int>("uav_num", uav_num, 1);
+	// 【参数】高度类型 其他:固定高度 1:动态高度
+	nh.param<int>("height_type", height_type, 0);
 	// 【参数】智能体高度
 	nh.param<float>("agent_height", agent_height, 1.0);
 	// 【参数】无人机之间的假想感知距离
@@ -23,6 +25,7 @@ void ORCA::init(ros::NodeHandle &nh)
 	nh.param<float>("orca_params/maxSpeed", orca_params.maxSpeed, 0.5);
 	// 【参数】时间步长 不确定有啥用
 	nh.param<float>("orca_params/time_step", orca_params.time_step, 0.1);
+
 
 	// 初始化订阅器和发布器
 	goal_reached_printed.resize(uav_num, false);
@@ -85,6 +88,10 @@ bool ORCA::orca_run()
 		uav_control_cmd.desired_pos[0] = sim->getAgentGoal(idx).x();
 		uav_control_cmd.desired_pos[1] = sim->getAgentGoal(idx).y();
 		uav_control_cmd.desired_pos[2] = agent_height;
+		if(height_type == 1)
+		{
+			uav_control_cmd.desired_pos[2] = goals[idx].pose.position.z;
+		}
 		uav_control_cmd.desired_yaw = 0.0;
 		control_cmd_pub.publish(uav_control_cmd);
 		if (!goal_reached_printed[idx])
@@ -104,6 +111,10 @@ bool ORCA::orca_run()
 		uav_control_cmd.desired_vel[0] = vel.x();
 		uav_control_cmd.desired_vel[1] = vel.y();
 		uav_control_cmd.desired_pos[2] = agent_height;
+		if(height_type == 1)
+		{
+			uav_control_cmd.desired_pos[2] = goals[idx].pose.position.z;
+		}
 		uav_control_cmd.desired_yaw = 0.0;
 		control_cmd_pub.publish(uav_control_cmd);
 		return false;
@@ -220,7 +231,7 @@ void ORCA::goal_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int i)
 	arrived_goal[i] = false;
 	goals[i] = *msg;
 	// 高度固定
-	goals[i].pose.position.z = agent_height;
+	// goals[i].pose.position.z = agent_height;
 
 	goal_reached_printed[i] = false;
 	cout << goals[i].pose.position.x << "," << goals[i].pose.position.y << endl;

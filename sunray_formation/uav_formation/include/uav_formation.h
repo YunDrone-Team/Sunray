@@ -1,48 +1,42 @@
 #include <ros/ros.h>
-#include "RVOSimulator.h"
-#include "Vector2.h"
+#include <std_msgs/String.h>
+#include <geometry_msgs/PoseStamped.h>
+#include "printf_format.h"
+#include <iostream>
+#include <fstream>
+#include <yaml-cpp/yaml.h>
 
-// neighborDist: 10.0
-// maxNeighbors: 10
-// timeHorizon: 10.0
-// timeHorizonObst: 3.0
-// radius: 0.08
-// maxSpeed: 1
-// timestep: 0.2 # 1 / controller rate
-// axel_width: 0.255
-// los_margin: 0.1
+using namespace sunray_logger;
 
-// waypoint_spacing: 0.1
-// path_margin: 0.6
-// goal_tolerance: 0.1
-
-class UAV_formation
+struct FormationData
 {
-private:
-    RVO::RVOSimulator *sim;
-    RVO::Vector2 goal;
-    std::vector<RVO::Vector2> waypoints;
-
-    float max_speed;
-    float neighbor_dist;
-    float time_horizon;
-    float time_horizon_obst;
-    float radius;
-    float goal_radius;
-    float waypoint_spacing;
-    float path_margin;
-    float goal_tolerance;
-    float axel_width;
-    float los_margin;
-public:
-    UAV_formation(/* args */);
-    ~UAV_formation();
+    std::string name;
+    double pose_x;
+    double pose_y;
+    double pose_z;
+    double pose_yaw;
 };
 
-UAV_formation::UAV_formation(/* args */)
+class UAVFormation
 {
-}
+public:
+    UAVFormation(){};
+    ~UAVFormation(){};
+    void init(ros::NodeHandle &nh_);
 
-UAV_formation::~UAV_formation()
-{
-}
+private:
+    ros::NodeHandle nh;
+    ros::Publisher goal_pub;
+    ros::Subscriber cmd_sub;
+    int uav_id;
+    std::string uav_name;
+    std::string uav_prefix;
+    bool file_exist;
+    std::string file_path;
+    YAML::Node formation_data; 
+    std::map<std::string, FormationData> formation_map;
+
+    void fix_formation_pub();                                         // 固定阵型 计算位置 发布位置
+    void pre_define_formation_pub(std::string formation_name); // 预定义阵型 读取文件发布位置
+    void cmd_callback(const std_msgs::String::ConstPtr& msg);
+};

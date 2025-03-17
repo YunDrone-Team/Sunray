@@ -4,7 +4,7 @@
     <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
     <!-- vehicle model and world -->
     <arg name="vehicle" default="sunray300"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/football_field.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/outdoor.world"/>
     
 
     <!-- gazebo configs -->

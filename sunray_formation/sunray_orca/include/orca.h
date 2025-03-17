@@ -30,6 +30,7 @@ private:
     string node_name; // 节点名称
     string agent_prefix;
     int uav_num;
+    int height_type; // 其他:固定高度，1:指定高度
     float agent_height;
     RVO::RVOSimulator *sim = new RVO::RVOSimulator();
 
