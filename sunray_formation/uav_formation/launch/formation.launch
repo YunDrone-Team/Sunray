@@ -1,0 +1,19 @@
+<launch>
+    <node name="uav_formation_node_1" pkg="sunray_formation" type="uav_formation_node" output="screen">
+        <param name="uav_id" type="int" value="1" />
+        <param name="uav_name" type="string" value="uav" />
+        <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/formation.yaml" />
+    </node>
+
+    <node name="uav_formation_node_2" pkg="sunray_formation" type="uav_formation_node" output="screen">
+        <param name="uav_id" type="int" value="2" />
+        <param name="uav_name" type="string" value="uav" />
+        <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/formation.yaml" />
+    </node>
+
+    <node name="uav_formation_node_3" pkg="sunray_formation" type="uav_formation_node" output="screen">
+        <param name="uav_id" type="int" value="3" />
+        <param name="uav_name" type="string" value="uav" />
+        <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/formation.yaml" />
+    </node>
+</launch>

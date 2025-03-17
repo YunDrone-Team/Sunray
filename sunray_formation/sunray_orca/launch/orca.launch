@@ -3,6 +3,8 @@
   <arg name="uav_name" default="uav" />
   <arg name="agent_type" default="1" />
   <arg name="uav_num" default="1" />
+  <!-- 飞行高度类型 1:根据目标点指令获取  其他:agent_height -->
+  <arg name="height_type" default="1" />
   <arg name="agent_height" default="1.0" />
   <arg name="orca_params/neighborDist" default="1.5" />
   <arg name="orca_params/maxNeighbors" default="10" />
@@ -17,6 +19,7 @@
     <param name="uav_name" value="$(arg uav_name)" />
     <param name="agent_type" value="$(arg agent_type)" />
     <param name="uav_num" value="$(arg uav_num)" />
+    <param name="height_type" value="$(arg height_type)" />
     <param name="agent_height" value="$(arg agent_height)" />
     <param name="orca_params/neighborDist" value="$(arg orca_params/neighborDist)" />
     <param name="orca_params/maxNeighbors" value="$(arg orca_params/maxNeighbors)" />

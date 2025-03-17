@@ -1,0 +1,79 @@
+uav_num: 3
+
+# users:
+#   - name: Alice
+#     age: 30
+#     email: alice@example.com
+#   - name: Bob
+#     age: 25
+#     email: bob@example.com
+#   - name: Charlie
+#     age: 35
+#     email: charlie@example.com
+
+
+formations:
+# 三角阵型
+  - name: triangle
+    uav_pos:
+      uav_1_x: 1.0
+      uav_1_y: 0.0
+      uav_1_z: 1
+      uav_2_x: 0.0
+      uav_2_y: 1.0
+      uav_2_z: 1
+      uav_3_x: 0.0
+      uav_3_y: -1.0
+      uav_3_z: 1
+
+# 一字阵型 横向
+  - name: line_horizontal
+    uav_pos:
+      uav_1_x: 0.0
+      uav_1_y: 0.0
+      uav_1_z: 1.0
+      uav_2_x: 0.0
+      uav_2_y: 1.0
+      uav_2_z: 1
+      uav_3_x: 0.0
+      uav_3_y: -1.0
+      uav_3_z: 1
+
+# 一字阵型 纵向
+  - name: line_vertical
+    uav_pos:
+      uav_1_x: 0.0
+      uav_1_y: 0.0
+      uav_1_z: 1.0
+      uav_2_x: 1.0
+      uav_2_y: 0.0
+      uav_2_z: 1
+      uav_3_x: -1.0
+      uav_3_y: 0.0
+      uav_3_z: 1
+
+# 一字阵型 横向 依次高低顺序
+  - name: line_horizontal_high_low
+    uav_pos:
+      uav_1_x: 0.0
+      uav_1_y: 0.0
+      uav_1_z: 1.0
+      uav_2_x: 0.0
+      uav_2_y: 1.0
+      uav_2_z: 0.6
+      uav_3_x: 0.0
+      uav_3_y: -1.0
+      uav_3_z: 1.4
+
+# 一字阵型 纵向 依次高低顺序
+  - name: line_horizontal_low_high
+    uav_pos:
+      uav_1_x: 0.0
+      uav_1_y: 0.0
+      uav_1_z: 1.0
+      uav_2_x: 0.0
+      uav_2_y: 1.0
+      uav_2_z: 1.4
+      uav_3_x: 0.0
+      uav_3_y: -1.0
+      uav_3_z: 0.6
