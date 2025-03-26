@@ -23,14 +23,16 @@
     </include>
 
     <arg name="uav_id" value="1"/>
-    <arg name="x" value="1"/>
-    <arg name="y" value="1"/>
+    <arg name="x" value="0"/>
+    <arg name="y" value="0"/>
 
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
             <arg name="id" value="$(arg uav_id)" />
             <arg name="vehicle" value="$(arg vehicle)" />
+            <arg name="x"  value="$(arg x)"/>
+            <arg name="y"  value="$(arg y)"/>
         </include>
     </group>
 </launch>

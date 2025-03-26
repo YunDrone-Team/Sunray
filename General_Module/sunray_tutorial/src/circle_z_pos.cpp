@@ -136,17 +136,21 @@ int main(int argc, char **argv)
     double k_p = 1;       // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
-    double hight = 0.6;
+    double hight = 0.8;
 
     geometry_msgs::PoseStamped pose;
     std::cout << "start circle" << std::endl;
+    ros::Time start_time = ros::Time::now();
+
+    // 圈数
+    int num = 2;
     for (int i = 0; i < num_points; i++)
     {
         double theta = i * 2 * M_PI / num_points;
         pose.pose.position.x = center_x + radius * cos(theta);
         pose.pose.position.y = center_y + radius * sin(theta);
         pose.pose.position.z = hight; // fixed altitude
-
+        start_time = ros::Time::now();
         // Send setpoints until the drone reaches the target point
         while (ros::ok())
         {
@@ -176,14 +180,26 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[2] = hight;
             control_cmd_pub.publish(uav_cmd);
 
-            // Check if the drone has reached the target point
-            if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.15 &&
-                fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.15)
+            // 闭环
+            // if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.15 &&
+            //     fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.15)
+            // {
+            //     break;
+            // }
+
+            // 开环
+            if(ros::Time::now() - start_time > ros::Duration(0.6))
             {
                 break;
             }
             ros::spinOnce();
             ros::Duration(0.1).sleep();
+
+            if(num != 1 && i == num_points - 1)
+            {
+                num--;
+                i = 0;
+            }
         }
     }
 

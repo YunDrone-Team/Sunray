@@ -39,5 +39,5 @@
     </group>
 
     <!-- 发布静态TF odom和world -->
-    <node pkg="tf" type="static_transform_publisher" name="world_odom" args="0.0 0.0 0.0 0.0 0.0 0.0 /world /odom 100" />
+    <!-- <node pkg="tf" type="static_transform_publisher" name="world_odom" args="0.0 0.0 0.0 0.0 0.0 0.0 /world /odom 100" /> -->
 </launch>
