@@ -49,6 +49,8 @@ add_message_files(
   OrcaCmd.msg
   TargetMsg.msg
   TargetsInFrameMsg.msg
+  UGVControlCMD.msg
+  UGVState.msg
 )
 
 add_service_files(

@@ -180,7 +180,7 @@ int main(int argc, char **argv)
             cin >> state_desired[0];
             cout << BLUE << "desired velocity: --- y [m]" << endl;
             cin >> state_desired[1];
-            cout << BLUE << "desired velocity: --- v [m]" << endl;
+            cout << BLUE << "desired velocity: --- z [m]" << endl;
             cin >> state_desired[2];
             cout << BLUE << "desired state: --- yaw [deg]:" << endl;
             cin >> state_desired[3];
@@ -320,7 +320,7 @@ int main(int argc, char **argv)
             cin >> state_desired[0];
             cout << BLUE << "desired state: --- y [m/s]" << endl;
             cin >> state_desired[1];
-            cout << BLUE << "desired state: --- z [m/s]" << endl;
+            cout << BLUE << "desired state: --- z [m]" << endl;
             cin >> state_desired[2]; // 高度（Z轴）
             cout << BLUE << "desired state: --- yaw [deg]:" << endl;
             cin >> state_desired[3];                            // 固定yaw
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawBody;
             uav_cmd.desired_vel[0] = state_desired[0];
             uav_cmd.desired_vel[1] = state_desired[1];
-            uav_cmd.desired_vel[2] = state_desired[2];
+            uav_cmd.desired_pos[2] = state_desired[2];
             uav_cmd.desired_yaw = state_desired[3];
             uav_cmd.desired_yaw_rate = 0.0;
             uav_command_pub[0].publish(uav_cmd);
@@ -344,33 +344,43 @@ int main(int argc, char **argv)
 
         case 17:
         {
-            cout << BLUE << "XyVelZPosYawBody" << endl;
-            cout << BLUE << "latitude:" << endl;
-            cin >> state_desired[0];
-            cout << BLUE << "longitude:" << endl;
-            cin >> state_desired[1];
-            // 高度为相对高度
-            cout << BLUE << "altitude: --- z [m]" << endl;
-            cin >> state_desired[2]; // 高度（Z轴）
-            cout << BLUE << "desired state: --- yaw [deg]:" << endl;
-            cin >> state_desired[3];                            // 固定yaw
-            state_desired[3] = state_desired[3] / 180.0 * M_PI; // 转换为弧度
-
-            // 
+            cout << BLUE << "waypoint" << endl;
             uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::GlobalPos;
-            uav_cmd.latitude = state_desired[0];
-            uav_cmd.longitude = state_desired[1];
-            uav_cmd.altitude = state_desired[2];
-            uav_cmd.desired_yaw = state_desired[3];
-            uav_cmd.desired_yaw_rate = 0.0;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Waypoint;
             uav_command_pub[0].publish(uav_cmd);
-
-            cout << BLUE << "latitude longitude altitude: " << state_desired[0] << " " << state_desired[1] << " " << state_desired[2] << " " << endl;
-            cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
 
             break;
         }
+
+        // case 17:
+        // {
+        //     cout << BLUE << "XyVelZPosYawBody" << endl;
+        //     cout << BLUE << "latitude:" << endl;
+        //     cin >> state_desired[0];
+        //     cout << BLUE << "longitude:" << endl;
+        //     cin >> state_desired[1];
+        //     // 高度为相对高度
+        //     cout << BLUE << "altitude: --- z [m]" << endl;
+        //     cin >> state_desired[2]; // 高度（Z轴）
+        //     cout << BLUE << "desired state: --- yaw [deg]:" << endl;
+        //     cin >> state_desired[3];                            // 固定yaw
+        //     state_desired[3] = state_desired[3] / 180.0 * M_PI; // 转换为弧度
+
+        //     // 
+        //     uav_cmd.header.stamp = ros::Time::now();
+        //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::GlobalPos;
+        //     uav_cmd.latitude = state_desired[0];
+        //     uav_cmd.longitude = state_desired[1];
+        //     uav_cmd.altitude = state_desired[2];
+        //     uav_cmd.desired_yaw = state_desired[3];
+        //     uav_cmd.desired_yaw_rate = 0.0;
+        //     uav_command_pub[0].publish(uav_cmd);
+
+        //     cout << BLUE << "latitude longitude altitude: " << state_desired[0] << " " << state_desired[1] << " " << state_desired[2] << " " << endl;
+        //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
+
+        //     break;
+        // }
 
         case 108:
         {
