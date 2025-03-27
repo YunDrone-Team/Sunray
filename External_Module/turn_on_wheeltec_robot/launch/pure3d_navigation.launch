@@ -1,0 +1,109 @@
+<launch> 
+    <!-- 摄像头限制，障碍物与摄像头距离小于0.6m时无法识别障碍物 -->
+
+    <!-- 开启机器人底层相关节点 同时开启导航功能 -->
+    <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch" >
+        <arg name="pure3d_nav"  default="true"/>
+        <arg name="odom_frame_id"   value="odom"/>
+    </include>
+    <!-- 开启摄像头 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_camera.launch" >
+   
+    </include>
+
+    <!-- 自定义scan数据tf位置 -->
+    <node pkg="tf" type="static_transform_publisher" name="base_to_depth2laser1" args="0.34 0.00 0.5 0 0 0  base_footprint laser1 100" />
+    <!-- 摄像头点云数据转换laserScan -->
+    <node name="depth2laser1" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan"  args= "standalone depthimage_to_lasersacn/DepthImageToLaserScanNodelet">
+      <remap from="image" to="/camera/depth/image"/>
+      <remap from="camera_info" to="/camera/depth/camera_info"/>
+      <!-- 距离小于该值的点不识别 -->
+      <param name="range_min" type="double" value="0.45"/>
+      <!-- 距离大于该值的点不识别 -->
+      <param name="range_max" type="double" value="4"/>
+      <!-- 截取的第几行的点云，取值范围0-475，初步测试输出scan数据为scan_height附近点云的集合，0为最高高度 -->
+      <param name="scan_height" type="int" value="10"/>
+      <!-- scan数据tf名称 -->
+      <param name="output_frame_id" type="str" value="laser1"/>
+      <!-- 输出scan数据的话题名 -->
+      <remap from="scan" to="/scan"/>
+    </node>
+
+    <!-- 可以输出多个scanTopic给movebase用于导航，对应costmap_common_params.yaml观测源添加多个话题-->
+    <!-- 自定义scan数据tf位置 -->
+    <node pkg="tf" type="static_transform_publisher" name="base_to_depth2laser2" args="0.34 0.00 0.1 0 0 0  base_footprint laser2 100" />
+    <!-- 摄像头点云数据转换laserScan -->
+    <node name="depth2laser2" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan"  args= "standalone depthimage_to_lasersacn/DepthImageToLaserScanNodelet">
+      <remap from="image" to="/camera/depth/image"/>
+      <remap from="camera_info" to="/camera/depth/camera_info"/>
+      <!-- 距离小于该值的点不识别 -->
+      <param name="range_min" type="double" value="0.45"/>
+      <!-- 距离大于该值的点不识别 -->
+      <param name="range_max" type="double" value="4"/>
+      <!-- 截取的第几行的点云，取值范围0-475，初步测试输出scan数据为scan_height附近点云的集合，0为最高高度 -->
+      <param name="scan_height" type="int" value="250"/>
+      <!-- scan数据tf名称 -->
+      <param name="output_frame_id" type="str" value="laser2"/>
+      <!-- 输出scan数据的话题名 -->
+      <remap from="scan" to="/scan2"/>
+    </node>
+
+    <!-- rtabmap -->
+    <group ns="rtabmap">
+      <arg name="database_path" default="~/.ros/rtabmap.db"/>
+      <!-- 3D地图数据包本地化，会关闭地图保存功能  -->
+      <arg name="localization" default="true"/>
+      <arg     if="$(arg localization)" name="rtabmap_args" default=""/>
+      <arg unless="$(arg localization)" name="rtabmap_args" default="-d"/>
+
+      <!-- 数据同步节点订阅rgb图和depth图，同步后输出rgbd图 -->
+      <node pkg="nodelet" type="nodelet" name="rgbd_sync" args="standalone rtabmap_ros/rgbd_sync" output="screen" >
+        <remap from="rgb/image"       to="/camera/rgb/image_raw"/>
+        <remap from="depth/image"     to="/camera/depth/image"/>
+        <remap from="rgb/camera_info" to="/camera/rgb/camera_info"/>
+        <remap from="rgbd_image"      to="rgbd_image"/> <!-- output -->
+        
+        <!-- Should be true for not synchronized camera topics 
+             (e.g., false for kinectv2, zed, realsense, true for xtion, kinect360)-->
+        <param name="approx_sync"       value="true"/> 
+      </node>
+
+      <!-- rtabmap节点，订阅rgbd图，输出地图 -->
+      <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="$(arg rtabmap_args)">
+        <param name="frame_id" type="string" value="base_footprint"/>
+        <param name="database_path"       type="string" value="$(arg database_path)"/>
+
+        <!-- 不订阅RGB、depth图片，订阅rgb_d数据  -->
+        <param name="subscribe_depth" type="bool" value="false"/>
+        <param name="subscribe_rgb"   type="bool" value="false"/>
+        <param name="subscribe_rgbd"  type="bool" value="true"/>
+
+        <remap from="odom" to="/odom"/>
+        <remap from="rgbd_image" to="rgbd_image"/>
+        <param name="queue_size" type="int" value="10"/>
+
+        <!-- RTAB-Map's parameters -->
+        <param name="RGBD/AngularUpdate"        type="string" value="0.01"/>
+        <param name="RGBD/LinearUpdate"         type="string" value="0.01"/>
+        <param name="RGBD/OptimizeFromGraphEnd" type="string" value="false"/>
+
+        <!-- localization mode -->
+        <param     if="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="false"/>
+        <param unless="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="true"/>
+      </node>
+    </group>
+     
+
+    <!-- 固定odom_combined于map，连接tf树 -->
+    <node pkg="tf" type="static_transform_publisher" name="odom_to_map" args="0 0 0 0 0 0  map odom_combined 100" />
+
+    <!-- MarkerArray功能节点> -->
+    <node name='send_mark' pkg="turn_on_wheeltec_robot" type="send_mark.py">
+    </node>
+
+    <!-- move_base节点检测 -->
+   <node name='node_detection' pkg="turn_on_wheeltec_robot" type="node_ping.py">
+    <param name="node_name" type="string" value="/move_base"/>
+   </node>
+
+</launch>

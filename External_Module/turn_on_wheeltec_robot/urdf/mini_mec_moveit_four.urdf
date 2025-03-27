@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot  name="mini_mec_four_arm">
+  <link  name="base_link">
+    <inertial>
+      <origin  xyz="-0.0242608603884175 0.000941782403866838 0.161277046716716"  rpy="0 0 0" />
+      <mass  value="0.964324036915094" />
+      <inertia
+        ixx="0.00138184345008643"
+        ixy="2.24386688768857E-06"
+        ixz="-4.9156239453518E-06"
+        iyy="0.00132339360576493"
+        iyz="-2.22771738954188E-07"
+        izz="0.00180451595701426" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/base_link.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link  name="right_front_link">
+    <inertial>
+      <origin  xyz="4.89650032380745E-06 2.85003743513701E-06 0.0233864908345848"  rpy="0 0 0" />
+      <mass  value="0.0528664319862723" />
+      <inertia  ixx="6.04432505174197E-06" ixy="6.42470647469883E-10"  ixz="1.13403723159527E-09"   iyy="6.043453127262E-06"  iyz="6.47662758829591E-10"  izz="7.83046693677153E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link1.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="right_front_joint"  type="continuous">
+    <origin  xyz="0.0734779429714969 -0.0688295279026024 0.037"  rpy="1.5707963267953 1.5707963267949 0" />
+    <parent  link="base_link" />
+    <child  link="right_front_link" />
+    <axis  xyz="0 0 -1" />
+  </joint>
+
+  <link  name="right_wheel_link">
+    <inertial>
+      <origin  xyz="-5.11580597498118E-06 3.01168768439969E-06 0.0232620873949244" rpy="0 0 0" />
+      <mass  value="0.0505856351299081" />
+      <inertia
+        ixx="5.77351459295277E-06"
+        ixy="-6.53871442489076E-10"
+        ixz="-1.14535771257589E-09"
+        iyy="5.77266607437441E-06"
+        iyz="6.38528288142685E-10"
+        izz="7.74203422438329E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link2.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="right_wheel_joint"  type="continuous">
+    <origin  xyz="-0.0995220570285331 -0.0688295279025332 0.037"  rpy="1.5707963267953 1.5707963267949 0" />
+    <parent  link="base_link" />
+    <child  link="right_wheel_link" />
+    <axis  xyz="0 0 1" />
+  </joint>
+
+  <link  name="left_wheel_link">
+    <inertial>
+      <origin  xyz="5.1365808728665E-06 2.99084281103063E-06 0.0233318663561555"  rpy="0 0 0" />
+      <mass  value="0.0503851668483252" />
+      <inertia
+        ixx="5.77286944663107E-06"
+        ixy="6.4243955917302E-10"
+        ixz="1.13420283864646E-09"
+        iyy="5.77199742241181E-06"
+        iyz="6.47666981201367E-10"
+        izz="7.74124442960726E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link3.STL" />
+      </geometry>
+      <material  name="">
+        <color   rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh   filename="package://mini_mec_four_arm/meshes/Link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="left_wheel_joint" type="continuous">
+    <origin  xyz="-0.0995220570284772 0.0711704720974968 0.037"  rpy="-1.5707963267945 1.5707963267949 0" />
+    <parent  link="base_link" />
+    <child  link="left_wheel_link" />
+    <axis  xyz="0 0 -1" />
+  </joint>
+
+  <link  name="left_front_link">
+    <inertial>
+      <origin  xyz="-4.96038281075362E-06 2.92016479913615E-06 0.0233166404325246"   rpy="0 0 0" />
+      <mass  value="0.0521703112796275" />
+      <inertia
+        ixx="5.90485876571993E-06"
+        ixy="-6.53908899809813E-10"
+        ixz="-1.14534317369952E-09"
+        iyy="5.90401027745708E-06"
+        iyz="6.38501492001224E-10"
+        izz="7.83002141734932E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link4.STL" />
+      </geometry>
+      <material name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link4.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="left_front_joint"  type="continuous">
+    <origin  xyz="0.0734779429715529 0.0711704720974276 0.037"  rpy="-1.5707963267945 1.5707963267949 0" />
+    <parent  link="base_link" />
+    <child  link="left_front_link" />
+    <axis  xyz="0 0 -1" />
+  </joint>
+
+  <link  name="Link1">
+    <inertial>
+      <origin  xyz="0.0525 -3.60822483003176E-16 -0.00717232457543077"  rpy="0 0 0" />
+      <mass  value="0.0182961255655802" />
+      <inertia
+        ixx="1.0513268753275E-05"
+        ixy="3.3334660312705E-20"
+        ixz="5.62010993018432E-21"
+        iyy="1.62397575138127E-05"
+        iyz="-1.10281950372364E-20"
+        izz="7.56857037469913E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link5.STL" />
+      </geometry>
+      <material  name="">
+        <color   rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link5.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint1"  type="revolute">
+    <origin  xyz="0.0859779429722549 0.00153207350830251 0.1575"  rpy="1.5707963267945 -1.5707963267949 0" />
+    <parent  link="base_link" />
+    <child  link="Link1" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-1.57"  upper="1.57"  effort="0"  velocity="0" />
+  </joint>
+  <link  name="Link2">
+    <inertial>
+      <origin  xyz="-0.0206963570082246 0.00116506235636091 0.00281764144444208"  rpy="0 0 0" />
+      <mass value="0.0488188930518477" />
+      <inertia
+        ixx="1.21270456083974E-05"
+        ixy="-1.29374135397093E-07"
+        ixz="-1.51620883401231E-07"
+        iyy="1.97453837177464E-05"
+        iyz="-1.4496687950046E-07"
+        izz="1.15876519674205E-05" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link6.STL" />
+      </geometry>
+      <material  name="">
+        <color   rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link6.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint2"  type="revolute">
+    <origin  xyz="0.105 0 0.000380439771702538"  rpy="-3.14159265358979 0 3.14159265358979" />
+    <parent  link="Link1" />
+    <child  link="Link2" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-1.57"  upper="1.57"  effort="0"  velocity="0" />
+  </joint>
+  <link  name="Link3">
+    <inertial>
+      <origin  xyz="0.0320491503624209 -0.00940216069084657 0.00617914751476116" rpy="0 0 0" />
+      <mass  value="0.0777888360737409" />
+      <inertia
+        ixx="1.69080832215357E-05"
+        ixy="7.14015112511598E-11"
+        ixz="-1.4180338298345E-07"
+        iyy="1.88070585676967E-05"
+        iyz="1.43436258826756E-07"
+        izz="1.29763203620163E-05" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link7.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link7.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint3"  type="revolute">
+    <origin  xyz="-0.0974999999999999 -0.00100000000000075 0.00294298277127994"  rpy="0 0 -3.14159265358979" />
+    <parent  link="Link2" />
+    <child  link="Link3" />
+    <axis xyz="0 0 1" />
+    <limit  lower="-1.57"  upper="1.57"  effort="0"  velocity="0" />
+  </joint>
+  <link name="Link4">
+    <inertial>
+      <origin   xyz="-0.00369362330435777 0.00436132757395002 -0.00376492941233544"  rpy="0 0 0" />
+      <mass  value="0.00297108566800576" />
+      <inertia
+        ixx="2.05767246894327E-07"
+        ixy="1.40876829989062E-07"
+        ixz="1.90823020774252E-21"
+        iyy="2.13065038138543E-07"
+        iyz="-2.62514833343569E-22"
+        izz="4.07485385419221E-07" />
+    </inertial>
+    <visual> 
+      <origin   xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link8.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link8.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint4"  type="revolute">
+    <origin  xyz="0.0540000000000393 0.000500000000001083 0.0196166694251245" rpy="1.5707963267949 1.5707963267949 0" />
+    <parent  link="Link3" />
+    <child  link="Link4" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-0.8"  upper="0.8"  effort="0"  velocity="0" />
+  </joint>
+  <link  name="Link5">
+    <inertial>
+      <origin  xyz="-0.00658804624479999 0.0193552201368047 0.00631635545310039"   rpy="0 0 0" />
+      <mass  value="0.0110869938441036" />
+      <inertia
+        ixx="2.26638567960554E-06"
+        ixy="-3.12207718593047E-07"
+        ixz="-3.99343074508915E-14"
+        iyy="7.09396223567129E-07"
+        iyz="-3.44198262464447E-13"
+        izz="2.52356347882981E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link9.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link9.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint5"  type="revolute">
+    <origin  xyz="-0.0240989659741024 0.0253818801308945 -0.00599999999999951"  rpy="0 0 0" />
+    <parent  link="Link4" />
+    <child link="Link5" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-0.8"  upper="0.8"  effort="0"  velocity="0" />
+  </joint>
+  <link   name="Link6">
+    <inertial>
+      <origin  xyz="0.00564731558518915 0.006408011857017 -0.00450000000000009"  rpy="0 0 0" />
+      <mass  value="0.00197604548440527" />
+      <inertia
+        ixx="1.95368168459781E-07"
+        ixy="-1.51745831304806E-07"
+        ixz="3.40562938600363E-21"
+        iyy="2.07440923057146E-07"
+        iyz="-3.44695543145825E-21"
+        izz="3.99845023290318E-07" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link10.STL" />
+      </geometry>
+      <material  name="">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link10.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="joint6" type="revolute">
+    <origin  xyz="0.0540000000000195 0.000500000000001111 -0.00538333057488446" rpy="1.57079632679488 1.5707963267949 0" />
+    <parent  link="Link3" />
+    <child  link="Link6" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-0.8"  upper="0.8"  effort="0"  velocity="0" />
+  </joint>
+  <link  name="Link7">
+    <inertial>
+      <origin  xyz="0.00618966269546512 0.0192027058273124 0.00133947934206335"  rpy="0 0 0" />
+      <mass value="0.0111184078826835" />
+      <inertia
+        ixx="2.26651224287934E-06"
+        ixy="3.12169913809685E-07"
+        ixz="6.32729770552465E-14"
+        iyy="7.09499232618779E-07"
+        iyz="-4.47080022328076E-13"
+        izz="2.52378788484384E-06" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link11.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh  filename="package://mini_mec_four_arm/meshes/Link11.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint7" type="revolute">
+    <origin  xyz="0.0244712312864288 0.0250231660532005 -0.000999999999999918"  rpy="0 0 0" />
+    <parent  link="Link6" />
+    <child  link="Link7" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-0.8"  upper="0.8" effort="0"  velocity="0" />
+  </joint>
+  <link  name="Link8">
+    <inertial>
+      <origin   xyz="-0.0127747670306946 0.0120023151330471 0.00400000000000025"  rpy="0 0 0" />
+      <mass  value="0.00108778506953504" />
+      <inertia
+        ixx="9.10794072428576E-08"
+        ixy="8.29113514522161E-08"
+        ixz="8.42849347986081E-22"
+        iyy="8.24748899495042E-08"
+        iyz="-9.42243497207554E-22"
+        izz="1.71922619588059E-07" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"   rpy="0 0 0" />
+      <geometry>
+        <mesh   filename="package://mini_mec_four_arm/meshes/Link12.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_mec_four_arm/meshes/Link12.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint  name="joint8"  type="revolute">
+    <origin  xyz="0.0466465669185682 0.00350000000000097 0.0398200607720236"  rpy="1.57079632679488 1.5707963267949 0" />
+    <parent  link="Link3" />
+    <child link="Link8" />
+    <axis  xyz="0 0 -1" />
+    <limit lower="-0.8" upper="0.8"  effort="0"  velocity="0" />
+  </joint>
+  <link  name="Link9">
+    <inertial>
+      <origin  xyz="0.0129506495019559 0.0118123207260394 0.00400000000000211"  rpy="0 0 0" />
+      <mass  value="0.00108778506953504" />
+      <inertia
+        ixx="8.86285716063844E-08"
+        ixy="-8.3002252149766E-08"
+        ixz="6.65124677821206E-22"
+        iyy="8.49257255859803E-08"
+        iyz="7.31981351950927E-22"
+        izz="1.71922619588062E-07" />
+    </inertial>
+    <visual>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh   filename="package://mini_mec_four_arm/meshes/Link13.STL" />
+      </geometry>
+      <material  name="">
+        <color  rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin  xyz="0 0 0"  rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://mini_mec_four_arm/meshes/Link13.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="joint9" type="revolute">
+    <origin  xyz="0.0466465669184963 0.00350000000000095 -0.0255867219217734"  rpy="1.57079632679488 1.5707963267949 0" />
+    <parent  link="Link3" />
+    <child  link="Link9" />
+    <axis  xyz="0 0 -1" />
+    <limit  lower="-0.8"  upper="0.8"  effort="0"  velocity="0" />
+  </joint>w
+</robot>
