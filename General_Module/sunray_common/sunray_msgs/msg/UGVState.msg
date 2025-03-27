@@ -20,4 +20,12 @@ float32 battery_state       ## [V]
 float32 battery_percetage   ## [0-1]
 
 ## 无人车控制状态 INIT HOLD POS_CONTROL POS_CONTROL_BODY VEL_CONTROL_BODY VEL_CONTROL_ENU
+uint8 INIT=0
+uint8 HOLD=1
+uint8 POS_CONTROL=2
+## 以下需要有定位的情况下才支持
+uint8 POS_CONTROL_BODY=3
+uint8 VEL_CONTROL_ENU=4
+uint8 VEL_CONTROL_BODY=5
+uint8 Point_Control_with_Astar=6
 uint8 control_mode
