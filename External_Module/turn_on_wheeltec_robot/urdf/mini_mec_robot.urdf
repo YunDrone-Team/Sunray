@@ -1,0 +1,93 @@
+<?xml version="1.0" ?>
+<robot name="wheeltec_robot">
+
+    <link name="base_link">
+        <visual>
+            <origin xyz=" 0 0 0.0975" rpy="0 0 0" />
+            <geometry>
+                <box size="0.27 0.185 0.055"/>
+            </geometry>
+            <material name="white">
+                <color rgba="1 1 1 1"/>
+            </material>
+        </visual>
+    </link>   
+
+    <joint name="left_wheel_joint" type="continuous">
+        <origin xyz="-0.085 0.0975 0.0375" rpy="1.57 0 0"/>
+        <parent link="base_link"/>
+        <child link="left_wheel_link"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <link name="left_wheel_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0375" length = "0.03"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0 0 0 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <joint name="right_wheel_joint" type="continuous">
+        <origin xyz="-0.085 -0.0975 0.0375" rpy="1.57 0 0"/>
+        <parent link="base_link"/>
+        <child link="right_wheel_link"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <link name="right_wheel_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0375" length = "0.03"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0 0 0 1"/>
+            </material>
+        </visual>
+    </link>
+
+      <joint name="left_front_joint" type="continuous">
+        <origin xyz="0.085 0.0975 0.0375" rpy="1.57 0 0"/>
+        <parent link="base_link"/>
+        <child link="left_front_link"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <link name="left_front_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0375" length = "0.03"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0 0 0 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <joint name="right_front_joint" type="continuous">
+        <origin xyz="0.085 -0.0975 0.0375" rpy="1.57 0 0"/>
+        <parent link="base_link"/>
+        <child link="right_front_link"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <link name="right_front_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0375" length = "0.03"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0 0 0 1"/>
+            </material>
+        </visual>
+    </link>
+
+
+</robot>

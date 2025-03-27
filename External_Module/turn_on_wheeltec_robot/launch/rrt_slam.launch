@@ -1,0 +1,9 @@
+<launch>
+
+<include file="$(find turn_on_wheeltec_robot)/launch/simple.launch" />
+<!-- 开启建图的同时也开启导航 -->
+<include file="$(find turn_on_wheeltec_robot)/launch/mapping.launch" >
+  <arg name="navigation"  value="true"/>
+</include>
+
+</launch>

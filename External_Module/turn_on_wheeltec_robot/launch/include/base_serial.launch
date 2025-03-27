@@ -1,0 +1,40 @@
+<launch>
+  <!--打开节点wheeltec_robot，初始化串口等操作-->
+  <arg name="smoother"  default="false"/> <!-- 是否开启速度平滑功能 -->
+  <arg name="odom_frame_id"  default="odom_combined"/> <!-- 设置里程计话题起点TF坐标 -->
+  <arg name="use_FDI_IMU_GNSS"  default="false"/> <!-- 是否使用飞迪系的惯导、GNSS/RTK模块，默认false：使用小车控制板板载的IMU芯片 -->
+ 
+  <node pkg="turn_on_wheeltec_robot" type="wheeltec_robot_node" name="wheeltec_robot" output="screen" respawn="false">
+    <param name="usart_port_name"    type="string" value="/dev/wheeltec_controller"/>  
+    <param name="serial_baud_rate"   type="int"    value="115200"/>
+    <param name="odom_frame_id"      type="string" value="$(arg odom_frame_id)"/> 
+    <param name="robot_frame_id"     type="string" value="base_footprint"/> 
+    <param name="gyro_frame_id"      type="string" value="gyro_link"/> 
+
+    <!-- 里程计修正参数，对来自运动底盘的速度信息进行手动修正 -->
+    <param name="odom_x_scale"      type="double" value="1.0"/> 
+    <param name="odom_y_scale"      type="double" value="1.0"/> 
+    <param name="odom_z_scale_positive"      type="double" value="1.0"/> 
+    <param name="odom_z_scale_negative"      type="double" value="1.0"/> 
+
+    <!-- 如果开启了平滑功能，则订阅平滑速度 -->
+    <remap if="$(arg smoother)" from="cmd_vel" to="smoother_cmd_vel"/>
+
+    <!-- 如果使用飞迪系的惯导、GNSS/RTK模块，对板载IMU话题进行重命名，避免相关节点订阅板载IMU话题 -->
+    <remap if="$(arg use_FDI_IMU_GNSS)" from="imu" to="imu_on_board"/>
+  </node>
+
+  <!-- 如果使用飞迪系的惯导、GNSS/RTK模块，启动相关launch文件，该节点发布的IMU话题名称就是【/imu】 -->
+  <include if="$(arg use_FDI_IMU_GNSS)" 
+    file="$(find fdilink_ahrs)/launch/ahrs_data.launch" >
+  </include>
+
+  <!-- 如果开启了速度平滑功能，则运行速度平滑功能包 -->
+  <include if="$(arg smoother)" 
+    file="$(find turn_on_wheeltec_robot)/launch/include/velocity_smoother.launch" >
+  </include>
+
+</launch>
+
+
+

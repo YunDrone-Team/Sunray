@@ -1,0 +1,60 @@
+
+<launch>
+  <arg name="mapping_mode"  default="gmapping" doc="opt: gmapping,hector,cartographer,karto"/>
+  
+  <!-- 是否在建图时开启导航 默认不开启 仅在rrt自主建图时同时进行-->
+  <arg name="navigation" default="false"/>
+  <arg name="odom_frame_id"  default="odom_combined"/>
+
+  <!-- turn on lidar开启雷达  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_lidar.launch" />
+
+  <!-- 启动APP一键保存地图功能  -->
+  <node pkg="world_canvas_msgs" type="save" name="save_map" />
+
+  <!-- 开启gmapping建图算法  -->
+  <group if="$(eval mapping_mode == 'gmapping')">
+  <include file="$(find turn_on_wheeltec_robot)/launch/include/algorithm_gmapping.launch" />
+  <!-- 开启机器人底层相关节点  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch">
+    <arg name="navigation" value="$(arg navigation)"/>
+    <arg name="is_cartographer" value="false"/>
+    <arg name="odom_frame_id"   value="$(arg odom_frame_id)"/>
+  </include>
+  </group>
+
+  <!-- 开启hector建图算法  -->
+  <group if="$(eval mapping_mode == 'hector')">
+  <include file="$(find turn_on_wheeltec_robot)/launch/include/algorithm_hector.launch" />
+  <!-- 开启机器人底层相关节点  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch">
+    <arg name="navigation" value="$(arg navigation)"/>
+    <arg name="is_cartographer" value="false"/>
+    <arg name="odom_frame_id"   value="$(arg odom_frame_id)"/>
+  </include>
+  </group> 
+
+   <!-- 开启karto建图算法  -->
+  <group if="$(eval mapping_mode == 'karto')">
+  <include file="$(find turn_on_wheeltec_robot)/launch/include/algorithm_karto.launch" />
+  <!-- 开启机器人底层相关节点  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch">
+    <arg name="navigation" value="$(arg navigation)"/>
+    <arg name="is_cartographer" value="false"/>
+    <arg name="odom_frame_id"   value="$(arg odom_frame_id)"/>
+  </include>
+  </group>  
+
+   <!-- 开启cartographer建图算法  -->
+  <group if="$(eval mapping_mode == 'cartographer')">
+  <!--这个功能包的路径是：/opt/ros/melodic/share/cartographer_ros-->
+  <include file="$(find cartographer_ros)/launch/revo_lds.launch" />
+  <!-- 开启机器人底层相关节点  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch">
+    <arg name="navigation" value="$(arg navigation)"/>
+    <arg name="is_cartographer" value="true"/>
+    <arg name="odom_frame_id"   value="$(arg odom_frame_id)"/>
+  </include>
+  </group>  
+
+</launch>
