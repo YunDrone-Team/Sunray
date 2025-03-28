@@ -103,7 +103,7 @@ int main(int argc, char **argv)
     // 切换到指令控制模式
     cout << "switch CMD_CONTROL" << endl;
     setup.cmd = 4;
-    setup.control_state = "CMD_CONTROL";
+    setup.control_mode = "CMD_CONTROL";
     uav_setup_pub.publish(setup);
     ros::Duration(1.0).sleep();
 

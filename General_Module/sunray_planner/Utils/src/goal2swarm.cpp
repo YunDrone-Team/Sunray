@@ -93,7 +93,7 @@ public:
 
     void uavStateCallback(const sunray_msgs::UAVState::ConstPtr &msg)
     {
-        control_state = msg->control_mode;
+        control_mode = msg->control_mode;
     }
 
     void waypointPub()
@@ -154,11 +154,11 @@ public:
         }
         std::cout << "start waypoint" << std::endl;
 
-        if (control_state != 2)
+        if (control_mode != 2)
         {
             std::cout << "waiting for control state to be CMD_CONTROL" << std::endl;
         }
-        while (control_state != 2 && ros::ok())
+        while (control_mode != 2 && ros::ok())
         {
             ros::spinOnce();
             loop_rate.sleep();
@@ -200,7 +200,7 @@ public:
 
 private:
     int uav_id;
-    int control_state;
+    int control_mode;
     std::string uav_name;
     int uav_num;
     int goal_type;

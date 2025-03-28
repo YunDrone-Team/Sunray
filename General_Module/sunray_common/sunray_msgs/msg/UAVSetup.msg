@@ -11,7 +11,7 @@ uint8 DISARM = 0                ## 解锁无人机
 uint8 ARM = 1                   ## 无人机上锁
 uint8 SET_PX4_MODE = 2          ## 设置PX4模式，需要配合px4_mode进行设置
 uint8 REBOOT_PX4 = 3            ## 重启PX4飞控
-uint8 SET_CONTROL_MODE = 4      ## 设置无人机控制模式，需要配合control_state进行设置
+uint8 SET_CONTROL_MODE = 4      ## 设置无人机控制模式，需要配合control_mode进行设置
 uint8 EMERGENCY_KILL = 5        ## 无人机紧急上锁
 
 ## PX4模式名查询:http://wiki.ros.org/mavros/CustomModes
@@ -19,4 +19,4 @@ uint8 EMERGENCY_KILL = 5        ## 无人机紧急上锁
 string px4_mode
 
 ## 参见uav_control.h中无人机控制模式枚举：INIT,RC_CONTROL,CMD_CONTROL,LAND_CONTROL
-string control_state
+string control_mode

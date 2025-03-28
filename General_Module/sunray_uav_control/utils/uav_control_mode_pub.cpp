@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     int CMD = 0;
     bool arming;
     string px4_mode;
-    string control_state;
+    string control_mode;
     int tmp = 0;
 
     while (ros::ok())
@@ -119,23 +119,23 @@ int main(int argc, char **argv)
             cin >> tmp;
             uav_setup.cmd  = 4;
             if(tmp == 0){
-                uav_setup.control_state = "INIT";
+                uav_setup.control_mode = "INIT";
             }else if(tmp == 1){
-                uav_setup.control_state = "RC_CONTROL";
+                uav_setup.control_mode = "RC_CONTROL";
             }
             else if(tmp == 2){
-                uav_setup.control_state = "HOVER_CONTROL";
+                uav_setup.control_mode = "HOVER_CONTROL";
             }
             else if(tmp == 3){
-                uav_setup.control_state = "CMD_CONTROL";
+                uav_setup.control_mode = "CMD_CONTROL";
             }
             else if(tmp == 4){
-                uav_setup.control_state = "LAND_CONTROL";
+                uav_setup.control_mode = "LAND_CONTROL";
             }
             else{
                 cout << "Mode error " << endl;
             }
-            cout << "control mode: " << control_state << endl;
+            cout << "control mode: " << control_mode << endl;
             uav_command_pub.publish(uav_setup);
             break;
         case 5:

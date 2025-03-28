@@ -315,12 +315,12 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     }
     else if (msg->cmd == sunray_msgs::UAVSetup::SET_CONTROL_MODE)
     {
-        if (msg->control_state == "INIT" && system_params.control_mode != Control_Mode::INIT)
+        if (msg->control_mode == "INIT" && system_params.control_mode != Control_Mode::INIT)
         {
             system_params.control_mode = Control_Mode::INIT;
             Logger::warning("Switch to INIT mode with cmd");
         }
-        else if (msg->control_state == "CMD_CONTROL")
+        else if (msg->control_mode == "CMD_CONTROL")
         {
             if (system_params.safety_state == 0 && (system_params.control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
             {
@@ -335,7 +335,7 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
                 }
             }
         }
-        else if (msg->control_state == "RC_CONTROL" && (system_params.control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
+        else if (msg->control_mode == "RC_CONTROL" && (system_params.control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
         {
             if (system_params.safety_state == 0)
             {
@@ -350,12 +350,12 @@ void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
                 }
             }
         }
-        else if (msg->control_state == "LAND_CONTROL" && system_params.control_mode != Control_Mode::LAND_CONTROL)
+        else if (msg->control_mode == "LAND_CONTROL" && system_params.control_mode != Control_Mode::LAND_CONTROL)
         {
             set_land();
             // set_offboard_control(Control_Mode::LAND_CONTROL);
         }
-        else if (msg->control_state == "WITHOUT_CONTROL" && system_params.control_mode != Control_Mode::WITHOUT_CONTROL)
+        else if (msg->control_mode == "WITHOUT_CONTROL" && system_params.control_mode != Control_Mode::WITHOUT_CONTROL)
         {
             system_params.control_mode = Control_Mode::WITHOUT_CONTROL;
         }

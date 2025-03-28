@@ -101,7 +101,7 @@ int main(int argc, char **argv)
         cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>UAV Terminal Control<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
         cout << GREEN << "setup: "
                 << YELLOW << "101 " << GREEN << "arm or dis arm,"
-                << YELLOW << " 102 " << GREEN << "control_state,"
+                << YELLOW << " 102 " << GREEN << "control_mode,"
                 << YELLOW << " 103 " << GREEN << "takeoff,"
                 << YELLOW << " 104 " << GREEN << "hover,"
                 << YELLOW << " 105 " << GREEN << "land,"
@@ -446,19 +446,19 @@ int main(int argc, char **argv)
         }
         case 102:
         {
-            int control_state;
-            cout << BLUE << "control_state 1 INIT 2 RC_CONTROL 3 CMD_CONTROL 4 LAND_CONTROL 5 WITHOUT_CONTROL" << std::endl;
-            cin >> control_state;
-            if (control_state == 1)
-                setup.control_state = "INIT";
-            else if (control_state == 2)
-                setup.control_state = "RC_CONTROL";
-            else if (control_state == 3)
-                setup.control_state = "CMD_CONTROL";
-            else if (control_state == 4)
-                setup.control_state = "LAND_CONTROL";
-            else if (control_state == 5)
-                setup.control_state = "WITHOUT_CONTROL";
+            int control_mode;
+            cout << BLUE << "control_mode 1 INIT 2 RC_CONTROL 3 CMD_CONTROL 4 LAND_CONTROL 5 WITHOUT_CONTROL" << std::endl;
+            cin >> control_mode;
+            if (control_mode == 1)
+                setup.control_mode = "INIT";
+            else if (control_mode == 2)
+                setup.control_mode = "RC_CONTROL";
+            else if (control_mode == 3)
+                setup.control_mode = "CMD_CONTROL";
+            else if (control_mode == 4)
+                setup.control_mode = "LAND_CONTROL";
+            else if (control_mode == 5)
+                setup.control_mode = "WITHOUT_CONTROL";
             else
             {
                 std::cout << BLUE << "input error" << std::endl;
