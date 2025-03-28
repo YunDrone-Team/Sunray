@@ -138,7 +138,7 @@ class UAVControl:
                 if "o" in self.k_dict:
                     if time.time() - self.k_dict["o"] > 1:
                         self.setup_msg.cmd = 4
-                        self.setup_msg.control_state = "CMD_CONTROL"
+                        self.setup_msg.control_mode = "CMD_CONTROL"
                         self.setup_pub.publish(self.setup_msg)
 
                         self.k_dict.pop("o", None)

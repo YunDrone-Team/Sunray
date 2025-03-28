@@ -343,7 +343,7 @@ def listener():
 
     # 切换到offboard模式
     setup_msg.cmd = 4
-    setup_msg.control_state = "CMD_CONTROL"
+    setup_msg.control_mode = "CMD_CONTROL"
     setup_pub.publish(setup_msg)
     print("切换到offboard模式")
     time.sleep(2)

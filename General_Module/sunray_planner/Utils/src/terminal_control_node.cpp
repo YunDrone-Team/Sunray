@@ -132,7 +132,7 @@
 //                     break;
 //                 case 2:
 //                     setup_.cmd = 3;
-//                     setup_.control_state = "CMD_CONTROL";
+//                     setup_.control_mode = "CMD_CONTROL";
 //                     setup_pub_.publish(setup_);
     
 //                     break;
