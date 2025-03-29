@@ -8,9 +8,10 @@
 class RC_Input
 {
 public:
-	float ch[4];
-	float last_ch[4];
 	RC_Input() {};
+
+	float ch[4];			// 油门、滚转、俯仰、偏航四个通道
+	float last_ch[4];
 	void init(ros::NodeHandle &nh);
 	void handle_rc_data(const mavros_msgs::RCIn::ConstPtr &pMsg);
 	void printf_info();
@@ -179,7 +180,9 @@ void RC_Input::init(ros::NodeHandle &nh)
 	nh.param<std::string>("uav_name", uav_name, "uav");
 
 	std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
+	// 【订阅】遥控器输入 -  遥控器 -> 飞控 -> mavros -> 本节点
 	rc_sub = nh.subscribe<mavros_msgs::RCIn>(rc_topic, 10, &RC_Input::handle_rc_data, this);
+	// 【发布】遥控器指令状态 - 本节点 -> uav_control节点
 	rc_state_pub = nh.advertise<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 10);
 }
 
