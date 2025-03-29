@@ -83,9 +83,10 @@ private:
     PX4State px4_state;                                     // 无人机状态集合
     PositionState external_state;                           // 外部定位数据
     PositionState err_state;                                // 状态误差
-    sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据
+    sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据（用于发布）
     ExternalPositioFactory factory;
     std::shared_ptr<ExternalPosition> external_position;
+    std_msgs::ColorRGBA uav_rviz_color;                     // 无人机在RVIZ中的颜色
 
     ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 无人机状态订阅
@@ -114,6 +115,7 @@ public:
     // std::map<int, ExternalPosition> obj_map; // 外部定位数据来源映射
 
     void init(ros::NodeHandle &nh);                                            // 初始化
+    void setup_rviz_color();
     void show_px4_state();                                                     // 显示无人机状态
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);          // 无人机状态回调函数
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg); // 无人机电池状态回调函数

@@ -96,47 +96,52 @@ void ExternalFusion::init(ros::NodeHandle &nh)
         Logger::error("external source not found,external source id: [ ", external_source, " ]");
     }
 
-    // 【订阅】无人机状态
+    // 【订阅】无人机PX4模式 - 飞控 -> mavros -> 本节点
     px4_state_sub = nh.subscribe<mavros_msgs::State>(topic_prefix + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
-    // 【订阅】无人机电量
+    // 【订阅】无人机电池状态 - 飞控 -> mavros -> 本节点
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(topic_prefix + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
-    // 【订阅】无人机当前位置 NED
+    // 【订阅】PX4中的无人机位置（坐标系:ENU系） - 飞控 -> mavros -> 本节点
     // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
     px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/mavros/local_position/pose", 10, &ExternalFusion::px4_pose_callback, this);
-    // 【订阅】无人机速度 NED
+    // 【订阅】PX4中的无人机速度（坐标系:ENU系） - 飞控 -> mavros -> 本节点
     px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(topic_prefix + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
-    // 【订阅】无人机姿态 imu
+    // 【订阅】PX4中的无人机欧拉角 - 飞控 -> mavros -> 本节点
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(topic_prefix + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
-    // 【订阅】无人机GPS卫星数量
+    // 【订阅】无人机GPS卫星数量 - 飞控 -> mavros -> 本节点
     px4_gps_satellites_sub = nh.subscribe<std_msgs::UInt32>(topic_prefix + "/mavros/global_position/raw/satellites", 10, &ExternalFusion::px4_gps_satellites_callback, this);
-    // 【订阅】无人机GPS状态
+    // 【订阅】无人机GPS状态 - 飞控 -> mavros -> 本节点
     px4_gps_state_sub = nh.subscribe<sensor_msgs::NavSatFix>(topic_prefix + "/mavros/global_position/global", 10, &ExternalFusion::px4_gps_state_callback, this);
-    // 【订阅】无人机GPS原始数据
+    // 【订阅】无人机GPS原始数据 - 飞控 -> mavros -> 本节点
     px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(topic_prefix + "/mavros/gpsstatus/gps1/raw", 10, &ExternalFusion::px4_gps_raw_callback, this);
 
+    // 如果使能了RVIZ，则发布RVIZ中显示的话题
     if (enable_rviz)
     {
-        // 【发布】无人机里程计,主要用于RVIZ显示
+        // 【发布】无人机里程计 - 本节点 -> RVIZ
         uav_odom_pub = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/sunray/uav_odom", 1);
-        // 【发布】无人机运动轨迹,主要用于RVIZ显示
+        // 【发布】无人机运动轨迹 - 本节点 -> RVIZ
         uav_trajectory_pub = nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/uav_trajectory", 1);
-        // 【发布】无人机位置(带图标),用于RVIZ显示
+        // 【发布】无人机MESH图标 - 本节点 -> RVIZ
         uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray/uav_mesh", 1);
-        // 【定时器】定时发布 rviz显示,保证1Hz以上
+        // 【定时器】RVIZ相关话题定时发布  - 本节点 -> RVIZ
         timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &ExternalFusion::timer_rviz, this);
     }
 
-    // 【发布】外部定位状态
+    // 【发布】外部定位状态 - 本节点 -> uav_control_node
     odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/odom_state", 10);
     // 定时任务 检查超时等任务以及发布状态
     timer_task = nh.createTimer(ros::Duration(0.2), &ExternalFusion::timer_callback, this);
 
-    // 初始化变量
+    // 无人机状态初始化
     px4_state.connected = false;
     px4_state.armed = false;
     px4_state.battery = 0;
     px4_state.battery_percentage = 0;
     px4_state.mode = "UNKNOWN";
+
+    // 设置RVIZ颜色
+    setup_rviz_color();
+
     Logger::info("external fusion node init");
 }
 
@@ -151,7 +156,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
 //     px4_state.position_state.vel_z = msg->twist.twist.linear.z;
 // }
 
-// 无人机位置回调函数
+// 回调函数：PX4中的无人机位置
 void ExternalFusion::px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     px4_state.position_state.pos_x = msg->pose.position.x;
@@ -159,7 +164,7 @@ void ExternalFusion::px4_pose_callback(const geometry_msgs::PoseStamped::ConstPt
     px4_state.position_state.pos_z = msg->pose.position.z;
 }
 
-// 无人机速度回调函数
+// 回调函数：PX4中的无人机速度
 void ExternalFusion::px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg)
 {
     px4_state.position_state.vel_x = msg->twist.linear.x;
@@ -167,7 +172,7 @@ void ExternalFusion::px4_vel_callback(const geometry_msgs::TwistStamped::ConstPt
     px4_state.position_state.vel_z = msg->twist.linear.z;
 }
 
-// 无人机状态回调函数
+// 回调函数：PX4状态
 void ExternalFusion::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
     px4_state.connected = msg->connected;
@@ -175,14 +180,14 @@ void ExternalFusion::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
     px4_state.mode = msg->mode;
 }
 
-// 无人机电量回调函数
+// 回调函数：PX4电池
 void ExternalFusion::px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg)
 {
     px4_state.battery = msg->voltage;
     px4_state.battery_percentage = msg->percentage * 100;
 }
 
-// 无人机姿态回调函数
+// 回调函数：PX4中的无人机姿态
 void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     px4_state.position_state.att_x = msg->orientation.x;
@@ -383,15 +388,71 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
     odom_state_pub.publish(external_odom);
 }
 
+// 根据智能体ID来设置仿真时RVIZ中智能体的颜色，与真机无关
+void ExternalFusion::setup_rviz_color()
+{
+    uav_rviz_color.a = 1.0;
+    switch(uav_id) 
+    {
+        case 1:
+            uav_rviz_color.r = 1.0;
+            uav_rviz_color.g = 0.0;
+            uav_rviz_color.b = 0.0;
+            break;
+        case 2:
+            uav_rviz_color.r = 0.0;
+            uav_rviz_color.g = 1.0;
+            uav_rviz_color.b = 0.0;
+            break;
+        case 3:
+            uav_rviz_color.r = 0.0;
+            uav_rviz_color.g = 0.0;
+            uav_rviz_color.b = 1.0;
+            break;
+        case 4:
+            uav_rviz_color.r = 1.0;
+            uav_rviz_color.g = 1.0;
+            uav_rviz_color.b = 0.0;
+            break;
+        case 5:
+            uav_rviz_color.r = 1.0;
+            uav_rviz_color.g = 0.0;
+            uav_rviz_color.b = 1.0;
+            break;
+        case 6:
+            uav_rviz_color.r = 0.0;
+            uav_rviz_color.g = 1.0;
+            uav_rviz_color.b = 1.0;
+            break;
+        case 7:
+            uav_rviz_color.r = 0.5;
+            uav_rviz_color.g = 0.5;
+            uav_rviz_color.b = 0.5;
+            break;
+        case 8:
+            uav_rviz_color.r = 0.3;
+            uav_rviz_color.g = 0.7;
+            uav_rviz_color.b = 0.2;
+            break;
+        default:
+            uav_rviz_color.r = 1.0;
+            uav_rviz_color.g = 1.0;
+            uav_rviz_color.b = 1.0;
+            break;
+    }
+}
+
 // 定时器回调函数，用于发布无人机当前轨迹等
 void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
 {
+    // 如果无人机的odom的状态无效，则停止发布
     if (!external_position->position_state.valid)
     {
         return;
     }
+
+    // 发布无人机里程计，用于rviz显示
     nav_msgs::Odometry uav_odom;
-    // 发布无人机当前odometry(有些节点需要Odometry这个数据类型)
     uav_odom.header.stamp = ros::Time::now();
     uav_odom.header.frame_id = "world";
     uav_odom.child_frame_id = "base_link";
@@ -424,6 +485,7 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     uav_pos.pose.orientation.z = external_state.att_z;
     uav_pos.pose.orientation.w = external_state.att_w;
     uav_pos_vector.insert(uav_pos_vector.begin(), uav_pos);
+    // 轨迹滑窗
     if (uav_pos_vector.size() > 40)
     {
         uav_pos_vector.pop_back();
@@ -434,31 +496,32 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     uav_trajectory.poses = uav_pos_vector;
     uav_trajectory_pub.publish(uav_trajectory);
 
-    // 发布无人机marker
-    visualization_msgs::Marker meshROS;
-    meshROS.header.frame_id = "world";
-    meshROS.header.stamp = ros::Time::now();
-    meshROS.ns = "mesh";
-    meshROS.id = 0;
-    meshROS.type = visualization_msgs::Marker::MESH_RESOURCE;
-    meshROS.action = visualization_msgs::Marker::ADD;
-    meshROS.pose.position.x = external_state.pos_x;
-    meshROS.pose.position.y = external_state.pos_y;
-    meshROS.pose.position.z = external_state.pos_z;
-    meshROS.pose.orientation.w = external_state.att_w;
-    meshROS.pose.orientation.x = external_state.att_x;
-    meshROS.pose.orientation.y = external_state.att_y;
-    meshROS.pose.orientation.z = external_state.att_z;
-    meshROS.scale.x = 1.0;
-    meshROS.scale.y = 1.0;
-    meshROS.scale.z = 1.0;
-    meshROS.color.a = 1.0;
-    meshROS.color.r = static_cast<float>((uav_id * 123) % 256) / 255.0;
-    meshROS.color.g = static_cast<float>((uav_id * 456) % 256) / 255.0;
-    meshROS.color.b = static_cast<float>((uav_id * 789) % 256) / 255.0;
-    meshROS.mesh_use_embedded_materials = false;
-    meshROS.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
-    uav_mesh_pub.publish(meshROS);
+    // 发布无人机MESH，用于rviz显示
+    visualization_msgs::Marker rviz_mesh;
+    rviz_mesh.header.frame_id = "world";
+    rviz_mesh.header.stamp = ros::Time::now();
+    rviz_mesh.ns = "mesh";
+    rviz_mesh.id = 0;
+    rviz_mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
+    rviz_mesh.action = visualization_msgs::Marker::ADD;
+    rviz_mesh.pose.position.x = external_state.pos_x;
+    rviz_mesh.pose.position.y = external_state.pos_y;
+    rviz_mesh.pose.position.z = external_state.pos_z;
+    rviz_mesh.pose.orientation.w = external_state.att_w;
+    rviz_mesh.pose.orientation.x = external_state.att_x;
+    rviz_mesh.pose.orientation.y = external_state.att_y;
+    rviz_mesh.pose.orientation.z = external_state.att_z;
+    rviz_mesh.scale.x = 1.0;
+    rviz_mesh.scale.y = 1.0;
+    rviz_mesh.scale.z = 1.0;
+    rviz_mesh.color.a = 1.0;
+    // rviz_mesh.color.r = static_cast<float>((uav_id * 123) % 256) / 255.0;
+    // rviz_mesh.color.g = static_cast<float>((uav_id * 456) % 256) / 255.0;
+    // rviz_mesh.color.b = static_cast<float>((uav_id * 789) % 256) / 255.0;
+    rviz_mesh.color = uav_rviz_color;
+    rviz_mesh.mesh_use_embedded_materials = false;
+    rviz_mesh.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
+    uav_mesh_pub.publish(rviz_mesh);
 
     // // 发布TF用于RVIZ显示（用于lidar）
     // static tf2_ros::TransformBroadcaster broadcaster;

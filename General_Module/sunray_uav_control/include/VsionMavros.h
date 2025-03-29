@@ -83,7 +83,8 @@ public:
     // 话题绑定
     void bindTopic(ros::NodeHandle &nh)
     {
-        // 绑定vision pos
+        // 【发布】无人机位置和偏航角传输至PX4_EKF2模块用于位置姿态估计 - 本节点 -> mavros -> 飞控
+        //  注意：这个话题用于给飞控传输外部定位数据，需要配合PX4中的EKF2参数才能发挥作用
         external_position_pub = nh.advertise<geometry_msgs::PoseStamped>(pub_topic, 10);
         // 定时器
         timer_task = nh.createTimer(ros::Duration(1.0 / task_rate), &VsionMavros::timerCallback, this);

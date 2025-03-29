@@ -76,9 +76,9 @@ public:
     void bindTopic(ros::NodeHandle &nh) override
     {
         nh_ = nh;
-        // 【订阅】mocap pose
+        // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
         pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + this->rigidBody_name + "/pose", 1, &MocapExternalPosition::PosCallback, this);
-        // 【订阅】mocap Twist
+        // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
         vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + this->rigidBody_name + "/twist", 1, &MocapExternalPosition::VelCallback, this);
         // 【定时器】定时任务
         task_timer = nh.createTimer(ros::Duration(0.05), &MocapExternalPosition::timerCallback, this);

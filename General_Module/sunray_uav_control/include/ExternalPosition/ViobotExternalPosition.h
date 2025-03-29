@@ -116,7 +116,7 @@ public:
     void bindTopic(ros::NodeHandle &nh) override
     {
         nh_ = nh;
-        // 【订阅】pose
+        // 【订阅】VIOBOT估计位置（坐标系:VIOBOT系） VIOBOT -> 本节点
         pos_sub =  nh.subscribe<nav_msgs::Odometry>(source_topic_name, 1, &ViobotExternalPosition::ViobotCallback, this);
         // 【定时器】定时任务
         task_timer = nh.createTimer(ros::Duration(0.05), &ViobotExternalPosition::timerCallback, this);
