@@ -49,7 +49,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     nh.param<double>("pub_rate", pub_rate, 0.02);                                 // 【参数】发布到mavros的频率
     nh.param<bool>("check_jump", check_jump, false);                              // 【参数】是否检查外部定位数据跳变
     nh.param<bool>("enable_rviz", enable_rviz, false);                            // 【参数】是否发布到rviz
-    // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);               // 【参数】是否使用rangeSensor
+    // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);           // 【参数】是否使用rangeSensor
 
     uav_prefix = uav_name + std::to_string(uav_id);
     string topic_prefix = "/" + uav_prefix;
@@ -306,6 +306,7 @@ void ExternalFusion::timer_callback(const ros::TimerEvent &event)
 {
     // 检查外部定位数据是否超时
     timeoutCheck();
+    
     // 检查mavros连接是否正常
     if((ros::Time::now() - px4_state.stamp).toSec() > 1.0)
     {
