@@ -11,19 +11,17 @@ private:
     bool rcState_cb;                                   // 遥控器状态回调
     bool allow_lock;                                   // 允许临时解锁 特殊模式下允许跳过解锁检查
     std::string uav_name;                              // 无人机名称
-    std::string uav_ns;                                // 节点命名空间
-    std::string topic_prefix;                          // 话题前缀
-    std::string uav_prefix;                            // 无人机前缀
-    sunray_msgs::UAVControlCMD control_cmd;            // 外部控制指令
-    sunray_msgs::UAVControlCMD last_control_cmd;       // 上一刻控制指令
-    sunray_msgs::UAVState uav_state;                   // 无人机状态
-    sunray_msgs::UAVState uav_state_last;              // 上一刻无人机状态
-    sunray_msgs::RcState rc_state;                     // rc_control状态
-    mavros_msgs::PositionTarget local_setpoint;        // px4目标指令
-    mavros_msgs::GlobalPositionTarget global_setpoint; // px4目标指令
-    mavros_msgs::AttitudeTarget att_setpoint;          // px4目标指令
+    std::string uav_ns;                                // 节点名称
+    sunray_msgs::UAVControlCMD control_cmd;            // 当前时刻无人机控制指令（来自任务节点）
+    sunray_msgs::UAVControlCMD last_control_cmd;       // 上一时刻无人机控制指令（来自任务节点）
+    sunray_msgs::UAVState uav_state;                   // 当前时刻无人机状态（本节点发布）
+    sunray_msgs::RcState rc_state;                     // 无人机遥控器状态（来自遥控器输入节点）
+    mavros_msgs::PositionTarget local_setpoint;        // PX4的本地位置设定点（待发布）
+    mavros_msgs::GlobalPositionTarget global_setpoint; // PX4的全局位置设定点（待发布）
+    mavros_msgs::AttitudeTarget att_setpoint;          // PX4的姿态设定点（待发布）
+    float default_home_x, default_home_y, default_home_z; // 默认home点？
 
-    // 订阅节点
+    // 订阅节点句柄
     ros::Subscriber setup_sub;          // 【订阅】无人机模式设置
     ros::Subscriber control_cmd_sub;    // 【订阅】控制指令订阅
     ros::Subscriber odom_state_sub;     // 【订阅】无人机位置状态订阅
@@ -56,7 +54,8 @@ private:
     ros::Timer task_timer;  // 【定时器】任务定时器
     ros::Timer print_timer; // 【定时器】状态定时器
 
-    struct geo_fence // 地理围栏
+    // 地理围栏
+    struct geo_fence 
     {
         float x_min = 5.0;
         float x_max = 5.0;
@@ -66,6 +65,16 @@ private:
         float z_max = 2.0;
     };
     geo_fence uav_geo_fence;
+
+    // 无人机控制状态机
+    enum Control_Mode 
+    {
+        INIT = 0,           // 初始模式
+        RC_CONTROL = 1,     // 遥控器控制模式
+        CMD_CONTROL = 2,    // 外部指令控制模式
+        LAND_CONTROL = 3,   // 降落模式
+        WITHOUT_CONTROL = 4 // 无控制模式
+    };
 
     struct PX4State
     {
@@ -82,7 +91,7 @@ private:
         Eigen::Vector3d target_pos{0.0, 0.0, 0.0};        // 无人机目标位置
         Eigen::Vector3d target_vel{0.0, 0.0, 0.0};        // 无人机目标速度
         Eigen::Vector3d target_att{0.0, 0.0, 0.0};        // 无人机目标姿态 角度
-        Eigen::Vector4d target_att_q{0.0, 0.0, 0.0, 0.0}; // 无人机目标姿态 四元数
+        Eigen::Quaterniond target_att_q{0.0, 0.0, 0.0, 0.0}; // 无人机目标姿态 四元数
     };
     PX4State px4_state;
 
@@ -97,7 +106,7 @@ private:
         float land_end_time;                         // 降落最后一段时间
         float land_end_speed;                        // 降落最后一段速度
         float land_speed;                            // 降落速度
-        bool home_set = false;                       // 起飞点是否设置
+        bool set_home = false;                       // 起飞点是否设置
         Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 起飞点
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0};    // 悬停点
         Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
@@ -118,7 +127,7 @@ private:
         uint16_t type_mask;            // 控制指令类型
         int control_mode;              // 控制模式
         int last_control_mode;         // 上一个控制模式
-        int safety_state;              // 安全标志
+        int safety_state;              // 安全标志，0代表正常，其他代表不正常
         int location_source;           // 定位来源
         float cmd_timeout;             // 指令超时时间
         float odom_valid_timeout;      // 外部定位超时时间
@@ -156,14 +165,7 @@ private:
     };
     Waypoint_Params wp_params;
 
-    enum Control_Mode // 无人机控制模式
-    {
-        INIT = 0,           // 初始模式
-        RC_CONTROL = 1,     // 遥控器控制模式
-        CMD_CONTROL = 2,    // 外部指令控制模式
-        LAND_CONTROL = 3,   // 降落
-        WITHOUT_CONTROL = 4 // 无控制
-    };
+
 
     enum BaseMoveMode // 基础移动模式
     {
@@ -262,14 +264,14 @@ private:
     int safetyCheck();                                                                        // 安全检查
     void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
     void set_auto_land();                                                                     // 调用px4 auto.land
-    void reboot();                                                                            // 重启
+    void reboot_px4();                                                                            // 重启
     void emergencyStop();                                                                     // 紧急停止出来
-    void setMode(std::string mode);                                                           // 设置模式
+    void set_px4_flight_mode(std::string mode);                                                           // 设置模式
     void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);        // 【发布】发送控制指令
     void setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint); // 【发布】发送控制指令
-    void set_desired_from_cmd();                                                              // CMD_CONTROL模式下获取期望值
-    void set_desired_from_rc();                                                               // RC_CONTROL模式下获取期望值
-    void set_desired_from_land();                                                             // LAND_CONTROL模式下获取期望值
+    void handle_cmd_control();                                                              // CMD_CONTROL模式下获取期望值
+    void handle_rc_control();                                                               // RC_CONTROL模式下获取期望值
+    void handle_land_control();                                                             // LAND_CONTROL模式下获取期望值
     void set_desired_from_hover();                                                            // Hover模式下获取期望值
     void print_state(const ros::TimerEvent &event);                                           // 打印状态
     void task_timer_callback(const ros::TimerEvent &event);                                   // 任务定时器回调函数
@@ -277,7 +279,7 @@ private:
     void set_default_local_setpoint();                                                        // 设置默认期望值
     void set_default_global_setpoint();                                                       // 设置默认期望值
     void set_offboard_mode();                                                                 // 设置offboard模式
-    void body2ned(double body_xy[2], double ned_xy[2], double yaw);                           // body坐标系转ned坐标系
+    void body2enu(double body_frame[2], double enu_frame[2], double yaw);                           // body坐标系转ned坐标系
     void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);                        // 遥控器状态回调函数
     void set_offboard_control(int mode);                                                      // 设置offboard控制模式
     void return_to_home();                                                                    // 返航模式实现
@@ -289,7 +291,7 @@ private:
     void publish_goal();                                                                      // 发布规划点
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
-    void setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
+    void uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
     void odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg);
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);
     void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);

@@ -1,4 +1,167 @@
 #include "UAVControl.h"
+void UAVControl::init(ros::NodeHandle &nh)
+{
+    uav_ns = ros::this_node::getName();
+    nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
+    nh.param<std::string>("uav_name", uav_name, "uav"); // 【参数】无人机名字前缀
+    // 无人机名字 = 无人机名字前缀 + 无人机ID
+    uav_name = "/" + uav_name + std::to_string(uav_id);
+    // 【参数】飞行相关参数
+    nh.param<float>("flight_param/Takeoff_height", flight_params.takeoff_height, 1.0); // 【参数】默认起飞高度
+    nh.param<float>("flight_param/Disarm_height", flight_params.disarm_height, 0.2);   // 【参数】降落时自动上锁高度
+    nh.param<float>("flight_param/Land_speed", flight_params.land_speed, 0.2);         // 【参数】降落速度
+    nh.param<float>("flight_param/land_end_time", flight_params.land_end_time, 1.0);   // 【参数】降落最后一阶段时间
+    nh.param<float>("flight_param/land_end_speed", flight_params.land_end_speed, 0.3); // 【参数】降落最后一阶段速度
+    nh.param<int>("flight_param/land_type", flight_params.land_type, 0);               // 【参数】降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
+    nh.param<float>("flight_param/home_x", default_home_x, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("flight_param/home_y", default_home_y, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
+    nh.param<float>("flight_param/home_z", default_home_z, 0.0);                       // 【参数】默认home点 在起飞后运行程序时需要
+    // 【参数】地理围栏
+    nh.param<float>("geo_fence/x_min", uav_geo_fence.x_min, -10.0); // 【参数】地理围栏最小x坐标
+    nh.param<float>("geo_fence/x_max", uav_geo_fence.x_max, 10.0);  // 【参数】地理围栏最大x坐标
+    nh.param<float>("geo_fence/y_min", uav_geo_fence.y_min, -10.0); // 【参数】地理围栏最小y坐标
+    nh.param<float>("geo_fence/y_max", uav_geo_fence.y_max, 10.0);  // 【参数】地理围栏最大y坐标
+    nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);  // 【参数】地理围栏最小z坐标
+    nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);   // 【参数】地理围栏最大z坐标
+    // 【参数】运行系统相关参数
+    nh.param<bool>("system_params/check_cmd_timeout", system_params.check_cmd_timeout, true);             // 【参数】是否检查命令超时
+    nh.param<float>("system_params/cmd_timeout", system_params.cmd_timeout, 2.0);                         // 【参数】命令超时时间
+    nh.param<float>("system_params/odom_valid_timeout", system_params.odom_valid_timeout, 0.5);           // 【参数】定位超时降落时间
+    nh.param<float>("system_params/odom_valid_warming_time", system_params.odom_valid_warming_time, 0.3); // 【参数】定位超时警告时间
+    nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);                           // 【参数】是否使用遥控器控制
+    nh.param<bool>("system_params/use_offset", system_params.use_offset, false);                          // 【参数】是否使用位置偏移
+
+    // 【订阅】无人机PX4模式 - 飞控 -> mavros -> 本节点
+    px4_state_sub = nh.subscribe<mavros_msgs::State>(uav_name + "/mavros/state",
+                                                     10, &UAVControl::px4_state_callback, this);
+    // 【订阅】无人机电池状态 - 飞控 -> mavros -> 本节点
+    px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(uav_name + "/mavros/battery",
+                                                              10, &UAVControl::px4_battery_callback, this);
+    // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(uav_name + "/mavros/local_position/odom",
+    //                                                 10, &UAVControl::px4_odom_callback, this);
+    // 【订阅】PX4中的无人机位置（坐标系:ENU系） - 飞控 -> mavros -> 本节点
+    px4_local_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(uav_name + "/mavros/local_position/pose",
+                                                                 10, &UAVControl::px4_local_pos_callback, this);
+    // px4_global_pos_sub = nh.subscribe<nav_msgs::Odometry>(uav_name + "/mavros/global_position/local",
+    //                                                       10, &UAVControl::px4_global_pos_callback, this);
+    // 【订阅】PX4中的无人机速度（坐标系:ENU系） - 飞控 -> mavros -> 本节点
+    px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(uav_name + "/mavros/local_position/velocity_local",
+                                                            10, &UAVControl::px4_vel_callback, this);
+    // 【订阅】PX4中的无人机欧拉角 - 飞控 -> mavros -> 本节点    
+    px4_att_sub = nh.subscribe<sensor_msgs::Imu>(uav_name + "/mavros/imu/data", 1,
+                                                 &UAVControl::px4_att_callback, this);
+    // 【订阅】PX4中无人机的位置/速度/加速度设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）    
+    px4_pos_target_sub =
+        nh.subscribe<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/target_local",
+                                                  1,
+                                                  &UAVControl::px4_pos_target_callback, this);
+    // 【订阅】PX4中无人机的姿态设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）
+    px4_att_target_sub =
+        nh.subscribe<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/target_attitude",
+                                                  1,
+                                                  &UAVControl::px4_att_target_callback, this);
+    // 【订阅】无人机控制指令 - 外部节点 -> 本节点                                     
+    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd",
+                                                               10, &UAVControl::control_cmd_callback, this);
+    // 【订阅】无人机设置指令 - 外部节点 -> 本节点    
+    setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup",
+                                                    1, &UAVControl::uav_setup_callback, this);
+    // 【订阅】外部定位状态 - 本节点 -> uav_control_node
+    odom_state_sub = nh.subscribe<sunray_msgs::ExternalOdom>(uav_name + "/sunray/odom_state", 10,
+                                                             &UAVControl::odom_state_callback, this);
+    // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_input -> 本节点
+    rc_state_sub = nh.subscribe<sunray_msgs::RcState>(uav_name + "/sunray/rc_state", 1,
+                                                      &UAVControl::rc_state_callback, this);
+    // 【订阅】无人机航点数据 -- 外部节点 -> 本节点
+    uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_name + "/sunray/uav_waypoint", 1,
+                                                              &UAVControl::waypoint_callback, this);
+    // 【发布】PX4位置环控制指令（包括期望位置、速度、加速度等接口，坐标系:ENU系） - 本节点 -> mavros -> 飞控
+    px4_setpoint_local_pub = nh.advertise<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/local", 1);
+    // 【发布】PX4全局位置控制指令（包括期望经纬度等接口 坐标系:WGS84坐标系）- 本节点 -> mavros -> 飞控
+    px4_setpoint_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(uav_name + "/mavros/setpoint_raw/global", 1);
+    // 【发布】PX4姿态环控制指令（包括期望姿态等接口）- 本节点 -> mavros -> 飞控
+    px4_setpoint_attitude_pub = nh.advertise<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/attitude", 1);
+    // 【发布】无人机状态（接收到vision_pose节点的无人机状态，加上无人机控制模式，重新发布出去）- 本节点 -> 其他控制&任务节点
+    uav_state_pub = nh.advertise<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1);
+    // 【发布】 ？？
+    goal_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_" + std::to_string(uav_id), 1);
+
+    // 【服务】PX4解锁/上锁指令 -- 本节点 -> mavros -> 飞控
+    px4_arming_client = nh.serviceClient<mavros_msgs::CommandBool>(uav_name + "/mavros/cmd/arming");
+    // 【服务】PX4修改PX4飞行模式指令 -- 本节点 -> mavros -> 飞控
+    px4_set_mode_client = nh.serviceClient<mavros_msgs::SetMode>(uav_name + "/mavros/set_mode");
+    // 【服务】PX4紧急上锁服务(KILL) -- 本节点 -> mavros -> 飞控
+    px4_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(uav_name + "/mavros/cmd/command");
+    // 【服务】重启PX4飞控 -- 本节点 -> mavros -> 飞控
+    px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(uav_name + "/mavros/cmd/command");
+
+    // 【定时器】定时打印无人机状态
+    print_timer = nh.createTimer(ros::Duration(1), &UAVControl::print_state, this);
+    // 【定时器】安全检查+无人机状态发布定时器
+    task_timer = nh.createTimer(ros::Duration(0.05), &UAVControl::task_timer_callback, this);
+
+    // 初始化各个部分参数
+    system_params.control_mode = Control_Mode::INIT;
+    system_params.last_control_mode = Control_Mode::INIT;
+    system_params.type_mask = 0;
+    system_params.safety_state = -1;
+    system_params.odom_valid_time = ros::Time(0);
+    rcState_cb = false;
+    allow_lock = false;
+    flight_params.home_pos[0] = default_home_x;
+    flight_params.home_pos[1] = default_home_y;
+    flight_params.home_pos[2] = default_home_z;
+
+    // 绑定高级模式对应的实现函数
+    advancedModeFuncMap[Takeoff] = std::bind(&UAVControl::set_takeoff, this);
+    advancedModeFuncMap[Land] = std::bind(&UAVControl::set_land, this);
+    advancedModeFuncMap[Hover] = std::bind(&UAVControl::set_desired_from_hover, this);
+    advancedModeFuncMap[Waypoint] = std::bind(&UAVControl::waypoint_mission, this);
+    advancedModeFuncMap[Return] = std::bind(&UAVControl::return_to_home, this);
+}
+
+// 检查当前模式 并进入对应的处理函数中
+void UAVControl::mainLoop()
+{
+    // 无人机控制状态机：控制模式由遥控器话题（遥控器拨杆）进行切换
+    switch (system_params.control_mode)
+    {
+        // 初始模式：保持PX4在定点模式，此时PX4不接收来自机载电脑的任何指令
+        case Control_Mode::INIT:
+            // 无人机在未解锁状态且处于非定点模式时切换到定点模式 
+            if (!px4_state.armed && uav_state.mode != "POSCTL")
+            {
+                set_px4_flight_mode("POSCTL");
+            }
+            break;
+
+        // 遥控器控制模式（RC_CONTROL）
+        case Control_Mode::RC_CONTROL:
+            // 在RC_CONTROL模式下，控制程序根据遥控器的摇杆来控制无人机移动
+            // 类似于PX4的定点模式，只不过此时PX4为OFFBOARD模式（PX4的控制指令来自机载电脑）
+            handle_rc_control();
+            break;
+
+        // CMD控制模式（CMD_CONTROL）：根据"/sunray/uav_control_cmd"话题的控制指令来控制无人机移动（二次开发一般使用这个模式）
+        case Control_Mode::CMD_CONTROL:
+            handle_cmd_control();
+            break;
+
+        // 降落控制模式（LAND_CONTROL）：当前位置原地降落，降落后会自动上锁
+        case Control_Mode::LAND_CONTROL:
+            handle_land_control();
+            break;
+
+        // 无控制模式（WITHOUT_CONTROL）：do nothing
+        case Control_Mode::WITHOUT_CONTROL:
+            break;
+
+        default:
+            set_desired_from_hover();
+            break;
+    }
+    system_params.last_control_mode = system_params.control_mode;
+}
 
 // 安全检查 是否超出地理围栏 外部定位是否有效
 int UAVControl::safetyCheck()
@@ -88,11 +251,12 @@ void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
 {
     if (!px4_state.armed && msg->armed)
     {
+        // 每一次解锁时，将无人机的解锁位置设置为home点
         flight_params.home_pos[0] = px4_state.pos[0];
         flight_params.home_pos[1] = px4_state.pos[1];
         flight_params.home_pos[2] = px4_state.pos[2];
         flight_params.home_yaw = px4_state.att[2];
-        flight_params.home_set = true;
+        flight_params.set_home = true;
         Logger::info("Home position set to: ", flight_params.home_pos[0], flight_params.home_pos[1], flight_params.home_pos[2]);
     }
 
@@ -100,9 +264,9 @@ void UAVControl::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
     px4_state.armed = msg->armed;
     px4_state.mode = msg->mode;
 
-    if (flight_params.home_set && !px4_state.armed)
+    if (flight_params.set_home && !px4_state.armed)
     {
-        flight_params.home_set = false;
+        flight_params.set_home = false;
     }
 }
 
@@ -131,16 +295,6 @@ void UAVControl::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.att[2] = yaw;
 }
 
-// 无人机目标位置回调
-void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg)
-{
-    px4_state.target_pos[0] = msg->position.x;
-    px4_state.target_pos[1] = msg->position.y;
-    px4_state.target_pos[2] = msg->position.z;
-    px4_state.target_vel[0] = msg->velocity.x;
-    px4_state.target_vel[1] = msg->velocity.y;
-    px4_state.target_vel[2] = msg->velocity.z;
-}
 
 // 外部定位状态回调
 void UAVControl::odom_state_callback(const sunray_msgs::ExternalOdom::ConstPtr &msg)
@@ -191,15 +345,15 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     }
 }
 
-// 设置模式
-void UAVControl::setMode(std::string mode)
+// 设置PX4飞行模式
+void UAVControl::set_px4_flight_mode(std::string mode)
 {
     mavros_msgs::SetMode mode_cmd;
     mode_cmd.request.custom_mode = mode;
     px4_set_mode_client.call(mode_cmd);
 }
 
-// 紧急停止
+// KILL PX4
 void UAVControl::emergencyStop()
 {
     mavros_msgs::CommandLong emergency_srv;
@@ -219,8 +373,8 @@ void UAVControl::emergencyStop()
     Logger::error("Emergency Stop!");
 }
 
-// 重启飞控
-void UAVControl::reboot()
+// 重启PX4
+void UAVControl::reboot_px4()
 {
     // https://mavlink.io/en/messages/common.html, MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN(#246)
     mavros_msgs::CommandLong reboot_srv;
@@ -233,7 +387,7 @@ void UAVControl::reboot()
     Logger::error("Reboot!");
 }
 
-// 解锁
+// PX4解锁/上锁
 void UAVControl::setArm(bool arm)
 {
     mavros_msgs::CommandBool arm_cmd;
@@ -267,8 +421,7 @@ void UAVControl::setArm(bool arm)
 
 void UAVControl::set_auto_land()
 {
-
-    setMode("AUTO.LAND");
+    set_px4_flight_mode("AUTO.LAND");
 }
 
 // 控制指令回调
@@ -294,80 +447,78 @@ void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr
     }
 }
 
-// 模式设置回调
-void UAVControl::setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
+// 回调函数：接收无人机设置指令
+void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
 {
-    if (msg->cmd == sunray_msgs::UAVSetup::ARM)
+    switch (msg->cmd)
     {
-        setArm(true);
-    }
-    else if (msg->cmd == sunray_msgs::UAVSetup::DISARM)
-    {
-        setArm(false);
-    }
-    else if (msg->cmd == sunray_msgs::UAVSetup::SET_PX4_MODE)
-    {
-        setMode(msg->px4_mode);
-    }
-    else if (msg->cmd == sunray_msgs::UAVSetup::REBOOT_PX4)
-    {
-        reboot();
-    }
-    else if (msg->cmd == sunray_msgs::UAVSetup::SET_CONTROL_MODE)
-    {
-        if (msg->control_mode == "INIT" && system_params.control_mode != Control_Mode::INIT)
-        {
+        // 设置指令：解锁无人机
+        case sunray_msgs::UAVSetup::ARM:
+            setArm(true);
+            break;
+        // 设置指令：无人机上锁
+        case sunray_msgs::UAVSetup::DISARM:
+            setArm(false);
+            break;
+        // 设置指令：设置PX4模式，需要配合px4_mode进行设置
+        case sunray_msgs::UAVSetup::SET_PX4_MODE:
+            set_px4_flight_mode(msg->px4_mode);
+            break;
+        // 设置指令：重启PX4飞控
+        case sunray_msgs::UAVSetup::REBOOT_PX4:
+            reboot_px4();
+            break;
+        // 设置指令： 无人机紧急上锁
+        case sunray_msgs::UAVSetup::EMERGENCY_KILL:
+            emergencyStop();
             system_params.control_mode = Control_Mode::INIT;
-            Logger::warning("Switch to INIT mode with cmd");
-        }
-        else if (msg->control_mode == "CMD_CONTROL")
-        {
-            if (system_params.safety_state == 0 && (system_params.control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
+            break;
+        // 设置指令：设置无人机控制模式，需要配合control_mode进行设置
+        case sunray_msgs::UAVSetup::SET_CONTROL_MODE:
+            if (msg->control_mode == "INIT" && system_params.control_mode != Control_Mode::INIT)
             {
-                Logger::warning("Switch to CMD_CONTROL mode with cmd");
-                set_offboard_control(Control_Mode::CMD_CONTROL);
+                system_params.control_mode = Control_Mode::INIT;
+                Logger::warning("Switch to INIT mode with cmd");
             }
-            else
+            else if (msg->control_mode == "RC_CONTROL" && (system_params.control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
             {
-                if (system_params.safety_state != 0)
+                if (system_params.safety_state == 0)
                 {
-                    Logger::error("Safety state error, cannot switch to CMD_CONTROL mode");
+                    Logger::warning("Switch to RC_CONTROL mode with cmd");
+                    set_offboard_control(Control_Mode::RC_CONTROL);
                 }
-            }
-        }
-        else if (msg->control_mode == "RC_CONTROL" && (system_params.control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
-        {
-            if (system_params.safety_state == 0)
-            {
-                Logger::warning("Switch to RC_CONTROL mode with cmd");
-                set_offboard_control(Control_Mode::RC_CONTROL);
-            }
-            else
-            {
-                if (system_params.safety_state != 0)
+                else if (system_params.safety_state != 0)
                 {
                     Logger::error("Safety state error, cannot switch to RC_CONTROL mode!");
                 }
             }
-        }
-        else if (msg->control_mode == "LAND_CONTROL" && system_params.control_mode != Control_Mode::LAND_CONTROL)
-        {
-            set_land();
-            // set_offboard_control(Control_Mode::LAND_CONTROL);
-        }
-        else if (msg->control_mode == "WITHOUT_CONTROL" && system_params.control_mode != Control_Mode::WITHOUT_CONTROL)
-        {
-            system_params.control_mode = Control_Mode::WITHOUT_CONTROL;
-        }
-        else
-        {
-            Logger::error("Unknown control state!");
-        }
-    }
-    else if (msg->cmd == sunray_msgs::UAVSetup::EMERGENCY_KILL)
-    {
-        emergencyStop();
-        system_params.control_mode = Control_Mode::INIT;
+            else if (msg->control_mode == "CMD_CONTROL")
+            {
+                if (system_params.safety_state == 0 && (system_params.control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
+                {
+                    set_offboard_control(Control_Mode::CMD_CONTROL);
+                    Logger::warning("Switch to CMD_CONTROL mode with cmd");
+                }
+                else if (system_params.safety_state != 0)
+                {
+                    Logger::error("Safety state error, cannot switch to CMD_CONTROL mode");
+                }
+            }
+            else if (msg->control_mode == "LAND_CONTROL" && system_params.control_mode != Control_Mode::LAND_CONTROL)
+            {
+                set_land();
+            }
+            else if (msg->control_mode == "WITHOUT_CONTROL" && system_params.control_mode != Control_Mode::WITHOUT_CONTROL)
+            {
+                system_params.control_mode = Control_Mode::WITHOUT_CONTROL;
+            }
+            else
+            {
+                Logger::error("Unknown control state!");
+            }
+            break;
+        default:
+            break;
     }
 }
 
@@ -438,7 +589,7 @@ void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg
 // 打印状态
 void UAVControl::print_state(const ros::TimerEvent &event)
 {
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_prefix, "<<<<<<<<<<<<<<<");
+    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_name, "<<<<<<<<<<<<<<<");
     if (px4_state.connected)
     {
         Logger::print_color(int(LogColor::green), "CONNECTED:", "TRUE");
@@ -522,7 +673,8 @@ void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTar
     setpoint.type_mask = type_mask;
     px4_setpoint_local_pub.publish(setpoint);
 }
-// 发布Global目标点
+
+// 发送经纬度以及高度期望值至飞控(输入,期望lat/lon/alt,期望yaw)
 void UAVControl::setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
@@ -604,21 +756,25 @@ void UAVControl::set_offboard_control(int mode)
 // 设置offboard模式
 void UAVControl::set_offboard_mode()
 {
-    // 使用遥控器时 未解锁则不允许进入OFFBOARD模式
+    // 无人机未解锁时，不允许进入OFFBOARD模式
     if (!px4_state.armed && system_params.use_rc)
     {
         Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
         return;
     }
+
+    // 设置默认目标点+设置PX4为OFFBOARD模式（PX4进入OFFBOARD模式，需要发送指令才可进入，此处发送0指令）
     set_default_local_setpoint();
     local_setpoint.velocity.x = 0.0;
     local_setpoint.velocity.y = 0.0;
     local_setpoint.velocity.z = 0.0;
     setpoint_local_pub(TypeMask::XYZ_VEL, local_setpoint);
+    set_px4_flight_mode("OFFBOARD");
+
     control_cmd.cmd = Hover;
     set_hover_pos();
     control_cmd.header.stamp = ros::Time::now();
-    setMode("OFFBOARD");
+    
 }
 
 // 任务定时器回调函数
@@ -677,15 +833,16 @@ void UAVControl::task_timer_callback(const ros::TimerEvent &event)
     uav_state_pub.publish(uav_state);
 }
 
-// 坐标系转换
-void UAVControl::body2ned(double body_xy[2], double ned_xy[2], double yaw)
+// 【坐标系旋转函数】- 机体系到enu系
+// body_frame是机体系,enu_frame是惯性系,yaw_angle是当前偏航角[rad]
+void UAVControl::body2enu(double body_frame[2], double enu_frame[2], double yaw)
 {
-    ned_xy[0] = cos(yaw) * body_xy[0] - sin(yaw) * body_xy[1];
-    ned_xy[1] = sin(yaw) * body_xy[0] + cos(yaw) * body_xy[1];
+    enu_frame[0] = cos(yaw) * body_frame[0] - sin(yaw) * body_frame[1];
+    enu_frame[1] = sin(yaw) * body_frame[0] + cos(yaw) * body_frame[1];
 }
 
 // 从指令中获取期望位置
-void UAVControl::set_desired_from_cmd()
+void UAVControl::handle_cmd_control()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
@@ -713,7 +870,7 @@ void UAVControl::set_desired_from_cmd()
 
         return;
     }
-    // 高级模式单独判断
+    // 高级模式单独判断，执行对应的高级模式处理函数
     if (advancedModeFuncMap.find(control_cmd.cmd) != advancedModeFuncMap.end())
     {
         // 调用对应的函数
@@ -723,7 +880,6 @@ void UAVControl::set_desired_from_cmd()
     }
     else if (control_cmd.cmd == GlobalPos)
     {
-
         // 经纬度海拔控制模式
         // std::cout<<"globalPos"<<std::endl;
         set_default_global_setpoint();
@@ -757,20 +913,20 @@ void UAVControl::set_desired_from_cmd()
                     // Body系的需要转换到NED下
                     set_default_local_setpoint();
                     double body_pos[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
-                    double ned_pos[2] = {0.0, 0.0};
-                    UAVControl::body2ned(body_pos, ned_pos, px4_state.att[2]); // 偏航角 px4_state.att[2]
+                    double enu_pos[2] = {0.0, 0.0};
+                    UAVControl::body2enu(body_pos, enu_pos, px4_state.att[2]); // 偏航角 px4_state.att[2]
 
-                    local_setpoint.position.x = px4_state.pos[0] + ned_pos[0];
-                    local_setpoint.position.y = px4_state.pos[1] + ned_pos[1];
+                    local_setpoint.position.x = px4_state.pos[0] + enu_pos[0];
+                    local_setpoint.position.y = px4_state.pos[1] + enu_pos[1];
                     local_setpoint.position.z = px4_state.pos[2] + control_cmd.desired_pos[2];
 
                     // Body 系速度向量到 NED 系的转换
                     double body_vel[2] = {control_cmd.desired_vel[0], control_cmd.desired_vel[1]};
-                    double ned_vel[2] = {0.0, 0.0};
-                    UAVControl::body2ned(body_vel, ned_vel, px4_state.att[2]);
+                    double enu_vel[2] = {0.0, 0.0};
+                    UAVControl::body2enu(body_vel, enu_vel, px4_state.att[2]);
 
-                    local_setpoint.velocity.x = ned_vel[0];
-                    local_setpoint.velocity.y = ned_vel[1];
+                    local_setpoint.velocity.x = enu_vel[0];
+                    local_setpoint.velocity.y = enu_vel[1];
                     local_setpoint.velocity.z = control_cmd.desired_vel[2];
 
                     local_setpoint.yaw = control_cmd.desired_yaw + px4_state.att[2];
@@ -816,28 +972,33 @@ void UAVControl::set_desired_from_cmd()
 }
 
 // 从遥控器状态中获取并计算期望值
-void UAVControl::set_desired_from_rc()
+void UAVControl::handle_rc_control()
 {
     if ((ros::Time::now() - rc_state.header.stamp).toSec() > 1.5)
     {
         Logger::error("RC timeout!");
         return;
     }
+
     if (system_params.last_control_mode != system_params.control_mode)
     {
         system_params.last_rc_time = ros::Time::now();
     }
+
     double delta_t = (ros::Time::now() - system_params.last_rc_time).toSec();
     system_params.last_rc_time = ros::Time::now();
+
+    // 遥控器的指令为机体系，因此需要将指令转换为惯性系
     double body_xy[2], enu_xy[2], body_z, body_yaw;
     // 允许一定误差(0.2 也就是1400 到 1600)保持悬停
     body_xy[0] = ((rc_state.channel[1] >= -0.2 && rc_state.channel[1] <= 0.2) ? 0 : rc_state.channel[1]) * rc_control_params.max_vel_xy * delta_t;
     body_xy[1] = -((rc_state.channel[0] >= -0.2 && rc_state.channel[0] <= 0.2) ? 0 : rc_state.channel[0]) * rc_control_params.max_vel_xy * delta_t;
     body_z = ((rc_state.channel[2] >= -0.2 && rc_state.channel[2] <= 0.2) ? 0 : rc_state.channel[2]) * rc_control_params.max_vel_z * delta_t;
     body_yaw = -rc_state.channel[3] * rc_control_params.max_vel_yaw * delta_t;
-    body2ned(body_xy, enu_xy, px4_state.att[2]);
+    body2enu(body_xy, enu_xy, px4_state.att[2]);
 
-    // 悬停位置 = 前一个悬停位置 + 遥控器数值[-1,1] * 0.01(如果主程序中设定是100Hz的话)
+    // 定点悬停位置 = 前一个悬停位置 + 遥控器数值[-1,1] * 速度限幅 * delta_t
+    // 因为这是一个积分系统，所以即使停杆了，无人机也还会继续移动一段距离
     flight_params.hover_pos[0] += enu_xy[0];
     flight_params.hover_pos[1] += enu_xy[1];
     flight_params.hover_pos[2] += body_z;
@@ -847,19 +1008,19 @@ void UAVControl::set_desired_from_rc()
     if (flight_params.hover_pos[2] < flight_params.home_pos[2] + 0.2)
         flight_params.hover_pos[2] = flight_params.home_pos[2] + 0.2;
 
+    // 发布PX4控制指令
     local_setpoint.position.x = flight_params.hover_pos[0];
     local_setpoint.position.y = flight_params.hover_pos[1];
     local_setpoint.position.z = flight_params.hover_pos[2];
     local_setpoint.yaw = flight_params.hover_yaw;
-    // 因为这是一个积分系统，所以即使停杆了，无人机也还会继续移动一段距离
     system_params.type_mask = TypeMask::XYZ_POS_YAW;
     setpoint_local_pub(system_params.type_mask, local_setpoint);
 }
 
 // 计算降落的期望值
-void UAVControl::set_desired_from_land()
+void UAVControl::handle_land_control()
 {
-    // 如果无人机已经上锁，代表已经降落结束
+    // 如果无人机已经上锁，代表已经降落结束，切换控制状态机为INIT模式
     if (!px4_state.armed)
     {
         system_params.control_mode = Control_Mode::INIT;
@@ -874,6 +1035,7 @@ void UAVControl::set_desired_from_land()
     {
         return;
     }
+
     bool new_cmd = system_params.control_mode != system_params.last_control_mode ||
                    (control_cmd.cmd == Land && (control_cmd.header.stamp != last_control_cmd.header.stamp));
     if (new_cmd)
@@ -946,7 +1108,7 @@ void UAVControl::return_to_home()
     if (new_cmd)
     {
         // 如果未设置home点，则无法进入返航模式
-        if (!flight_params.home_set)
+        if (!flight_params.set_home)
         {
             Logger::error("Home position not set! Cannot return to home!");
             set_desired_from_hover();
@@ -1022,6 +1184,7 @@ float UAVControl::get_vel_from_waypoint(float point_x, float point_y)
         wp_params.wp_y_vel *= ratio;
     }
 }
+
 // 高级模式-航点模式的实现函数
 void UAVControl::waypoint_mission()
 {
@@ -1234,7 +1397,7 @@ void UAVControl::set_takeoff()
     if (new_cmd)
     {
         // 如果未设置home点，则无法起飞
-        if (!flight_params.home_set)
+        if (!flight_params.set_home)
         {
             Logger::error("Home position not set! Cannot takeoff!");
             set_desired_from_hover();
@@ -1265,7 +1428,7 @@ void UAVControl::set_land()
     if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL))
     {
         system_params.control_mode = Control_Mode::LAND_CONTROL;
-        set_desired_from_land();
+        handle_land_control();
     }
 }
 
@@ -1283,4 +1446,33 @@ void UAVControl::publish_goal()
     goal.pose.orientation = q;
     // 发布goal话题
     goal_pub.publish(goal);
+}
+
+// 回调函数：接收PX4的姿态设定值
+void UAVControl::px4_att_target_callback(const mavros_msgs::AttitudeTarget::ConstPtr &msg)
+{
+    px4_state.target_att_q = Eigen::Quaterniond(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);    
+
+    // 转为rpy
+    tf::Quaternion q(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    px4_state.target_att[0] = roll;
+    px4_state.target_att[1] = pitch;
+    px4_state.target_att[2] = yaw;
+
+    // px4_rates_target = Eigen::Vector3d(msg->body_rate.x, msg->body_rate.y, msg->body_rate.z);
+    px4_state.target_thrust = msg->thrust;
+}
+
+// 回调函数：接收PX4位置设定值
+void UAVControl::px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg)
+{
+    px4_state.target_pos[0] = msg->position.x;
+    px4_state.target_pos[1] = msg->position.y;
+    px4_state.target_pos[2] = msg->position.z;
+    px4_state.target_vel[0] = msg->velocity.x;
+    px4_state.target_vel[1] = msg->velocity.y;
+    px4_state.target_vel[2] = msg->velocity.z;
 }
