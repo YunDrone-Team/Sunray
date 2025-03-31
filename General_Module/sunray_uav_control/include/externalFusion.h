@@ -1,5 +1,4 @@
 #include "ExternalPosition.h"
-#include "ExternalPositionFactory.h"
 #include <math.h>
 #include <map>
 
@@ -25,33 +24,17 @@ enum external_source
     VINS = 7
 };
 
-struct PositionState
-{
-    double pos_x = 0.0;
-    double pos_y = 0.0;
-    double pos_z = 0.0;
-    double vel_x = 0.0;
-    double vel_y = 0.0;
-    double vel_z = 0.0;
-    double att_x = 0.0;
-    double att_y = 0.0;
-    double att_z = 0.0;
-    double att_w = 0.0;
-    double roll = 0.0;
-    double pitch = 0.0;
-    double yaw = 0.0;
-};
-
 // 无人机状态集合
 struct PX4State
 {
+    ros::Time stamp;
     bool connected;
     bool armed;
     bool landed;
     float battery;
     float battery_percentage;
     std::string mode;
-    PositionState position_state;
+    PoseState pose_state;
 };
 
 std::map<int, std::string> ERR_MSG = {
@@ -76,17 +59,20 @@ private:
     double latitude;                                        // 纬度
     double longitude;                                       // 经度
     double altitude;                                        // 海拔
+    double timeout_counter;                                 // 定位超时时长
+    double jump_threshold;                                  // 判断数据跳变的阈值
+    double pub_rate;                                        // 数据发布频率
+    bool is_timeout;                                        // 定位超时标志
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
+    geometry_msgs::PoseStamped last_vision_position;        // 上一刻vision_pose消息
     sunray_msgs::UAVState uav_state;                        // 无人机状态信息
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     std::set<int> err_msg;                                  // 错误信息集合
     PX4State px4_state;                                     // 无人机状态集合
-    PositionState external_state;                           // 外部定位数据
-    PositionState err_state;                                // 状态误差
+    PoseState external_state;                               // 外部定位数据
+    PoseState err_state;                                    // 状态误差
     sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据（用于发布）
-    ExternalPositioFactory factory;
-    std::shared_ptr<ExternalPosition> external_position;
-    std_msgs::ColorRGBA uav_rviz_color;                     // 无人机在RVIZ中的颜色
+    ExternalPosition external_position;                     // 外部定位源的回调和处理
 
     ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 无人机状态订阅
@@ -99,13 +85,15 @@ private:
     ros::Subscriber px4_gps_state_sub;      // 无人机gps状态订阅
     ros::Subscriber px4_gps_raw_sub;        // 无人机gps原始数据订阅
 
+    ros::Publisher vision_pose_pub;    // 发布vision_pose消息
     ros::Publisher odom_state_pub;     // 发布定位状态
     ros::Publisher uav_odom_pub;       // 无人机里程计发布
     ros::Publisher uav_trajectory_pub; // 无人机轨迹发布
     ros::Publisher uav_mesh_pub;       // 无人机mesh发布
 
-    ros::Timer timer_task;     // 定时器
-    ros::Timer timer_rviz_pub; // 定时发布rviz显示消息
+    ros::Timer timer_check;      // 定时器
+    ros::Timer timer_pub_mavros; // 定时器
+    ros::Timer timer_rviz_pub;   // 定时发布rviz显示消息
 
 public:
     ExternalFusion(/* args */);
@@ -114,7 +102,7 @@ public:
     std::map<int, std::string> source_map; // 外部定位数据来源映射
     // std::map<int, ExternalPosition> obj_map; // 外部定位数据来源映射
 
-    void init(ros::NodeHandle &nh);                                            // 初始化
+    void init(ros::NodeHandle &nh); // 初始化
     void setup_rviz_color();
     void show_px4_state();                                                     // 显示无人机状态
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);          // 无人机状态回调函数
@@ -122,12 +110,15 @@ public:
     void px4_odom_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);   // 无人机里程计回调函数（同时包含了位置和速度）
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);              // 无人机姿态回调函数 从imu获取解析
     void timer_callback(const ros::TimerEvent &event);                         // 定时器回调函数
+    void timer_update_external_state(const ros::TimerEvent &event);            // 定时器更新和发布
     void timer_rviz(const ros::TimerEvent &e);                                 // 定时发布rviz显示消息
     void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);   // 无人机位置回调函数
     void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);   // 无人机位置回调函数
     void px4_gps_satellites_callback(const std_msgs::UInt32::ConstPtr &msg);   // 无人机gps卫星状态回调函数
     void px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstPtr &msg);  // 无人机gps状态回调函数
     void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);       // 无人机gps原始数据回调函数
+    bool timeoutCheck();                                                       // 外部定位数据超时检测
+    bool checkJump();                                                          // 外部定位数据跳变检测
     // void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);           // 无人机里程计回调函数（同时包含了位置和速度 但是是机体系）
 };
 

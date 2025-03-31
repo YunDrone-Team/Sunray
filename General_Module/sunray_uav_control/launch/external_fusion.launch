@@ -7,7 +7,6 @@
     <arg name="source_timeout" default="0.35" />
     <arg name="jump_threshold" default="0.1" />
     <arg name="pub_rate" default="0.02" />
-    <arg name="task_rate" default="0.05" />
     <arg name="check_jump" default="false" />
     <arg name="enable_rviz" default="false" />
     <arg name="server" default="192.168.25.13"/>
@@ -21,7 +20,6 @@
         <param name="source_timeout" value="$(arg source_timeout)" />
         <param name="jump_threshold" value="$(arg jump_threshold)" />
         <param name="pub_rate" value="$(arg pub_rate)" />
-        <param name="task_rate" value="$(arg task_rate)" />
         <param name="check_jump" value="$(arg check_jump)" />
         <param name="enable_rviz" value="$(arg enable_rviz)" />
     </node>
