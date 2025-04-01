@@ -2,7 +2,7 @@
 <sdf version='1.6'>
   <model name='sunray150_with_cam'>
     <include>
-      <uri>model://sunray150</uri> <!--uri编写的p250飞机-->
+      <uri>model://sunray150</uri> 
     </include>
 
     <include>
