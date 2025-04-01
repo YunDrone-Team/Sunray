@@ -48,7 +48,6 @@
     </light>
 
     <scene>
-      <!-- <ambient>1.0 1.0 1.0 1.0</ambient> -->
       <shadows>0</shadows>
     </scene>
 
@@ -57,14 +56,10 @@
       <uri>model://ground_plane</uri>
     </include>
 
-    <include>
-      <uri>model://room3</uri>
-    </include>
-
     <!-- 装饰 -->
-    <model name='texture'>
+    <model name='yundrone_logo'>
       <static>true</static>
-      <link name="sunray">
+      <link name="yundrone_logo">
         <pose frame=''> 0.0 0.0 0.0 0.0 0.0 0.0</pose>
         <visual name="visual">
             <cast_shadows>false</cast_shadows>
@@ -75,29 +70,29 @@
             </geometry>
             <material>
               <script>
-                <uri>model://texture.material</uri>
-                <name>sunray_world_1</name>
+                <uri>model://yundrone_logo/yundrone_logo.material</uri>
+                <name>yundrone_logo</name>
               </script>
             </material>
         </visual>
       </link>
     </model>
 
-    <model name='H_takeoff'>
+    <model name='single_aruco_91'>
       <static>true</static>
-      <link name="H_t">
-        <pose frame=''> -3.8 0 0.01 0.0 0.0 0.0</pose>
+      <link name="single_aruco_91">
+        <pose frame=''> -3.5 1.5 0.02 0.0 0.0 0.0</pose>
         <visual name="visual">
             <cast_shadows>false</cast_shadows>
             <geometry>
               <box>
-                <size>1.0 1.0 0.01</size>
+                <size>0.48 0.48 0.01</size>
               </box>
             </geometry>
             <material>
               <script>
-                <uri>model://texture.material</uri>
-                <name>H_1</name>
+                <uri>model://single_aruco/single_aruco.material</uri>
+                <name>aruco_91</name>
               </script>
             </material>
         </visual>
@@ -105,21 +100,21 @@
     </model>
 
 
-    <model name='H_land'>
+    <model name='single_aruco_92'>
       <static>true</static>
-      <link name="H_l">
-        <pose frame=''> 3.5 1.5 0.01 0.0 0.0 0.0</pose>
+      <link name="single_aruco_92">
+        <pose frame=''> 3.5 1.5 0.02 0.0 0.0 0.0</pose>
         <visual name="visual">
             <cast_shadows>false</cast_shadows>
             <geometry>
               <box>
-                <size>1.0 1.0 0.01</size>
+                <size>0.48 0.48 0.01</size>
               </box>
             </geometry>
             <material>
               <script>
-                <uri>model://texture.material</uri>
-                <name>H_1</name>
+                <uri>model://single_aruco/single_aruco.material</uri>
+                <name>aruco_92</name>
               </script>
             </material>
         </visual>

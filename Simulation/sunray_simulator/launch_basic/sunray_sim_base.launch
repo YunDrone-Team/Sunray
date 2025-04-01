@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- MAVROS posix SITL environment launch script -->
+	<!-- 启动 PX4 SITL -->
+	<!-- PX4源码中与此相关的文件： -->
+	<!-- PX4 SITL rcS启动脚本路径：~/PX4/ROMFS/px4fmu_common/init.d-posix/rcS -->
+	<!-- PX4 SITL 无人机模型文件：~/PX4/ROMFS/px4fmu_common/init.d-posix/1046_p230 或 1045_p450-->
+
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
+    <!-- 无人机名字 -->
     <arg name="vehicle" default="sunray150"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty.world"/>
     
     <!-- px4 1.14之后用 -->
     <!-- <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" /> -->
@@ -52,17 +56,26 @@
     <arg name="mavlink_id" value="$(eval 1 + arg('ID'))" />
     
     <arg name="interactive" default="true"/>
+    
+    <!-- generate sdf vehicle model -->
     <arg name="cmd" default="$(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=$(arg mavlink_udp_port) 
                                 --mavlink_tcp_port=$(arg mavlink_tcp_port) --gst_udp_port=$(arg gst_udp_port) --video_uri=$(arg video_uri) 
                                 --mavlink_cam_udp_port=$(arg mavlink_cam_udp_port) $(find sunray_simulator)/models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find sunray_simulator)"/>
     <param command="$(arg cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
+
     <arg unless="$(arg interactive)" name="px4_command_arg1" value=""/>
     <arg     if="$(arg interactive)" name="px4_command_arg1" value="-d"/>
-    <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen" args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) $(arg px4_command_arg1)">
+    <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen" 
+        args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) $(arg px4_command_arg1)">
     </node>
-    <node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
 
-    <!-- MAVROS -->
+    <!-- 加载Gazebo模型 -->
+    <!-- 无人机模型SDF文件 -->
+    <!-- 无人机初始位置及姿态：x, y, z，R, P, Y -->
+    <node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model" output="screen" 
+        args="-sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
+
+    <!-- 启动MAVROS -->
     <include file="$(find mavros)/launch/px4.launch">
         <arg name="fcu_url" value="$(arg fcu_url)"/>
         <arg name="gcs_url" value=""/>

@@ -90,7 +90,7 @@
           <visualize>1</visualize>
           <samples>10000</samples>
           <downsample>1</downsample>
-          <csv_file_name>package://sunray_simulator/models/livox_mid360/scan_mode/mid360.csv</csv_file_name>
+          <csv_file_name>package://sunray_simulator/models/sensor_models/livox_mid360/scan_mode/mid360.csv</csv_file_name>
           <!-- <robotNamespace></robotNamespace> -->
           <topic_name>livox</topic_name>
           <frameName>laser_3d</frameName>

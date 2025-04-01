@@ -48,7 +48,6 @@
     </light>
 
     <scene>
-      <!-- <ambient>1.0 1.0 1.0 1.0</ambient> -->
       <shadows>0</shadows>
     </scene>
 
@@ -58,9 +57,9 @@
     </include>
 
     <!-- 装饰 -->
-    <model name='texture'>
+    <model name='yundrone_logo'>
       <static>true</static>
-      <link name="sunray">
+      <link name="yundrone_logo">
         <pose frame=''> 0.0 0.0 0.0 0.0 0.0 0.0</pose>
         <visual name="visual">
             <cast_shadows>false</cast_shadows>
@@ -71,8 +70,8 @@
             </geometry>
             <material>
               <script>
-                <uri>model://texture.material</uri>
-                <name>sunray_world_1</name>
+                <uri>model://yundrone_logo/yundrone_logo.material</uri>
+                <name>yundrone_logo</name>
               </script>
             </material>
         </visual>
