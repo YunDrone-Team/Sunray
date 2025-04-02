@@ -43,7 +43,7 @@
         </geometry>
         <material>
           <script>
-            <uri>model://texture.material</uri>
+            <uri>model://single_aruco/single_aruco.material</uri>
             <name>arcuo_92</name>
           </script>
         </material>

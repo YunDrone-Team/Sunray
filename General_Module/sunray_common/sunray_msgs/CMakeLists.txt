@@ -38,6 +38,7 @@ add_message_files(
   UAVControlCMD.msg
   UAVState.msg
   UAVSetup.msg
+  PX4State.msg
   UAVWayPoint.msg
   RcState.msg
   TextInfo.msg

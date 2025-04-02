@@ -80,8 +80,8 @@
             </geometry>
             <material>
               <script>
-                <uri>model://texture.material</uri>
-                <name>sunray_world_1</name>
+                <uri>model://yundrone_logo/yundrone_logo.material</uri>
+                <name>yundrone_logo</name>
               </script>
             </material>
         </visual>

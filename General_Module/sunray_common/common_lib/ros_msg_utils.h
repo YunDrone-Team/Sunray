@@ -11,6 +11,7 @@
 #include <sunray_msgs/UAVControlCMD.h>
 #include <sunray_msgs/UAVState.h>
 #include <sunray_msgs/UAVSetup.h>
+#include <sunray_msgs/PX4State.h>
 #include <sunray_msgs/TextInfo.h>
 #include <sunray_msgs/UAVWayPoint.h>
 

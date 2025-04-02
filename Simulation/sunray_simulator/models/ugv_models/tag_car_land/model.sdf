@@ -33,8 +33,8 @@
         </geometry>
         <material>
           <script>
-            <uri>model://texture.material</uri>
-            <name>combo_tag</name>
+            <uri>model://land_aruco/land_aruco.material</uri>
+            <name>land_aruco</name>
           </script>
         </material>
       </visual>

@@ -60,7 +60,7 @@
     <!-- generate sdf vehicle model -->
     <arg name="cmd" default="$(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=$(arg mavlink_udp_port) 
                                 --mavlink_tcp_port=$(arg mavlink_tcp_port) --gst_udp_port=$(arg gst_udp_port) --video_uri=$(arg video_uri) 
-                                --mavlink_cam_udp_port=$(arg mavlink_cam_udp_port) $(find sunray_simulator)/models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find sunray_simulator)"/>
+                                --mavlink_cam_udp_port=$(arg mavlink_cam_udp_port) $(find sunray_simulator)/models/drone_models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find sunray_simulator)"/>
     <param command="$(arg cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
 
     <arg unless="$(arg interactive)" name="px4_command_arg1" value=""/>
