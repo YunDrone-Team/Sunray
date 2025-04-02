@@ -17,7 +17,7 @@ float32 yaw_setpoint        ## [rad]  姿态控制目标
 
 ## 无人机电池状态
 float32 battery_state       ## [V]
-float32 battery_percetage   ## [0-1]
+float32 battery_percentage   ## [0-1]
 
 ## 无人车控制状态 INIT HOLD POS_CONTROL POS_CONTROL_BODY VEL_CONTROL_BODY VEL_CONTROL_ENU
 uint8 INIT=0

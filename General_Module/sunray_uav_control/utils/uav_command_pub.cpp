@@ -113,9 +113,9 @@ int main(int argc, char **argv)
                 << YELLOW << " 2 " << GREEN << "(XyzVel),"
                 << YELLOW << " 3 " << GREEN << "(XyVelZPos),"
                 << YELLOW << " 4 " << GREEN << "(XyzPosYaw),"
-                << YELLOW << " 5 " << GREEN << "(XyzPosYawrate),"
+                // << YELLOW << " 5 " << GREEN << "(XyzPosYawrate),"
                 << YELLOW << " 6 " << GREEN << "(XyzVelYaw),"
-                << YELLOW << " 7 " << GREEN << "(XyzVelYawrate),"
+                // << YELLOW << " 7 " << GREEN << "(XyzVelYawrate),"
                 << YELLOW << " 8 " << GREEN << "(XyVelZPosYaw),"
                 << YELLOW << " 14 " << GREEN << "(XyzPosYawBody),"
                 << YELLOW << " 15 " << GREEN << "(XyzVelYawBody),"
@@ -342,15 +342,15 @@ int main(int argc, char **argv)
             break;
         }
 
-        case 17:
-        {
-            cout << BLUE << "waypoint" << endl;
-            uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Waypoint;
-            uav_command_pub[0].publish(uav_cmd);
+        // case 17:
+        // {
+        //     cout << BLUE << "waypoint" << endl;
+        //     uav_cmd.header.stamp = ros::Time::now();
+        //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Waypoint;
+        //     uav_command_pub[0].publish(uav_cmd);
 
-            break;
-        }
+        //     break;
+        // }
 
         // case 17:
         // {
@@ -382,7 +382,7 @@ int main(int argc, char **argv)
         //     break;
         // }
 
-        case 108:
+        case 17:
         {
             cout << BLUE << "goalpoint" << endl;
             cout << BLUE << "desired state: --- x [m] " << endl;
