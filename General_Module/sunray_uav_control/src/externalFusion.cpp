@@ -88,7 +88,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
     timer_pub_px4_state = nh.createTimer(ros::Duration(0.05), &ExternalFusion::timer_pub_px4_state_cb, this);
     // 【定时器】定时更新和发布到mavros/vision_pose/pose
-    timer_pub_vision_pose = nh.createTimer(ros::Duration(0.02), &ExternalFusion::timer_update_external_state, this);
+    timer_pub_vision_pose = nh.createTimer(ros::Duration(0.02), &ExternalFusion::timer_pub_vision_pose_cb, this);
 
     // 无人机状态初始化
     px4_state.connected = false;
@@ -101,7 +101,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
 }
 
 // 定时器回调函数
-void ExternalFusion::timer_update_external_state(const ros::TimerEvent &event)
+void ExternalFusion::timer_pub_vision_pose_cb(const ros::TimerEvent &event)
 {
     external_odom = external_position.external_odom;
 
@@ -174,8 +174,6 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     {
         return;
     }
-
-    // TODO!! 全部改为发布PX4 state的数值
 
     // 发布无人机里程计，用于rviz显示
     nav_msgs::Odometry uav_odom;

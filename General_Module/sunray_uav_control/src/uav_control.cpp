@@ -349,12 +349,12 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         break;
     // 设置指令：设置无人机控制模式，需要配合control_mode进行设置
     case sunray_msgs::UAVSetup::SET_CONTROL_MODE:
-        if (msg->control_mode == "INIT" && system_params.control_mode != Control_Mode::INIT)
+        if (msg->control_mode == "INIT")
         {
             system_params.control_mode = Control_Mode::INIT;
             Logger::warning("Switch to INIT mode with cmd");
         }
-        else if (msg->control_mode == "RC_CONTROL" && (system_params.control_mode != Control_Mode::RC_CONTROL || px4_state.mode != "OFFBOARD"))
+        else if (msg->control_mode == "RC_CONTROL" &&  px4_state.mode != "OFFBOARD")
         {
             if (system_params.safety_state == 0)
             {
@@ -737,12 +737,15 @@ void UAVControl::handle_cmd_control()
 
         return;
     }
-    // 高级模式单独判断，执行对应的高级模式处理函数
+
+    // 特殊指令单独判断，执行对应的特殊指令处理函数
     if (advancedModeFuncMap.find(control_cmd.cmd) != advancedModeFuncMap.end())
     {
         // 调用对应的函数
         // std::cout<<"advancedMode"<<std::endl;
+        // 目标点赋值
         advancedModeFuncMap[control_cmd.cmd]();
+        // 发布PX4指令
         setpoint_local_pub(system_params.type_mask, local_setpoint);
     }
     else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::GlobalPos)
@@ -894,13 +897,17 @@ void UAVControl::handle_land_control()
         Logger::warning("Landing finished!");
     }
 
-    if (flight_params.land_type == 1 && px4_state.mode != "AUTO.LAND")
+    // 使用AUTO.LAND飞行模式进行降落
+    if (flight_params.land_type == 1)
     {
-        set_auto_land();
-    }
-    if (flight_params.land_type == 1 && px4_state.mode == "AUTO.LAND")
-    {
-        return;
+        if(px4_state.mode != "AUTO.LAND")
+        {
+            set_auto_land();
+        }else
+        {
+            return;
+        }
+        
     }
 
     bool new_cmd = system_params.control_mode != system_params.last_control_mode ||

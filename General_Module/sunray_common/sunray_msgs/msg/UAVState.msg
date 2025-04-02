@@ -8,7 +8,7 @@ uint8 uav_id                ## 无人机编号
 bool connected              ## 是否与飞控建立连接
 bool armed                  ## 是否解锁，true为已解锁，false则不是
 string mode                 ## PX4飞行模式（PX4飞控端）
-uint8 control_mode          ## 无人机控制模式（Sunray端无人机控制）
+uint8 control_mode          ## 无人机控制状态机（Sunray端无人机控制）
 uint8 move_mode             ## 无人机移动模式（Sunray端无人机控制）
 
 ## 无人机里程计信息

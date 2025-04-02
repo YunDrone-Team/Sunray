@@ -22,29 +22,17 @@ private:
     mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
     float default_home_x, default_home_y, default_home_z; // 默认home点？
 
-    // 订阅节点句柄
-    ros::Subscriber setup_sub;        // 【订阅】无人机模式设置
-    ros::Subscriber control_cmd_sub;  // 【订阅】控制指令订阅
-    ros::Subscriber odom_state_sub;   // 【订阅】无人机位置状态订阅
-    ros::Subscriber rc_state_sub;     // 【订阅】rc_control状态订阅
-    ros::Subscriber px4_state_sub;    // 【订阅】无人机状态订阅 来自externalFusion节点
-    ros::Subscriber uav_waypoint_sub; // 【订阅】无人机航点订阅
 
-    // 发布节点
-    ros::Publisher uav_control_pub;           // 【发布】控制指令发布
-    ros::Publisher uav_state_pub;             // 【发布】无人机状态发布
-    ros::Publisher px4_setpoint_local_pub;    // 【发布】无人机指令发布 NED
-    ros::Publisher px4_setpoint_global_pub;   // 【发布】无人机指令发布 经纬度+海拔
-    ros::Publisher px4_setpoint_attitude_pub; // 【发布】无人机指令发布 姿态+推力
-    ros::Publisher goal_pub;                  // 【发布】发布一个目标点 来自外部控制指令
-    // 服务节点
-    ros::ServiceClient px4_arming_client;    // 【服务】px4解锁
-    ros::ServiceClient px4_set_mode_client;  // 【服务】px4模式设置
-    ros::ServiceClient px4_reboot_client;    // 【服务】px4重启
-    ros::ServiceClient px4_emergency_client; // 【服务】px4紧急停止
-    // 定时器
-    ros::Timer cmd_timer;   // 【定时器】指令定时器
-    ros::Timer print_timer; // 【定时器】状态定时器
+
+    // 无人机控制状态机
+    enum Control_Mode
+    {
+        INIT = 0,           // 初始模式
+        RC_CONTROL = 1,     // 遥控器控制模式
+        CMD_CONTROL = 2,    // 外部指令控制模式
+        LAND_CONTROL = 3,   // 降落模式
+        WITHOUT_CONTROL = 4 // 无控制模式
+    };
 
     // 地理围栏
     struct geo_fence
@@ -58,15 +46,13 @@ private:
     };
     geo_fence uav_geo_fence;
 
-    // 无人机控制状态机
-    enum Control_Mode
+    struct RCControlParams
     {
-        INIT = 0,           // 初始模式
-        RC_CONTROL = 1,     // 遥控器控制模式
-        CMD_CONTROL = 2,    // 外部指令控制模式
-        LAND_CONTROL = 3,   // 降落模式
-        WITHOUT_CONTROL = 4 // 无控制模式
+        float max_vel_xy = 1.0;  // 最大水平速度
+        float max_vel_z = 1.0;   // 最大垂直速度
+        float max_vel_yaw = 1.5; // 最大偏航速度
     };
+    RCControlParams rc_control_params;
 
     struct FlightParams
     {
@@ -87,26 +73,18 @@ private:
     };
     FlightParams flight_params;
 
-    struct RCControlParams
-    {
-        float max_vel_xy = 1.0;  // 最大水平速度
-        float max_vel_z = 1.0;   // 最大垂直速度
-        float max_vel_yaw = 1.5; // 最大偏航速度
-    };
-    RCControlParams rc_control_params;
-
     struct SystemParams
     {
         uint16_t type_mask;       // 控制指令类型
-        int control_mode;         // 控制模式
-        int last_control_mode;    // 上一个控制模式
+        int control_mode;         // 控制状态机
+        int last_control_mode;    // 上一个控制状态机
+        bool odom_valid;          // 外部定位是否有效
         int safety_state;         // 安全标志，0代表正常，其他代表不正常
         int location_source;      // 定位来源
         float cmd_timeout;        // 指令超时时间
         float odom_valid_timeout; // 外部定位超时时间
         bool check_cmd_timeout;   // 是否检查指令超时
         bool check_batt_volt;     // 是否检查电池电压
-        bool odom_valid;          // 外部定位是否有效
         bool use_rc;              // 是否使用遥控器
         bool use_offset;          // 是否添加偏移
         ros::Time last_land_time; // 进入降落最后一阶段的时间戳
@@ -193,6 +171,30 @@ private:
             {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
 
     std::map<int, std::function<void()>> advancedModeFuncMap;
+
+    // 订阅节点句柄
+    ros::Subscriber setup_sub;        // 【订阅】无人机模式设置
+    ros::Subscriber control_cmd_sub;  // 【订阅】控制指令订阅
+    ros::Subscriber odom_state_sub;   // 【订阅】无人机位置状态订阅
+    ros::Subscriber rc_state_sub;     // 【订阅】rc_control状态订阅
+    ros::Subscriber px4_state_sub;    // 【订阅】无人机状态订阅 来自externalFusion节点
+    ros::Subscriber uav_waypoint_sub; // 【订阅】无人机航点订阅
+
+    // 发布节点
+    ros::Publisher uav_control_pub;           // 【发布】控制指令发布
+    ros::Publisher uav_state_pub;             // 【发布】无人机状态发布
+    ros::Publisher px4_setpoint_local_pub;    // 【发布】无人机指令发布 NED
+    ros::Publisher px4_setpoint_global_pub;   // 【发布】无人机指令发布 经纬度+海拔
+    ros::Publisher px4_setpoint_attitude_pub; // 【发布】无人机指令发布 姿态+推力
+    ros::Publisher goal_pub;                  // 【发布】发布一个目标点 来自外部控制指令
+    // 服务节点
+    ros::ServiceClient px4_arming_client;    // 【服务】px4解锁
+    ros::ServiceClient px4_set_mode_client;  // 【服务】px4模式设置
+    ros::ServiceClient px4_reboot_client;    // 【服务】px4重启
+    ros::ServiceClient px4_emergency_client; // 【服务】px4紧急停止
+    // 定时器
+    ros::Timer cmd_timer;   // 【定时器】指令定时器
+    ros::Timer print_timer; // 【定时器】状态定时器
 
     int safetyCheck();                                                                        // 安全检查
     void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
