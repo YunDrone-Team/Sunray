@@ -1,6 +1,8 @@
+#include "ros_msg_utils.h"
 #include "ExternalPosition.h"
 #include <math.h>
 #include <map>
+#include "printf_format.h"
 
 #define MOCAP_TIMEOUT 0.35
 #define GAZEBO_TIMEOUT 0.1
@@ -10,6 +12,8 @@
 #define VINS_TIMEOUT 0.35
 #define VIOBOT_TIMEOUT 0.35
 #define ODOM_TIMEOUT 0.35
+
+using namespace sunray_logger;
 
 // 外部定位数据来源枚举
 enum external_source
@@ -24,9 +28,11 @@ enum external_source
     VINS = 7
 };
 
-std::map<int, std::string> ERR_MSG = {
+std::map<int, std::string> ERR_MSG = 
+{
     {1, "Warning: The error between external state and px4 state is too large!"},
-    {2, "Warning: The external position is timeout!"}};
+    {2, "Warning: The external position is timeout!"}
+};
 
 class ExternalFusion
 {
@@ -34,8 +40,6 @@ private:
     std::string node_name;                                  // 节点名称
     std::string uav_name{""};                               // 无人机名称
     std::string source_topic{""};                           // 外部定位数据来源
-    std::string pub_topic{""};                              // 发布到无人机话题
-    std::string uav_prefix{""};                             // 无人机前缀 uav_name+uav_id
     int uav_id;                                             // 无人机编号
     int external_source;                                    // 外部定位数据来源
     double range_hight;                                     // 激光定位数据
@@ -49,12 +53,14 @@ private:
     sunray_msgs::UAVState uav_state;                        // 无人机状态信息
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     std::set<int> err_msg;                                  // 错误信息集合
-    PoseState external_state;                               // 外部定位数据
-    PoseState err_state;                                    // 状态误差
     ros::Time px4_state_time;                               // 无人机状态时间戳
     sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据（用于发布）
     sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
     ExternalPosition external_position;                     // 外部定位源的回调和处理
+
+    double vision_pose_pub_rate;                            // 外部定位数据发送到PX4的频率，单位：秒
+    bool enable_rviz;                                       // 是否使能RVIZ相关话题发布
+    bool check_jump;                                        // 是否检查外部定位数据跳变
 
     ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
@@ -77,10 +83,9 @@ private:
     ros::Publisher uav_mesh_pub;       // 【发布】无人机mesh发布
     ros::Publisher px4_state_pub;      // 【发布】无人机状态
 
-    ros::Timer timer_check;         // 定时器
-    ros::Timer timer_pub_mavros;    // 定时器发布mavros/vision_pose/pose
+    ros::Timer timer_pub_vision_pose;    // 定时器发布mavros/vision_pose/pose
     ros::Timer timer_rviz_pub;      // 定时发布rviz显示消息
-    ros::Timer timer_px4_state_pub; // 定时发布px4_state
+    ros::Timer timer_pub_px4_state; // 定时发布px4_state
 
 public:
     ExternalFusion(/* args */);
@@ -96,7 +101,7 @@ public:
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);      // 无人机电池状态回调函数
     void px4_odom_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);        // 无人机里程计回调函数（同时包含了位置和速度）
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);                   // 无人机姿态回调函数 从imu获取解析
-    void timer_callback(const ros::TimerEvent &event);                              // 定时器回调函数
+    void timer_pub_px4_state_cb(const ros::TimerEvent &event);                              // 定时器回调函数
     void timer_update_external_state(const ros::TimerEvent &event);                 // 定时器更新和发布
     void timer_rviz(const ros::TimerEvent &e);                                      // 定时发布rviz显示消息
     void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);        // 无人机位置回调函数
