@@ -3,6 +3,33 @@
 
 #include "ros_msg_utils.h"
 
+// 超时检测 定时调用改函数
+bool ExternalFusion::timeoutCheck()
+{
+    timeout_counter = (ros::Time::now() - vision_pose.header.stamp).toSec();
+    if (timeout_counter > source_timeout)
+    {
+        is_timeout = true;
+    }
+    else
+    {
+        is_timeout = false;
+    }
+
+    if ((external_source == GPS || external_source == RTK))
+    {
+        if (px4_state.gps_status == -1)
+        {
+            is_timeout = false;
+        }
+        else
+        {
+            is_timeout = true;
+        }
+    }
+    return is_timeout;
+}
+
 struct PoseState
 {
     ros::Time stamp;
@@ -28,6 +55,9 @@ public:
     {
     }
 
+    // 声明一个自定义话题 - sunray_msgs::ExternalOdom
+    sunray_msgs::ExternalOdom external_odom;
+
     void init(ros::NodeHandle &nh, std::string souce_topic = "Odometry", int type = 0)
     {
         // 初始化参数
@@ -36,7 +66,27 @@ public:
         source_topic_name = souce_topic;
 
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
-        std::string vision_topic = topic_prefix + "/mavros/vision_pose/pose";
+
+        // 【发布】外部定位状态 - 本节点 -> uav_control_node
+        odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(uav_name + "/sunray/external_odom_state", 10);
+
+    // 发布外部定位状态 - 移除这部分到另外一个类
+    external_odom.header.stamp = ros::Time::now();
+    external_odom.external_source = external_source;
+    external_odom.odom_valid = !is_timeout;
+    external_odom.position[0] = external_state.pos_x;
+    external_odom.position[1] = external_state.pos_y;
+    external_odom.position[2] = external_state.pos_z;
+    external_odom.velocity[0] = external_state.vel_x;
+    external_odom.velocity[1] = external_state.vel_y;
+    external_odom.velocity[2] = external_state.vel_z;
+    external_odom.attitude_q.w = external_state.att_w;
+    external_odom.attitude_q.x = external_state.att_x;
+    external_odom.attitude_q.y = external_state.att_y;
+    external_odom.attitude_q.z = external_state.att_z;
+    odom_state_pub.publish(external_odom);
+
+        // 增加外部定位数据超时检查
 
         position_state.pos_x = -0.01;
         position_state.pos_y = -0.01;
@@ -51,7 +101,7 @@ public:
 
         switch (type)
         {
-        case 0:
+        case sunray_msgs::ExternalOdom::ODOM:
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
         case 1:
@@ -153,9 +203,9 @@ public:
         position_state.vel_z = msg->twist.linear.z;
     }
 
-    PoseState GetPositionState()
+    sunray_msgs::ExternalOdom GetPositionState()
     {
-        return position_state;
+        return external_odom;
     }
 
 private:
@@ -166,7 +216,7 @@ private:
     int uav_id;
     std::string uav_name;
     std::string source_topic_name;
-    PoseState position_state;
+
 };
 
 #endif // EXTERNALPOSITION_H// 实现外部定位源话题回调函数

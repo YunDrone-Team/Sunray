@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
-    ros::init(argc, argv, "UAVControl");
+    ros::init(argc, argv, "uav_control_node");
     ros::NodeHandle nh("~");
     ros::Rate rate(50.0);
     
@@ -22,9 +22,11 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         ros::spinOnce();
-        rate.sleep();
+        
         // 控制类主循环函数
         uav_ctrl.mainLoop();
+
+        rate.sleep();
     }
 
     return 0;
