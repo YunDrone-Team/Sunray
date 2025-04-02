@@ -4,15 +4,6 @@
 #include <map>
 #include "printf_format.h"
 
-#define MOCAP_TIMEOUT 0.35
-#define GAZEBO_TIMEOUT 0.1
-#define T265_TIMEOUT 0.3
-#define UWB_TIMEOUT 0.1
-#define GPS_TIMEOUT 1.0
-#define VINS_TIMEOUT 0.35
-#define VIOBOT_TIMEOUT 0.35
-#define ODOM_TIMEOUT 0.35
-
 using namespace sunray_logger;
 
 std::map<int, std::string> ERR_MSG =
@@ -32,7 +23,7 @@ private:
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     std::set<int> err_msg;                                  // 错误信息集合
     ros::Time px4_state_time;                               // 无人机状态时间戳
-    sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据（用于发布）
+    sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据
     sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
     ExternalPosition external_position;                     // 外部定位源的回调和处理
     bool enable_rviz;                                       // 是否使能RVIZ相关话题发布
@@ -72,7 +63,7 @@ public:
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);      // 无人机电池状态回调函数
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);                   // 无人机姿态回调函数 从imu获取解析
     void timer_pub_px4_state_cb(const ros::TimerEvent &event);                      // 定时器回调函数
-    void timer_update_external_state(const ros::TimerEvent &event);                 // 定时器更新和发布
+    void timer_pub_vision_pose_cb(const ros::TimerEvent &event);                 // 定时器更新和发布
     void timer_rviz(const ros::TimerEvent &e);                                      // 定时发布rviz显示消息
     void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);        // 无人机位置回调函数
     void px4_vel_callback(const geometry_msgs::TwistStamped::ConstPtr &msg);        // 无人机位置回调函数

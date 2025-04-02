@@ -13,18 +13,19 @@ public:
     // 声明一个自定义话题 - sunray_msgs::ExternalOdom
     sunray_msgs::ExternalOdom external_odom;
 
-    void init(ros::NodeHandle &nh, std::string souce_topic = "Odometry", int external_source = 0)
+    void init(ros::NodeHandle &nh, std::string source_topic = "Odometry", int external_source = 0)
     {
         // 初始化参数
         nh.param<int>("uav_id", uav_id, 1);
         nh.param<std::string>("uav_name", uav_name, "uav");
-        source_topic_name = souce_topic;
+        source_topic_name = source_topic;
 
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
 
         // 【发布】外部定位状态 - 本节点 -> uav_control_node
         odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/external_odom_state", 10);
         timer_pub_odom_state = nh.createTimer(ros::Duration(0.05), &ExternalPosition::timerCallback, this);
+        
         // 初始化外部定位状态
         external_odom.header.stamp = ros::Time::now();
         external_odom.external_source = external_source;
@@ -51,7 +52,7 @@ public:
             pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(source_topic_name, 10, &ExternalPosition::PosCallback, this);
             break;
         case sunray_msgs::ExternalOdom::GAZEBO:
-            souce_topic = topic_prefix + "/sunray/gazebo_pose";
+            source_topic = topic_prefix + "/sunray/gazebo_pose";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
         case sunray_msgs::ExternalOdom::MOCAP:
@@ -61,7 +62,7 @@ public:
             vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/twist", 1, &ExternalPosition::VelCallback, this);
             break;
         case sunray_msgs::ExternalOdom::GPS:
-            souce_topic = topic_prefix + "/mavros/global_position/local";
+            source_topic = topic_prefix + "/mavros/global_position/local";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
         default:
@@ -153,7 +154,7 @@ public:
         odom_state_pub.publish(external_odom);
     }
 
-    sunray_msgs::ExternalOdom GetPositionState()
+    sunray_msgs::ExternalOdom GetExternalOdom()
     {
         return external_odom;
     }
