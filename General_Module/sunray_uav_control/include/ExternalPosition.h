@@ -3,51 +3,6 @@
 
 #include "ros_msg_utils.h"
 
-// 超时检测 定时调用改函数
-bool ExternalFusion::timeoutCheck()
-{
-    timeout_counter = (ros::Time::now() - vision_pose.header.stamp).toSec();
-    if (timeout_counter > source_timeout)
-    {
-        is_timeout = true;
-    }
-    else
-    {
-        is_timeout = false;
-    }
-
-    if ((external_source == GPS || external_source == RTK))
-    {
-        if (px4_state.gps_status == -1)
-        {
-            is_timeout = false;
-        }
-        else
-        {
-            is_timeout = true;
-        }
-    }
-    return is_timeout;
-}
-
-struct PoseState
-{
-    ros::Time stamp;
-    double pos_x = 0.0;
-    double pos_y = 0.0;
-    double pos_z = 0.0;
-    double vel_x = 0.0;
-    double vel_y = 0.0;
-    double vel_z = 0.0;
-    double att_x = 0.0;
-    double att_y = 0.0;
-    double att_z = 0.0;
-    double att_w = 0.0;
-    double roll = 0.0;
-    double pitch = 0.0;
-    double yaw = 0.0;
-};
-
 class ExternalPosition
 {
 public:
@@ -58,7 +13,7 @@ public:
     // 声明一个自定义话题 - sunray_msgs::ExternalOdom
     sunray_msgs::ExternalOdom external_odom;
 
-    void init(ros::NodeHandle &nh, std::string souce_topic = "Odometry", int type = 0)
+    void init(ros::NodeHandle &nh, std::string souce_topic = "Odometry", int external_source = 0)
     {
         // 初始化参数
         nh.param<int>("uav_id", uav_id, 1);
@@ -68,56 +23,44 @@ public:
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
 
         // 【发布】外部定位状态 - 本节点 -> uav_control_node
-        odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(uav_name + "/sunray/external_odom_state", 10);
+        odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/external_odom_state", 10);
+        timer_pub_odom_state = nh.createTimer(ros::Duration(0.05), &ExternalPosition::timerCallback, this);
+        // 初始化外部定位状态
+        external_odom.header.stamp = ros::Time::now();
+        external_odom.external_source = external_source;
+        external_odom.position[0] = -0.01;
+        external_odom.position[1] = -0.01;
+        external_odom.position[2] = -0.01;
+        external_odom.velocity[0] = 0.0;
+        external_odom.velocity[1] = 0.0;
+        external_odom.velocity[2] = 0.0;
+        external_odom.attitude_q.x = 0;
+        external_odom.attitude_q.y = 0;
+        external_odom.attitude_q.z = 0;
+        external_odom.attitude_q.w = 1;
+        external_odom.attitude[0] = 0.0;
+        external_odom.attitude[1] = 0.0;
+        external_odom.attitude[2] = 0.0;
 
-    // 发布外部定位状态 - 移除这部分到另外一个类
-    external_odom.header.stamp = ros::Time::now();
-    external_odom.external_source = external_source;
-    external_odom.odom_valid = !is_timeout;
-    external_odom.position[0] = external_state.pos_x;
-    external_odom.position[1] = external_state.pos_y;
-    external_odom.position[2] = external_state.pos_z;
-    external_odom.velocity[0] = external_state.vel_x;
-    external_odom.velocity[1] = external_state.vel_y;
-    external_odom.velocity[2] = external_state.vel_z;
-    external_odom.attitude_q.w = external_state.att_w;
-    external_odom.attitude_q.x = external_state.att_x;
-    external_odom.attitude_q.y = external_state.att_y;
-    external_odom.attitude_q.z = external_state.att_z;
-    odom_state_pub.publish(external_odom);
-
-        // 增加外部定位数据超时检查
-
-        position_state.pos_x = -0.01;
-        position_state.pos_y = -0.01;
-        position_state.pos_z = -0.01;
-        position_state.att_x = 0;
-        position_state.att_y = 0;
-        position_state.att_z = 0;
-        position_state.att_w = 1;
-        position_state.roll = 0.0;
-        position_state.pitch = 0.0;
-        position_state.yaw = 0.0;
-
-        switch (type)
+        switch (external_source)
         {
         case sunray_msgs::ExternalOdom::ODOM:
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
-        case 1:
+        case sunray_msgs::ExternalOdom::POSE:
             pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(source_topic_name, 10, &ExternalPosition::PosCallback, this);
             break;
-        case 2:
+        case sunray_msgs::ExternalOdom::GAZEBO:
             souce_topic = topic_prefix + "/sunray/gazebo_pose";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
-        case 3:
+        case sunray_msgs::ExternalOdom::MOCAP:
             // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
             pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/pose", 1, &ExternalPosition::PosCallback, this);
             // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
             vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/twist", 1, &ExternalPosition::VelCallback, this);
             break;
-        case 5:
+        case sunray_msgs::ExternalOdom::GPS:
             souce_topic = topic_prefix + "/mavros/global_position/local";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
@@ -135,20 +78,20 @@ public:
         tf2::fromMsg(msg->pose.pose.orientation, quaternion);
         double roll, pitch, yaw;
         tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-        position_state.stamp = ros::Time::now();
-        position_state.pos_x = msg->pose.pose.position.x;
-        position_state.pos_y = msg->pose.pose.position.y;
-        position_state.pos_z = msg->pose.pose.position.z;
-        position_state.vel_x = msg->twist.twist.linear.x;
-        position_state.vel_y = msg->twist.twist.linear.y;
-        position_state.vel_z = msg->twist.twist.linear.z;
-        position_state.att_x = msg->pose.pose.orientation.x;
-        position_state.att_y = msg->pose.pose.orientation.y;
-        position_state.att_z = msg->pose.pose.orientation.z;
-        position_state.att_w = msg->pose.pose.orientation.w;
-        position_state.roll = roll;
-        position_state.pitch = pitch;
-        position_state.yaw = yaw;
+        external_odom.header.stamp = ros::Time::now();
+        external_odom.position[0] = msg->pose.pose.position.x;
+        external_odom.position[1] = msg->pose.pose.position.y;
+        external_odom.position[2] = msg->pose.pose.position.z;
+        external_odom.velocity[0] = msg->twist.twist.linear.x;
+        external_odom.velocity[1] = msg->twist.twist.linear.y;
+        external_odom.velocity[2] = msg->twist.twist.linear.z;
+        external_odom.attitude_q.x = msg->pose.pose.orientation.x;
+        external_odom.attitude_q.y = msg->pose.pose.orientation.y;
+        external_odom.attitude_q.z = msg->pose.pose.orientation.z;
+        external_odom.attitude_q.w = msg->pose.pose.orientation.w;
+        external_odom.attitude[0] = roll;
+        external_odom.attitude[1] = pitch;
+        external_odom.attitude[2] = yaw;
     }
 
     // 实现外部定位源话题回调函数
@@ -159,17 +102,17 @@ public:
         tf2::fromMsg(msg->pose.orientation, quaternion);
         double roll, pitch, yaw;
         tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-        position_state.stamp = ros::Time::now();
-        position_state.pos_x = msg->pose.position.x;
-        position_state.pos_y = msg->pose.position.y;
-        position_state.pos_z = msg->pose.position.z;
-        position_state.att_x = msg->pose.orientation.x;
-        position_state.att_y = msg->pose.orientation.y;
-        position_state.att_z = msg->pose.orientation.z;
-        position_state.att_w = msg->pose.orientation.w;
-        position_state.roll = roll;
-        position_state.pitch = pitch;
-        position_state.yaw = yaw;
+        external_odom.header.stamp = ros::Time::now();
+        external_odom.position[0] = msg->pose.position.x;
+        external_odom.position[1] = msg->pose.position.y;
+        external_odom.position[2] = msg->pose.position.z;
+        external_odom.attitude_q.x = msg->pose.orientation.x;
+        external_odom.attitude_q.y = msg->pose.orientation.y;
+        external_odom.attitude_q.z = msg->pose.orientation.z;
+        external_odom.attitude_q.w = msg->pose.orientation.w;
+        external_odom.attitude[0] = roll;
+        external_odom.attitude[1] = pitch;
+        external_odom.attitude[2] = yaw;
     }
 
     // Gps模式下，实际接收的是mavros/global_position/local
@@ -180,27 +123,34 @@ public:
         tf2::fromMsg(msg->pose.pose.orientation, quaternion);
         double roll, pitch, yaw;
         tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-        position_state.stamp = ros::Time::now();
-        position_state.pos_x = msg->pose.pose.position.x;
-        position_state.pos_y = msg->pose.pose.position.y;
-        position_state.pos_z = msg->pose.pose.position.z;
-        position_state.vel_x = msg->twist.twist.linear.x;
-        position_state.vel_y = msg->twist.twist.linear.y;
-        position_state.vel_z = msg->twist.twist.linear.z;
-        position_state.att_x = msg->pose.pose.orientation.x;
-        position_state.att_y = msg->pose.pose.orientation.y;
-        position_state.att_z = msg->pose.pose.orientation.z;
-        position_state.att_w = msg->pose.pose.orientation.w;
-        position_state.roll = roll;
-        position_state.pitch = pitch;
-        position_state.yaw = yaw;
+        external_odom.header.stamp = ros::Time::now();
+        external_odom.position[0] = msg->pose.pose.position.x;
+        external_odom.position[1] = msg->pose.pose.position.y;
+        external_odom.position[2] = msg->pose.pose.position.z;
+        external_odom.velocity[0] = msg->twist.twist.linear.x;
+        external_odom.velocity[1] = msg->twist.twist.linear.y;
+        external_odom.velocity[2] = msg->twist.twist.linear.z;
+        external_odom.attitude_q.x = msg->pose.pose.orientation.x;
+        external_odom.attitude_q.y = msg->pose.pose.orientation.y;
+        external_odom.attitude_q.z = msg->pose.pose.orientation.z;
+        external_odom.attitude_q.w = msg->pose.pose.orientation.w;
+        external_odom.attitude[0] = roll;
+        external_odom.attitude[1] = pitch;
+        external_odom.attitude[2] = yaw;
     }
 
     void VelCallback(const geometry_msgs::TwistStamped::ConstPtr &msg)
     {
-        position_state.vel_x = msg->twist.linear.x;
-        position_state.vel_y = msg->twist.linear.y;
-        position_state.vel_z = msg->twist.linear.z;
+        external_odom.velocity[0] = msg->twist.linear.x;
+        external_odom.velocity[1] = msg->twist.linear.y;
+        external_odom.velocity[2] = msg->twist.linear.z;
+    }
+
+    void timerCallback(const ros::TimerEvent &event)
+    {
+        bool is_timeout = (ros::Time::now() - external_odom.header.stamp).toSec() > 1.0;
+        external_odom.odom_valid = !is_timeout;
+        odom_state_pub.publish(external_odom);
     }
 
     sunray_msgs::ExternalOdom GetPositionState()
@@ -213,10 +163,11 @@ private:
     ros::Subscriber odom_sub;
     ros::Subscriber pos_sub;
     ros::Subscriber vel_sub;
+    ros::Publisher odom_state_pub; // 【发布】发布定位状态
+    ros::Timer timer_pub_odom_state;
     int uav_id;
     std::string uav_name;
     std::string source_topic_name;
-
 };
 
 #endif // EXTERNALPOSITION_H// 实现外部定位源话题回调函数
