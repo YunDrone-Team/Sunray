@@ -21,32 +21,25 @@ using namespace sunray_logger;
 
 ExternalFusion::ExternalFusion()
 {
-    /*
-        如果自定义消息 需要在这里添加对应的定位名称 通过名称去检索对应的解析类
-    */
-    source_map[ODOM] = "ODOM";
-    source_map[POSE] = "POSE";
-    source_map[GAZEBO] = "GAZEBO";
-    source_map[MOCAP] = "MOCAP";
-    source_map[VIOBOT] = "VIOBOT";
-    source_map[GPS] = "GPS";
-    source_map[RTK] = "RTK";
-    source_map[VINS] = "VINS";
+    source_map[sunray_msgs::ExternalOdom::ODOM] = "ODOM";
+    source_map[sunray_msgs::ExternalOdom::POSE] = "POSE";
+    source_map[sunray_msgs::ExternalOdom::GAZEBO] = "GAZEBO";
+    source_map[sunray_msgs::ExternalOdom::MOCAP] = "MOCAP";
+    source_map[sunray_msgs::ExternalOdom::VIOBOT] = "VIOBOT";
+    source_map[sunray_msgs::ExternalOdom::GPS] = "GPS";
+    source_map[sunray_msgs::ExternalOdom::RTK] = "RTK";
+    source_map[sunray_msgs::ExternalOdom::VINS] = "VINS";
 }
 
 void ExternalFusion::init(ros::NodeHandle &nh)
 {
     nh_ = nh;
-    node_name = ros::this_node::getName();                                        // 【参数】节点名称
-    nh.param<int>("uav_id", uav_id, 1);                                           // 【参数】无人机编号
-    nh.param<int>("external_source", external_source, ODOM);                      // 【参数】外部定位数据来源
-    nh.param<string>("uav_name", uav_name, "uav");                                // 【参数】无人机名称
-    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose"); // 【参数】外部定位数据来源
-    nh.param<double>("source_timeout", source_timeout, 0.35);                     // 【参数】外部定位数据超时时间
-    nh.param<double>("jump_threshold", jump_threshold, 0.1);                      // 【参数】外部定位数据跳变阈值
-    nh.param<double>("vision_pose_pub_rate", vision_pose_pub_rate, 0.02);         // 【参数】发布到mavros的频率
-    nh.param<bool>("check_jump", check_jump, false);                              // 【参数】是否检查外部定位数据跳变
-    nh.param<bool>("enable_rviz", enable_rviz, false);                            // 【参数】是否发布到rviz
+    node_name = ros::this_node::getName();                                              // 【参数】节点名称
+    nh.param<int>("uav_id", uav_id, 1);                                                 // 【参数】无人机编号
+    nh.param<int>("external_source", external_source, sunray_msgs::ExternalOdom::ODOM); // 【参数】外部定位数据来源
+    nh.param<string>("uav_name", uav_name, "uav");                                      // 【参数】无人机名称
+    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
+    nh.param<bool>("enable_rviz", enable_rviz, false);                                  // 【参数】是否发布到rviz
     // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);           // 【参数】是否使用rangeSensor
 
     // 初始化外部定位数据解析类
@@ -58,7 +51,6 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     // 【订阅】无人机电池状态 - 飞控 -> mavros -> 本节点
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(uav_name + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
     // 【订阅】PX4中的无人机位置（坐标系:ENU系） - 飞控 -> mavros -> 本节点
-    // px4_odom_sub = nh.subscribe<nav_msgs::Odometry>(uav_name + "/mavros/local_position/odom", 10, &ExternalFusion::px4_odom_callback, this);
     px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(uav_name + "/mavros/local_position/pose", 10, &ExternalFusion::px4_pose_callback, this);
     // 【订阅】PX4中的无人机速度（坐标系:ENU系） - 飞控 -> mavros -> 本节点
     px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(uav_name + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
@@ -70,7 +62,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_gps_state_sub = nh.subscribe<sensor_msgs::NavSatFix>(uav_name + "/mavros/global_position/global", 10, &ExternalFusion::px4_gps_state_callback, this);
     // 【订阅】无人机GPS经纬度 - 飞控 -> mavros -> 本节点
     px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(uav_name + "/mavros/gpsstatus/gps1/raw", 10, &ExternalFusion::px4_gps_raw_callback, this);
-    // 【订阅】PX4中无人机的位置/速度/加速度设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）    
+    // 【订阅】PX4中无人机的位置/速度/加速度设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）
     px4_pos_target_sub = nh.subscribe<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/target_local", 1, &ExternalFusion::px4_pos_target_callback, this);
     // 【订阅】PX4中无人机的姿态设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）
     px4_att_target_sub = nh.subscribe<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/target_attitude", 1, &ExternalFusion::px4_att_target_callback, this);
@@ -90,13 +82,13 @@ void ExternalFusion::init(ros::NodeHandle &nh)
 
     // 【发布】mavros/vision_pose/pose - 本节点 -> mavros
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_name + "/mavros/vision_pose/pose", 10);
-
     // 【发布】无人机状态 - 本节点 -> uav_control_node
     px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10);
+
     // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
-    timer_pub_px4_state = nh.createTimer(ros::Duration(0.02), &ExternalFusion::timer_pub_px4_state_cb, this);
+    timer_pub_px4_state = nh.createTimer(ros::Duration(0.05), &ExternalFusion::timer_pub_px4_state_cb, this);
     // 【定时器】定时更新和发布到mavros/vision_pose/pose
-    timer_pub_vision_pose = nh.createTimer(ros::Duration(vision_pose_pub_rate), &ExternalFusion::timer_update_external_state, this);
+    timer_pub_vision_pose = nh.createTimer(ros::Duration(0.02), &ExternalFusion::timer_update_external_state, this);
 
     // 无人机状态初始化
     px4_state.connected = false;
@@ -108,38 +100,37 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     Logger::info("external fusion node init");
 }
 
-
 // 定时器回调函数
 void ExternalFusion::timer_update_external_state(const ros::TimerEvent &event)
 {
-    if(!odom_valid)
+    external_odom = external_position.external_odom;
+
+    if (!external_odom.odom_valid)
     {
         // 加一个打印
         return;
     }
 
-    // 将外部定位数据赋值到vision_pose，并发布至PX4
-    vision_pose.header.stamp = external_state.stamp;
-    vision_pose.pose.position.x = external_odom.position[0];
-    vision_pose.pose.position.y = external_state.pos_y;
-    vision_pose.pose.position.z = external_state.pos_z;
-    vision_pose.pose.orientation.x = external_state.att_x;
-    vision_pose.pose.orientation.y = external_state.att_y;
-    vision_pose.pose.orientation.z = external_state.att_z;
-    vision_pose.pose.orientation.w = external_state.att_w;
-    vision_pose_pub.publish(vision_pose);
-
-    last_vision_position = vision_pose;
+    if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
+    {
+        // 将外部定位数据赋值到vision_pose，并发布至PX4
+        vision_pose.header.stamp = ros::Time::now();
+        vision_pose.pose.position.x = external_odom.position[0];
+        vision_pose.pose.position.y = external_odom.position[1];
+        vision_pose.pose.position.z = external_odom.position[2];
+        vision_pose.pose.orientation.x = external_odom.attitude_q.x;
+        vision_pose.pose.orientation.y = external_odom.attitude_q.y;
+        vision_pose.pose.orientation.z = external_odom.attitude_q.z;
+        vision_pose.pose.orientation.w = external_odom.attitude_q.w;
+        vision_pose_pub.publish(vision_pose);
+    }
 }
 
 // 定时器回调函数
 void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
 {
-    // 检查外部定位数据是否超时
-    timeoutCheck();
-    
     // 检查mavros连接是否正常
-    if((ros::Time::now() - px4_state_time).toSec() > 1.0)
+    if ((ros::Time::now() - px4_state_time).toSec() > 1.0)
     {
         px4_state.connected = false;
     }
@@ -149,30 +140,24 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
     px4_state.header.stamp = ros::Time::now();
     px4_state_pub.publish(px4_state);
 
-    if (external_source != GPS && external_source != RTK)
+    if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
         // 检查超时
-        if (is_timeout)
+        if (!external_odom.odom_valid)
         {
             // Logger::warning("Warning: The external position is timeout!", external_position->position_state.timeout_count);
             err_msg.insert(2);
         }
         Eigen::Vector3d err_external_px4;
         // 计算差值
-        err_state.pos_x = external_state.pos_x - px4_state.position[0];
-        err_state.pos_y = external_state.pos_y - px4_state.position[1];
-        err_state.pos_z = external_state.pos_z - px4_state.position[2];
-        err_state.vel_x = external_state.vel_x - px4_state.velocity[0];
-        err_state.vel_y = external_state.vel_y - px4_state.velocity[1];
-        err_state.vel_z = external_state.vel_z - px4_state.velocity[2];
-        err_state.roll = external_state.roll - px4_state.attitude[0];
-        err_state.pitch = external_state.pitch - px4_state.attitude[1];
-        err_state.yaw = external_state.yaw - px4_state.attitude[2];
+        err_external_px4[0] = external_odom.position[0] - px4_state.position[0];
+        err_external_px4[1] = external_odom.position[1] - px4_state.position[1];
+        err_external_px4[2] = external_odom.position[2] - px4_state.position[2];
 
         // 如果误差状态的绝对值大于阈值，则打印警告信息   只检查位置和偏航角
-        if (abs(err_state.pos_x) > 0.1 ||
-            abs(err_state.pos_y) > 0.1 ||
-            abs(err_state.pos_z) > 0.1)
+        if (abs(err_external_px4[0]) > 0.1 ||
+            abs(err_external_px4[1]) > 0.1 ||
+            abs(err_external_px4[2]) > 0.1)
         // abs(err_state.yaw) > 10) // deg
         {
             // Logger::warning("Warning: The error between external state and px4 state is too large!");
@@ -185,7 +170,7 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
 void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
 {
     // 如果无人机的odom的状态无效，则停止发布
-    if (is_timeout)
+    if (!external_odom.odom_valid)
     {
         return;
     }
@@ -197,34 +182,28 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     uav_odom.header.stamp = ros::Time::now();
     uav_odom.header.frame_id = "world";
     uav_odom.child_frame_id = "base_link";
-    uav_odom.pose.pose.position.x = external_state.pos_x;
-    uav_odom.pose.pose.position.y = external_state.pos_y;
-    uav_odom.pose.pose.position.z = external_state.pos_z;
+    uav_odom.pose.pose.position.x = px4_state.position[0];
+    uav_odom.pose.pose.position.y = px4_state.position[1];
+    uav_odom.pose.pose.position.z = px4_state.position[2];
     // 导航算法规定 高度不能小于0
     if (uav_odom.pose.pose.position.z <= 0)
     {
         uav_odom.pose.pose.position.z = 0.01;
     }
-    uav_odom.pose.pose.orientation.x = external_state.att_x;
-    uav_odom.pose.pose.orientation.y = external_state.att_y;
-    uav_odom.pose.pose.orientation.z = external_state.att_z;
-    uav_odom.pose.pose.orientation.w = external_state.att_w;
-    uav_odom.twist.twist.linear.x = external_state.vel_x;
-    uav_odom.twist.twist.linear.y = external_state.vel_y;
-    uav_odom.twist.twist.linear.z = external_state.vel_z;
+    uav_odom.pose.pose.orientation = px4_state.attitude_q;
+    uav_odom.twist.twist.linear.x = px4_state.velocity[0];
+    uav_odom.twist.twist.linear.y = px4_state.velocity[1];
+    uav_odom.twist.twist.linear.z = px4_state.velocity[2];
     uav_odom_pub.publish(uav_odom);
 
     // 发布无人机运动轨迹，用于rviz显示
     geometry_msgs::PoseStamped uav_pos;
     uav_pos.header.stamp = ros::Time::now();
     uav_pos.header.frame_id = "world";
-    uav_pos.pose.position.x = external_state.pos_x;
-    uav_pos.pose.position.y = external_state.pos_y;
-    uav_pos.pose.position.z = external_state.pos_z;
-    uav_pos.pose.orientation.x = external_state.att_x;
-    uav_pos.pose.orientation.y = external_state.att_y;
-    uav_pos.pose.orientation.z = external_state.att_z;
-    uav_pos.pose.orientation.w = external_state.att_w;
+    uav_pos.pose.position.x = px4_state.position[0];
+    uav_pos.pose.position.y = px4_state.position[1];
+    uav_pos.pose.position.z = px4_state.position[2];
+    uav_pos.pose.orientation = px4_state.attitude_q;
     uav_pos_vector.insert(uav_pos_vector.begin(), uav_pos);
     // 轨迹滑窗
     if (uav_pos_vector.size() > 40)
@@ -245,13 +224,10 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     rviz_mesh.id = 0;
     rviz_mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
     rviz_mesh.action = visualization_msgs::Marker::ADD;
-    rviz_mesh.pose.position.x = external_state.pos_x;
-    rviz_mesh.pose.position.y = external_state.pos_y;
-    rviz_mesh.pose.position.z = external_state.pos_z;
-    rviz_mesh.pose.orientation.w = external_state.att_w;
-    rviz_mesh.pose.orientation.x = external_state.att_x;
-    rviz_mesh.pose.orientation.y = external_state.att_y;
-    rviz_mesh.pose.orientation.z = external_state.att_z;
+    rviz_mesh.pose.position.x = px4_state.position[0];
+    rviz_mesh.pose.position.y = px4_state.position[1];
+    rviz_mesh.pose.position.z = px4_state.position[2];
+    rviz_mesh.pose.orientation = px4_state.attitude_q;
     rviz_mesh.scale.x = 1.0;
     rviz_mesh.scale.y = 1.0;
     rviz_mesh.scale.z = 1.0;
@@ -274,9 +250,9 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     // tfs.child_frame_id = uav_prefix + "/lidar_link"; // 子坐标系，无人机的坐标系
     // // tfs.child_frame_id = "/lidar_link"; //子坐标系，无人机的坐标系
     // //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
-    // tfs.transform.translation.x = external_state.pos_x;
-    // tfs.transform.translation.y = external_state.pos_y;
-    // tfs.transform.translation.z = external_state.pos_z;
+    // tfs.transform.translation.x = external_odom.position[0];
+    // tfs.transform.translation.y = external_odom.position[1];
+    // tfs.transform.translation.z = external_odom.position[2];
     // //  |--------- 四元数设置
     // tfs.transform.rotation.x = external_state.att_x;
     // tfs.transform.rotation.y = external_state.att_y;
@@ -411,7 +387,6 @@ void ExternalFusion::px4_pos_target_callback(const mavros_msgs::PositionTarget::
     px4_state.vel_setpoint[2] = msg->velocity.z;
 }
 
-
 // 打印状态
 void ExternalFusion::show_px4_state()
 {
@@ -428,7 +403,7 @@ void ExternalFusion::show_px4_state()
     else
         Logger::print_color(int(LogColor::red), "CONNECTED:", "FALSE");
 
-    if (external_source == GPS || external_source == RTK)
+    if (external_source == sunray_msgs::ExternalOdom::GPS || external_source == sunray_msgs::ExternalOdom::RTK)
     {
         Logger::print_color(int(LogColor::green), "GPS STATUS:", px4_state.gps_status, "SERVICE:", px4_state.gps_service);
         Logger::print_color(int(LogColor::green), "GPS SATS:", px4_state.satellites);
@@ -441,24 +416,24 @@ void ExternalFusion::show_px4_state()
     }
     // Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
     Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-                        external_state.pos_x,
-                        external_state.pos_y,
-                        external_state.pos_z,
+                        external_odom.position[0],
+                        external_odom.position[1],
+                        external_odom.position[2],
                         "[m]");
     Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
-                        external_state.vel_x,
-                        external_state.vel_y,
-                        external_state.vel_z,
+                        external_odom.velocity[0],
+                        external_odom.velocity[1],
+                        external_odom.velocity[2],
                         "[m/s]");
     Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                        external_state.roll / M_PI * 180,
-                        external_state.pitch / M_PI * 180,
-                        external_state.yaw / M_PI * 180,
+                        external_odom.attitude[0] / M_PI * 180,
+                        external_odom.attitude[1] / M_PI * 180,
+                        external_odom.attitude[2] / M_PI * 180,
                         "[deg]");
 
     if (px4_state.connected)
     {
-        if (external_source != GPS && external_source != RTK)
+        if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
         {
             Logger::print_color(int(LogColor::blue), "PX4 POS(receive)");
             Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
@@ -479,19 +454,19 @@ void ExternalFusion::show_px4_state()
 
             Logger::print_color(int(LogColor::blue), "ERR POS(send - receive)");
             Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-                                external_state.pos_x - px4_state.position[0],
-                                external_state.pos_y - px4_state.position[1],
-                                external_state.pos_z - px4_state.position[2],
+                                external_odom.position[0] - px4_state.position[0],
+                                external_odom.position[1] - px4_state.position[1],
+                                external_odom.position[2] - px4_state.position[2],
                                 "[m]");
             Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
-                                external_state.vel_x - px4_state.velocity[0],
-                                external_state.vel_y - px4_state.velocity[1],
-                                external_state.vel_z - px4_state.velocity[2],
+                                external_odom.velocity[0] - px4_state.velocity[0],
+                                external_odom.velocity[1] - px4_state.velocity[1],
+                                external_odom.velocity[2] - px4_state.velocity[2],
                                 "[m/s]");
             Logger::print_color(int(LogColor::green), "ATT[X Y Z]:",
-                                (external_state.roll - px4_state.attitude[0]) / M_PI * 180,
-                                (external_state.pitch - px4_state.attitude[1]) / M_PI * 180,
-                                (external_state.yaw - px4_state.attitude[2]) / M_PI * 180,
+                                (external_odom.attitude[0] - px4_state.attitude[0]) / M_PI * 180,
+                                (external_odom.attitude[1] - px4_state.attitude[1]) / M_PI * 180,
+                                (external_odom.attitude[2] - px4_state.attitude[2]) / M_PI * 180,
                                 "[deg]");
         }
     }
@@ -502,5 +477,3 @@ void ExternalFusion::show_px4_state()
     }
     err_msg.clear();
 }
-
-
