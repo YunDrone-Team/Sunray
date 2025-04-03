@@ -13,7 +13,6 @@
 */
 
 #include "externalFusion.h"
-#include "printf_format.h"
 #include <signal.h>
 
 using namespace std;

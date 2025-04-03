@@ -2,7 +2,7 @@
 <sdf version="1.5">
   <model name="wheeltec">
 
-    <link name="chassis">
+    <link name="base_link">
       <pose>0 0 0.16 0 0 0</pose>
       <inertial>
         <mass>2</mass>
@@ -204,7 +204,7 @@
 
     <joint type="revolute" name="right_front_wheel_joint">
       <child>right_front_wheel</child>
-      <parent>chassis</parent>
+      <parent>base_link</parent>
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
@@ -221,7 +221,7 @@
 
     <joint type="revolute" name="right_after_wheel_joint">
       <child>right_after_wheel</child>
-      <parent>chassis</parent>
+      <parent>base_link</parent>
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
@@ -238,7 +238,7 @@
 
     <joint type="revolute" name="left_front_wheel_joint">
       <child>left_front_wheel</child>
-      <parent>chassis</parent>
+      <parent>base_link</parent>
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
@@ -255,7 +255,7 @@
 
     <joint type="revolute" name="left_after_wheel_joint">
       <child>left_after_wheel</child>
-      <parent>chassis</parent>
+      <parent>base_link</parent>
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
@@ -272,15 +272,14 @@
 
     <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
       <commandTopic>/cmd_vel</commandTopic>
-      <odometryTopic>/odom</odometryTopic>
+      <odometryTopic>/car_odom</odometryTopic>
       <odometryFrame>odom</odometryFrame>
       <leftFrontJoint>left_front_wheel_joint</leftFrontJoint>
       <rightFrontJoint>right_front_wheel_joint</rightFrontJoint>
       <leftRearJoint>right_after_wheel_joint</leftRearJoint>
       <rightRearJoint>wheel_rb_joint</rightRearJoint>
       <odometryRate>20.0</odometryRate>
-      <robotBaseFrame>base_link</robotBaseFrame>
-
+      <robotBaseFrame>/base_link</robotBaseFrame>
     </plugin>
 
   </model>
