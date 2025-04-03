@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- Gazebo configs -->
-    <arg name="gazebo_enable" default="true"/>
-    <arg name="gui" default="true"/>
+    <!-- MAVROS posix SITL environment launch script -->
+    <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
+    <!-- vehicle model and world -->
+    <arg name="vehicle" default="sunray300_with_mid360"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
     <!-- 启动Gazebo -->
     <group if="$(arg gazebo_enable)">

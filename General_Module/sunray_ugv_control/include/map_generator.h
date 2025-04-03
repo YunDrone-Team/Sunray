@@ -48,8 +48,8 @@ public:
     GridWithWeights *grid;
 
     octomap::OcTree *tree;
-    octomap::OcTree *global_map;
-    octomap::OcTree *local_map;
+    octomap::OcTree *global_map;    // 没用上
+    octomap::OcTree *local_map;     // 没用上
     nav_msgs::Odometry odom;
     tf::StampedTransform transform;
     laser_geometry::LaserProjection projector;
@@ -185,6 +185,7 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
     pcl::PCLPointCloud2 pcl_cloud;
     pcl_conversions::toPCL(cloud_msg, pcl_cloud);
 
+    // 转换到世界坐标系 根据odom数据进行转换
     pcl::fromPCLPointCloud2(pcl_cloud, *temp_cloud);
     pcl_ros::transformPointCloud(*temp_cloud, *cloud_transformed, transform);
 
@@ -196,6 +197,11 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
         // float x = point.x;
         // float y = point.y;
         // float z = point.z;
+        // 过滤距离自己很近的点
+        if (abs(point.x - odom.pose.pose.position.x) < 0.4 || abs(point.y - odom.pose.pose.position.y) < 0.4)
+        {
+            continue;
+        }
 
         // Convert color to octomap::ColorOcTreeNode
         octomap::point3d octomap_point(point.x, point.y, point.z);

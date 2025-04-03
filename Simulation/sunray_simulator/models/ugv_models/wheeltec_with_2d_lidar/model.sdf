@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="wheeltec_with_2d_lidar">
+
+    <include>
+      <uri>model://wheeltec</uri>
+    </include>
+
+    <link name="laser">
+      <pose>0.085 0 0.2 0 0 0</pose>
+      <visual name="lidar_visual">
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.015</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <inertial>
+        <mass>0.05</mass>        <!--质量-->
+        <!--惯性标签，定义模型当前link的惯性矩，是一个对称正定3x3矩阵-->
+        <inertia>
+          <ixx>0.0025</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0025</iyy>
+          <iyz>0</iyz>
+          <izz>0.0042</izz>
+        </inertia>
+      </inertial>
+      <collision name='collision'>
+        <pose frame=''>0 0 0.03 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <min_depth>0.001</min_depth>
+              <max_vel>0</max_vel>
+            </ode>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+
+      <!-- Add a ray sensor, and give it a name -->
+      <sensor type="ray" name="head_hokuyo_sensor">
+        <pose>0 0 0 0 0 0</pose>
+        <visualize>true</visualize>
+        <update_rate>10</update_rate>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1000</samples>
+              <resolution>1</resolution>
+              <min_angle>-3.14</min_angle>
+              <max_angle>3.14</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.10</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </ray>
+        <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+          <topicName>/scan</topicName>
+          <frameName>/base_link</frameName>
+        </plugin>
+      </sensor>
+    </link>
+
+    <joint name="2Dlidar_joint" type="fixed">
+      <child>laser</child>
+      <parent>wheeltec::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+  </model>
+</sdf>

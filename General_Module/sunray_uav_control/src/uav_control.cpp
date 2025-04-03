@@ -126,6 +126,7 @@ void UAVControl::mainLoop()
 
     default:
         set_desired_from_hover();
+        setpoint_local_pub(system_params.type_mask, local_setpoint);
         break;
     }
     system_params.last_control_mode = system_params.control_mode;
@@ -134,6 +135,7 @@ void UAVControl::mainLoop()
 // 安全检查 是否超出地理围栏 外部定位是否有效
 int UAVControl::safetyCheck()
 {
+    // 如果超出地理围栏，则返回1
     if (px4_state.position[0] < uav_geo_fence.x_min ||
         px4_state.position[0] > uav_geo_fence.x_max ||
         px4_state.position[1] < uav_geo_fence.y_min ||
@@ -143,7 +145,7 @@ int UAVControl::safetyCheck()
     {
         return 1;
     }
-
+    // 如果外部定位失效，则返回2
     if (!system_params.odom_valid)
     {
         return 2;
@@ -175,7 +177,16 @@ void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
     {
         flight_params.set_home = false;
     }
-    px4_state = *msg; // 更新无人机状态
+
+    // 更新无人机状态
+    px4_state = *msg; 
+    // 如果使用相对坐标，则将当前位置转换为相对坐标 仅显示用
+    if(system_params.use_offset)
+    {
+        flight_params.relative_pos[0] = px4_state.position[0] - flight_params.home_pos[0];
+        flight_params.relative_pos[1] = px4_state.position[1] - flight_params.home_pos[1];
+        flight_params.relative_pos[2] = px4_state.position[2] - flight_params.home_pos[2];
+    }
 }
 
 // 遥控器状态回调
@@ -183,6 +194,7 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
 {
     rcState_cb = true;
     rc_state = *msg;
+    // 解锁与上锁通道判断
     if (rc_state.arm_state == 2)
     {
         setArm(true);
@@ -191,6 +203,7 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     {
         setArm(false);
     }
+    // 状态机模式通道判断 1 - INIT 2 - RC_CONTROL 3 - CMD_CONTROL
     if (rc_state.mode_state == 1)
     {
         system_params.control_mode = Control_Mode::INIT;
@@ -206,12 +219,14 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
         Logger::warning("Switch to CMD_CONTROL mode with rc");
         set_offboard_control(Control_Mode::CMD_CONTROL);
     }
+    // 降落通道判断
     if (rc_state.land_state == 1)
     {
         Logger::warning("Switch to LAND_CONTROL mode with rc");
         set_land();
         // set_offboard_control(Control_Mode::LAND_CONTROL);
     }
+    // 紧急停止通道判断
     if (rc_state.kill_state == 1)
     {
         Logger::error("Emergency Stop with rc");
@@ -269,7 +284,7 @@ void UAVControl::setArm(bool arm)
     px4_arming_client.call(arm_cmd);
     if (arm)
     {
-
+        // 解锁
         if (arm_cmd.response.success)
         {
             Logger::warning("Arming success!");
@@ -281,6 +296,7 @@ void UAVControl::setArm(bool arm)
     }
     else
     {
+        // 上锁
         if (arm_cmd.response.success)
         {
             Logger::warning("Disarming success!");
@@ -295,6 +311,7 @@ void UAVControl::setArm(bool arm)
 
 void UAVControl::set_auto_land()
 {
+    // 进入px4 auto.land模式
     set_px4_flight_mode("AUTO.LAND");
 }
 
@@ -307,17 +324,21 @@ void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr
     // 航点模式直接自动切换到CMD_CONTROL模式
     if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Waypoint)
     {
+        // 允许就算没有遥控器的情况下临时自动解锁
         allow_lock = true;
         system_params.control_mode = Control_Mode::CMD_CONTROL;
     }
     else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Point)
     {
+        // 发布规划点 与程序本身状态无关
         publish_goal();
+        // 发布完成后要切换回之前的状态
         control_cmd = last_control_cmd;
     }
     else
     {
-        allow_lock = false; // 其他模式需要手动解锁
+        // 其他模式需要手动解锁
+        allow_lock = false; 
     }
 }
 
@@ -354,7 +375,7 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
             system_params.control_mode = Control_Mode::INIT;
             Logger::warning("Switch to INIT mode with cmd");
         }
-        else if (msg->control_mode == "RC_CONTROL" &&  px4_state.mode != "OFFBOARD")
+        else if (msg->control_mode == "RC_CONTROL")
         {
             if (system_params.safety_state == 0)
             {
@@ -368,7 +389,7 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
         }
         else if (msg->control_mode == "CMD_CONTROL")
         {
-            if (system_params.safety_state == 0 && (system_params.control_mode != Control_Mode::CMD_CONTROL || px4_state.mode != "OFFBOARD"))
+            if (system_params.safety_state == 0)
             {
                 set_offboard_control(Control_Mode::CMD_CONTROL);
                 Logger::warning("Switch to CMD_CONTROL mode with cmd");
@@ -378,11 +399,11 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
                 Logger::error("Safety state error, cannot switch to CMD_CONTROL mode");
             }
         }
-        else if (msg->control_mode == "LAND_CONTROL" && system_params.control_mode != Control_Mode::LAND_CONTROL)
+        else if (msg->control_mode == "LAND_CONTROL")
         {
             set_land();
         }
-        else if (msg->control_mode == "WITHOUT_CONTROL" && system_params.control_mode != Control_Mode::WITHOUT_CONTROL)
+        else if (msg->control_mode == "WITHOUT_CONTROL")
         {
             system_params.control_mode = Control_Mode::WITHOUT_CONTROL;
         }
@@ -452,7 +473,7 @@ void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg
     wp_params.wp_points[9][1] = msg->wp_point_10[1];
     wp_params.wp_points[9][2] = msg->wp_point_10[2];
     wp_params.wp_points[9][3] = msg->wp_point_10[3];
-    // 环绕点最后一位
+    // 环绕点的值在最后一位获取
     wp_params.wp_points[10][0] = msg->wp_circle_point[0];
     wp_params.wp_points[10][1] = msg->wp_circle_point[1];
 
@@ -515,7 +536,7 @@ void UAVControl::print_state(const ros::TimerEvent &event)
 
         if (system_params.use_offset)
         {
-            // 相对位置
+            // 打印相对位置
             Logger::print_color(int(LogColor::blue), "POS(relative to home)");
             Logger::print_color(int(LogColor::green), "Relative POS[X Y Z]:",
                                 flight_params.relative_pos[0],
@@ -535,13 +556,14 @@ void UAVControl::print_state(const ros::TimerEvent &event)
 // 设置悬停位置
 void UAVControl::set_hover_pos()
 {
+    // 将当前位置设置为悬停位置
     flight_params.hover_pos[0] = px4_state.position[0];
     flight_params.hover_pos[1] = px4_state.position[1];
     flight_params.hover_pos[2] = px4_state.position[2];
     flight_params.hover_yaw = px4_state.attitude[2];
 }
 
-// 发布NED目标点
+// 发布惯性系下的目标点
 void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
@@ -559,7 +581,7 @@ void UAVControl::setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPosi
     px4_setpoint_global_pub.publish(setpoint);
 }
 
-// 设置默认目标点
+// 设置默认目标点 用于清除过去指令的影响
 void UAVControl::set_default_local_setpoint()
 {
     local_setpoint.header.stamp = ros::Time::now();
@@ -578,7 +600,7 @@ void UAVControl::set_default_local_setpoint()
     local_setpoint.yaw_rate = 0;
 }
 
-// 设置默认目标点
+// 设置默认目标点 用于清除过去指令的影响
 void UAVControl::set_default_global_setpoint()
 {
     global_setpoint.header.stamp = ros::Time::now();
@@ -606,16 +628,19 @@ void UAVControl::set_offboard_control(int mode)
         Logger::error("RC not enabled, cannot enter RC_CONTROL mode!");
         return;
     }
+    // 如果没有收到遥控器的回调，不允许进入RC_CONTROL模式
     if (mode == Control_Mode::RC_CONTROL && !rcState_cb)
     {
         Logger::error("RC callback error, cannot enter RC_CONTROL mode!");
         return;
     }
+    // 如果无人机未解锁，不允许进入OFFBOARD模式
     if (!px4_state.armed && system_params.use_rc)
     {
         Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
         return;
     }
+    // 进入OFFBOARD模式前，先设置默认目标点
     set_hover_pos();
     control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     control_cmd.header.stamp = ros::Time::now();
@@ -623,10 +648,7 @@ void UAVControl::set_offboard_control(int mode)
     {
         set_offboard_mode();
     }
-    if (system_params.control_mode != mode)
-    {
-        system_params.control_mode = mode;
-    }
+    system_params.control_mode = mode;
 }
 
 // 设置offboard模式
@@ -713,18 +735,20 @@ void UAVControl::handle_cmd_control()
 {
     // 判断是否是新的指令
     bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
+    // 如果需要检查指令超时：判断是否是新的指令，只有不是新的指令才会超时，悬停和起飞模式是不进行超时判断的
     if (system_params.check_cmd_timeout && !new_cmd && control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover && control_cmd.cmd != sunray_msgs::UAVControlCMD::Takeoff)
     {
         if ((ros::Time::now() - last_control_cmd.header.stamp).toSec() > system_params.cmd_timeout)
         {
             Logger::error("Command timeout, change to hover mode");
+            // 超时会切换到悬停模式
             control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             control_cmd.header.stamp = ros::Time::now();
             set_desired_from_hover();
             return;
         }
     }
-    // 如果无人机未解锁则不执行
+    // 在 use_rc 为 true 的情况下 如果无人机未解锁则不执行
     if (!allow_lock && !px4_state.armed && system_params.use_rc)
     {
         if (new_cmd)
@@ -771,16 +795,18 @@ void UAVControl::handle_cmd_control()
         // 基础控制模式
         if (new_cmd)
         {
+            // 判断指令是否存在
             auto it = moveModeMap.find(control_cmd.cmd);
             if (it != moveModeMap.end())
             {
                 system_params.type_mask = it->second;
-
+                // 机体系需要单独做转换
                 if (control_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYawBody ||
                     control_cmd.cmd == sunray_msgs::UAVControlCMD::XyzVelYawBody ||
                     control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawBody)
                 {
-                    // Body系的需要转换到NED下
+                    // Body系的需要转换到NED下】
+                    // 清除过去数据 更新时间戳
                     set_default_local_setpoint();
                     double body_pos[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
                     double enu_pos[2] = {0.0, 0.0};
@@ -804,8 +830,11 @@ void UAVControl::handle_cmd_control()
                     // 设置控制模式
                     system_params.type_mask = moveModeMap[control_cmd.cmd];
                 }
+                // 惯性系下的控制将直接赋值
                 else
                 {
+                    // 清除过去数据 更新时间戳
+                    set_default_local_setpoint();
                     local_setpoint.position.x = control_cmd.desired_pos[0];
                     local_setpoint.position.y = control_cmd.desired_pos[1];
                     local_setpoint.position.z = control_cmd.desired_pos[2];
@@ -1299,6 +1328,7 @@ void UAVControl::set_takeoff()
 // 进入降落模式
 void UAVControl::set_land()
 {
+    // 当前模式不是降落模式，且要处于RC_CONTROL或CMD_CONTROL模式才会进入降落模式
     if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL))
     {
         system_params.control_mode = Control_Mode::LAND_CONTROL;
