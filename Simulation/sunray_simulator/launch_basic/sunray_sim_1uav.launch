@@ -1,38 +1,36 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- MAVROS posix SITL environment launch script -->
-    <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
-    <!-- vehicle model and world -->
-    <arg name="vehicle" default="sunray300_with_mid360"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
-    
-
-    <!-- gazebo configs -->
+	<!-- Gazebo configs -->
+    <arg name="gazebo_enable" default="true"/>
     <arg name="gui" default="true"/>
-    <arg name="debug" default="false"/>
-    <arg name="verbose" default="false"/>
-    <arg name="paused" default="false"/>
-    <!-- Gazebo sim -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="gui" value="$(arg gui)"/>
-        <arg name="world_name" value="$(arg world)"/>
-        <arg name="debug" value="$(arg debug)"/>
-        <arg name="verbose" value="$(arg verbose)"/>
-        <arg name="paused" value="$(arg paused)"/>
-        <!-- <arg name="use_sim_time" value="false"/> -->
-    </include>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <!-- 启动Gazebo -->
+    <group if="$(arg gazebo_enable)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name" value="$(arg world)"/>
+            <arg name="gui" value="$(arg gui)"/>
+			<!-- 室内定位gazebo需要为true -->
+			<arg name="use_sim_time" value="true"/>
+        </include>
+    </group>
 
-    <arg name="uav_id" value="1"/>
-    <arg name="x" value="0"/>
-    <arg name="y" value="0"/>
+    <arg name="vehicle" default="sunray150"/>
+    <!-- <arg name="vehicle" default="sunray150_with_mid360"/> -->
 
-    <!-- UAV1 -->
-    <group ns="uav$(arg uav_id)">
+    <!-- 启动1号无人机仿真 -->
+    <!--无人机编号-->
+    <arg name="uav1_id" default="1"/>
+	<!-- 无人机初始位置 -->
+	<arg name="uav1_init_x" default="1.0"/>
+    <arg name="uav1_init_y" default="2.0"/>
+    <arg name="uav1_init_yaw" default="1.57"/>
+    <group ns="uav$(arg uav1_id)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="id" value="$(arg uav_id)" />
+            <arg name="uav_id" value="$(arg uav1_id)" />
             <arg name="vehicle" value="$(arg vehicle)" />
-            <arg name="x"  value="$(arg x)"/>
-            <arg name="y"  value="$(arg y)"/>
+            <arg name="uav_init_x"  value="$(arg uav1_init_x)"/>
+            <arg name="uav_init_y"  value="$(arg uav1_init_y)"/>
+            <arg name="uav_init_yaw"  value="$(arg uav1_init_yaw)"/>
         </include>
     </group>
 </launch>
