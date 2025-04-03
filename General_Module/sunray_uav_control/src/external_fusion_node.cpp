@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
     ros::Rate rate(50);
 
-    // 中断信号注册
+    // 中断信号注册 
     signal(SIGINT, mySigintHandler);
     ExternalFusion external_fusion;
     external_fusion.init(nh);
