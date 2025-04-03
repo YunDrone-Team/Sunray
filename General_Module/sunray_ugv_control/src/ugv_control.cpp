@@ -56,7 +56,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
         cout << RED << "Pose source: Unknown" << TAIL << endl;
     }
 
-    // 【订阅】控制指令 ORCA算法 -> 本节点
+    // 【订阅】控制指令 外部控制节点 -> 本节点
     ugv_cmd_sub = nh.subscribe<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 10, &UGV_CONTROL::ugv_cmd_cb, this);
     // 【订阅】ugv电池的数据 ugv_driver -> 本节点
     battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/sunray_ugv/battery", 1, &UGV_CONTROL::battery_cb, this);
@@ -105,7 +105,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state.vel_setpoint[1] = 0.0;
     ugv_state.yaw_setpoint = 0.0;
     ugv_state.battery_state = -1.0;
-    ugv_state.battery_percetage = -1.0;
+    ugv_state.battery_percentage = -1.0;
     ugv_state.control_mode = sunray_msgs::UGVControlCMD::INIT;
 
     // 打印本节点参数，用于检查
@@ -350,6 +350,9 @@ void UGV_CONTROL::path_control()
         x_ref = astar_path[0].x * this->resolution + this->ugv_geo_fence.min_x;
         y_ref = astar_path[0].y * this->resolution + this->ugv_geo_fence.min_y;
         pos_control_diff(x_ref, y_ref, 0);
+        // 当前位置到目标点需要的偏航角 效果不好 需要修改
+        double yaw_ref = atan2(y_ref - ugv_state.position[1], x_ref - ugv_state.position[0]);
+        pos_control(x_ref, y_ref, yaw_ref);
     }
     else
     {
@@ -447,7 +450,7 @@ void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
         astar.a_star_search();
         astar_path.clear();
         astar_path = astar.reconstruct_path();
-        if(astar_path.size() > 0)
+        if (astar_path.size() > 0)
         {
             astar_path.erase(astar_path.begin());
         }

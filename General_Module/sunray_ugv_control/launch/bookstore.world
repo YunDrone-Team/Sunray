@@ -31,7 +31,7 @@
     <model name='target'>  <!--模型名字-->
     	<pose frame=''>1 1 0  0 0 0</pose>  <!--模型相对于世界坐标系所放位置-->
       <include>
-      <uri>model://move_car_with_2d_lidar</uri>
+      <uri>model://wheeltec_with_2d_lidar</uri>
     </include>
     </model>
     <model name='AirConditionerC_01_001'>
