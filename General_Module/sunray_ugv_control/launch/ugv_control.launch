@@ -11,7 +11,7 @@
         <param name="ugv_geo_fence/min_x" value="-10.0" />
         <param name="ugv_geo_fence/max_y" value="10.0" />
         <param name="ugv_geo_fence/min_y" value="-10.0" />
-        <param name="resolution" value="0.6" />
+        <param name="resolution" value="0.4" />
         <param name="inflate" value="0.2" />
 
         <!-- map generator 模块使用 -->
