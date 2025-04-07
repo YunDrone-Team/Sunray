@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
   sunray_msgs
   tf2_geometry_msgs
-  serial
+  # serial
 )
 
 ## System dependencies are found with CMake's conventions
