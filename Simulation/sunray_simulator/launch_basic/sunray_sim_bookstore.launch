@@ -5,6 +5,7 @@
     <!-- vehicle model and world -->
     <arg name="vehicle" default="sunray150_with_mid360"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/bookstore.world"/>
+    <arg name="gazebo_enable" default="true"/>
     
 
     <!-- gazebo configs -->
@@ -13,26 +14,32 @@
     <arg name="verbose" default="false"/>
     <arg name="paused" default="false"/>
     <!-- Gazebo sim -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="gui" value="$(arg gui)"/>
-        <arg name="world_name" value="$(arg world)"/>
-        <arg name="debug" value="$(arg debug)"/>
-        <arg name="verbose" value="$(arg verbose)"/>
-        <arg name="paused" value="$(arg paused)"/>
+    <group if="$(arg gazebo_enable)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="gui" value="$(arg gui)"/>
+            <arg name="world_name" value="$(arg world)"/>
+            <arg name="debug" value="$(arg debug)"/>
+            <arg name="verbose" value="$(arg verbose)"/>
+            <arg name="paused" value="$(arg paused)"/>
         <!-- <arg name="use_sim_time" value="false"/> -->
-    </include>
+        </include>
 
-    <arg name="uav_id" value="1"/>
-    <arg name="x" value="0"/>
-    <arg name="y" value="0"/>
+    <!--无人机编号-->
+        <arg name="uav_id" default="1"/>
+	<!-- 无人机初始位置 -->
+	    <arg name="uav_init_x" default="0.0"/>
+        <arg name="uav_init_y" default="0.0"/>
+        <arg name="uav_init_yaw" default="0.0"/>
 
     <!-- UAV1 -->
-    <group ns="uav$(arg uav_id)">
-        <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="id" value="$(arg uav_id)" />
-            <arg name="x"  value="$(arg x)"/>
-            <arg name="y"  value="$(arg y)"/>
-            <arg name="vehicle" value="$(arg vehicle)" />
-        </include>
+        <group ns="uav$(arg uav_id)">
+            <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
+                <arg name="uav_id" value="$(arg uav_id)" />
+                <arg name="vehicle" value="$(arg vehicle)" />
+                <arg name="uav_init_x"  value="$(arg uav_init_x)"/>
+                <arg name="uav_init_y"  value="$(arg uav_init_y)"/>
+                <arg name="uav_init_yaw"  value="$(arg uav_init_yaw)"/>
+            </include>
+        </group>
     </group>
 </launch>

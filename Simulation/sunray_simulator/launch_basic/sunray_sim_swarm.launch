@@ -3,6 +3,7 @@
 
     <arg name="vehicle" default="sunray300"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <arg name="gazebo_enable" default="true"/>
 
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>
@@ -10,30 +11,36 @@
     <arg name="verbose" default="false"/>
     <arg name="paused" default="false"/>
 
+    <!--无人机编号-->
     <arg name="uav_id" default="1"/>
     <arg name="uav_num" default="8"/>
-    <arg name="x" default="0"/>
-    <arg name="y" default="0"/>
+    <!-- 无人机初始位置 -->
+    <arg name="uav_init_x" default="0.0"/>
+    <arg name="uav_init_y" default="0.0"/>
+    <arg name="uav_init_yaw" default="0.0"/>
 
     <group if="$(eval uav_id == 1)">
         <!-- Gazebo sim -->
-        <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="gui" value="$(arg gui)"/>
-            <arg name="world_name" value="$(arg world)"/>
-            <arg name="debug" value="$(arg debug)"/>
-            <arg name="verbose" value="$(arg verbose)"/>
-            <arg name="paused" value="$(arg paused)"/>
-            <!-- <arg name="use_sim_time" value="false"/> -->
-        </include>
+        <group if="$(arg gazebo_enable)">
+            <include file="$(find gazebo_ros)/launch/empty_world.launch">
+                <arg name="gui" value="$(arg gui)"/>
+                <arg name="world_name" value="$(arg world)"/>
+                <arg name="debug" value="$(arg debug)"/>
+                <arg name="verbose" value="$(arg verbose)"/>
+                <arg name="paused" value="$(arg paused)"/>
+                <!-- <arg name="use_sim_time" value="false"/> -->
+            </include>
+        </group>
     </group>
 
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
-            <arg name="id" value="$(arg uav_id)" />
-            <arg name="x" value="$(arg x)"/>
-            <arg name="y" value="$(arg y)"/>
+            <arg name="uav_id" value="$(arg uav_id)" />
             <arg name="vehicle" value="$(arg vehicle)" />
+            <arg name="uav_init_x" value="$(arg uav_init_x)"/>
+            <arg name="uav_init_y" value="$(arg uav_init_y)"/>
+            <arg name="uav_init_yaw" value="$(arg uav_init_yaw)"/>
         </include>
     </group>
 
@@ -41,8 +48,8 @@
     <include file="$(find sunray_simulator)/launch_basic/sunray_sim_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">
         <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
         <arg name="uav_num" value="$(arg uav_num)" />
-        <arg name="x" value="$(arg x)" />
-        <arg name="y" value="$(eval arg('y') + 1)" />
+        <arg name="uav_init_x" value="$(arg uav_init_x)" />
+        <arg name="uav_init_y" value="$(eval arg('uav_init_y') + 1)" />
         <arg name="vehicle" value="$(arg vehicle)" />
     </include>
 

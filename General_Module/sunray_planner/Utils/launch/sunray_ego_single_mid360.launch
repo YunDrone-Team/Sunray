@@ -45,8 +45,7 @@
     </node>
 
     <!-- 点云转换为世界坐标系 -->
-    <node name="point_cloud_transform_1" pkg="sunray_planner_ut
-    ils" type="point_cloud_transform" output="screen">
+    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
         <param name="input_point_topic" value="$(arg local_pointcloud_topic_1)" />
         <param name="output_point_topic" value="$(arg world_pointcloud_topic_1)" />
         <param name="odom_topic" value="$(arg odom_topic_1)" />

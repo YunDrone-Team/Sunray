@@ -68,9 +68,9 @@ add_executable(circle_vel src/circle_vel.cpp)
 add_dependencies(circle_vel sunray_tutorial_gencpp)
 target_link_libraries(circle_vel ${catkin_LIBRARIES})
 
-# add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
-# add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
-# target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
+add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
+add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
+target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
 
 # add_executable(vel_body_follow_car src/vel_body_follow_car.cpp)
 # add_dependencies(vel_body_follow_car sunray_tutorial_gencpp)
