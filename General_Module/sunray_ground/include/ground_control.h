@@ -9,6 +9,9 @@
 #include "Communication/CommunicationUDPSocket.h"
 #include "Communication/MSG.h"
 #include "Communication/Codec.h"
+#include "sunray_msgs/UGVState.h"
+#include "sunray_msgs/UGVControlCMD.h"
+
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -16,6 +19,9 @@
 #include <csignal>
 #include <cstdlib>
 #include <unordered_set>
+
+#define UAVType 0
+#define UGVType 1
 
 using namespace std;
 class GroundControl
@@ -46,13 +52,19 @@ public:
 private:
     uint32_t last_time_stamp;
     int uav_num;
+    int ugv_num;
     int simulation_num;
     int uav_id;
+    int ugv_id;
+    int ugv_simulation_num;
+
     string tcp_port;
     int udp_port;
     int udp_ground_port;
 
     string uav_name;
+    string ugv_name;
+
     string tcp_ip;
     string udp_ip;
     pid_t demoPID = -1;
@@ -64,7 +76,11 @@ private:
     std::vector<ros::Publisher> control_cmd_pub;
     std::vector<ros::Publisher> uav_setup_pub;
     std::vector<ros::Subscriber> uav_state_sub;
+    std::vector<ros::Subscriber> ugv_state_sub;
     std::map<int,ros::Publisher> uav_state_pub;
+    std::map<int,ros::Publisher> ugv_state_pub;
+    std::map<int,ros::Publisher> ugv_controlCMD_pub;
+
     std::vector<ros::Publisher> uav_waypoint_pub;
 
 
@@ -79,6 +95,7 @@ private:
     CommunicationUDPSocket *udpSocket;
     Codec codec;
     unionData udpData[30];
+    unionData ugvStateData[30]; 
 
     std::mutex _mutexUDP;       // 互斥锁
     std::mutex _mutexTCPServer; // 互斥锁
@@ -92,10 +109,14 @@ private:
     void sendMsgCb(const ros::TimerEvent &e);
     void HeartRate(const ros::TimerEvent &e);
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
+    void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
+
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);
     void executiveDemo(std::string orderStr);
     bool SynchronizationUAVState(StateData Data);
+    bool SynchronizationUGVState(UGVStateData Data);
+    bool PublishUGVControlTopic(UGVControlData Data);
     void TCPLinkState(bool state,std::string IP);
     pid_t OrderCourse(std::string orderStr);
     pid_t CheckChildProcess(pid_t pid); // 检查子进程是否已经结束

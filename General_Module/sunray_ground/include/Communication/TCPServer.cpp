@@ -280,6 +280,8 @@ bool TCPServer::resetMaxSock()
             std::string clientIP = itDelete->first;
             sigLinkState(linkState, clientIP);
             ipSocketMap.erase(itDelete);
+
+
         }
     }
     deleteVector.clear();
@@ -306,6 +308,7 @@ bool TCPServer::TCPServerOnRun()
             // select出问题了
             sigTCPServerError(errno);
             std::cout << "select出问题了 " << ret << " " << maxSock + 1 << std::endl;
+
             bool fl = false;
             if (errno == EBADF)
                 fl = resetMaxSock();

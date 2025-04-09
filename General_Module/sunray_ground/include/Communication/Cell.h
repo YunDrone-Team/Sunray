@@ -21,6 +21,7 @@
 //#include <ws2dnet.h>
 //#include <ws2ipdef.h>
 //#include <ws2spi.h>
+#include <iphlpapi.h>
 
 
 //    #pragma comment(lib,"ws2_32.lib")
@@ -30,32 +31,30 @@
     #include<string.h>
     #include<signal.h>
 
+//新加的，待验证
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <net/if.h>
+
+
     #define SOCKET int
     #define INVALID_SOCKET  (SOCKET)(~0)
     #define SOCKET_ERROR            (-1)
 #endif
-//
 
-
-//
-//#include<stdio.h>
-
-//缓冲区最小单元大小
-#ifndef RECV_BUFF_SZIE
-#define RECV_BUFF_SZIE 8192
-#define SEND_BUFF_SZIE 10240
-#endif // !RECV_BUFF_SZIE
-
-enum ActorState
-{
-    Server =1,
-    Client =2
-};
 
 struct SocketIP
 {
     SOCKET socket;
     std::string IP;
+};
+
+// 定义网卡信息结构体
+struct NetworkInterface {
+    std::string name;
+    std::string ip;
 };
 
 #endif // CELL_H
