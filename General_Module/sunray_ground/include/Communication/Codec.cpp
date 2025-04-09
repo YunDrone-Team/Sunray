@@ -146,6 +146,38 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
     return lastTwoBytes;
 }
 
+void Codec::coderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateData& state)
+{
+    /*UGV状态数据帧封装*/
+    dataFrame.push_back(static_cast<uint8_t>(MessageID::UGVStateMessageID));
+    state.timestamp=getTimestamp();
+    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((state.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+    //std::cout << "UGV状态数据发送的时间戳 "<<state.timestamp<<std::endl;
+
+    dataFrame.push_back(static_cast<uint8_t>(state.ugvID));
+    dataFrame.push_back(static_cast<uint8_t>(state.locationSource));
+    dataFrame.push_back(static_cast<uint8_t>(state.connected));
+    dataFrame.push_back(static_cast<uint8_t>(state.odom_valid));
+
+    floatCopyToUint8tArray(dataFrame,state.position.x);
+    floatCopyToUint8tArray(dataFrame,state.position.y);
+    floatCopyToUint8tArray(dataFrame,state.velocity.x);
+    floatCopyToUint8tArray(dataFrame,state.velocity.y);
+    floatCopyToUint8tArray(dataFrame,state.yaw);
+
+    floatCopyToUint8tArray(dataFrame,state.posSetpoint.x);
+    floatCopyToUint8tArray(dataFrame,state.posSetpoint.y);
+    floatCopyToUint8tArray(dataFrame,state.velSetpoint.x);
+    floatCopyToUint8tArray(dataFrame,state.velSetpoint.y);
+    floatCopyToUint8tArray(dataFrame,state.yawSetpoint);
+
+    floatCopyToUint8tArray(dataFrame,state.batteryState);
+    floatCopyToUint8tArray(dataFrame,state.batteryPercentage);
+
+    dataFrame.push_back(static_cast<uint8_t>(state.controlMode));
+}
+
 void Codec::coderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state)
 {
     /*状态数据帧封装*/
@@ -203,6 +235,59 @@ void Codec::coderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state
     dataFrame.push_back(static_cast<uint8_t>(state.controlMode));
     dataFrame.push_back(static_cast<uint8_t>(state.moveMode));
 
+}
+
+
+void Codec::decoderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateData& state)
+{
+    //时间戳赋值
+    state.timestamp=0;
+    // 由于数据是按大端顺序存储的，直接左移i*8位并添加对应的字节
+    int i;
+    for (i = 0; i <(int)sizeof(uint64_t); ++i)
+        state.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+
+    state.ugvID=static_cast<uint8_t>(dataFrame[i++]);
+    state.locationSource=static_cast<uint8_t>(dataFrame[i++]);
+    state.connected=static_cast<uint8_t>(dataFrame[i++]);
+    state.odom_valid=static_cast<uint8_t>(dataFrame[i++]);
+
+//    std::cout <<"decoderUGVStateDataFrame: ";
+//    for (uint8_t byte : dataFrame) {
+//            std::cout << static_cast<int>(byte) << " ";
+//        }
+//        std::cout << std::endl;
+
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+
+//    for (const auto& elem : dataFrame) {
+//        // 创建一个临时的 ostringstream 来格式化数字
+//                std::ostringstream oss;
+//                // 设置输出为16进制，并设置每个数字的宽度为2，用0填充
+//                oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(elem);
+//                // 将格式化的字符串输出到标准输出流
+//                std::cout << oss.str() << " ";
+//       }
+//    std::cout <<std::endl;
+    uint8tArrayToFloat(dataFrame,state.position.x);
+//    std::cout << "位置x "<<(int)dataFrame.size()<<std::endl;
+    uint8tArrayToFloat(dataFrame,state.position.y);
+
+    uint8tArrayToFloat(dataFrame,state.velocity.x);
+    uint8tArrayToFloat(dataFrame,state.velocity.y);
+    uint8tArrayToFloat(dataFrame,state.yaw);
+
+    uint8tArrayToFloat(dataFrame,state.posSetpoint.x);
+    uint8tArrayToFloat(dataFrame,state.posSetpoint.y);
+
+    uint8tArrayToFloat(dataFrame,state.velSetpoint.x);
+    uint8tArrayToFloat(dataFrame,state.velSetpoint.y);
+    uint8tArrayToFloat(dataFrame,state.yawSetpoint);
+
+    uint8tArrayToFloat(dataFrame,state.batteryState);
+    uint8tArrayToFloat(dataFrame,state.batteryPercentage);
+
+    state.controlMode=static_cast<uint8_t>(dataFrame[0]);
 }
 
 void Codec::decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state) //编码状态数据帧
@@ -277,6 +362,28 @@ void Codec::decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& sta
     state.moveMode=static_cast<uint8_t>(dataFrame[1]);
 }
 
+
+void Codec::decoderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control)
+{
+    //时间戳赋值
+    control.timestamp=0;
+    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    int i;
+    for (i = 0; i <(int)sizeof(uint64_t); ++i)
+        control.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+
+    control.controlMode=static_cast<uint8_t>(dataFrame[i++]);
+    control.yawType=static_cast<uint8_t>(dataFrame[i++]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+
+    uint8tArrayToFloat(dataFrame,control.desiredPos.x);
+    uint8tArrayToFloat(dataFrame,control.desiredPos.y);
+    uint8tArrayToFloat(dataFrame,control.desiredVel.x);
+    uint8tArrayToFloat(dataFrame,control.desiredVel.y);
+    uint8tArrayToFloat(dataFrame,control.desiredYaw);
+    uint8tArrayToFloat(dataFrame,control.angularVel);
+
+}
 
 void Codec::decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control) //编码控制数据帧
 {
@@ -473,6 +580,28 @@ void Codec::coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo) /
 
 }
 
+void Codec::coderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control)
+{
+    dataFrame.push_back(static_cast<uint8_t>(MessageID::UGVControlMessageID));
+    control.timestamp=getTimestamp();
+    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((control.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+    //std::cout << "参数控制数据发送的时间戳 "<<control.timestamp<<std::endl;
+
+    dataFrame.push_back(static_cast<uint8_t>(control.controlMode));
+    dataFrame.push_back(static_cast<uint8_t>(control.yawType));
+
+    floatCopyToUint8tArray(dataFrame,control.desiredPos.x);
+    floatCopyToUint8tArray(dataFrame,control.desiredPos.y);
+    floatCopyToUint8tArray(dataFrame,control.desiredVel.x);
+    floatCopyToUint8tArray(dataFrame,control.desiredVel.y);
+
+    floatCopyToUint8tArray(dataFrame,control.desiredYaw);
+    floatCopyToUint8tArray(dataFrame,control.angularVel);
+
+}
+
 void Codec::coderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control)
 {
     dataFrame.push_back(static_cast<uint8_t>(MessageID::ControlMessageID));
@@ -540,10 +669,11 @@ void Codec::coderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack)
 {
     dataFrame.push_back(static_cast<uint8_t>(MessageID::ACKMessageID));
     ack.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+    for (int i = 0; i < (int)sizeof(uint64_t); i++)
         dataFrame.push_back(static_cast<uint8_t>((ack.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    dataFrame.push_back(static_cast<uint8_t>(ack.uavID));
-    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
+    dataFrame.push_back(static_cast<uint8_t>(ack.agentType));
+    dataFrame.push_back(static_cast<uint8_t>(ack.ID));
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
         dataFrame.push_back(static_cast<uint8_t>((ack.port >> (i * 8)) & 0xFF));
 }
 
@@ -565,6 +695,8 @@ void Codec::coderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& h
     heartbeat.timestamp=getTimestamp();
     for (int i = 0; i < (int)sizeof(uint64_t); ++i)
         dataFrame.push_back(static_cast<uint8_t>((heartbeat.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+    dataFrame.push_back(static_cast<uint8_t>(heartbeat.agentType));
+
     //心跳包缺心跳包计数，int32_t count 4个字节
     //std::cout << "心跳数据发送的时间戳 "<<heartbeat.timestamp<<std::endl;
 
@@ -578,11 +710,37 @@ void Codec::decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack)
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         ack.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-    ack.uavID=static_cast<uint8_t>(dataFrame[i++]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+//    std::cout <<"decoderACKDataFrame: ";
+//    for (uint8_t byte : dataFrame) {
+//            std::cout << static_cast<int>(byte) << " ";
+//        }
+//        std::cout << std::endl;
+    ack.agentType=static_cast<uint8_t>(dataFrame[i++]);
+    ack.ID=static_cast<uint8_t>(dataFrame[i]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin()+i+1);
     ack.port = 0;
     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
         ack.port |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+
+//    // 时间戳赋值
+//    ack.timestamp = 0;
+//    for (int i = 0; i < static_cast<int>(sizeof(uint64_t)); ++i) {
+//        ack.timestamp |= static_cast<uint64_t>(dataFrame[i]) << (i * 8);
+//    }
+
+
+//    // 跳过时间戳字节，获取 agentType
+//    int index = sizeof(uint64_t);
+//    ack.agentType = dataFrame[index++];
+
+//    // 获取 ID
+//    ack.ID = dataFrame[index++];
+
+//    // 获取 port
+//    ack.port = 0;
+//    for (int j = 0; j < static_cast<int>(sizeof(uint16_t)); ++j) {
+//        ack.port |= static_cast<uint16_t>(dataFrame[index++]) << (j * 8);
+//    }
 
 }
 
@@ -635,12 +793,14 @@ void Codec::decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData&
     for (int i = 0; i <(int)sizeof(uint64_t); ++i)
         heartbeat.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
 
+     heartbeat.agentType=static_cast<uint8_t>(dataFrame[(int)sizeof(uint64_t)]);
     //心跳包缺心跳包计数，int32_t count 4个字节
 }
 
 bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData& decoderData)
 {
     //std::cout << "数据帧解码准备数据大小 "<<undecodedData.size()<<std::endl;
+
     uint8_t first= static_cast<uint8_t>(undecodedData.at(0));
     if(first!=0xac && first!=0xad && first!=0xfd &&first!=0xab)
         return false;
@@ -651,8 +811,11 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData&
 
     //去除开头的消息帧头2个字节，消息大小4个字节，消息序号1个字节，2+4+1=7
     undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 7);
+
     //去掉尾部的校验和2个字节
     undecodedData.resize(undecodedData.size()-2);
+
+
 
     //第2个元素是数据帧类型
     messageID=static_cast<int>(static_cast<uint8_t>(undecodedData[1]));
@@ -674,13 +837,29 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData&
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
         decoderStateDataFrame(undecodedData,decoderData.state);
         break;
+    case MessageID::UGVStateMessageID:
+        //第一个元素是机器人编号
+        decoderData.ugvState.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        //std::cout << "机器人编号 "<<(int)undecodedData[0]<<std::endl;
+        //去掉之前已经读出的两个元素
+        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
+        decoderUGVStateDataFrame(undecodedData,decoderData.ugvState);
+        break;
     case MessageID::ControlMessageID:
         //第一个元素是机器人编号
-        decoderData.contro.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        decoderData.control.robotID=static_cast<uint8_t>(undecodedData.at(0));
         //去掉之前已经读出的两个元素
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
 
-        decoderControlDataFrame(undecodedData,decoderData.contro);
+        decoderControlDataFrame(undecodedData,decoderData.control);
+        break;
+    case MessageID::UGVControlMessageID:
+        //第一个元素是机器人编号
+        decoderData.ugvControl.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        //去掉之前已经读出的两个元素
+        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
+
+        decoderUGVControlDataFrame(undecodedData,decoderData.ugvControl);
         break;
     case MessageID::VehicleMessageID:
         //第一个元素是机器人编号
@@ -698,6 +877,8 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData&
         break;
     case MessageID::ACKMessageID:
         //第一个元素是机器人编号
+//        std::cout << "decoderACKDataFrame: "<<undecodedData.size()<< std::endl;
+
         decoderData.ack.robotID =static_cast<uint8_t>(undecodedData.at(0));
         //去掉之前已经读出的两个元素
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
@@ -810,20 +991,67 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
         // 将uint16_t的低位字节直接转换为uint8_t并存储到vector中
         coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
         break;
+    case MessageID::UGVStateMessageID:
+        //UDP不带回复帧头 0xab65
+        coderData.push_back(0xab);
+        coderData.push_back(0x65);
+
+        /*编码状态数据帧*/
+        coderUGVStateDataFrame(tempData,codelessData.ugvState);
+
+        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
+            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+        coderData.push_back(getUDPMessageNum());//获取UDP消息序号
+        coderData.push_back(static_cast<uint8_t>(codelessData.state.robotID));//获取机器人ID
+
+        //将整个数据帧从尾部加入数据里面
+        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
+        checksum=getChecksum(coderData);//获取校验值
+        // 将uint16_t的高位字节直接转换为uint8_t并存储到vector中
+        // 这里使用static_cast<uint8_t>是安全的，因为我们知道结果是一个在uint8_t范围内的值（0-255）
+        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
+        // 将uint16_t的低位字节直接转换为uint8_t并存储到vector中
+        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+        break;
     case MessageID::ControlMessageID:
         //TCP帧头 0xac43
         coderData.push_back(0xac);
         coderData.push_back(0x43);
 
         /*编码无人机参数控制数据*/
-        coderControlDataFrame(tempData,codelessData.contro);
+        coderControlDataFrame(tempData,codelessData.control);
         safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
         dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
         for (int i = 0; i < (int)sizeof(uint32_t); ++i)
             coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
 
         coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.contro.robotID));//获取机器人ID
+        coderData.push_back(static_cast<uint8_t>(codelessData.control.robotID));//获取机器人ID
+        //将整个数据帧从尾部加入数据里面
+        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
+
+        checksum=getChecksum(coderData);//获取校验值
+
+        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
+        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+        break;
+    case MessageID::UGVControlMessageID:
+        //TCP帧头 0xac43
+        coderData.push_back(0xac);
+        coderData.push_back(0x43);
+
+        /*编码无人车控制数据*/
+        coderUGVControlDataFrame(tempData,codelessData.ugvControl);
+        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
+            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
+        coderData.push_back(static_cast<uint8_t>(codelessData.control.robotID));//获取机器人ID
         //将整个数据帧从尾部加入数据里面
         coderData.insert(coderData.end(), tempData.begin(), tempData.end());
 

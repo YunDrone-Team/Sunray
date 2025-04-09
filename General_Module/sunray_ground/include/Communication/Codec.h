@@ -17,7 +17,9 @@ public:
 
 
     void coderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state);//编码状态数据帧
+    void coderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateData& state);//编码状态数据帧
     void coderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control);//编码无人机参数控制数据
+    void coderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control);//编码无人车控制数据
     void coderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle); //编码无人机模式切换数据帧
     void coderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat); //编码无人机心跳包数据帧
     void coderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //编码搜索在线无人机数据帧
@@ -28,7 +30,10 @@ public:
 
     void decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat); //解码无人机心跳包数据帧
     void decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state);//解码状态数据帧
-    void decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control);//解码控制数据帧
+    void decoderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateData& state);//解码UGV状态数据帧
+    void decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control);//解码无人机控制数据帧
+    void decoderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control);//解码无人车控制数据帧
+
     void decoderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle);//解码模式切换数据帧
     void decoderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //解码搜索在线无人机数据帧
     void decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //解码无人机应答数据帧
