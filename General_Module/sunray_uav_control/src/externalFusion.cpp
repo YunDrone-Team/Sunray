@@ -39,6 +39,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     nh.param<string>("uav_name", uav_name, "uav");                                      // 【参数】无人机名称
     nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
     nh.param<bool>("enable_rviz", enable_rviz, false);                                  // 【参数】是否发布到rviz
+    nh.param<bool>("enable_range_sensor", enable_range_sensor, false);                  // 【参数】是否使用距离传感器数据
     // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);           // 【参数】是否使用rangeSensor
 
     // 初始化外部定位数据解析类
@@ -65,7 +66,8 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_pos_target_sub = nh.subscribe<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/target_local", 1, &ExternalFusion::px4_pos_target_callback, this);
     // 【订阅】PX4中无人机的姿态设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）
     px4_att_target_sub = nh.subscribe<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/target_attitude", 1, &ExternalFusion::px4_att_target_callback, this);
-
+    // 【订阅】无人机上的激光定高原始数据
+    px4_distance_sub = nh.subscribe<sensor_msgs::Range>(uav_name + "/mavros/distance_sensor/hrlv_ez4_pub", 1, &ExternalFusion::px4_distance_callback, this);
     // 如果使能了RVIZ，则发布RVIZ中显示的话题
     if (enable_rviz)
     {
@@ -117,6 +119,10 @@ void ExternalFusion::timer_pub_vision_pose_cb(const ros::TimerEvent &event)
         vision_pose.pose.position.x = external_odom.position[0];
         vision_pose.pose.position.y = external_odom.position[1];
         vision_pose.pose.position.z = external_odom.position[2];
+        if (enable_range_sensor)
+        {
+            vision_pose.pose.position.z = distance_sensor.range;
+        }
         vision_pose.pose.orientation.x = external_odom.attitude_q.x;
         vision_pose.pose.orientation.y = external_odom.attitude_q.y;
         vision_pose.pose.orientation.z = external_odom.attitude_q.z;
@@ -161,6 +167,13 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
         {
             // Logger::warning("Warning: The error between external state and px4 state is too large!");
             err_msg.insert(1);
+        }
+    }
+    if (enable_range_sensor)
+    {
+        if ((ros::Time::now() - distance_sensor.header.stamp).toSec() > 1.0)
+        {
+            err_msg.insert(3);
         }
     }
 }
@@ -384,6 +397,12 @@ void ExternalFusion::px4_pos_target_callback(const mavros_msgs::PositionTarget::
     px4_state.vel_setpoint[2] = msg->velocity.z;
 }
 
+// 回调函数：接收PX4距离传感器原始数据
+void ExternalFusion::px4_distance_callback(const sensor_msgs::Range::ConstPtr &msg)
+{
+    distance_sensor = *msg;
+}
+
 // 打印状态
 void ExternalFusion::show_px4_state()
 {
@@ -412,11 +431,22 @@ void ExternalFusion::show_px4_state()
         Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
     }
     // Logger::print_color(int(LogColor::blue), "EXTERNAL POS(send)");
-    Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
-                        external_odom.position[0],
-                        external_odom.position[1],
-                        external_odom.position[2],
-                        "[m]");
+    if (enable_range_sensor)
+    {
+        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                            external_odom.position[0],
+                            external_odom.position[1],
+                            distance_sensor.range,
+                            "[m]");
+    }
+    else
+    {
+        Logger::print_color(int(LogColor::green), "POS[X Y Z]:",
+                            external_odom.position[0],
+                            external_odom.position[1],
+                            external_odom.position[2],
+                            "[m]");
+    }
     Logger::print_color(int(LogColor::green), "VEL[X Y Z]:",
                         external_odom.velocity[0],
                         external_odom.velocity[1],

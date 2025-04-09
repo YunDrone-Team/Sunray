@@ -3,6 +3,70 @@
 
 #include "ros_msg_utils.h"
 
+// 滑动平均滤波器
+class MovingAverageFilter
+{
+public:
+    MovingAverageFilter(int size = 5)
+    {
+        this->size = size;
+        this->data = new double[size];
+        this->sum = 0;
+        this->count = 0;
+        this->index = 0;
+    }
+
+    ~MovingAverageFilter()
+    {
+        delete[] data;
+    }
+
+    void setSize(int size)
+    {
+        this->size = size;
+        delete[] data;
+        this->data = new double[size];
+        this->sum = 0;
+        this->count = 0;
+        this->index = 0;
+    }
+
+    void addData(double value)
+    {
+
+        if (count < size)
+        {
+            sum += value;
+            data[count++] = value;
+        }
+        else
+        {
+            sum -= data[index];
+            sum += value;
+            data[index] = value;
+            index = (index + 1) % size;
+        }
+    }
+
+    double getAverage()
+    {
+        return sum / count;
+    }
+
+    double filter(double value)
+    {
+        addData(value);
+        return getAverage();
+    }
+
+private:
+    int size;
+    double *data;
+    double sum;
+    int count;
+    int index;
+};
+
 class ExternalPosition
 {
 public:
@@ -25,7 +89,7 @@ public:
         // 【发布】外部定位状态 - 本节点 -> uav_control_node
         odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/external_odom_state", 10);
         timer_pub_odom_state = nh.createTimer(ros::Duration(0.05), &ExternalPosition::timerCallback, this);
-        
+
         // 初始化外部定位状态
         external_odom.header.stamp = ros::Time::now();
         external_odom.external_source = external_source;
@@ -60,6 +124,11 @@ public:
             pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/pose", 1, &ExternalPosition::PosCallback, this);
             // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
             vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/twist", 1, &ExternalPosition::VelCallback, this);
+            break;
+        case sunray_msgs::ExternalOdom::VIOBOT:
+            moving_average_filter.setSize(1);
+            source_topic = "/baton_mini/odometry";
+            odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic, 10, &ExternalPosition::viobotCallback, this);
             break;
         case sunray_msgs::ExternalOdom::GPS:
             source_topic = topic_prefix + "/mavros/global_position/local";
@@ -140,6 +209,58 @@ public:
         external_odom.attitude[2] = yaw;
     }
 
+    void viobotCallback(const nav_msgs::Odometry::ConstPtr &msg)
+    {
+        // 四元素转rpy
+        tf2::Quaternion quaternion;
+        tf2::fromMsg(msg->pose.pose.orientation, quaternion);
+        double roll, pitch, yaw;
+        external_odom.header.stamp = ros::Time::now();
+        external_odom.position[0] = msg->pose.pose.position.x;
+        external_odom.position[1] = msg->pose.pose.position.y;
+        external_odom.position[2] = msg->pose.pose.position.z;
+        // external_odom.position[0] = moving_average_filter.filter(msg->pose.pose.position.x);
+        // external_odom.position[1] = moving_average_filter.filter(msg->pose.pose.position.y);
+        // external_odom.position[2] = moving_average_filter.filter(msg->pose.pose.position.z);
+        external_odom.velocity[0] = msg->twist.twist.linear.x;
+        external_odom.velocity[1] = msg->twist.twist.linear.y;
+        external_odom.velocity[2] = msg->twist.twist.linear.z;
+
+        tf2::Quaternion q;
+        q.setW(msg->pose.pose.orientation.w);
+        q.setX(msg->pose.pose.orientation.x);
+        q.setY(msg->pose.pose.orientation.y);
+        q.setZ(msg->pose.pose.orientation.z);
+        // 绕 Z 轴旋转 90°
+        tf2::Quaternion q_z;
+        q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90°
+
+        // 绕 Y 轴旋转 -90°
+        tf2::Quaternion q_y;
+        q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90°
+
+        // 组合旋转（顺序：先 q_z，再 q_y）
+        q = q * q_z * q_y;
+
+        // 转欧拉角
+        tf2::Matrix3x3 m(q);
+        m.getRPY(roll, pitch, yaw);
+        // std::cout << "roll: " << roll * 180 / M_PI << " pitch: " << pitch * 180 / M_PI << " yaw: " << yaw * 180 / M_PI << std::endl;
+
+        // external_odom.attitude_q.x = msg->pose.pose.orientation.x;
+        // external_odom.attitude_q.y = msg->pose.pose.orientation.y;
+        // external_odom.attitude_q.z = msg->pose.pose.orientation.z;
+        // external_odom.attitude_q.w = msg->pose.pose.orientation.w;
+
+        external_odom.attitude_q.x = q.getX();
+        external_odom.attitude_q.y = q.getY();
+        external_odom.attitude_q.z = q.getZ();
+        external_odom.attitude_q.w = q.getW();
+        external_odom.attitude[0] = roll;
+        external_odom.attitude[1] = pitch;
+        external_odom.attitude[2] = yaw;
+    }
+
     void VelCallback(const geometry_msgs::TwistStamped::ConstPtr &msg)
     {
         external_odom.velocity[0] = msg->twist.linear.x;
@@ -169,6 +290,7 @@ private:
     int uav_id;
     std::string uav_name;
     std::string source_topic_name;
+    MovingAverageFilter moving_average_filter;
 };
 
 #endif // EXTERNALPOSITION_H// 实现外部定位源话题回调函数
