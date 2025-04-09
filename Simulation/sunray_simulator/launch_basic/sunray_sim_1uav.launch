@@ -16,8 +16,8 @@
         </include>
     </group>
 
-    <arg name="vehicle" default="sunray150"/>
-    <!-- <arg name="vehicle" default="sunray150_with_mid360"/> -->
+    <!-- <arg name="vehicle" default="sunray150"/> -->
+    <arg name="vehicle" default="sunray150_with_mid360"/>
 
     <!-- 启动1号无人机仿真 -->
     <!--无人机编号-->

@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<sdf version='1.7'>
+<sdf version='1.5'>
   <world name='default'>
     <!-- 动力学库 -->
     <physics type='ode'>
@@ -56,37 +56,29 @@
     <include>
       <uri>model://ground_plane</uri>
     </include>
-    <!-- <model name='unit_cylinder'>
-      <static>1</static>
-      <pose>10 10 0.5 0 -0 0</pose>
-      <link name='link'>
-        
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.5</radius>
-              <length>3</length>
-            </cylinder>
-          </geometry>
-          
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.5</radius>
-              <length>3</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <script>
-              <name>Gazebo/Blue</name>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-            </script>
-          </material>
+
+    <!-- 装饰 -->
+    <model name='yundrone_logo'>
+      <static>true</static>
+      <link name="yundrone_logo">
+        <pose frame=''> 0.0 0.0 0.0 0.0 0.0 0.0</pose>
+        <visual name="visual">
+            <cast_shadows>false</cast_shadows>
+            <geometry>
+              <box>
+                <size>20.0 20.0 0.01</size>
+              </box>
+            </geometry>
+            <material>
+              <script>
+                <uri>model://yundrone_logo/yundrone_logo.material</uri>
+                <name>yundrone_logo</name>
+              </script>
+            </material>
         </visual>
-        
       </link>
-    </model> -->
+    </model>
+
     <model name='unit_cylinder_0'>
       <static>1</static>
       <pose>10 8 0.5 0 -0 0</pose>

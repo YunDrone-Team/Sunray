@@ -1,0 +1,24 @@
+<launch>
+    <arg name="uav_num" default="2" />              <!-- 无人机真机数量 -->
+    <arg name="simulation_num" default="1" />       <!-- 仿真无人机数量 -->
+    <arg name="uav_name" default="uav" />
+    <arg name="uav_id" default="1" />               <!-- 当前无人机id，默认值为1 -->
+    <arg name="tcp_ip" default="192.168.0.29" />    <!-- 该参数当前废弃，无人机IP地址 0.0.0.0 则监听所有ip-->
+    <arg name="udp_ip" default="192.168.0.115" />   <!-- 该参数当前废弃，UDP单播地面站目标IP-->
+    <arg name="tcp_port" default="8969" />          <!-- TCP绑定端口-->
+    <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->
+    <arg name="udp_ground_port" default="9696" />   <!-- UDP通信、组播地面站目标端口-->
+
+    <node name="ground_control" pkg="sunray_ground" type="ground_control_node" output="screen">
+        <param name="uav_num" value="$(arg uav_num)" />
+        <param name="simulation_num" value="$(arg simulation_num)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="uav_id" value="$(arg uav_id)" />  <!-- 新增的参数传递给节点 -->  
+        <param name="tcp_ip" value="$(arg tcp_ip)" />
+        <param name="udp_ip" value="$(arg udp_ip)" />
+        <param name="tcp_port" value="$(arg tcp_port)" />
+        <param name="udp_port" value="$(arg udp_port)" />
+        <param name="udp_ground_port" value="$(arg udp_ground_port)" />
+
+    </node>
+</launch>
