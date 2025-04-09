@@ -1,3 +1,12 @@
+/*
+本程序功能：
+    1、管理无人机状态机 INIT RC_CONTROL CMD_CONTROL LAND_CONTROL WITHOUT_CONTROL等
+    2、订阅外部控制话题 sunray/uav_control_cmd 用于接收和执行相应动作指令 XyzPos、XyzVel、Return等
+    3、订阅外部话题 sunray/setup 用于控制程序状态机模式状态
+    4、发布对应控制指令到mavros-px4
+    5、发布无人机状态uav_state
+*/
+
 #include "UAVControl.h"
 
 void UAVControl::init(ros::NodeHandle &nh)

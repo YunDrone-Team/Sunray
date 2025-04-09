@@ -3,7 +3,7 @@
 #include "printf_utils.h"
 #include <csignal>
 
-using namespace  std;
+using namespace std;
 
 geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
@@ -17,11 +17,10 @@ bool stop_flag{false};
 
 void mySigintHandler(int sig)
 {
-    std::cout<<"[pos_body_hexagon] exit..."<<std::endl;
+    std::cout << "[pos_body_hexagon] exit..." << std::endl;
 
     ros::shutdown();
     exit(EXIT_SUCCESS); // 或者使用 exit(0)
-
 }
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
@@ -46,7 +45,8 @@ void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
     stop_flag = true;
 }
 
-void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
     current_pose = *msg;
 }
 
@@ -60,7 +60,6 @@ int main(int argc, char **argv)
     int uav_id;
 
     signal(SIGINT, mySigintHandler);
-
 
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
@@ -77,18 +76,20 @@ int main(int argc, char **argv)
     string topic_prefix = "/" + uav_name;
     // 【订阅】无人机状态 -- from vision_pose
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, uav_state_cb);
-    //【订阅】无人机控制信息
+    // 【订阅】无人机控制信息
     ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(topic_prefix + "/sunray/control_state", 1, uav_control_state_cb);
     // 【订阅】目标点位置
-    if(sim_mode){
+    if (sim_mode)
+    {
         ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/sunray/gazebo_pose", 1, target_pos_cb);
     }
-    else{
+    else
+    {
         ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/" + uav_name + "/pose", 1, target_pos_cb);
     }
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
-    
+
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
@@ -97,7 +98,7 @@ int main(int argc, char **argv)
     ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
-    uav_cmd.cmd_id = 0;
+    // uav_cmd.cmd_id= 0;
     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     uav_cmd.desired_pos[0] = 0.0;
     uav_cmd.desired_pos[1] = 0.0;
@@ -113,13 +114,12 @@ int main(int argc, char **argv)
     uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-    uav_cmd.enable_yawRate = false;
 
-    //固定的浮点显示
+    // 固定的浮点显示
     cout.setf(ios::fixed);
     // setprecision(n) 设显示小数精度为2位
     cout << setprecision(2);
-    //左对齐
+    // 左对齐
     cout.setf(ios::left);
     // 强制显示小数点
     cout.setf(ios::showpoint);
@@ -132,80 +132,79 @@ int main(int argc, char **argv)
     cout << GREEN << "sim_mode                  : " << sim_mode << " " << TAIL << endl;
     cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
     cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
-    
+
     ros::Duration(0.5).sleep();
     // 解锁
-    cout<<"arm"<<endl;
+    cout << "arm" << endl;
     setup.cmd = 1;
     uav_setup_pub.publish(setup);
-    ros::Duration(1.0).sleep();
+    ros::Duration(4.0).sleep();
 
     // 切换到指令控制模式
-    cout<<"switch CMD_CONTROL"<<endl;
+    cout << "switch CMD_CONTROL" << endl;
     setup.cmd = 4;
     setup.control_mode = "CMD_CONTROL";
     uav_setup_pub.publish(setup);
     ros::Duration(1.0).sleep();
 
     // 起飞
-    cout<<"takeoff"<<endl;
-    uav_cmd.cmd = 1;
-    uav_cmd.cmd_id = 0;
+    cout << "takeoff" << endl;
+    uav_cmd.cmd = 100;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(10).sleep();
-    
+
     // 悬停
-    cout<<"hover"<<endl;
-    uav_cmd.cmd = 2;
+    cout << "hover" << endl;
+    uav_cmd.cmd = 102;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(2).sleep();
-    std::tuple<double, double, double> vertex = std::make_tuple(1,  0,  0);
+
+    std::tuple<double, double, double> vertex = std::make_tuple(1, 0, 0);
     int yaw;
-    for(int i = 0; i < 8; ++i) {
-        if(stop_flag){
-                cout<<"land"<<endl;
-                uav_cmd.cmd = 3;
-                uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
-                control_cmd_pub.publish(uav_cmd);
-                break;
+    for (int i = 0; i < 8; ++i)
+    {
+        if (stop_flag)
+        {
+            cout << "land" << endl;
+            uav_cmd.cmd = 101;
+            control_cmd_pub.publish(uav_cmd);
+            break;
         }
         ros::spinOnce();
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_POS_BODY;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
         uav_cmd.desired_pos[0] = std::get<0>(vertex);
         uav_cmd.desired_pos[1] = std::get<1>(vertex);
         uav_cmd.desired_pos[2] = 1 - current_pose.pose.position.z;
         uav_cmd.desired_yaw = 0;
-        uav_cmd.enable_yawRate = 0;
-        uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(5).sleep();
-        
-        if(i == 0 || i == 6){
-            yaw = 120;   
+
+        if (i == 0 || i == 6)
+        {
+            yaw = 120;
         }
-        else{
+        else
+        {
             yaw = 60;
         }
-        if(i == 7){
+        if (i == 7)
+        {
             break;
         }
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XYZ_POS_BODY;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
         uav_cmd.desired_pos[0] = 0;
         uav_cmd.desired_pos[1] = 0;
         uav_cmd.desired_pos[2] = 0;
         uav_cmd.desired_yaw = yaw / 180.0 * M_PI;
-        uav_cmd.enable_yawRate = 0;
-        uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+        uav_cmd.PosVelAccYawrate;
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }
 
     // 降落
-    cout<<"land"<<endl;
-    uav_cmd.cmd = 3;
-    uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+    cout << "land" << endl;
+    uav_cmd.cmd = 101;
     control_cmd_pub.publish(uav_cmd);
-
 }
