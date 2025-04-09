@@ -5,7 +5,8 @@
     <arg name="uav_name" default="uav" />
     <arg name="position_topic" default="/uav1/sunray/gazebo_pose" />
     <arg name="enable_rviz" default="false" />
-    <arg name="server" default="192.168.25.13"/>
+    <arg name="enable_range_sensor" default="false" />
+    <arg name="server" default="192.168.25.11"/>
 
 
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
@@ -14,6 +15,7 @@
         <param name="uav_name" value="$(arg uav_name)" />
         <param name="position_topic" value="$(arg position_topic)" />
         <param name="enable_rviz" value="$(arg enable_rviz)" />
+        <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
     </node>
 
     <!-- 启动 vrpn_client_ros -->

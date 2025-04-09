@@ -9,7 +9,8 @@ using namespace sunray_logger;
 std::map<int, std::string> ERR_MSG =
     {
         {1, "Warning: The error between external state and px4 state is too large!"},
-        {2, "Warning: The external position is timeout!"}};
+        {2, "Warning: The external position is timeout!"},
+        {3, "Warning: The distance sensor data is timeout!"}};
 
 class ExternalFusion
 {
@@ -19,6 +20,7 @@ private:
     std::string source_topic{""};                           // 外部定位数据来源
     int uav_id;                                             // 无人机编号
     int external_source;                                    // 外部定位数据来源
+    sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     std::set<int> err_msg;                                  // 错误信息集合
@@ -27,6 +29,7 @@ private:
     sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
     ExternalPosition external_position;                     // 外部定位源的回调和处理
     bool enable_rviz;                                       // 是否使能RVIZ相关话题发布
+    bool enable_range_sensor;                               // 是否使用距离传感器数据
 
     ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
@@ -37,9 +40,9 @@ private:
     ros::Subscriber px4_gps_satellites_sub; // 【订阅】无人机gps卫星状态订阅
     ros::Subscriber px4_gps_state_sub;      // 【订阅】无人机gps状态订阅
     ros::Subscriber px4_gps_raw_sub;        // 【订阅】无人机gps原始数据订阅
-
-    ros::Subscriber px4_pos_target_sub; // 【订阅】px4目标订阅 位置 速度加 速度
-    ros::Subscriber px4_att_target_sub; // 【订阅】无人机姿态订阅
+    ros::Subscriber px4_distance_sub;       // 【订阅】无人机距离传感器原始数据订阅
+    ros::Subscriber px4_pos_target_sub;     // 【订阅】px4目标订阅 位置 速度加 速度
+    ros::Subscriber px4_att_target_sub;     // 【订阅】无人机姿态订阅
 
     ros::Publisher vision_pose_pub;    // 【发布】发布vision_pose消息
     ros::Publisher uav_odom_pub;       // 【发布】无人机里程计发布
@@ -72,6 +75,7 @@ public:
     void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);            // 无人机gps原始数据回调函数
     void px4_att_target_callback(const mavros_msgs::AttitudeTarget::ConstPtr &msg); // 无人机姿态设定值回调函数
     void px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg); // 无人机位置设定值回调函数
+    void px4_distance_callback(const sensor_msgs::Range::ConstPtr &msg);             //无人机距离传感器原始数据
     // void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);           // 无人机里程计回调函数（同时包含了位置和速度 但是是机体系）
 };
 
