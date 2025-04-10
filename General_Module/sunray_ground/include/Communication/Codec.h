@@ -2,13 +2,14 @@
 #define CODEC_H
 
 #include "Communication/MSG.h"
+#include "Communication/DecoderInterfaceBase.h"
 #include <cstring>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
-class Codec
+class Codec: public DecoderInterfaceBase
 {
 public:
     Codec();
