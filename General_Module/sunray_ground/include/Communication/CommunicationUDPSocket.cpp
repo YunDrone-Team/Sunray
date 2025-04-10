@@ -310,6 +310,15 @@ int CommunicationUDPSocket::Bind(unsigned short port)                           
     return 0;
 }
 
+void CommunicationUDPSocket::setDecoderInterfacePtr(DecoderInterfaceBase* ptr)
+{
+    if(decoderInterfacePtr!=nullptr)
+        delete decoderInterfacePtr;
+
+    decoderInterfacePtr=ptr;
+}
+
+
 CommunicationUDPSocket::~CommunicationUDPSocket()
 {
     std::cout << "~CommunicationUDPSocket()"<<std::endl;
@@ -319,6 +328,9 @@ CommunicationUDPSocket::~CommunicationUDPSocket()
 
     if(defaultSock !=INVALID_SOCKET)
         Close(defaultSock);
+
+    if(decoderInterfacePtr!=nullptr)
+        delete decoderInterfacePtr;
 
 #ifdef _WIN32
     //清除Windows socket环境
@@ -384,7 +396,10 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             std::vector<uint8_t> waitCheckVector(start, end);
             //std::cout << "UDP准备计算校验和数据的大小： "<<waitCheckVector.size()<<std::endl;
 
-            uint16_t checksum =codec.getChecksum(waitCheckVector);
+//            uint16_t checksum =codec.getChecksum(waitCheckVector);
+            uint16_t checksum=0;
+            if(decoderInterfacePtr!=nullptr)
+                checksum=decoderInterfacePtr->getChecksum(waitCheckVector);
 
             uint16_t BackChecksum = static_cast<uint16_t>(copyData[index+size-1]) |
                     (static_cast<uint16_t>(copyData[index +size-2]) << 8);
@@ -402,7 +417,10 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             ReceivedParameter readData;
             readData.communicationType=CommunicationType::UDPUnicastCommunicationType;
 
-            codec.decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+//            codec.decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+            if(decoderInterfacePtr!=nullptr)
+                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+
             //清除已处理数据
             data.erase(data.begin()+index, data.begin() +index+size);
             copyData.erase(copyData.begin()+index, copyData.begin()+index+size);//待测试

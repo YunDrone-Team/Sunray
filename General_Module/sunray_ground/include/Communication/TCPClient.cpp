@@ -309,6 +309,7 @@ void TCPClient::createThread()
                 ConnectStr temp=item;
                 CommunicationTCPSocket* TCPSocket=new CommunicationTCPSocket;
                 TCPSocket->InitSocket();
+                TCPSocket->setDecoderInterfacePtr(temp.decoderInterfacePtr);
                 int back;
 //                 back=TCPSocket->Bind(temp.ListeningPort);
 //                std::cout << "绑定端口号back "<<back<< std::endl;
@@ -378,7 +379,7 @@ void TCPClient::createThread()
 
 
 
-void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigned short targetPort)
+void TCPClient::createClient(unsigned short listeningPort,DecoderInterfaceBase* ptr,std::string ip,unsigned short targetPort)
 {   //重新连接服务器没处理
 
         //std::cout << "TCPClient::createClient "<<std::endl;
@@ -386,6 +387,7 @@ void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigne
         connectData.ListeningPort=listeningPort;
         connectData.TargetIP=ip;
         connectData.TargetPort=targetPort;
+        connectData.decoderInterfacePtr=ptr;
         connectData.State=false;
 
         std::unique_lock<std::mutex> lock(mutexConnect);

@@ -13,17 +13,17 @@
 #include <fcntl.h>
 #include "Communication/Cell.h"
 #include "Communication/MSG.h"
-#include "Communication/Codec.h"
+#include "Communication/DecoderInterfaceBase.h"
 
 class CommunicationUDPSocket
 {
 public:
     static CommunicationUDPSocket * getInstance();              //获取一个实例
-     boost::signals2::signal<void(std::vector<uint8_t>, std::string)> sigReadData;
-     boost::signals2::signal<void(ReceivedParameter)> sigUDPUnicastReadData;
+    boost::signals2::signal<void(std::vector<uint8_t>, std::string)> sigReadData;
+    boost::signals2::signal<void(ReceivedParameter)> sigUDPUnicastReadData;
 
-     boost::signals2::signal<void(int)> sigUDPError;
-
+    boost::signals2::signal<void(int)> sigUDPError;
+    void setDecoderInterfacePtr(DecoderInterfaceBase* ptr);
 
     bool InitSocket();                                        //初始化Socket
     int Bind(unsigned short port=9898);                         //绑定监听端口号
@@ -44,7 +44,7 @@ public:
 
     void setUDPReadState(bool state);   //设置UDP是否循环读取
 
-//    void sendUDPData(std::vector<char> sendData,std::string targetIp,unsigned short targetPort);
+    //    void sendUDPData(std::vector<char> sendData,std::string targetIp,unsigned short targetPort);
 
     void setRunState(bool state);
     int findStdVectorComponent(uint8_t a,uint8_t b,std::vector<uint8_t> Data);
@@ -83,7 +83,7 @@ private:
     char* _souIp;
     uint16_t* _linuxPort;
     unsigned short* _winPort;
-    Codec codec;
+    DecoderInterfaceBase* decoderInterfacePtr=nullptr;
     std::string multicastIP;
     SOCKET maxSock=INVALID_SOCKET;
     SOCKET defaultSock=INVALID_SOCKET;

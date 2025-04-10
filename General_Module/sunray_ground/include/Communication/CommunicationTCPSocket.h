@@ -13,7 +13,7 @@
 
 #include "Communication/Cell.h"
 #include "Communication/MSG.h"
-#include "Communication/Codec.h"
+#include "Communication/DecoderInterfaceBase.h"
 
 
 //单例设计取消
@@ -25,6 +25,8 @@ public:
 
     std::weak_ptr<CommunicationTCPSocket> next;
     CommunicationTCPSocket();
+    void setDecoderInterfacePtr(DecoderInterfaceBase* ptr);
+
 
     boost::signals2::signal<void(std::vector<uint8_t>, std::string)> sigReadData;
     boost::signals2::signal<void(ReceivedParameter)> sigTCPClientReadData;
@@ -68,9 +70,9 @@ public:
 
     SOCKET _sock;
     std::string connectIP;
-    Codec codec;
 
     std::unordered_map<SOCKET,std::vector<uint8_t>> TCPServerCacheDataMap;
+    DecoderInterfaceBase* decoderInterfacePtr=nullptr;
 
 
 private:
@@ -83,6 +85,7 @@ private:
     void TCPClientManagingData(std::vector<uint8_t>& data,std::string IP);
 
     std::vector<uint8_t> TCPClientCacheData;//TCPClient缓存数据，用于缓存数据未收全的情况
+
 
 
 //    std::atomic<bool> threadState;

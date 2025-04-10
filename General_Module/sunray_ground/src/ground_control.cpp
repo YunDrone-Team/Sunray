@@ -6,16 +6,16 @@
 void GroundControl::init(ros::NodeHandle &nh)
 {
 
-    nh.param<int>("uav_num", uav_num, 3);
-    nh.param<int>("ugv_num", ugv_num, 3);
-
-    nh.param<int>("simulation_num", simulation_num, 1);
+    nh.param<int>("uav_num", uav_num, 0);
     nh.param<int>("uav_id", uav_id, 1);
+    nh.param<string>("uav_name", uav_name, "uav");
+    nh.param<int>("simulation_num", simulation_num, 1);
+
+    nh.param<int>("ugv_num", ugv_num, 0);
     nh.param<int>("ugv_id", ugv_id, 1);
+    nh.param<string>("ugv_name", ugv_name, "ugv");
     nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0);
 
-    nh.param<string>("uav_name", uav_name, "uav");
-    nh.param<string>("ugv_name", ugv_name, "ugv");
     nh.param<string>("tcp_ip", tcp_ip, "0.0.0.0");
     nh.param<string>("udp_ip", udp_ip, "127.0.0.1");
     nh.param<string>("tcp_port", tcp_port, "8969");
@@ -38,18 +38,13 @@ void GroundControl::init(ros::NodeHandle &nh)
             topic_prefix + "/sunray/uav_waypoint", 1));
     }
 
-    if (ugv_num > 0)
+    if (uav_num > 0)
     {
-        for (int i = ugv_id; i <= ugv_id + ugv_simulation_num; i++)
-        {
-            std::string topic_prefix = "/" + ugv_name + std::to_string(i);
-
-            ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(
-                topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&GroundControl::ugv_state_cb, this, _1, i)));
-
-            ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(
-                                                            topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
-        }
+        std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
+        control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
+        uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, uav_id)));
+        uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1));
+        uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
     }
 
     for (int i = 1; i <= uav_num; i++)
@@ -58,11 +53,25 @@ void GroundControl::init(ros::NodeHandle &nh)
             continue;
 
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
-        uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(
-                                                   topic_prefix + "/sunray/uav_state", 1))));
+        uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray/uav_state", 1))));
+    }
 
-        // uav_state_pub.push_back(nh.advertise<sunray_msgs::UAVState>(
-        //     topic_prefix + "/sunray/uav_state", 1));
+    for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
+    {
+        std::string topic_prefix = "/" + ugv_name + std::to_string(i);
+
+        ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&GroundControl::ugv_state_cb, this, _1, i)));
+
+        ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
+    }
+
+    if (ugv_num > 0)
+    {
+        std::string topic_prefix = "/" + ugv_name + std::to_string(ugv_id);
+
+        ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&GroundControl::ugv_state_cb, this, _1, ugv_id)));
+
+        ugv_controlCMD_pub.insert(std::make_pair(ugv_id, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
     }
 
     for (int i = 1; i <= ugv_num; i++)
@@ -71,8 +80,7 @@ void GroundControl::init(ros::NodeHandle &nh)
             continue;
 
         std::string topic_prefix = "/" + ugv_name + std::to_string(i);
-        ugv_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(
-                                                   topic_prefix + "/sunray_ugv/ugv_state", 1))));
+        ugv_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1))));
     }
 
     // executiveDemo();
@@ -84,12 +92,14 @@ void GroundControl::init(ros::NodeHandle &nh)
     // qDebug()<<"TCPServer绑定端口号结果： "<<back;
     HeartbeatState = false; // 心跳包 TCPLinkState
 
+    tcpServer.setDecoderInterfacePtr(new Codec);
     tcpServer.Listen(30);
     tcpServer.sigTCPServerReadData.connect(boost::bind(&GroundControl::TCPServerCallBack, this, _1));
     tcpServer.sigLinkState.connect(boost::bind(&GroundControl::TCPLinkState, this, _1, _2));
     tcpServer.setRunState(true);
 
     udpSocket = CommunicationUDPSocket::getInstance();
+    udpSocket->setDecoderInterfacePtr(new Codec);
     udpSocket->Bind(static_cast<unsigned short>(udp_port));
     udpSocket->sigUDPUnicastReadData.connect(boost::bind(&GroundControl::UDPCallBack, this, _1));
     // udpSocket->InitSocket();
@@ -98,13 +108,14 @@ void GroundControl::init(ros::NodeHandle &nh)
 
 void GroundControl::TCPLinkState(bool state, std::string IP)
 {
-    // std::cout << "TCPLinkState: "<<state<<" IP："<<IP << std::endl;
+    std::cout << "TCPLinkState: " << state << " IP：" << IP << std::endl;
 
     std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
     if (state)
         GSIPHash.insert(IP);
     else
         GSIPHash.erase(IP);
+    std::cout << "TCPLinkState end" << std::endl;
 }
 
 uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
@@ -166,22 +177,17 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
             // std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
         }
 
-        if (ugv_num <= 0)
-            break;
-
-        for (int i = ugv_id; i <= ugv_id + ugv_simulation_num; i++)
+        for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
         {
             backData.ack.init();
             backData.ack.robotID = i;
             backData.ack.ID = i;
             backData.ack.agentType = 1;
             backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
-            // std::cout << "应答数据: " << int(backData.ack.ID) << std::endl;
             back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            // udp_ground_port = readData.data.search.port;
-            // udp_ip = readData.ip;
-             std::cout << "发送结果: " << back << " ugv_num " << ugv_num << std::endl;
+
+            // std::cout << "发送结果: " << back << " ugv_num " << ugv_num << std::endl;
         }
 
         break;
@@ -321,6 +327,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     float pitch;
     uint32_t time_stamp;
     uint8_t robot_id;
+    std::cout << "GroundControl::TCPServerCallBack 1" << std::endl;
 
     std::cout << "GroundControl::TCPServerCallBack:" << readData.messageID << std::endl;
     switch (readData.messageID)
@@ -642,28 +649,25 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
         // std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl;
     }
 
-    if (ugv_num > 0)
+    for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
     {
-        for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
+
         {
-
-            {
-                std::lock_guard<std::mutex> lock(_mutexUDP);
-                // 无人车车间组播链路发送
-                int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), udp_port);
-            }
-
-            std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
-            for (const auto &ip : GSIPHash)
-            {
-                int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), ip, udp_ground_port);
-                if (sendBack < 0)
-                    tempVec.push_back(ip);
-                // std::cout << "无人车状态发送结果： " << sendBack<<" ip "<<ip << std::endl;
-            }
-
-            // std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl;
+            std::lock_guard<std::mutex> lock(_mutexUDP);
+            // 无人车车间组播链路发送
+            int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), udp_port);
         }
+
+        std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+        for (const auto &ip : GSIPHash)
+        {
+            int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), ip, udp_ground_port);
+            if (sendBack < 0)
+                tempVec.push_back(ip);
+            // std::cout << "无人车状态发送结果： " << sendBack<<" ip "<<ip << std::endl;
+        }
+
+        // std::cout << "udp状态发送结果： " << back<<" port "<<udp_port << std::endl;
     }
 
     std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
@@ -687,7 +691,7 @@ void GroundControl::HeartRate(const ros::TimerEvent &e)
             tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
         }
 
-        for (int i = ugv_id; i <= ugv_id + ugv_simulation_num; i++)
+        for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
         {
             Heartbeatdata.heartbeat.robotID = i;
             Heartbeatdata.heartbeat.agentType = UGVType;
