@@ -79,6 +79,10 @@ add_executable(error_estimation utils/error_estimation.cpp)
 add_dependencies(error_estimation sunray_control_gencpp)
 target_link_libraries(error_estimation ${catkin_LIBRARIES})
 
+add_executable(positioning_accuracy utils/positioning_accuracy.cpp)
+add_dependencies(positioning_accuracy sunray_control_gencpp)
+target_link_libraries(positioning_accuracy ${catkin_LIBRARIES})
+
 # add_executable(uav_control_mode_pub utils/uav_control_mode_pub.cpp)
 # add_dependencies(uav_control_mode_pub sunray_control_gencpp)
 # target_link_libraries(uav_control_mode_pub ${catkin_LIBRARIES})
