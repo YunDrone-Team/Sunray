@@ -273,7 +273,7 @@
     <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
       <commandTopic>/cmd_vel</commandTopic>
       <odometryTopic>/car_odom</odometryTopic>
-      <odometryFrame>odom</odometryFrame>
+      <odometryFrame>world</odometryFrame>
       <leftFrontJoint>left_front_wheel_joint</leftFrontJoint>
       <rightFrontJoint>right_front_wheel_joint</rightFrontJoint>
       <leftRearJoint>right_after_wheel_joint</leftRearJoint>

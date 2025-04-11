@@ -14,6 +14,11 @@
 #include <sunray_msgs/PX4State.h>
 #include <sunray_msgs/TextInfo.h>
 #include <sunray_msgs/UAVWayPoint.h>
+#include <sunray_msgs/UGVControlCMD.h>
+#include <sunray_msgs/UGVState.h>
+
+
+
 
 // #include <sunray_msgs/FMTState.h>
 #include <sunray_msgs/Heartbeat.h>
@@ -31,11 +36,14 @@
 #include <sunray_msgs/RcState.h>
 
 // std_msgs
+#include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/UInt32.h>
 #include <std_msgs/Empty.h>
 #include "std_msgs/Int32.h"
 #include "std_msgs/Bool.h"
+#include <std_msgs/ColorRGBA.h>
+#include <std_msgs/String.h>
 
 // sensor_msgs
 #include <sensor_msgs/BatteryState.h>

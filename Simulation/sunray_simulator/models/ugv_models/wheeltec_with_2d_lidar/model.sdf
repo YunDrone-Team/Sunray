@@ -51,7 +51,7 @@
       <!-- Add a ray sensor, and give it a name -->
       <sensor type="ray" name="head_hokuyo_sensor">
         <pose>0 0 0 0 0 0</pose>
-        <visualize>true</visualize>
+        <visualize>false</visualize>
         <update_rate>10</update_rate>
         <ray>
           <scan>
@@ -74,9 +74,10 @@
           </noise>
         </ray>
         <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
-          <topicName>/scan</topicName>
-          <frameName>/base_link</frameName>
+          <topicName>/sunray/ugv1/scan</topicName>
+          <frameName>/ugv1/base_link</frameName>
         </plugin>
+
       </sensor>
     </link>
 

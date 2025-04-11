@@ -51,7 +51,7 @@ enum class UGVControlMode // 无人车控制模式
 {
   INIT              = 0,     // 初始模式
   HOLD              = 1,     //
-  POS_CONTROL       = 2,     //
+  POS_CONTROL_ENU       = 2,     //
   POS_CONTROL_BODY  = 3,     //
   VEL_CONTROL       = 4,     //
   VEL_CONTROL_BODY  = 5,
