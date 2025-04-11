@@ -1,9 +1,0 @@
-<launch>
-  <!-- 启动Gazebo -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find sunray_ugv_control)/launch/bookstore.world"/>
-  </include>
-
-  <arg name="rivz_config" default="$(find sunray_ugv_control)/launch/rviz.rviz"/>
-  <node type="rviz" name="rviz_ugv" pkg="rviz" args="-d $(arg rivz_config)"/>
-</launch>

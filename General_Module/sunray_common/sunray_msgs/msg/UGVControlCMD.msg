@@ -2,15 +2,15 @@ std_msgs/Header header
 
 ## 控制命令
 uint8 cmd
-## cmd 枚举
-uint8 INIT=0
-uint8 HOLD=1
-uint8 POS_CONTROL=2
-## 以下需要有定位的情况下才支持
-uint8 POS_CONTROL_BODY=3
-uint8 VEL_CONTROL_ENU=4
-uint8 VEL_CONTROL_BODY=5
-uint8 Point_Control_with_Astar=6
+
+## 控制命令枚举
+uint8 INIT=0                        ## 初始化，不做任何控制
+uint8 HOLD=1                        ## 当前点停止
+uint8 POS_CONTROL_ENU=2             ## 惯性系位置控制, 需要配合desired_pos和desired_yaw使用       
+uint8 POS_CONTROL_BODY=3            ## 车体系位置控制, 需要配合desired_pos和desired_yaw使用
+uint8 VEL_CONTROL_ENU=4             ## 惯性系速度控制, 需要配合desired_vel和desired_yaw使用
+uint8 VEL_CONTROL_BODY=5            ## 车体系速度控制, 需要配合desired_vel和desired_yaw使用
+uint8 Point_Control_with_Astar=6    ## Astar避障控制
 
 ## 偏航角类型 0 角速度 1 角度（需要有定位支持）
 uint8 yaw_type
