@@ -46,6 +46,7 @@ private:
     string ugv_name;                               // 名称
     string ugv_prefix;                             // 名称前缀
     string topic_prefix;                           // 话题前缀
+    string vel_topic;                               // 速度话题
     bool flag_printf;                              // 是否打印 - 通过参数配置
     bool goal_set;                                 // 是否有规划目标点
     float resolution;                              // 地图分辨率

@@ -177,6 +177,11 @@ void add_wall(SquareGrid &grid, int x, int y)
     grid.walls.insert(GridLocation{x, y});
 }
 
+void remove_wall(SquareGrid &grid, int x, int y)
+{
+    grid.walls.erase(GridLocation{x, y});
+}
+
 // 带权网格 (GridWithWeights)
 // 继承SquareGrid
 // 添加森林区域(移动成本为5)

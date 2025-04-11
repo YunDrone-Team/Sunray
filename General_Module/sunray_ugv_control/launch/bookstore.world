@@ -29,8 +29,8 @@
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
     <model name='target'>  <!--模型名字-->
-    	<pose frame=''>1 1 0  0 0 0</pose>  <!--模型相对于世界坐标系所放位置-->
-      <include>
+    	<pose frame=''>0 0 0  0 0 0</pose>  <!--模型相对于世界坐标系所放位置-->
+    <include>
       <uri>model://wheeltec_with_2d_lidar</uri>
     </include>
     </model>

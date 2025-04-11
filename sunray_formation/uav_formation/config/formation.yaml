@@ -1,17 +1,5 @@
 uav_num: 3
 
-# users:
-#   - name: Alice
-#     age: 30
-#     email: alice@example.com
-#   - name: Bob
-#     age: 25
-#     email: bob@example.com
-#   - name: Charlie
-#     age: 35
-#     email: charlie@example.com
-
-
 formations:
 # 三角阵型
   - name: triangle
