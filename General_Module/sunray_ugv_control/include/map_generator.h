@@ -3,10 +3,7 @@
 
 #include "Astar.h"
 #include "ros/ros.h"
-#include "sensor_msgs/PointCloud2.h"
 
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.h>
@@ -17,6 +14,7 @@
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
 
+#include "sensor_msgs/PointCloud2.h"
 #include <sensor_msgs/LaserScan.h>
 #include <laser_geometry/laser_geometry.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -33,23 +31,19 @@ public:
     ~MapGenerator() {};
 
     void init(ros::NodeHandle &nh, float map_min_x, float map_min_y, float map_max_x, float map_max_y, float map_resolution = 0.1, float inflate_size = 0);
-    void PointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr &msg);
-    void updateMapFromPointCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);
     void updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr &msg);
     void odomCallback(const nav_msgs::Odometry::ConstPtr &msg);
     void ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg);
     void PublishOctomap();
-    void PublishOccupancyMap();
-    void inflateOccupancyMap();
+    nav_msgs::OccupancyGrid projectOctomapSlice(const octomap::OcTree &octree, double height);
+    void inflateOccupancyGrid(nav_msgs::OccupancyGrid &grid, double inflation_radius, double resolution);
 
     octomap_msgs::Octomap octomap_msg;
-    nav_msgs::OccupancyGrid occupancy_grid_msg;
+    nav_msgs::OccupancyGrid octomap_grid_msg;
     nav_msgs::Path path_msg;
-    GridWithWeights *grid;
+    GridWithWeights *astar_grid;
 
     octomap::OcTree *tree;
-    octomap::OcTree *global_map;    // 没用上
-    octomap::OcTree *local_map;     // 没用上
     nav_msgs::Odometry odom;
     tf::StampedTransform transform;
     laser_geometry::LaserProjection projector;
@@ -68,6 +62,9 @@ public:
     ros::Subscriber laser_sub;
     ros::Publisher octomap_pub;
     ros::Publisher occupancy_pub;
+
+    // 定时器
+    ros::Timer timer;
 };
 
 void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, float map_max_x, float map_max_y, float map_resolution, float inflate_size)
@@ -109,20 +106,8 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     tree->setBBXMin(minPt);
     tree->setBBXMax(maxPt);
 
-    grid = new GridWithWeights(static_cast<int>((map_max_x - map_min_x) / map_resolution),
+    astar_grid = new GridWithWeights(static_cast<int>((map_max_x - map_min_x) / map_resolution),
                                static_cast<int>((map_max_y - map_min_y) / map_resolution));
-
-    // 设置 OccupancyGrid 参数
-    occupancy_grid_msg.info.width = static_cast<unsigned int>((this->map_max_x - this->map_min_x) / this->map_resolution);
-    occupancy_grid_msg.info.height = static_cast<unsigned int>((this->map_max_y - this->map_min_y) / this->map_resolution);
-    occupancy_grid_msg.info.resolution = this->map_resolution;
-    occupancy_grid_msg.info.origin.position.x = this->map_min_x;
-    occupancy_grid_msg.info.origin.position.y = this->map_min_y;
-    occupancy_grid_msg.info.origin.position.z = 0.0;
-    occupancy_grid_msg.info.origin.orientation.w = 1.0; // 无旋转
-
-    // 初始化栅格数据（默认值 -1 表示未知）
-    occupancy_grid_msg.data.resize(occupancy_grid_msg.info.width * occupancy_grid_msg.info.height, -1);
 };
 
 void MapGenerator::PublishOctomap()
@@ -130,42 +115,9 @@ void MapGenerator::PublishOctomap()
     octomap_msg.header.frame_id = "odom";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
     octomap_pub.publish(octomap_msg);
-}
 
-void MapGenerator::PublishOccupancyMap()
-{
-    occupancy_grid_msg.header.frame_id = "odom";
-    occupancy_grid_msg.header.stamp = ros::Time::now();
-
-    // // 6. 遍历 OctoMap，投影到 2D 平面（例如 z=0 附近）
-    // double z_min = 0.0; // 地面高度下限
-    // double z_max = 1;   // 地面高度上限（可根据机器人高度调整）
-
-    // for (octomap::OcTree::leaf_iterator it = tree->begin_leafs(); it != tree->end_leafs(); ++it)
-    // {
-    //     // std::cout << "it.getZ()" << it.getZ() << std::endl;
-    //     if (it.getZ() >= z_min && it.getZ() <= z_max)
-    //     {
-    //         // 获取体素的 2D 坐标（忽略 z 轴）
-    //         int grid_x = static_cast<int>((it.getX() - min_x) / occupancy_grid_msg.info.resolution);
-    //         int grid_y = static_cast<int>((it.getY() - min_y) / occupancy_grid_msg.info.resolution);
-
-    //         // 检查坐标是否在合法范围内
-    //         if (grid_x >= 0 && grid_x < occupancy_grid_msg.info.width && grid_y >= 0 && grid_y < occupancy_grid_msg.info.height)
-    //         {
-    //             // 将占据概率转换为 OccupancyGrid 的值（0-100）
-    //             double occupancy = it->getOccupancy();
-    //             int8_t value = (occupancy > tree->getOccupancyThres()) ? 100 : 0;
-    //             occupancy_grid_msg.data[grid_y * occupancy_grid_msg.info.width + grid_x] = value;
-    //         }
-    //     }
-    // }
-
-    occupancy_pub.publish(occupancy_grid_msg);
-}
-
-void MapGenerator::updateMapFromPointCloud(const sensor_msgs::PointCloud2::ConstPtr &msg)
-{
+    octomap_grid_msg = projectOctomapSlice(*tree, 0);
+    occupancy_pub.publish(octomap_grid_msg);
 }
 
 void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr &msg)
@@ -189,50 +141,20 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
     pcl::fromPCLPointCloud2(pcl_cloud, *temp_cloud);
     pcl_ros::transformPointCloud(*temp_cloud, *cloud_transformed, transform);
 
-    occupancy_grid_msg.data.resize(occupancy_grid_msg.info.width * occupancy_grid_msg.info.height, -1);
-    grid->clear_walls();
+    // astar_grid->clear_walls();
+    octomap::Pointcloud octoCloud;
     for (const auto &point : *cloud_transformed)
     {
-        // Extract XYZ coordinates and RGB color from the point
-        // float x = point.x;
-        // float y = point.y;
-        // float z = point.z;
         // 过滤距离自己很近的点
-        if (abs(point.x - odom.pose.pose.position.x) < 0.4 || abs(point.y - odom.pose.pose.position.y) < 0.4)
+        if (abs(point.x - odom.pose.pose.position.x) < 0.2 || abs(point.y - odom.pose.pose.position.y) < 0.2)
         {
             continue;
         }
-
-        // Convert color to octomap::ColorOcTreeNode
-        octomap::point3d octomap_point(point.x, point.y, point.z);
-
-        // Insert the node into the octomap
-        tree->updateNode(octomap_point, true);
-
-        for (float x = -this->inflate_size; x <= this->inflate_size; x += 0.05)
-        {
-            for (float y = -this->inflate_size; y <= this->inflate_size; y += 0.05)
-            {
-                pcl::PointXYZ new_point;
-                new_point.x = point.x + x;
-                new_point.y = point.y + y;
-
-                int grid_x = static_cast<int>((new_point.x - this->map_min_x) / this->map_resolution);
-                int grid_y = static_cast<int>((new_point.y - this->map_min_y) / this->map_resolution);
-
-                // 检查坐标是否在合法范围内
-                if (grid_x >= 0 && grid_x < occupancy_grid_msg.info.width && grid_y >= 0 && grid_y < occupancy_grid_msg.info.height)
-                {
-                    occupancy_grid_msg.data[grid_y * occupancy_grid_msg.info.width + grid_x] = 100;
-                    add_wall(*grid, grid_x, grid_y);
-                }
-            }
-        }
+        octoCloud.push_back(octomap::point3d(point.x, point.y, point.z));
     }
-
+    tree->insertPointCloud(octoCloud, octomap::point3d(0.0, 0.0, 0.0));
     octomap_msg.header.frame_id = "odom";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
-    PublishOccupancyMap();
     PublishOctomap();
     // std::cout << "Map updated from point cloud." << std::endl;
 }
@@ -263,4 +185,122 @@ void MapGenerator::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
     transform.setRotation(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w));
 }
 
-// #endif // MAP_GENERATOR_H
+
+nav_msgs::OccupancyGrid MapGenerator::projectOctomapSlice(const octomap::OcTree &octree, double height)
+{
+    // 设置OccupancyGrid参数
+    nav_msgs::OccupancyGrid grid;
+    grid.header.frame_id = "odom"; // 根据实际情况设置
+    grid.info.resolution = this->map_resolution;
+    grid.info.width = static_cast<unsigned int>((this->map_max_x - this->map_min_x) / this->map_resolution);
+    grid.info.height = static_cast<unsigned int>((this->map_max_y - this->map_min_y) / this->map_resolution);
+    grid.info.origin.position.x = this->map_min_x;
+    grid.info.origin.position.y = this->map_min_y;
+    grid.info.origin.position.z = 0;
+    grid.info.origin.orientation.w = 1.0;
+
+    // 初始化网格数据(-1表示未知)
+    grid.data.resize(grid.info.width * grid.info.height, -1);
+
+    // 定义高度范围(考虑一定厚度)
+    double z_min = height - this->map_resolution;
+    double z_max = height + this->map_resolution;
+
+    // 遍历所有叶子节点
+    for (octomap::OcTree::leaf_iterator it = octree.begin_leafs();
+         it != octree.end_leafs(); ++it)
+    {
+        // 检查节点是否在指定高度范围内和地图范围内
+        if (it.getZ() >= z_min && it.getZ() <= z_max && it.getX() >= this->map_min_x && it.getX() <= this->map_max_x && it.getY() >= this->map_min_y && it.getY() <= this->map_max_y)
+        {
+            // 计算网格坐标
+            int grid_x = (it.getX() - this->map_min_x) / this->map_resolution;
+            int grid_y = (it.getY() - this->map_min_y) / this->map_resolution;
+
+            // 检查坐标是否在范围内
+            if (grid_x >= 0 && grid_x < grid.info.width &&
+                grid_y >= 0 && grid_y < grid.info.height)
+            {
+                // 设置占用值(0-100)
+                int index = grid_y * grid.info.width + grid_x;
+                if (octree.isNodeOccupied(*it))
+                {
+                    grid.data[index] = 100; // 占用
+                    // 占用表示障碍物 添加到astar_grid中
+                    add_wall(*astar_grid, grid_x, grid_y);
+                }
+                else
+                {
+                    grid.data[index] = 0; // 空闲
+                    remove_wall(*astar_grid, grid_x, grid_y);
+                }
+                
+            }
+        }
+    }
+
+    // 膨胀处理
+    if (this->inflate_size > 0)
+    {
+        inflateOccupancyGrid(grid, this->inflate_size, this->map_resolution);
+    }
+
+    return grid;
+}
+
+void MapGenerator::inflateOccupancyGrid(nav_msgs::OccupancyGrid &grid, double inflation_radius, double resolution)
+{
+    // 计算膨胀半径对应的像素数
+    int inflation_cells = std::ceil(inflation_radius / resolution);
+
+    // 创建临时网格用于膨胀
+    std::vector<int8_t> inflated_data = grid.data;
+
+    // 定义8邻域方向
+    const int dx8[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+    const int dy8[] = {-1, -1, -1, 0, 0, 1, 1, 1};
+
+    // 遍历所有占用单元格
+    for (int y = 0; y < grid.info.height; ++y)
+    {
+        for (int x = 0; x < grid.info.width; ++x)
+        {
+            int index = y * grid.info.width + x;
+
+            // 如果是占用单元格
+            if (grid.data[index] == 100)
+            {
+                add_wall(*astar_grid, x, y);
+                // 膨胀到周围单元格
+                for (int r = 1; r <= inflation_cells; ++r)
+                {
+                    for (int dir = 0; dir < 8; ++dir)
+                    {
+                        int nx = x + dx8[dir] * r;
+                        int ny = y + dy8[dir] * r;
+
+                        if (nx >= 0 && nx < grid.info.width &&
+                            ny >= 0 && ny < grid.info.height)
+                        {
+                            int nindex = ny * grid.info.width + nx;
+
+                            // 只膨胀到空闲或未知区域
+                            if (inflated_data[nindex] != 100)
+                            {
+                                // 计算距离并设置衰减值
+                                double distance = r * resolution;
+                                if (distance <= inflation_radius)
+                                {
+                                    inflated_data[nindex] = 100; // 或者使用衰减值
+                                    add_wall(*astar_grid, nx, ny);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    grid.data = inflated_data;
+}

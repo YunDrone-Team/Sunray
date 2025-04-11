@@ -4,15 +4,16 @@
         <param name="flag_printf" value="true" />
         <param name="pose_source" value="2" />
         <param name="ugv_control_param/Kp_xy" value="1.4" />
-        <param name="ugv_control_param/Kp_yaw" value="0.9" />
+        <param name="ugv_control_param/Kp_yaw" value="1.5" />
         <param name="ugv_control_param/max_vel_xy" value="0.5" />
-        <param name="ugv_control_param/max_vel_yaw" value="50.0 / 180.0 * M_PI" />
+        <param name="ugv_control_param/max_vel_yaw" value="1.57" />
         <param name="ugv_geo_fence/max_x" value="10.0" />
         <param name="ugv_geo_fence/min_x" value="-10.0" />
         <param name="ugv_geo_fence/max_y" value="10.0" />
         <param name="ugv_geo_fence/min_y" value="-10.0" />
         <param name="resolution" value="0.4" />
-        <param name="inflate" value="0.2" />
+        <param name="inflate" value="0.4" />
+        <param name="vel_topic" value="/cmd_vel" />
 
         <!-- map generator 模块使用 -->
         <!-- odom_type 1:从 odom_topic中获取 其他:从ugv_state中获取-->

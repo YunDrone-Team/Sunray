@@ -22,13 +22,15 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     nh.param<float>("ugv_geo_fence/max_y", ugv_geo_fence.max_y, 10.0);
     nh.param<float>("ugv_geo_fence/min_y", ugv_geo_fence.min_y, -10.0);
     // 地图分辨率
-    nh.param<float>("resolution", resolution, 0.6);
+    nh.param<float>("resolution", resolution, 0.4);
     // 地图膨胀参数
-    nh.param<float>("inflate", inflate, 0.2);
+    nh.param<float>("inflate", inflate, 0.4);
+    // 输出话题
+    nh.param<string>("vel_topic", vel_topic, "/cmd_vel");
 
     // 计算地图网格数量
-    int grid_w = static_cast<int>((ugv_geo_fence.max_x - ugv_geo_fence.min_x) / resolution) + 1;
-    int grid_h = static_cast<int>((ugv_geo_fence.max_y - ugv_geo_fence.min_y) / resolution) + 1;
+    int grid_w = static_cast<int>((ugv_geo_fence.max_x - ugv_geo_fence.min_x) / resolution);
+    int grid_h = static_cast<int>((ugv_geo_fence.max_y - ugv_geo_fence.min_y) / resolution);
     // 初始化地图
     map_gen.init(nh, ugv_geo_fence.min_x, ugv_geo_fence.min_y, ugv_geo_fence.max_x, ugv_geo_fence.max_y, resolution, inflate);
     // 初始化A*算法
@@ -67,7 +69,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state_pub = nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1);
     // 【发布】控制指令（机体系，单位：米/秒，Rad/秒）本节点 -> ugv_driver
     // ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/sunray_ugv/" + ugv_prefix + "/cmd_vel", 1);
-    ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/ugv1/cmd_vel", 1);
+    ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>(vel_topic, 1);
 
     // 【发布】无人车marker 本节点 -> RVIZ(仿真)
     ugv_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray_ugv/mesh", 1);
@@ -315,7 +317,6 @@ void UGV_CONTROL::pos_control(double x_ref, double y_ref, double yaw_ref)
     desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, 0.0);
     desired_vel.linear.y = constrain_function(desired_vel.linear.y, ugv_control_param.max_vel_xy, 0.0);
     desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, 0.01);
-
     // 发布控制指令
     ugv_cmd_vel_pub.publish(desired_vel);
 }
@@ -365,10 +366,10 @@ void UGV_CONTROL::path_control()
     {
         x_ref = astar_path[0].x * this->resolution + this->ugv_geo_fence.min_x;
         y_ref = astar_path[0].y * this->resolution + this->ugv_geo_fence.min_y;
-        pos_control_diff(x_ref, y_ref, 0);
+        // pos_control_diff(x_ref, y_ref, 0);
         // 当前位置到目标点需要的偏航角 效果不好 需要修改
         double yaw_ref = atan2(y_ref - ugv_state.position[1], x_ref - ugv_state.position[0]);
-        pos_control(x_ref, y_ref, yaw_ref);
+        pos_control(x_ref, y_ref, 0);
     }
     else
     {
@@ -462,7 +463,7 @@ void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
         int goal_y = (static_cast<int>((planner_goal.pose.position.y - this->ugv_geo_fence.min_y) / this->resolution));
         astar.setGoal(goal_x, goal_y);
         astar.setStart(start_x, start_y);
-        astar.setGraph(map_gen.grid);
+        astar.setGraph(map_gen.astar_grid);
         astar.a_star_search();
         astar_path.clear();
         astar_path = astar.reconstruct_path();
