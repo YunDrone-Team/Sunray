@@ -60,7 +60,7 @@
     <model name='target'>  <!--模型名字-->
     	<pose frame=''>1 1 0  0 0 0</pose>  <!--模型相对于世界坐标系所放位置-->
       <include>
-      <uri>model://tag_car</uri>
+      <uri>model://tag_car_down</uri>
     </include>
     </model>
 
@@ -78,8 +78,8 @@
             </geometry>
             <material>
               <script>
-                <uri>model://texture.material</uri>
-                <name>sunray_world_1</name>
+                <uri>model://yundrone_logo/yundrone_logo.material</uri>
+                <name>yundrone_logo</name>
               </script>
             </material>
         </visual>

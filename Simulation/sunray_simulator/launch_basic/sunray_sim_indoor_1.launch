@@ -5,7 +5,7 @@
     <!-- vehicle model and world -->
     <arg name="vehicle" default="sunray300_with_2dlidar_cam"/>
     <arg name="gazebo_enable" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/indoor_1.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/indoor.world"/>
 
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>
