@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="sunray_ugv_control" type="ugv_terminal_control" name="terminal_control" output="screen" />
+</launch>

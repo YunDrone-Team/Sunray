@@ -67,7 +67,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state_pub = nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1);
     // 【发布】控制指令（机体系，单位：米/秒，Rad/秒）本节点 -> ugv_driver
     // ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/sunray_ugv/" + ugv_prefix + "/cmd_vel", 1);
-    ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
+    ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/ugv1/cmd_vel", 1);
 
     // 【发布】无人车marker 本节点 -> RVIZ(仿真)
     ugv_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray_ugv/mesh", 1);
@@ -160,14 +160,18 @@ void UGV_CONTROL::mainloop()
     case sunray_msgs::UGVControlCMD::POS_CONTROL:
         // 位置控制算法
         // pos_control(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
+        pos_control(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
+        break;
+    case sunray_msgs::UGVControlCMD::POS_CONTROL_BODY:
+        // 位置控制算法
+        // pos_control(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
         pos_control_diff(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
         break;
-
     // VEL_CONTROL_BODY：车体系速度控制，无人车按照期望的速度在车体系移动（期望速度由外部指令赋值）
     case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY:
         // 控制指令限幅（防止外部指令给了一个很大的数）
         desired_vel.linear.x = constrain_function(current_ugv_cmd.desired_vel[0], ugv_control_param.max_vel_xy, 0.0);
-        desired_vel.linear.y = constrain_function(current_ugv_cmd.desired_vel[1], ugv_control_param.max_vel_xy, 0.0);
+        desired_vel.linear.y = 0.0;
         desired_vel.angular.z = constrain_function(current_ugv_cmd.angular_vel, ugv_control_param.max_vel_yaw, 0.01);
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
@@ -194,41 +198,53 @@ void UGV_CONTROL::mainloop()
 void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
 {
     current_ugv_cmd = *msg;
-
+    
     switch (msg->cmd)
     {
     // 收到INIT指令
-    case sunray_msgs::UGVControlCMD::INIT:
+    case sunray_msgs::UGVControlCMD::INIT://0
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: INIT!";
         cout << BLUE << text_info.data << TAIL << endl;
         break;
     // 收到HOLD指令
-    case sunray_msgs::UGVControlCMD::HOLD:
+    case sunray_msgs::UGVControlCMD::HOLD://1
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: HOLD!";
         cout << BLUE << text_info.data << TAIL << endl;
         break;
     // 收到POS_CONTROL指令
-    case sunray_msgs::UGVControlCMD::POS_CONTROL:
+    case sunray_msgs::UGVControlCMD::POS_CONTROL://2
         desired_position.x = msg->desired_pos[0];
         desired_position.y = msg->desired_pos[1];
         desired_yaw = msg->desired_yaw;
-        //  text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL!";
-        //  cout << BLUE << text_info.data << TAIL << endl;
+        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL!";
+        cout << BLUE << text_info.data << TAIL << endl;
         break;
     // 收到VEL_CONTROL_BODY指令：此处不做任何处理，在主循环中处理
-    case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY:
-        //  text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
-        //  cout << BLUE << text_info.data << TAIL << endl;
+    case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY://5
+        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
+        cout << BLUE << text_info.data << TAIL << endl;
         break;
     // 收到VEL_CONTROL_ENU指令：此处不做任何处理，在主循环中处理
-    case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU:
-        //  text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
-        //  cout << BLUE << text_info.data << TAIL << endl;
+    case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU://4
+        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
+        cout << BLUE << text_info.data << TAIL << endl;
+        break;
+    //收到POS_CONTROL_BODY指令
+    case sunray_msgs::UGVControlCMD::POS_CONTROL_BODY://3
+        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
+        cout << BLUE << text_info.data << TAIL << endl;
+        break;
+    case sunray_msgs::UGVControlCMD::Point_Control_with_Astar://6
+        planner_goal.pose.position.x = msg->desired_pos[0];
+        planner_goal.pose.position.y = msg->desired_pos[1];
+        goal_set = true; // 触发路径规划
+        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
+        cout << BLUE << text_info.data << TAIL << endl;
         break;
     default:
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Wrong!";
         cout << RED << text_info.data << TAIL << endl;
-        return;
+        return; 
         break;
     }
     // text_info_pub.publish(text_info);

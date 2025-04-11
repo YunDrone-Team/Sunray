@@ -58,7 +58,14 @@ target_link_libraries(map_generator
                         )
 
 add_executable(astar src/Astar.cpp)
-target_link_libraries(astar ${catkin_LIBRARIES})        
+target_link_libraries(astar ${catkin_LIBRARIES})    
+
+add_executable(ugv_terminal_control src/ugv_terminal_control.cpp)
+target_link_libraries(ugv_terminal_control
+    ${catkin_LIBRARIES}
+    octomap
+    octomath
+)
 
 add_executable(ugv_control_node src/ugv_control_node.cpp)
 target_link_libraries(ugv_control_node 
