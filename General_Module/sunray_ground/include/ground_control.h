@@ -87,6 +87,10 @@ private:
     ros::Timer recvMsgTimer;
     ros::Timer sendMsgTimer;
     ros::Timer HeartbeatTimer;
+    ros::Timer CheckChildProcessTimer;
+    ros::Timer InterAircraftTimer;
+    ros::Timer SendGroundStationDataTimer;
+    ros::Timer InterVehicleTimer;
 
     TcpServer tcp_server;
     // UDPServer udp_server;
@@ -108,6 +112,13 @@ private:
     uint8_t getPX4ModeEnum(std::string modeStr);
     void sendMsgCb(const ros::TimerEvent &e);
     void HeartRate(const ros::TimerEvent &e);
+    void CheckChildProcessCallBack(const ros::TimerEvent &e);
+    void sendInterAircraftStatusInformation(const ros::TimerEvent &e);
+    void sendGroundStationData (const ros::TimerEvent &e);
+    void sendInterVehicleStatusInformation(const ros::TimerEvent &e);
+
+
+
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
 
