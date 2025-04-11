@@ -85,8 +85,12 @@ void GroundControl::init(ros::NodeHandle &nh)
 
     // executiveDemo();
 
-    sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
+    // sendMsgTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendMsgCb, this);
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &GroundControl::HeartRate, this);
+    CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &GroundControl::CheckChildProcessCallBack, this);
+    InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendInterAircraftStatusInformation, this);
+    SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendGroundStationData, this);
+    InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendInterVehicleStatusInformation, this);
 
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
     // qDebug()<<"TCPServer绑定端口号结果： "<<back;
@@ -108,14 +112,17 @@ void GroundControl::init(ros::NodeHandle &nh)
 
 void GroundControl::TCPLinkState(bool state, std::string IP)
 {
-    std::cout << "TCPLinkState: " << state << " IP：" << IP << std::endl;
 
     std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
     if (state)
+    {
         GSIPHash.insert(IP);
-    else
+        HeartbeatState = true; // 心跳包
+    }else{
         GSIPHash.erase(IP);
-    std::cout << "TCPLinkState end" << std::endl;
+        if (GSIPHash.empty())
+            HeartbeatState = false; // 心跳包
+    }
 }
 
 uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
@@ -155,7 +162,6 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
     int back;
     // std::cout << " GroundControl::UDPCallBack: " << (int)readData.messageID << std::endl;
 
-    // std::cout << "readData.communicationType: " << (int)readData.communicationType << "  " << readData.messageID << std::endl;
     switch (readData.messageID)
     {
     case MessageID::SearchMessageID:
@@ -252,9 +258,7 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
     {
         perror("fork failed");
         // return EXIT_FAILURE;
-    }
-    else if (pid == 0)
-    {
+    }else if (pid == 0){
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
@@ -266,9 +270,7 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }
-    else
-    {
+    }else{
 
         demoPID = pid;
         printf("This is the parent process. Child PID: %d\n", pid);
@@ -284,9 +286,7 @@ void GroundControl::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }
-    else if (pid == 0)
-    {
+    }else if (pid == 0){
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
         // 由于source是bash的内建命令，不能直接在execlp中调用它
@@ -304,9 +304,7 @@ void GroundControl::executiveDemo(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }
-    else
-    {
+    }else{
         // 父进程
         int status;
 
@@ -318,42 +316,16 @@ void GroundControl::executiveDemo(std::string orderStr)
 void GroundControl::TCPServerCallBack(ReceivedParameter readData)
 {
     // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
-    //  std::cout << "TCP网络服务端收到数据：" << readData.data << std::endl;
-    //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
-    //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.length() << std::endl;
-    //  std::cout << "TCP网络服务端收到数据长度：" << readData.data.size() << std::endl;
-
+   
     float roll;
     float pitch;
     uint32_t time_stamp;
     uint8_t robot_id;
-    std::cout << "GroundControl::TCPServerCallBack 1" << std::endl;
 
     std::cout << "GroundControl::TCPServerCallBack:" << readData.messageID << std::endl;
     switch (readData.messageID)
     {
-    case MessageID::HeartbeatMessageID:
-        // std::cout << "TCPServer心跳包接收到机器人id： " << (int)readData.data.heartbeat.robotID << std::endl;
-        // std::cout << "TCPServer心跳包接收到时间戳 " << readData.data.heartbeat.timestamp << std::endl;
-        // std::cout << "TCPServer心跳包接收到IP " << readData.ip << std::endl;
-
-        HeartbeatState = true; // 心跳包
-        GSIPHash.insert(readData.ip);
-
-        break;
     case MessageID::ControlMessageID:
-        // std::cout << "TCPServer参数控制接收到机器人id： " << (int)readData.data.contro.robotID << std::endl;
-        // std::cout << "TCPServer接收到参数控制数据" << std::endl;
-        // std::cout << "TCPServer参数控制接收到时间戳 " << readData.data.contro.timestamp << std::endl;
-        // std::cout << "TCPServer控制模式 " << (int)readData.data.contro.controlMode << std::endl;
-        // std::cout << "x " << readData.data.contro.position.x << std::endl;
-        // std::cout << "y " << readData.data.contro.position.y << std::endl;
-        // std::cout << "z " << readData.data.contro.position.z << std::endl;
-        // std::cout << "yaw " << readData.data.contro.yaw << std::endl;
-        // std::cout << "roll " << readData.data.contro.roll << std::endl;
-        // std::cout << "pitch " << readData.data.contro.pitch << std::endl;
-        // std::cout << "yawRate " << readData.data.contro.yawRate << std::endl;
-
         time_stamp = readData.data.control.timestamp;
 
         roll = readData.data.control.roll;
@@ -378,12 +350,6 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
 
         break;
     case MessageID::VehicleMessageID:
-        // std::cout << "TCPServer模式切换接收到机器人id： " << (int)readData.data.vehicle.robotID << std::endl;
-
-        // std::cout << "TCPServer接收到模式切换数据" << std::endl;
-        // std::cout << "TCPServer模式切换接收到时间戳 " << readData.data.vehicle.timestamp << std::endl;
-        // std::cout << "TCPServersunray控制模式 " << (int)readData.data.vehicle.sunray_mode << std::endl;
-        // std::cout << "TCPServerpx4控制模式 " << (int)readData.data.vehicle.px4_mode << std::endl;
         robot_id = readData.data.vehicle.robotID;
         setup.header.stamp = ros::Time::now();
         if (readData.data.vehicle.sunray_mode == VehicleControlType::SetControlMode)
@@ -391,8 +357,6 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
             setup.control_mode = "CMD_CONTROL";
         }
         setup.cmd = readData.data.vehicle.sunray_mode;
-
-        // std::cout << "uav_setup_pub " << uav_setup_pub.size() << " robot_id -uav_id " << (robot_id - uav_id) << " robot_id:" << (int)robot_id << " uav_id " << uav_id << std::endl;
 
         uav_setup_pub.at(robot_id - uav_id).publish(setup);
         break;
@@ -412,17 +376,13 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
                 if (it != nodeMap.end())
                 {
                     std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }
-                else
-                {
+                }else{
                     pid_t back = OrderCourse(readData.data.demo.demoStr);
                     if (back > 0)
                         nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
                 }
             }
-        }
-        else
-        {
+        }else{
             if (readData.data.demo.demoSize > 0)
             {
                 std::cout << "TCPServer 关闭Demo： " << std::endl;
@@ -434,17 +394,13 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }
-                    else
-                    {
+                    }else{
                         printf("Sent SIGTERM to child process %d\n", temp);
                         nodeMap.erase(readData.data.demo.demoStr);
                     }
-                }
-                else
-                {
+                }else
                     std::cout << "该节点未启动： " << readData.data.demo.demoStr << std::endl;
-                }
+                
             }
         }
 
@@ -614,6 +570,56 @@ bool GroundControl::SynchronizationUAVState(StateData Data)
     return true;
 }
 
+void GroundControl::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
+{
+    for (int i = uav_id; i < uav_id + simulation_num; i++)
+    {
+        // 无人机机间组播链路发送
+        std::lock_guard<std::mutex> lock(_mutexUDP);
+        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), udp_port);
+    }
+}
+
+void GroundControl::sendGroundStationData(const ros::TimerEvent &e)
+{
+    std::vector<std::string> tempVec;
+    for (int i = uav_id; i < uav_id + simulation_num; i++)
+    {
+        std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+        for (const auto &ip : GSIPHash)
+        {
+            int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, udpData[i - 1]), ip, udp_ground_port);
+            if (sendBack < 0)
+                tempVec.push_back(ip);
+        }
+    }
+
+    for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
+    {
+        std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+        for (const auto &ip : GSIPHash)
+        {
+            int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), ip, udp_ground_port);
+            if (sendBack < 0)
+                tempVec.push_back(ip);
+        }
+    }
+
+    for (const auto &ip : tempVec)
+        GSIPHash.erase(ip);
+    tempVec.clear();
+}
+
+void GroundControl::sendInterVehicleStatusInformation(const ros::TimerEvent &e)
+{
+    // 无人车车间组播链路发送
+    for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
+    {
+        std::lock_guard<std::mutex> lock(_mutexUDP);
+        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), udp_port);
+    }
+}
+
 void GroundControl::sendMsgCb(const ros::TimerEvent &e)
 {
     //   std::cout << "send msg" << std::endl;
@@ -676,6 +682,19 @@ void GroundControl::sendMsgCb(const ros::TimerEvent &e)
     tempVec.clear();
 }
 
+void GroundControl::CheckChildProcessCallBack(const ros::TimerEvent &e)
+{
+    std::vector<std::string> keysToRemove;
+    for (const auto &pair : nodeMap)
+    {
+        if (pair.second == CheckChildProcess(pair.second))
+            keysToRemove.push_back(pair.first);
+    }
+
+    for (const auto &key : keysToRemove)
+        nodeMap.erase(key);
+}
+
 void GroundControl::HeartRate(const ros::TimerEvent &e)
 {
     // std::cout << "GroundControl::HeartRate: "<<HeartbeatState << std::endl;
@@ -699,16 +718,6 @@ void GroundControl::HeartRate(const ros::TimerEvent &e)
         }
         // Heartbeatdata.state.robotID = uav_id;
         // tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
-
-        std::vector<std::string> keysToRemove;
-        for (const auto &pair : nodeMap)
-        {
-            if (pair.second == CheckChildProcess(pair.second))
-                keysToRemove.push_back(pair.first);
-        }
-
-        for (const auto &key : keysToRemove)
-            nodeMap.erase(key);
     }
 }
 
