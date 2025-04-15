@@ -56,6 +56,7 @@ public:
     {
         nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
         nh.param<std::string>("uav_name", uav_name, "uav"); // 【参数】无人机名称
+        nh.param<float>("record_time", record_time, 20);    // 【参数】记录时间
 
         uav_prefix = uav_name + std::to_string(uav_id);
         topic_prefix = "/" + uav_prefix;
@@ -69,7 +70,7 @@ public:
 
         state = 0;
         wait_time = 0.5;
-        record_time = 20; // 20s
+        // record_time = 20; // 20s
         record_flag = false;
         last_time = ros::Time::now();
         timeValues.resize(5);
@@ -77,7 +78,7 @@ public:
         points.push_back(std::make_tuple(1, 1, 1));
         points.push_back(std::make_tuple(1, -1, 1));
         points.push_back(std::make_tuple(-1, -1, 1));
-        points.push_back(std::make_tuple(1, -1, 1));
+        points.push_back(std::make_tuple(-1, 1, 1));
     }
 
     void update_callback()
@@ -128,7 +129,7 @@ public:
             vel_max[0] = vel_max[1] = vel_max[2] = 0;
             pos_err_mean[0] = pos_err_mean[1] = pos_err_mean[2] = 0;
             vel_mean[0] = vel_mean[1] = vel_mean[2] = 0;
-            
+
             pos_err_mean[0] += std::accumulate(timeValues[i].pos_x.begin(), timeValues[i].pos_x.end(), 0.0) / timeValues[i].pos_x.size();
             pos_err_mean[1] += std::accumulate(timeValues[i].pos_y.begin(), timeValues[i].pos_y.end(), 0.0) / timeValues[i].pos_y.size();
             pos_err_mean[2] += std::accumulate(timeValues[i].pos_z.begin(), timeValues[i].pos_z.end(), 0.0) / timeValues[i].pos_z.size();

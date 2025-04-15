@@ -1,0 +1,10 @@
+<launch>
+	<arg name="uav_id" default="1"/>
+	<arg name="record_time" default="20"/>
+    
+    <!-- 启动 sunray_control_node -->
+	<node pkg="sunray_uav_control" type="positioning_accuracy" name="positioning_accuracy" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="record_time" value="$(arg record_time)" />
+	</node>
+</launch>
