@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="model01">
+    <link name="link">
+      <inertial>
+        <mass>1</mass>
+      </inertial>
+      <visual name="visual">
+	    <geometry>
+          <mesh>
+            <uri>file://models/model01/meshes/sqaure_window_90cm.DAE</uri>
+          </mesh>
+        </geometry>
+      <meta> <layer> 1 </layer></meta>
+</visual>
+    </link>
+	<static>1</static>
+  </model>
+</sdf>

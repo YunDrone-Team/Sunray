@@ -1,0 +1,47 @@
+<sdf version="1.7">
+  <model name="red_cuboid">
+    <link name="link">
+      <!-- 视觉属性 -->
+      <visual name="visual">
+        <geometry>
+          <box>
+            <!-- 格式：长(x) 宽(y) 高(z) -->
+            <size>0.4 0.4 2</size>
+          </box>
+        </geometry>
+        <material>
+          <!-- 推荐方案：使用RGBA直接定义颜色 -->
+          <ambient>1 0 0 1</ambient>   <!-- 环境光颜色 -->
+          <diffuse>1 0 0 1</diffuse>   <!-- 漫反射颜色 -->
+          <specular>0.1 0.1 0.1 1</specular>  <!-- 镜面反射 -->
+        </material>
+      </visual>
+
+      <!-- 碰撞属性 -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.4 0.4 2</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <!-- 物理属性（质量1kg） -->
+      <inertial>
+        <mass>1</mass>
+        <inertia>
+          <!-- 长方体惯性矩阵计算公式：
+               Ixx = (mass/12)*(width² + height²)
+               Iyy = (mass/12)*(length² + height²)
+               Izz = (mass/12)*(length² + width²) -->
+          <ixx>0.3417</ixx>
+          <iyy>0.3417</iyy>
+          <izz>0.0067</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+    </link>
+  </model>
+</sdf>

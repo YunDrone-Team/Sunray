@@ -1,0 +1,93 @@
+<sdf version="1.7">
+  <model name="land_marker_H_50cm">
+    <static>true</static>
+    <link name="main_link">
+      <!-- 白色基底保持不变 -->
+      <visual name="base">
+        <geometry>
+          <box>
+            <size>0.8 0.8 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- 黑色外环保持不变 -->
+      <visual name="outer_ring">
+        <pose>0 0 0.005 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.3</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- 白色内圆保持不变 -->
+      <visual name="inner_circle">
+        <pose>0 0 0.006 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.25</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- 修改后的H图案 -->
+      <visual name="h_vertical">
+        <pose>0 0 0.007 0 0 0</pose>
+        <geometry>
+          <box>
+            <!-- 竖杆高度缩短为300mm -->
+            <size>0.05 0.3 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- 调整后的横杆位置 -->
+      <visual name="h_top">
+        <!-- Y轴位置适配新高度（150mm处） -->
+        <pose>0 0.15 0.007 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.3 0.05 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+
+      <visual name="h_bottom">
+        <!-- Y轴位置适配新高度（-150mm处） -->
+        <pose>0 -0.15 0.007 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.3 0.05 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

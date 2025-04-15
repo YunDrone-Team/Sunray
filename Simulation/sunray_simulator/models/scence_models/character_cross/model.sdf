@@ -1,0 +1,75 @@
+<?xml version='1.0'?>
+<sdf version="1.7">
+  <model name="character_cross">
+    <static>true</static>
+    <link name="main_link">
+      <!-- 基础结构 -->
+      <visual name="base">
+        <geometry>
+          <box>
+            <size>0.8 0.8 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+        </material>
+      </visual>
+
+      <visual name="outer_ring">
+        <pose>0 0 0.005 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.3</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+
+      <visual name="inner_circle">
+        <pose>0 0 0.006 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.25</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- 十字架结构 -->
+      <visual name="cross_vertical">
+        <pose>0 0 0.007 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.45 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+
+      <visual name="cross_horizontal">
+        <pose>0 0 0.007 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.45 0.05 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
