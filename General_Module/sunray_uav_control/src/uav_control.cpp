@@ -110,6 +110,7 @@ void UAVControl::mainLoop()
         {
             set_px4_flight_mode("POSCTL");
         }
+        resetThrustMapping();
         break;
 
     // 遥控器控制模式（RC_CONTROL）
@@ -712,6 +713,7 @@ void UAVControl::check_state()
     uav_state.connected = px4_state.connected;
     uav_state.armed = px4_state.armed;
     uav_state.mode = px4_state.mode;
+    uav_state.landed_state = px4_state.landed_state;
     uav_state.location_source = system_params.location_source;
     uav_state.odom_valid = system_params.odom_valid;
     for (int i = 0; i < 3; i++)
@@ -794,10 +796,31 @@ void UAVControl::handle_cmd_control()
 
         setpoint_global_pub(system_params.type_mask, global_setpoint);
     }
-    // else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Att)
-    // {
-    //     // 姿态控制模式
-    // }
+    else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Att)
+    {
+        // 期望信息
+        pos_ctrl.des.p = control_cmd.desired_pos;
+        pos_ctrl.des.v = control_cmd.desired_vel;
+        pos_ctrl.des.a = control_cmd.desired_acc;
+        pos_ctrl.des.j = control_cmd.desired_jerk;
+        pos_ctrl.des.p = control_cmd.desired_pos;
+        pos_ctrl.des.yaw = control_cmd.desired_yaw;
+        pos_ctrl.des.yaw_rate = control_cmd.desired_yaw_rate;
+        // 当前位置信息
+        pos_ctrl.odom.p = px4_state.position;
+        pos_ctrl.odom.v = px4_state.velocity;
+        pos_ctrl.odom.q.x = px4_state.attitude_q.x;
+        pos_ctrl.odom.q.y = px4_state.attitude_q.y;
+        pos_ctrl.odom.q.z = px4_state.attitude_q.z;
+        pos_ctrl.odom.q.w = px4_state.attitude_q.w;
+
+        pos_ctrl.imu_q = pos_ctrl.odom.q;
+
+        Controller_Output_t u;
+
+        // 运行控制算法
+        u = pos_ctrl.update();
+    }
     else
     {
         // std::cout<<"baseMode"<<std::endl;
@@ -878,6 +901,43 @@ void UAVControl::handle_cmd_control()
 
     last_control_cmd = control_cmd;
 }
+
+
+// 姿态控制器
+void UAVControl::attitude_control()
+{
+    //compute disired acceleration
+    Eigen::Vector3d des_acc(0.0, 0.0, 0.0);
+
+    // 期望加速度
+    des_acc = att_ctrl_des.a + flight_params.Kv.asDiagonal() * (att_ctrl_des.v - odom.v) + flight_params.Kp.asDiagonal() * (att_ctrl_des.p - odom.p);
+    des_acc += Eigen::Vector3d(0,0,flight_params.gravity);
+
+    // 推力估计
+    controller.estimateThrustModel(imu_data.a,param);
+
+    // 计算推力
+    u.thrust = des_acc(2) / thr2acc_;
+
+
+
+    double roll,pitch,yaw,yaw_imu;
+    double yaw_odom = fromQuaternion2yaw(odom.q);
+    double sin = std::sin(yaw_odom);
+    double cos = std::cos(yaw_odom);
+    roll = (des_acc(0) * sin - des_acc(1) * cos )/ param_.gra;
+    pitch = (des_acc(0) * cos + des_acc(1) * sin )/ param_.gra;
+    // yaw = fromQuaternion2yaw(att_ctrl_des.q);
+    yaw_imu = fromQuaternion2yaw(imu.q);
+    // Eigen::Quaterniond q = Eigen::AngleAxisd(yaw,Eigen::Vector3d::UnitZ())
+    //   * Eigen::AngleAxisd(roll,Eigen::Vector3d::UnitX())
+    //   * Eigen::AngleAxisd(pitch,Eigen::Vector3d::UnitY());
+    Eigen::Quaterniond q = Eigen::AngleAxisd(att_ctrl_des.yaw,Eigen::Vector3d::UnitZ())
+    * Eigen::AngleAxisd(pitch,Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(roll,Eigen::Vector3d::UnitX());
+    u.q = imu.q * odom.q.inverse() * q;
+}
+
 
 // 从遥控器状态中获取并计算期望值
 void UAVControl::handle_rc_control()
