@@ -99,17 +99,17 @@ public:
                 {
                     record_flag = true;
                     start_time = ros::Time::now();
-                    std::cout << "start record point: " << state - 3 << std::endl;
+                    std::cout << "start record point: " << state - 2 << std::endl;
                 }
             }
             if (record_flag)
             {
-                timeValues[state - 3].pos_x.push_back(uav_state.position[0] - std::get<0>(points[state - 3]));
-                timeValues[state - 3].pos_y.push_back(uav_state.position[1] - std::get<1>(points[state - 3]));
-                timeValues[state - 3].pos_z.push_back(uav_state.position[2] - std::get<2>(points[state - 3]));
-                timeValues[state - 3].vel_x.push_back(uav_state.velocity[0]);
-                timeValues[state - 3].vel_y.push_back(uav_state.velocity[1]);
-                timeValues[state - 3].vel_z.push_back(uav_state.velocity[2]);
+                timeValues[state - 3].pos_x.push_back(abs(uav_state.position[0] - std::get<0>(points[state - 3])));
+                timeValues[state - 3].pos_y.push_back(abs(uav_state.position[1] - std::get<1>(points[state - 3])));
+                timeValues[state - 3].pos_z.push_back(abs(uav_state.position[2] - std::get<2>(points[state - 3])));
+                timeValues[state - 3].vel_x.push_back(abs(uav_state.velocity[0]));
+                timeValues[state - 3].vel_y.push_back(abs(uav_state.velocity[1]));
+                timeValues[state - 3].vel_z.push_back(abs(uav_state.velocity[2]));
             }
         }
     }
@@ -130,13 +130,13 @@ public:
             pos_err_mean[0] = pos_err_mean[1] = pos_err_mean[2] = 0;
             vel_mean[0] = vel_mean[1] = vel_mean[2] = 0;
 
-            pos_err_mean[0] += std::accumulate(timeValues[i].pos_x.begin(), timeValues[i].pos_x.end(), 0.0) / timeValues[i].pos_x.size();
-            pos_err_mean[1] += std::accumulate(timeValues[i].pos_y.begin(), timeValues[i].pos_y.end(), 0.0) / timeValues[i].pos_y.size();
-            pos_err_mean[2] += std::accumulate(timeValues[i].pos_z.begin(), timeValues[i].pos_z.end(), 0.0) / timeValues[i].pos_z.size();
+            pos_err_mean[0] = std::accumulate(timeValues[i].pos_x.begin(), timeValues[i].pos_x.end(), 0.0) / timeValues[i].pos_x.size();
+            pos_err_mean[1] = std::accumulate(timeValues[i].pos_y.begin(), timeValues[i].pos_y.end(), 0.0) / timeValues[i].pos_y.size();
+            pos_err_mean[2] = std::accumulate(timeValues[i].pos_z.begin(), timeValues[i].pos_z.end(), 0.0) / timeValues[i].pos_z.size();
 
-            vel_mean[0] += std::accumulate(timeValues[i].vel_x.begin(), timeValues[i].vel_x.end(), 0.0) / timeValues[i].vel_x.size();
-            vel_mean[1] += std::accumulate(timeValues[i].vel_y.begin(), timeValues[i].vel_y.end(), 0.0) / timeValues[i].vel_y.size();
-            vel_mean[2] += std::accumulate(timeValues[i].vel_z.begin(), timeValues[i].vel_z.end(), 0.0) / timeValues[i].vel_z.size();
+            vel_mean[0] = std::accumulate(timeValues[i].vel_x.begin(), timeValues[i].vel_x.end(), 0.0) / timeValues[i].vel_x.size();
+            vel_mean[1] = std::accumulate(timeValues[i].vel_y.begin(), timeValues[i].vel_y.end(), 0.0) / timeValues[i].vel_y.size();
+            vel_mean[2] = std::accumulate(timeValues[i].vel_z.begin(), timeValues[i].vel_z.end(), 0.0) / timeValues[i].vel_z.size();
 
             pos_err_max[0] = max(pos_err_max[0], *max_element(timeValues[i].pos_x.begin(), timeValues[i].pos_x.end()));
             pos_err_max[1] = max(pos_err_max[1], *max_element(timeValues[i].pos_y.begin(), timeValues[i].pos_y.end()));
@@ -145,23 +145,23 @@ public:
             vel_max[0] = max(vel_max[0], *max_element(timeValues[i].vel_x.begin(), timeValues[i].vel_x.end()));
             vel_max[1] = max(vel_max[1], *max_element(timeValues[i].vel_y.begin(), timeValues[i].vel_y.end()));
             vel_max[2] = max(vel_max[2], *max_element(timeValues[i].vel_z.begin(), timeValues[i].vel_z.end()));
-            Logger::print_color(int(LogColor::blue), LOG_BOLD, "--------------------------------");
-            Logger::print_color(int(LogColor::blue), "【POS_X_MAX", "POS_Y_MAX", "POS_Z_MAX】");
-            if (pos_err_max[0] > 0.1 || pos_err_max[1] > 0.1 || pos_err_max[2] > 0.1)
+            Logger::print_color(int(LogColor::blue), LOG_BOLD, "----Point ",i+1, " --------------------");
+            Logger::print_color(int(LogColor::blue), "【POS_ERROR_X_MAX", "POS_ERROR_Y_MAX", "POS_ERROR_Z_MAX】");
+            if (pos_err_max[0] > 0.15 || pos_err_max[1] > 0.15 || pos_err_max[2] > 0.15)
                 Logger::print_color(int(LogColor::yellow), pos_err_max[0], pos_err_max[1], pos_err_max[2]);
             else
                 Logger::print_color(int(LogColor::green), pos_err_max[0], pos_err_max[1], pos_err_max[2]);
-            Logger::print_color(int(LogColor::blue), "【POS_X_MEAN", "POS_Y_MEAN", "POS_Z_MEAN】");
+            Logger::print_color(int(LogColor::blue), "【POS_ERROR_X_MEAN", "POS_ERROR_Y_MEAN", "POS_ERROR_Z_MEAN】");
             if (pos_err_mean[0] > 0.1 || pos_err_mean[1] > 0.1 || pos_err_mean[2] > 0.1)
                 Logger::print_color(int(LogColor::yellow), pos_err_mean[0], pos_err_mean[1], pos_err_mean[2]);
             else
                 Logger::print_color(int(LogColor::green), pos_err_mean[0], pos_err_mean[1], pos_err_mean[2]);
-            Logger::print_color(int(LogColor::blue), "【VEL_X_MAX", "VEL_Y_MAX", "VEL_Z_MAX】");
-            if (vel_max[0] > 0.1 || vel_max[1] > 0.1 || vel_max[2] > 0.1)
+            Logger::print_color(int(LogColor::blue), "【VEL_ERROR_X_MAX", "VEL_ERROR_Y_MAX", "VEL_ERROR_Z_MAX】");
+            if (vel_max[0] > 0.15 || vel_max[1] > 0.15 || vel_max[2] > 0.15)
                 Logger::print_color(int(LogColor::yellow), vel_max[0], vel_max[1], vel_max[2]);
             else
                 Logger::print_color(int(LogColor::green), vel_max[0], vel_max[1], vel_max[2]);
-            Logger::print_color(int(LogColor::blue), "【VEL_X_MEAN", "VEL_Y_MEAN", "VEL_Z_MEAN】");
+            Logger::print_color(int(LogColor::blue), "【VEL_ERROR_X_MEAN", "VEL_ERROR_Y_MEAN", "VEL_ERROR_Z_MEAN】");
             if (vel_mean[0] > 0.1 || vel_mean[1] > 0.1 || vel_mean[2] > 0.1)
                 Logger::print_color(int(LogColor::yellow), vel_mean[0], vel_mean[1], vel_mean[2]);
             else
