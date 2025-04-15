@@ -11,12 +11,22 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "uav_control_node");
     ros::NodeHandle nh("~");
-    ros::Rate rate(50.0);
+    ros::Rate rate(100.0);
     
     // 声明控制类
     UAVControl uav_ctrl;
     // 控制类初始化
     uav_ctrl.init(nh);
+
+    // 初始化检查：等待PX4连接
+    int trials = 0;
+    while (ros::ok() && !uav_ctrl.px4_state.connected)
+    {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (trials++ > 5)
+            ROS_ERROR("Unable to connnect to PX4!!!");
+    }
 
     // 主循环
     while (ros::ok())

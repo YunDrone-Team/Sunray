@@ -8,6 +8,9 @@ bool connected                  ## 是否与飞控建立连接
 bool armed                      ## 是否解锁，true为已解锁，false则不是
 string mode                     ## PX4飞行模式（PX4飞控端）
 
+## PX4状态信息 - 来自~/mavros/extendedstate
+uint8 landed_state          ## 降落状态，枚举参见mavros_msgs::msg::ExtendedState
+
 ## 无人机电池信息 - 来自~/mavros/battery
 float32 battery_state           ## 电池电压，单位：[V]
 float32 battery_percentage       ## 电池百分比，[0-1]
