@@ -12,7 +12,7 @@ Panels:
         - /drone01/Planning1/drone_path1/Offset1
         - /drone01/Mapping1
       Splitter Ratio: 0.43611112236976624
-    Tree Height: 911
+    Tree Height: 441
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -118,7 +118,7 @@ Visualization Manager:
               Marker Topic: /drone_0_ego_planner_node/optimal_list
               Name: optimal_traj
               Namespaces:
-                "": true
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/Marker
@@ -260,7 +260,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 43.70415496826172
+      Distance: 61.40119171142578
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -268,17 +268,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -10.158917427062988
-        Y: -1.3307493925094604
-        Z: -9.5367431640625e-07
+        X: -10.692923545837402
+        Y: -3.9259543418884277
+        Z: -5.7220458984375e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2197964191436768
+      Pitch: 0.6647964715957642
       Target Frame: <Fixed Frame>
-      Yaw: 3.051588773727417
+      Yaw: 3.3565971851348877
     Saved:
       - Class: rviz/FPS
         Enable Stereo Rendering:
