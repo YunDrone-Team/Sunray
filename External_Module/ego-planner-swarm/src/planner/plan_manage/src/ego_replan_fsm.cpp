@@ -105,7 +105,13 @@ namespace ego_planner
         ros::spinOnce();
         ros::Duration(0.001).sleep();
       }
-      
+
+      for (size_t i = 0; i < (size_t)waypoint_num_; i++)
+      {
+        // 发布目标点用于RVIZ显示 "/drone_x_ego_planner_node/goal_point" - [目标点,颜色,大小,id]
+        visualization_->displayGoalPoint(wps_[i], Eigen::Vector4d(0, 0.5, 0.5, 1), 0.3, i);
+        ros::Duration(0.001).sleep();
+      }
       // plan first global waypoint
       wp_id_ = 0;
       planNextWaypoint(wps_[wp_id_]);
@@ -136,12 +142,7 @@ namespace ego_planner
       cout << GREEN << node_name << "PRESET_TARGET mode, waypoint_" << i+1 << " : [ " << wps_[i](0)<<", "<< wps_[i](1)<<", "<< wps_[i](2) <<   " ]"<< TAIL << endl;
     }
 
-    for (size_t i = 0; i < (size_t)waypoint_num_; i++)
-    {
-      // 发布目标点用于RVIZ显示 "/drone_x_ego_planner_node/goal_point" - [目标点,颜色,大小,id]
-      visualization_->displayGoalPoint(wps_[i], Eigen::Vector4d(0, 0.5, 0.5, 1), 0.3, i);
-      ros::Duration(0.001).sleep();
-    }
+
   }
 
   void EGOReplanFSM::planNextWaypoint(const Eigen::Vector3d next_wp)
@@ -215,6 +216,9 @@ namespace ego_planner
     {
       end_wp = Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
     }
+
+    // 发布目标点用于显示 - [目标点,颜色,大小,id]
+    visualization_->displayGoalPoint(end_wp, Eigen::Vector4d(0, 0.5, 0.5, 1), 0.3, 1);
 
     planNextWaypoint(end_wp);
   }
