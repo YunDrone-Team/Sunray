@@ -20,8 +20,7 @@ class ErrorEstimation
 {
 private:
     int uav_id;
-    int state;
-    float wait_time;
+    int state, last_state;
     float record_time;
     bool record_flag;
     std::string uav_name;
@@ -69,7 +68,7 @@ public:
         print_timer = nh.createTimer(ros::Duration(0.1), &ErrorEstimation::print_err, this);
 
         state = 0;
-        wait_time = 0.5;
+        last_state = -1;
         // record_time = 20; // 20s
         record_flag = false;
         last_time = ros::Time::now();
@@ -145,25 +144,33 @@ public:
             vel_max[0] = max(vel_max[0], *max_element(timeValues[i].vel_x.begin(), timeValues[i].vel_x.end()));
             vel_max[1] = max(vel_max[1], *max_element(timeValues[i].vel_y.begin(), timeValues[i].vel_y.end()));
             vel_max[2] = max(vel_max[2], *max_element(timeValues[i].vel_z.begin(), timeValues[i].vel_z.end()));
-            Logger::print_color(int(LogColor::blue), LOG_BOLD, "----Point ",i+1, " --------------------");
+            Logger::print_color(int(LogColor::blue), LOG_BOLD, "----Point ", i + 1, " --------------------");
             Logger::print_color(int(LogColor::blue), "【POS_ERROR_X_MAX", "POS_ERROR_Y_MAX", "POS_ERROR_Z_MAX】");
             if (pos_err_max[0] > 0.15 || pos_err_max[1] > 0.15 || pos_err_max[2] > 0.15)
                 Logger::print_color(int(LogColor::yellow), pos_err_max[0], pos_err_max[1], pos_err_max[2]);
+            else if (pos_err_max[0] > 0.2 || pos_err_max[1] > 0.2 || pos_err_max[2] > 0.2)
+                Logger::print_color(int(LogColor::red), pos_err_max[0], pos_err_max[1], pos_err_max[2]);
             else
                 Logger::print_color(int(LogColor::green), pos_err_max[0], pos_err_max[1], pos_err_max[2]);
             Logger::print_color(int(LogColor::blue), "【POS_ERROR_X_MEAN", "POS_ERROR_Y_MEAN", "POS_ERROR_Z_MEAN】");
             if (pos_err_mean[0] > 0.1 || pos_err_mean[1] > 0.1 || pos_err_mean[2] > 0.1)
                 Logger::print_color(int(LogColor::yellow), pos_err_mean[0], pos_err_mean[1], pos_err_mean[2]);
+            else if (pos_err_mean[0] > 0.2 || pos_err_mean[1] > 0.2 || pos_err_mean[2] > 0.2)
+                Logger::print_color(int(LogColor::red), pos_err_mean[0], pos_err_mean[1], pos_err_mean[2]);
             else
                 Logger::print_color(int(LogColor::green), pos_err_mean[0], pos_err_mean[1], pos_err_mean[2]);
             Logger::print_color(int(LogColor::blue), "【VEL_ERROR_X_MAX", "VEL_ERROR_Y_MAX", "VEL_ERROR_Z_MAX】");
             if (vel_max[0] > 0.15 || vel_max[1] > 0.15 || vel_max[2] > 0.15)
                 Logger::print_color(int(LogColor::yellow), vel_max[0], vel_max[1], vel_max[2]);
+            else if (vel_max[0] > 0.2 || vel_max[1] > 0.2 || vel_max[2] > 0.2)
+                Logger::print_color(int(LogColor::red), vel_max[0], vel_max[1], vel_max[2]);
             else
                 Logger::print_color(int(LogColor::green), vel_max[0], vel_max[1], vel_max[2]);
             Logger::print_color(int(LogColor::blue), "【VEL_ERROR_X_MEAN", "VEL_ERROR_Y_MEAN", "VEL_ERROR_Z_MEAN】");
             if (vel_mean[0] > 0.1 || vel_mean[1] > 0.1 || vel_mean[2] > 0.1)
                 Logger::print_color(int(LogColor::yellow), vel_mean[0], vel_mean[1], vel_mean[2]);
+            else if (vel_mean[0] > 0.2 || vel_mean[1] > 0.2 || vel_mean[2] > 0.2)
+                Logger::print_color(int(LogColor::red), vel_mean[0], vel_mean[1], vel_mean[2]);
             else
                 Logger::print_color(int(LogColor::green), vel_mean[0], vel_mean[1], vel_mean[2]);
         }
@@ -195,61 +202,71 @@ public:
         case 0:
             if (uav_state.armed)
             {
+                last_state = state;
                 state = 1;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 break;
             }
-            if ((ros::Time::now() - last_time).toSec() > wait_time)
+            if ((ros::Time::now() - last_time).toSec() > 0.5)
             {
                 // 解锁
-                cout << "arm" << endl;
+                if (last_state == state - 1)
+                {
+                    cout << "arm" << endl;
+                    last_state = state;
+                }
                 setup.cmd = 1;
                 uav_setup_pub.publish(setup);
-                wait_time += 1;
             }
             break;
         case 1:
             if (uav_state.control_mode == 2)
             {
+                last_state = state;
                 state = 2;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 break;
             }
-            if ((ros::Time::now() - last_time).toSec() > wait_time)
+            if ((ros::Time::now() - last_time).toSec() > 1)
             {
                 // 切换到指令控制模式
-                cout << "switch CMD_CONTROL" << endl;
+                if (last_state == state - 1)
+                {
+                    cout << "switch CMD_CONTROL" << endl;
+                    last_state = state;
+                }
                 setup.cmd = 4;
                 setup.control_mode = "CMD_CONTROL";
                 uav_setup_pub.publish(setup);
-                wait_time += 1;
             }
             break;
         case 2:
             if ((ros::Time::now() - last_time).toSec() > 5)
             {
+                last_state = state;
                 state = 3;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 break;
             }
-            if (wait_time == 0.5)
+            // 起飞
+            if (last_state == state - 1)
             {
-                // 起飞
                 cout << "takeoff" << endl;
-                uav_cmd.cmd = 100;
-                control_cmd_pub.publish(uav_cmd);
-                wait_time += 1;
             }
+            uav_cmd.cmd = 100;
+            control_cmd_pub.publish(uav_cmd);
+            last_state = state;
             break;
+
         case 3:
-            if (wait_time == 0.5) // 表示第一次进入该状态
+            if (!record_flag)
             {
-                std::cout << "go to point 1" << std::endl;
+                if (last_state == state - 1)
+                {
+                    std::cout << "go to point 1" << std::endl;
+                    last_state = state;
+                }
                 last_time = ros::Time::now();
-                wait_time += 1;
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = 4;
                 uav_cmd.desired_pos[0] = std::get<0>(points[0]);
@@ -259,25 +276,34 @@ public:
                 control_cmd_pub.publish(uav_cmd);
             }
 
+            if (!record_flag && (ros::Time::now() - last_time).toSec() > 30)
+            {
+                Logger::error("record time out, return to home");
+                state = 8;
+            }
+
             if (record_flag)
             {
                 // std::cout << (ros::Time::now() - start_time).toSec() << std::endl;
                 if ((ros::Time::now() - start_time).toSec() > record_time)
                 {
+                    
                     state = 4;
                     last_time = ros::Time::now();
-                    wait_time = 0.5;
                     record_flag = false;
                     break;
                 }
             }
             break;
         case 4:
-            if (wait_time == 0.5)
+            if (!record_flag)
             {
-                std::cout << "go to point 2" << std::endl;
+                if (last_state == state - 1)
+                {
+                    std::cout << "go to point 2" << std::endl;
+                    last_state = state;
+                }
                 last_time = ros::Time::now();
-                wait_time += 1;
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = 4;
                 uav_cmd.desired_pos[0] = std::get<0>(points[1]);
@@ -286,21 +312,31 @@ public:
                 uav_cmd.desired_yaw = 0.0;
                 control_cmd_pub.publish(uav_cmd);
             }
+
+            if (!record_flag && (ros::Time::now() - last_time).toSec() > 30)
+            {
+                Logger::error("record time out, return to home");
+                state = 8;
+            }
+
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
+                
                 state = 5;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 record_flag = false;
                 break;
             }
             break;
         case 5:
-            if (wait_time == 0.5)
+            if (!record_flag)
             {
-                std::cout << " go to point 3" << std::endl;
+                if (last_state == state - 1)
+                {
+                    std::cout << "go to point 3" << std::endl;
+                    last_state = state;
+                }
                 last_time = ros::Time::now();
-                wait_time += 1;
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = 4;
                 uav_cmd.desired_pos[0] = std::get<0>(points[2]);
@@ -309,21 +345,31 @@ public:
                 uav_cmd.desired_yaw = 0.0;
                 control_cmd_pub.publish(uav_cmd);
             }
+
+            if (!record_flag && (ros::Time::now() - last_time).toSec() > 30)
+            {
+                Logger::error("record time out, return to home");
+                state = 8;
+            }
+
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
+                
                 state = 6;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 record_flag = false;
                 break;
             }
             break;
         case 6:
-            if (wait_time == 0.5)
+            if (!record_flag)
             {
-                std::cout << "go to point 4" << std::endl;
+                if (last_state == state - 1)
+                {
+                    std::cout << "go to point 4" << std::endl;
+                    last_state = state;
+                }
                 last_time = ros::Time::now();
-                wait_time += 1;
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = 4;
                 uav_cmd.desired_pos[0] = std::get<0>(points[3]);
@@ -332,21 +378,31 @@ public:
                 uav_cmd.desired_yaw = 0.0;
                 control_cmd_pub.publish(uav_cmd);
             }
+
+            if (!record_flag && (ros::Time::now() - last_time).toSec() > 30)
+            {
+                Logger::error("record time out, return to home");
+                state = 8;
+            }
+
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
+                
                 state = 7;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 record_flag = false;
                 break;
             }
             break;
         case 7:
-            if (wait_time == 0.5)
+            if (!record_flag)
             {
-                std::cout << "go to point 5" << std::endl;
+                if (last_state == state - 1)
+                {
+                    std::cout << "go to point 5" << std::endl;
+                    last_state = state;
+                }
                 last_time = ros::Time::now();
-                wait_time += 1;
                 uav_cmd.header.stamp = ros::Time::now();
                 uav_cmd.cmd = 4;
                 uav_cmd.desired_pos[0] = std::get<0>(points[4]);
@@ -355,32 +411,30 @@ public:
                 uav_cmd.desired_yaw = 0.0;
                 control_cmd_pub.publish(uav_cmd);
             }
+
+            if (!record_flag && (ros::Time::now() - last_time).toSec() > 30)
+            {
+                Logger::error("record time out, return to home");
+                state = 8;
+            }
+
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
+                
                 state = 8;
                 last_time = ros::Time::now();
-                wait_time = 0.5;
                 record_flag = false;
                 break;
             }
             break;
         case 8:
-            if (wait_time > 5)
-            {
-                state = 9;
-                last_time = ros::Time::now();
-                wait_time = 0.5;
-                record_flag = false;
-                break;
-            }
-            if (wait_time == 0.5)
-            {
-                cout << "return to home" << endl;
-                uav_cmd.cmd = 104;
-                control_cmd_pub.publish(uav_cmd);
-                wait_time += 1;
-            }
-            wait_time += 1;
+            last_state = state;
+            state = 9;
+            last_time = ros::Time::now();
+            record_flag = false;
+            cout << "return to home" << endl;
+            uav_cmd.cmd = 104;
+            control_cmd_pub.publish(uav_cmd);
             break;
         case 9:
             calculate_err();

@@ -38,9 +38,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     nh.param<int>("external_source", external_source, sunray_msgs::ExternalOdom::ODOM); // 【参数】外部定位数据来源
     nh.param<string>("uav_name", uav_name, "uav");                                      // 【参数】无人机名称
     nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
-    nh.param<bool>("enable_rviz", enable_rviz, false);                                  // 【参数】是否发布到rviz
     nh.param<bool>("enable_range_sensor", enable_range_sensor, false);                  // 【参数】是否使用距离传感器数据
-    // nh.param<bool>("enable_rangeSensor", enable_rangeSensor, false);           // 【参数】是否使用rangeSensor
 
     // 初始化外部定位数据解析类
     external_position.init(nh, source_topic, external_source);
@@ -68,18 +66,14 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_att_target_sub = nh.subscribe<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/target_attitude", 1, &ExternalFusion::px4_att_target_callback, this);
     // 【订阅】无人机上的激光定高原始数据
     px4_distance_sub = nh.subscribe<sensor_msgs::Range>(uav_name + "/mavros/distance_sensor/hrlv_ez4_pub", 1, &ExternalFusion::px4_distance_callback, this);
-    // 如果使能了RVIZ，则发布RVIZ中显示的话题
-    if (enable_rviz)
-    {
-        // 【发布】无人机里程计 - 本节点 -> RVIZ
-        uav_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/sunray/uav_odom", 1);
-        // 【发布】无人机运动轨迹 - 本节点 -> RVIZ
-        uav_trajectory_pub = nh.advertise<nav_msgs::Path>(uav_name + "/sunray/uav_trajectory", 1);
-        // 【发布】无人机MESH图标 - 本节点 -> RVIZ
-        uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(uav_name + "/sunray/uav_mesh", 1);
-        // 【定时器】RVIZ相关话题定时发布  - 本节点 -> RVIZ
-        timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &ExternalFusion::timer_rviz, this);
-    }
+    // 【发布】无人机里程计 - 本节点 -> RVIZ
+    uav_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/sunray/uav_odom", 1);
+    // 【发布】无人机运动轨迹 - 本节点 -> RVIZ
+    uav_trajectory_pub = nh.advertise<nav_msgs::Path>(uav_name + "/sunray/uav_trajectory", 1);
+    // 【发布】无人机MESH图标 - 本节点 -> RVIZ
+    uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(uav_name + "/sunray/uav_mesh", 1);
+    // 【定时器】RVIZ相关话题定时发布  - 本节点 -> RVIZ
+    timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &ExternalFusion::timer_rviz, this);
 
     // 【发布】mavros/vision_pose/pose - 本节点 -> mavros
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_name + "/mavros/vision_pose/pose", 10);
