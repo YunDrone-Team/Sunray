@@ -28,7 +28,6 @@ private:
     sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据
     sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
     ExternalPosition external_position;                     // 外部定位源的回调和处理
-    bool enable_rviz;                                       // 是否使能RVIZ相关话题发布
     bool enable_range_sensor;                               // 是否使用距离传感器数据
 
     ros::NodeHandle nh_;                    // ros节点句柄
