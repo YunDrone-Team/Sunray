@@ -541,7 +541,7 @@ void UAVControl::print_state(const ros::TimerEvent &event)
                             px4_state.att_setpoint[0],
                             px4_state.att_setpoint[1],
                             px4_state.att_setpoint[2],
-                            "[m/s]");
+                            "[deg]");
 
         if (system_params.use_offset)
         {

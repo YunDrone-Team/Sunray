@@ -14,7 +14,6 @@
         <param name="external_source" value="$(arg external_source)" />
         <param name="uav_name" value="$(arg uav_name)" />
         <param name="position_topic" value="/$(arg uav_name)$(arg uav_id)/sunray/gazebo_pose" />
-        <param name="enable_rviz" value="$(arg enable_rviz)" />
     </node>
 
     <include file="$(find sunray_uav_control)/launch/external_fusion_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">

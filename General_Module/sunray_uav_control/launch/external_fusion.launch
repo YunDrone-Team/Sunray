@@ -14,7 +14,6 @@
         <param name="external_source" value="$(arg external_source)" />
         <param name="uav_name" value="$(arg uav_name)" />
         <param name="position_topic" value="$(arg position_topic)" />
-        <param name="enable_rviz" value="$(arg enable_rviz)" />
         <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
     </node>
 

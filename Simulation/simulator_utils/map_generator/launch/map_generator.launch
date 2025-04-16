@@ -22,7 +22,7 @@
 	<!-- 集群数量 -->
 	<arg name="swarm_num" default="1"/>
     <!-- 地图,注意与world匹配 -->
-    <arg name="map_name" default="planning_test3"/>
+    <arg name="map_name" default="planning_test"/>
     <arg name="map_generator_enable" default="true"/>
 	<group if="$(arg map_generator_enable)">
         <!-- map_generator_node: 生成随机地图，并发布全局、局部点云 -->
