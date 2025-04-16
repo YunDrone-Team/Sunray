@@ -69,7 +69,7 @@
 		<param name="fsm/emergency_time" value="1.0" type="double"/>
 		<!-- 仿真与实际标志位，实际中需要等待一个起始话题 -->
 		<!-- <param name="fsm/realworld_experiment" value="true"/> -->
-		<param name="fsm/realworld_experiment" value="false"/>
+		<param name="fsm/realworld_experiment" value="true"/>
 		<param name="fsm/fail_safe" value="true"/>
 
 		<!-- PRESET_TARGET模式下目标点数量 -->

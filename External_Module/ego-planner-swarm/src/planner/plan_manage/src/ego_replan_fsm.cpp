@@ -96,7 +96,7 @@ namespace ego_planner
       // PRESET_TARGET：预设目标点，并通过"/traj_start_trigger"话题触发
       trigger_sub_ = nh.subscribe("/traj_start_trigger", 1, &EGOReplanFSM::triggerCallback, this);
 
-      ros::Duration(1.0).sleep();
+      ros::Duration(5.0).sleep();
 
       readGivenWps();
 
