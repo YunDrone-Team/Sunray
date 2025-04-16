@@ -149,7 +149,7 @@ Visualization Manager:
             Shaft Length: 1
             Shaft Radius: 0.05000000074505806
             Value: Axes
-          Topic: /uav1/prometheus/fake_odom
+          Topic: /uav1/sunray/fake_odom
           Unreliable: false
           Value: false
         - Angle Tolerance: 0.10000000149011612
@@ -189,7 +189,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /uav1/prometheus/uav_mesh
+          Marker Topic: /uav1/sunray/uav_mesh
           Name: 无人机位置 - 模型
           Namespaces:
             {}
@@ -208,7 +208,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05000000074505806
           Shape: Arrow
-          Topic: /uav1/prometheus/motion_planning/goal
+          Topic: /uav1/sunray/motion_planning/goal
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -232,7 +232,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /uav1/prometheus/trajectory
+          Topic: /uav1/sunray/trajectory
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -316,7 +316,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /uav1/prometheus/global_planner/path_cmd
+          Topic: /uav1/sunray/global_planner/path_cmd
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -342,7 +342,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.10000000149011612
           Style: Flat Squares
-          Topic: /uav1/prometheus/global_planning/global_pcl
+          Topic: /uav1/sunray/global_planning/global_pcl
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -370,7 +370,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.10000000149011612
           Style: Flat Squares
-          Topic: /uav1/prometheus/global_planning/global_inflate_pcl
+          Topic: /uav1/sunray/global_planning/global_inflate_pcl
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -381,7 +381,7 @@ Visualization Manager:
       Displays:
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /uav1/prometheus/local_planner/desired_vel
+          Marker Topic: /uav1/sunray/local_planner/desired_vel
           Name: desired_vel
           Namespaces:
             {}
@@ -573,7 +573,7 @@ Visualization Manager:
       Displays:
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /uav2/prometheus/uav_mesh
+          Marker Topic: /uav2/sunray/uav_mesh
           Name: 无人机位置 - 模型
           Namespaces:
             {}
@@ -592,7 +592,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05000000074505806
           Shape: Arrow
-          Topic: /uav2/prometheus/motion_planning/goal
+          Topic: /uav2/sunray/motion_planning/goal
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -616,7 +616,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /uav2/prometheus/trajectory
+          Topic: /uav2/sunray/trajectory
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -681,7 +681,7 @@ Visualization Manager:
       Displays:
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /uav3/prometheus/uav_mesh
+          Marker Topic: /uav3/sunray/uav_mesh
           Name: 无人机位置 - 模型
           Namespaces:
             {}
@@ -700,7 +700,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05000000074505806
           Shape: Arrow
-          Topic: /uav3/prometheus/motion_planning/goal
+          Topic: /uav3/sunray/motion_planning/goal
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -724,7 +724,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /uav3/prometheus/trajectory
+          Topic: /uav3/sunray/trajectory
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -789,7 +789,7 @@ Visualization Manager:
       Displays:
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /uav4/prometheus/uav_mesh
+          Marker Topic: /uav4/sunray/uav_mesh
           Name: 无人机位置 - 模型
           Namespaces:
             {}
@@ -808,7 +808,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05000000074505806
           Shape: Arrow
-          Topic: /uav4/prometheus/motion_planning/goal
+          Topic: /uav4/sunray/motion_planning/goal
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -832,7 +832,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /uav4/prometheus/trajectory
+          Topic: /uav4/sunray/trajectory
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -907,7 +907,7 @@ Visualization Manager:
     - Class: rviz/Select
     - Class: rviz/FocusCamera
     - Class: rviz_plugins/Goal3DTool
-      Topic: /uav1/prometheus/motion_planning/goal
+      Topic: /uav1/sunray/motion_planning/goal
   Value: true
   Views:
     Current:

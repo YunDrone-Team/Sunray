@@ -1,11 +1,11 @@
 <sdf version="1.7">
-  <model name="cylinder_10cm">
+  <model name="cylinder_40cm">
     <link name="link">
       <!-- 视觉属性 -->
       <visual name="visual">
         <geometry>
           <cylinder>
-            <radius>0.1</radius>
+            <radius>0.4</radius>
             <length>2</length>
           </cylinder>
         </geometry>
@@ -13,7 +13,7 @@
           <!-- 使用Gazebo预置红色材质 -->
           <script>
             <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
+            <name>Gazebo/Blue</name>
           </script>
           <!-- 或直接使用RGBA值 -->
           <!-- <ambient>1 0 0 1</ambient>
@@ -26,7 +26,7 @@
       <collision name="collision">
         <geometry>
           <cylinder>
-            <radius>0.1</radius>
+            <radius>0.4</radius>
             <length>2</length>
           </cylinder>
         </geometry>
