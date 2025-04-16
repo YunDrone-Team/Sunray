@@ -19,6 +19,7 @@
 #include <traj_utils/DataDisp.h>
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
+#include "printf_utils.h"
 
 using std::vector;
 
@@ -63,6 +64,7 @@ namespace ego_planner
     double emergency_time_;
     bool flag_realworld_experiment_;
     bool enable_fail_safe_;
+    string node_name;
 
     /* planning data */
     bool have_trigger_, have_target_, have_odom_, have_new_target_, have_recv_pre_agent_;

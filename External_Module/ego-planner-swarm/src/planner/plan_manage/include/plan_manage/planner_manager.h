@@ -11,6 +11,7 @@
 #include <traj_utils/plan_container.hpp>
 #include <ros/ros.h>
 #include <traj_utils/planning_visualization.h>
+#include "printf_utils.h"
 
 namespace ego_planner
 {
@@ -48,6 +49,7 @@ namespace ego_planner
     
 
     PlanParameters pp_;
+    string node_name;
     LocalTrajData local_data_;
     GlobalTrajData global_data_;
     GridMap::Ptr grid_map_;
