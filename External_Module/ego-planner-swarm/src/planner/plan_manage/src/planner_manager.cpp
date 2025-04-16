@@ -16,23 +16,33 @@ namespace ego_planner
   {
     /* read algorithm parameters */
 
+    // 最大速度
     nh.param("manager/max_vel", pp_.max_vel_, -1.0);
+    // 最大加速度
     nh.param("manager/max_acc", pp_.max_acc_, -1.0);
+    // 最大加加速度
     nh.param("manager/max_jerk", pp_.max_jerk_, -1.0);
+    // 未知，限制参数
     nh.param("manager/feasibility_tolerance", pp_.feasibility_tolerance_, 0.0);
+    // 控制点距离
     nh.param("manager/control_points_distance", pp_.ctrl_pt_dist, -1.0);
+    // 规划范围
     nh.param("manager/planning_horizon", pp_.planning_horizen_, 5.0);
+    // ？
     nh.param("manager/use_distinctive_trajs", pp_.use_distinctive_trajs, false);
+    // 无人机ID
     nh.param("manager/drone_id", pp_.drone_id, -1);
 
+    node_name = "[planner_manager_uav" + std::to_string(pp_.drone_id)+"] -- ";
+
+    cout << GREEN << node_name << "init." << TAIL << endl;
+
     local_data_.traj_id_ = 0;
+    // 地图类
     grid_map_.reset(new GridMap);
     grid_map_->initMap(nh);
 
-    // obj_predictor_.reset(new fast_planner::ObjPredictor(nh));
-    // obj_predictor_->init();
-    // obj_pub_ = nh.advertise<visualization_msgs::Marker>("/dynamic/obj_prdi", 10); // zx-todo
-
+    // bspline优化器
     bspline_optimizer_.reset(new BsplineOptimizer);
     bspline_optimizer_->setParam(nh);
     bspline_optimizer_->setEnvironment(grid_map_, obj_predictor_);
@@ -42,23 +52,17 @@ namespace ego_planner
     visualization_ = vis;
   }
 
-  // !SECTION
-
-  // SECTION rebond replanning
-
   bool EGOPlannerManager::reboundReplan(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel,
                                         Eigen::Vector3d start_acc, Eigen::Vector3d local_target_pt,
                                         Eigen::Vector3d local_target_vel, bool flag_polyInit, bool flag_randomPolyTraj)
   {
     static int count = 0;
-    printf("\033[47;30m\n[drone %d replan %d]==============================================\033[0m\n", pp_.drone_id, count++);
-    // cout.precision(3);
-    // cout << "start: " << start_pt.transpose() << ", " << start_vel.transpose() << "\ngoal:" << local_target_pt.transpose() << ", " << local_target_vel.transpose()
-    //      << endl;
+
+    cout << GREEN_IN_WHITE << node_name << "uav"<< pp_.drone_id << " replan " << count++ << TAIL << endl;
 
     if ((start_pt - local_target_pt).norm() < 0.2)
     {
-      cout << "Close to goal" << endl;
+      cout << GREEN << node_name << "Close to goal"<< TAIL << endl;
       continous_failures_count_++;
       return false;
     }
@@ -172,7 +176,7 @@ namespace ego_planner
             }
             else
             {
-              ROS_ERROR("pseudo_arc_length is empty, return!");
+              cout << RED << node_name << "pseudo_arc_length is empty, return!"<< TAIL << endl;
               continous_failures_count_++;
               return false;
             }
@@ -232,8 +236,11 @@ namespace ego_planner
     {
       // cout << "enter" << endl;
       std::vector<ControlPoints> trajs = bspline_optimizer_->distinctiveTrajs(segments);
-      cout << "\033[1;33m"
-           << "multi-trajs=" << trajs.size() << "\033[1;0m" << endl;
+
+      cout << GREEN_IN_WHITE << node_name << "multi-trajs=" << trajs.size()<< TAIL << endl;
+
+      // cout << "\033[1;33m"
+      //      << "multi-trajs=" << trajs.size() << "\033[1;0m" << endl;
 
       double final_cost, min_cost = 999999.0;
       for (int i = trajs.size() - 1; i >= 0; i--)
@@ -241,7 +248,7 @@ namespace ego_planner
         if (bspline_optimizer_->BsplineOptimizeTrajRebound(ctrl_pts_temp, final_cost, trajs[i], ts))
         {
 
-          cout << "traj " << trajs.size() - i << " success." << endl;
+          cout << GREEN_IN_WHITE << node_name << "traj " << trajs.size() - i<< " success."<< TAIL << endl;
 
           flag_step_1_success = true;
           if (final_cost < min_cost)
@@ -260,7 +267,7 @@ namespace ego_planner
         }
         else
         {
-          cout << "traj " << trajs.size() - i << " failed." << endl;
+          cout << YELLOW_IN_WHITE << node_name << "traj " << trajs.size() - i<< " failed."<< TAIL << endl;
         }
       }
 
@@ -276,7 +283,8 @@ namespace ego_planner
       visualization_->displayInitPathList(point_set, 0.2, 0);
     }
 
-    cout << "plan_success=" << flag_step_1_success << endl;
+    cout << GREEN << node_name << "plan_success=" << flag_step_1_success<< TAIL << endl;
+
     if (!flag_step_1_success)
     {
       visualization_->displayOptimalList(ctrl_pts, 0);
@@ -298,7 +306,7 @@ namespace ego_planner
       bool flag_step_2_success = true;
       if (!pos.checkFeasibility(ratio, false))
       {
-        cout << "Need to reallocate time." << endl;
+        cout << GREEN << node_name << "Need to reallocate time." << TAIL << endl;
 
         Eigen::MatrixXd optimal_control_points;
         flag_step_2_success = refineTrajAlgo(pos, start_end_derivatives, ratio, ts, optimal_control_points);
@@ -308,7 +316,8 @@ namespace ego_planner
 
       if (!flag_step_2_success)
       {
-        printf("\033[34mThis refined trajectory hits obstacles. It doesn't matter if appeares occasionally. But if continously appearing, Increase parameter \"lambda_fitness\".\n\033[0m");
+        cout << GREEN << node_name << "This refined trajectory hits obstacles. It doesn't matter if appeares occasionally. But if continously appearing, Increase parameter lambda_fitness" << TAIL << endl;
+
         continous_failures_count_++;
         return false;
       }
@@ -319,7 +328,7 @@ namespace ego_planner
       if (print_once)
       {
         print_once = false;
-        ROS_ERROR("IN SWARM MODE, REFINE DISABLED!");
+        cout << RED << node_name << "IN SWARM MODE, REFINE DISABLED!" << TAIL << endl;
       }
     }
 
@@ -332,7 +341,8 @@ namespace ego_planner
     static int count_success = 0;
     sum_time += (t_init + t_opt + t_refine).toSec();
     count_success++;
-    cout << "total time:\033[42m" << (t_init + t_opt + t_refine).toSec() << "\033[0m,optimize:" << (t_init + t_opt).toSec() << ",refine:" << t_refine.toSec() << ",avg_time=" << sum_time / count_success << endl;
+    // cout << "total time:\033[42m" << (t_init + t_opt + t_refine).toSec() << "\033[0m,optimize:" << (t_init + t_opt).toSec() << ",refine:" << t_refine.toSec() << ",avg_time=" << sum_time / count_success << endl;
+    cout << GREEN << node_name << "total time: " << (t_init + t_opt + t_refine).toSec()<< ", optimize "<< (t_init + t_opt).toSec()<< ", refine:" <<t_refine.toSec()<< ", avg_time=" << sum_time / count_success<< TAIL << endl;
 
     // success. YoY
     continous_failures_count_ = 0;
