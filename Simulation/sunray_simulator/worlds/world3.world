@@ -1,0 +1,2459 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <world name="custom_grid">
+    <!-- 光源和地面 -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- 生成的圆柱 -->
+    
+        <model name="cylinder_green_-9_-10.0">
+          <pose>-9 -10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_-8.0">
+          <pose>-9 -8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_-6.0">
+          <pose>-9 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_-4.0">
+          <pose>-9 -4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_-2.0">
+          <pose>-9 -2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_0.0">
+          <pose>-9 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_2.0">
+          <pose>-9 2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_4.0">
+          <pose>-9 4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_6.0">
+          <pose>-9 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_8.0">
+          <pose>-9 8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-9_10.0">
+          <pose>-9 10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_-10.0">
+          <pose>-5 -10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_-8.0">
+          <pose>-5 -8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_-6.0">
+          <pose>-5 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_-4.0">
+          <pose>-5 -4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_-2.0">
+          <pose>-5 -2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_0.0">
+          <pose>-5 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_2.0">
+          <pose>-5 2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_4.0">
+          <pose>-5 4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_6.0">
+          <pose>-5 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_8.0">
+          <pose>-5 8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-5_10.0">
+          <pose>-5 10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_-10.0">
+          <pose>-1 -10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_-8.0">
+          <pose>-1 -8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_-6.0">
+          <pose>-1 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_-4.0">
+          <pose>-1 -4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_-2.0">
+          <pose>-1 -2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_0.0">
+          <pose>-1 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_2.0">
+          <pose>-1 2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_4.0">
+          <pose>-1 4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_6.0">
+          <pose>-1 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_8.0">
+          <pose>-1 8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_-1_10.0">
+          <pose>-1 10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_-10.0">
+          <pose>1 -10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_-8.0">
+          <pose>1 -8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_-6.0">
+          <pose>1 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_-4.0">
+          <pose>1 -4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_-2.0">
+          <pose>1 -2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_0.0">
+          <pose>1 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_2.0">
+          <pose>1 2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_4.0">
+          <pose>1 4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_6.0">
+          <pose>1 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_8.0">
+          <pose>1 8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_1_10.0">
+          <pose>1 10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_-10.0">
+          <pose>5 -10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_-8.0">
+          <pose>5 -8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_-6.0">
+          <pose>5 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_-4.0">
+          <pose>5 -4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_-2.0">
+          <pose>5 -2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_0.0">
+          <pose>5 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_2.0">
+          <pose>5 2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_4.0">
+          <pose>5 4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_6.0">
+          <pose>5 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_8.0">
+          <pose>5 8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_5_10.0">
+          <pose>5 10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_-10.0">
+          <pose>9 -10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_-8.0">
+          <pose>9 -8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_-6.0">
+          <pose>9 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_-4.0">
+          <pose>9 -4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_-2.0">
+          <pose>9 -2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_0.0">
+          <pose>9 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_2.0">
+          <pose>9 2.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_4.0">
+          <pose>9 4.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_6.0">
+          <pose>9 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_8.0">
+          <pose>9 8.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_green_9_10.0">
+          <pose>9 10.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.2</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>0 1 0 1</ambient>  <!-- 绿色 -->
+                <diffuse>0 1 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_-9.0">
+          <pose>-7 -9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_-6.0">
+          <pose>-7 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_-3.0">
+          <pose>-7 -3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_0.0">
+          <pose>-7 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_3.0">
+          <pose>-7 3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_6.0">
+          <pose>-7 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-7_9.0">
+          <pose>-7 9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_-9.0">
+          <pose>-3 -9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_-6.0">
+          <pose>-3 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_-3.0">
+          <pose>-3 -3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_0.0">
+          <pose>-3 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_3.0">
+          <pose>-3 3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_6.0">
+          <pose>-3 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_-3_9.0">
+          <pose>-3 9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_-9.0">
+          <pose>3 -9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_-6.0">
+          <pose>3 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_-3.0">
+          <pose>3 -3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_0.0">
+          <pose>3 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_3.0">
+          <pose>3 3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_6.0">
+          <pose>3 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_3_9.0">
+          <pose>3 9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_-9.0">
+          <pose>7 -9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_-6.0">
+          <pose>7 -6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_-3.0">
+          <pose>7 -3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_0.0">
+          <pose>7 0.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_3.0">
+          <pose>7 3.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_6.0">
+          <pose>7 6.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+        <model name="cylinder_red_7_9.0">
+          <pose>7 9.0 1.0 0 0 0</pose>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <cylinder>
+                  <radius>0.4</radius>
+                  <length>2.0</length>
+                </cylinder>
+              </geometry>
+              <material>
+                <ambient>1 0 0 1</ambient>  <!-- 红色 -->
+                <diffuse>1 0 0 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+        
+  </world>
+</sdf>
