@@ -3,9 +3,9 @@
     <arg name="drone_id" default="0"/>
 
 	<!-- size of map, change the size inflate x, y, z according to your application -->
-    <arg name="map_size_x" default="10.0"/>
-    <arg name="map_size_y" default="10.0"/>
-    <arg name="map_size_z" default=" 3.0"/>
+    <arg name="map_size_x" default="80.0"/>
+    <arg name="map_size_y" default="80.0"/>
+    <arg name="map_size_z" default=" 2.0"/>
 
 	<!-- 无人机目标点位置，用于规划器 -->
 	<arg name="target_x" default="20.0"/>
@@ -19,7 +19,7 @@
 	<arg name="planning_horizon" default="7.5"/>
 
 	<!-- topic of your odometry such as VIO or LIO -->
-    <arg name="odom_topic" default="/uav1/sunray/uav_odom" />
+    <arg name="odom_topic" default="/uav1/sunray/gazebo_pose" />
 	<!-- 点云信息，仿真中由map_generator产生 -->
 	<arg name="cloud_topic" default="pcl_render_node/cloud"/>
 	<!-- 相机及深度信息仿真中没有使用，此处可忽略(真机中使用) -->
@@ -28,6 +28,7 @@
 
 	<!-- number of moving objects -->
 	<arg name="obj_num" default="0" />
+
 
   	<!-- EGO-Planner主节点 -->
   	<node pkg="ego_planner" name="drone_$(arg drone_id)_ego_planner_node" type="ego_planner_node" output="screen">
@@ -77,7 +78,7 @@
 		<param name="fsm/waypoint0_z" value="$(arg target_z)" type="double"/>
 		<!-- GridMap参数 -->
 		<!-- 分辨率、地图尺寸 -->
-		<param name="grid_map/resolution"      value="0.1" /> 
+		<param name="grid_map/resolution"      value="0.2" /> 
 		<param name="grid_map/map_size_x"   value="$(arg map_size_x)" /> 
 		<param name="grid_map/map_size_y"   value="$(arg map_size_y)" /> 
 		<param name="grid_map/map_size_z"   value="$(arg map_size_z)" /> 
@@ -87,10 +88,10 @@
 		<param name="grid_map/local_update_range_y"  value="5.5" /> 
 		<param name="grid_map/local_update_range_z"  value="4.5" /> 
 		<!-- 膨胀距离 -->
-		<param name="grid_map/obstacles_inflation"     value="0.2" /> 
+		<param name="grid_map/obstacles_inflation"     value="0.099" /> 
 		<param name="grid_map/local_map_margin" value="10"/>
 		<!-- 地面高度 -->
-		<param name="grid_map/ground_height"        value="0.2"/>
+		<param name="grid_map/ground_height"        value="0.1"/>
 		<!-- 虚拟天花板高度 -->
 		<param name="grid_map/virtual_ceil_height"   value="2.0"/>
 		<param name="grid_map/visualization_truncate_height"   value="1.8"/>
@@ -184,4 +185,7 @@
         <param name="use_hight" value="true" />
         <param name="z_hight" value="1.0" />
     </node>
+
+  	<node name="rviz_ego" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" />
+
 </launch>
