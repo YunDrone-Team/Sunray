@@ -64,6 +64,8 @@ namespace ego_planner
     double emergency_time_;
     bool flag_realworld_experiment_;
     bool enable_fail_safe_;
+    bool fix_agent_height;
+    double agent_height;
     string node_name;
 
     /* planning data */

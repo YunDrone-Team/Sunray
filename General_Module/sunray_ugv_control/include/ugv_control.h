@@ -33,13 +33,14 @@ class UGV_CONTROL
         string node_name;    
         int ugv_id;                                    // 编号 - 通过参数配置
         int pose_source;                               // 位置来源（1：代表动捕、2代表gazebo odom） - 通过参数配置
-        int ugv_type;
         string ugv_name;                               // 名称
         string topic_prefix;                           // 话题前缀
         string vel_topic;                               // 速度话题
+        string odom_topic;
         bool flag_printf;                              // 是否打印 - 通过参数配置
         bool goal_set;                                 // 是否有规划目标点
         bool enable_rviz;
+        bool enable_astar;
         float resolution;                              // 地图分辨率
         float inflate;                                 // 地图膨胀系数
         double desired_yaw{0.0};                       // 当前期望偏航角（来自外部控制指令赋值）
@@ -110,7 +111,7 @@ class UGV_CONTROL
 
         void mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
         void mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
-        void gazebo_odom_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void odom_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg);
         void goal_point_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
         void battery_cb(const std_msgs::Float32::ConstPtr &msg);

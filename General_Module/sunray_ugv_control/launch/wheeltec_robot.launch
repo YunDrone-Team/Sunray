@@ -1,12 +1,5 @@
 <launch>
 	<arg name="ugv_id" default="1"/>
-	<arg name="k_p_path" default="4.0"/>
-	<arg name="k_aoivd" default="3.0"/>
-	<arg name="max_vel" default="1.5" />
-	<arg name="x_min" default="-4.5"/>
-	<arg name="x_max" default="4.5"/>
-	<arg name="y_min" default="-2.2"/>
-	<arg name="y_max" default="2.2"/>
 
 	<!-- 开启 底层单片机控制节点 -->
 	<node pkg="turn_on_wheeltec_robot" type="wheeltec_robot_node" name="wheeltec_robot_$(arg ugv_id)" output="screen">
