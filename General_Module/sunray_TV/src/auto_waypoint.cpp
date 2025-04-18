@@ -42,10 +42,14 @@ public:
         px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 10, &auto_waypoint::px4_state_callback, this);
         uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10, &auto_waypoint::uav_state_callback, this);
 
-        plan_points.push_back(tuple<float, float, float>(1, 1, 1));
-        plan_points.push_back(tuple<float, float, float>(1, -1, 1));
-        plan_points.push_back(tuple<float, float, float>(-1, -1, 1));
-        plan_points.push_back(tuple<float, float, float>(0, 0, 1));
+        plan_points.push_back(tuple<float, float, float>(3.65, 0, 1));
+        plan_points.push_back(tuple<float, float, float>(3.57, -2.96, 1));
+        plan_points.push_back(tuple<float, float, float>(3.68, -9.98, 1));
+        plan_points.push_back(tuple<float, float, float>(-1, -10.4, 1));
+        plan_points.push_back(tuple<float, float, float>(-1.5, -16.5, 1));
+        plan_points.push_back(tuple<float, float, float>(-2.79, -16.7, 1));
+        plan_points.push_back(tuple<float, float, float>(-2.2, -27.4, 1));
+        plan_points.push_back(tuple<float, float, float>(-9.6, -27.3, 1));
 
         state = 0;
         next_step = 0;
