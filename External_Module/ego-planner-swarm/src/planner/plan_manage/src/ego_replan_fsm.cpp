@@ -44,8 +44,6 @@ namespace ego_planner
       nh.param("fsm/waypoint" + to_string(i) + "_z", waypoints_[i][2], -1.0);
     }
 
-
-
     /* initialize main modules */
     // RVIZ显示相关类
     visualization_.reset(new PlanningVisualization(nh));

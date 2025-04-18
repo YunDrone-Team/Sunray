@@ -9,6 +9,7 @@
 #include <ros/ros.h>
 #include "bspline_opt/lbfgs.hpp"
 #include <traj_utils/plan_container.hpp>
+#include "printf_utils.h"
 
 // Gradient and elasitc band optimization
 
@@ -131,6 +132,7 @@ namespace ego_planner
     fast_planner::ObjPredictor::Ptr moving_objs_;
     SwarmTrajData *swarm_trajs_{NULL}; // Can not use shared_ptr and no need to free
     int drone_id_;
+    string node_name;
 
     enum FORCE_STOP_OPTIMIZE_TYPE
     {

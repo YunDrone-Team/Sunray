@@ -33,6 +33,7 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${Eigen3_INCLUDE_DIRS} 
     ${PCL_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/../plan_manage/include
 )
 
 add_library( bspline_opt 
