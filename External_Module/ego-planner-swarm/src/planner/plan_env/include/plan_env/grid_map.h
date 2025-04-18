@@ -191,6 +191,8 @@ public:
 private:
   MappingParameters mp_;
   MappingData md_;
+  bool fix_agent_height;
+  double agent_height;
 
   // get depth image and camera pose
   void depthPoseCallback(const sensor_msgs::ImageConstPtr& img,

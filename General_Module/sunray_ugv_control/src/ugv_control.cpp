@@ -6,14 +6,16 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     nh.param<int>("ugv_id", ugv_id, 1);
     // 【参数】是否打印
     nh.param<bool>("flag_printf", flag_printf, true);
-    // 【参数】设置获取数据源
+    // 【参数】是否发布到rviz
+    nh.param<bool>("enable_rviz", enable_rviz, false);     
+    // 【参数】是否启动自带A*
+    nh.param<bool>("enable_astar", enable_astar, false);
+    // 【参数】设置获取数据源，1代表使用动捕、2代表使用自定义odom话题
     nh.param<int>("pose_source", pose_source, 2);
     // 【参数】小车底层控制输出话题
+    nh.param<string>("odom_topic", odom_topic, "/odom");
+    // 【参数】小车底层控制输出话题
     nh.param<string>("vel_topic", vel_topic, "/cmd_vel");
-    // 【参数】是否发布到rviz
-    nh.param<bool>("enable_rviz", enable_rviz, true);          
-    // 【参数】是否发布到rviz
-    nh.param<int>("ugv_type", ugv_type, 0); 
     // 【参数】位置控制参数 - xy
     nh.param<float>("ugv_control_param/Kp_xy", ugv_control_param.Kp_xy, 1.4);
     // 【参数】位置控制参数 - yaw
@@ -27,18 +29,23 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     nh.param<float>("ugv_geo_fence/min_x", ugv_geo_fence.min_x, -10.0);
     nh.param<float>("ugv_geo_fence/max_y", ugv_geo_fence.max_y, 10.0);
     nh.param<float>("ugv_geo_fence/min_y", ugv_geo_fence.min_y, -10.0);
-    // 【参数】地图分辨率
-    nh.param<float>("map/resolution", resolution, 0.4);
-    // 【参数】地图膨胀参数
-    nh.param<float>("map/inflate", inflate, 0.4);
 
-    // 计算地图网格数量
-    int grid_w = static_cast<int>((ugv_geo_fence.max_x - ugv_geo_fence.min_x) / resolution);
-    int grid_h = static_cast<int>((ugv_geo_fence.max_y - ugv_geo_fence.min_y) / resolution);
-    // 初始化地图
-    map_gen.init(nh, ugv_geo_fence.min_x, ugv_geo_fence.min_y, ugv_geo_fence.max_x, ugv_geo_fence.max_y, resolution, inflate);
-    // 初始化A*算法
-    astar.init(grid_w, grid_h);
+    // 如果启动原生的Astar，则初始化astar类和地图类
+    if(enable_astar)
+    {
+        // 【参数】地图分辨率
+        nh.param<float>("map/resolution", resolution, 0.4);
+        // 【参数】地图膨胀参数
+        nh.param<float>("map/inflate", inflate, 0.4);
+        // 计算地图网格数量
+        int grid_w = static_cast<int>((ugv_geo_fence.max_x - ugv_geo_fence.min_x) / resolution);
+        int grid_h = static_cast<int>((ugv_geo_fence.max_y - ugv_geo_fence.min_y) / resolution);
+        // 初始化地图
+        map_gen.init(nh, ugv_geo_fence.min_x, ugv_geo_fence.min_y, ugv_geo_fence.max_x, ugv_geo_fence.max_y, resolution, inflate);
+        // 初始化A*算法
+        astar.init(grid_w, grid_h);
+    }
+
     // 初始化变量
     goal_set = false;
 
@@ -53,8 +60,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     }
     else if (pose_source == 2)
     {
-        // 【订阅】订阅gazebo Odom数据
-        gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>("/car_odom", 1, &UGV_CONTROL::gazebo_odom_cb, this);
+        // 【订阅】订阅Odom数据
+        gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::odom_cb, this);
     }
     else
     {
@@ -170,7 +177,7 @@ void UGV_CONTROL::mainloop()
         pos_control(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
         break;
     case sunray_msgs::UGVControlCMD::POS_CONTROL_BODY:
-        // 位置控制算法 ？？？？
+        // 位置控制算法 ？？？？暂时没有用
         pos_control_diff(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
         break;
     // VEL_CONTROL_BODY：车体系速度控制，无人车按照期望的速度在车体系移动（期望速度由外部指令赋值）
@@ -181,19 +188,16 @@ void UGV_CONTROL::mainloop()
         desired_vel.angular.z = constrain_function(current_ugv_cmd.angular_vel, ugv_control_param.max_vel_yaw, 0.01);
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
-
     // VEL_CONTROL_ENU：惯性系速度控制，无人车按照期望的速度在惯性系移动（期望速度由外部指令赋值）
     case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU:
         // 由于UGV底层控制指令为车体系，所以需要将收到的惯性系速度转换为车体系速度
         desired_vel = enu_to_body(current_ugv_cmd.desired_vel[0], current_ugv_cmd.desired_vel[1]);
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
-
     case sunray_msgs::UGVControlCMD::Point_Control_with_Astar:
         // A*算法
         path_control();
         break;
-
     default:
         break;
     }
@@ -238,11 +242,19 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
         cout << BLUE << text_info.data << TAIL << endl;
         break;
     case sunray_msgs::UGVControlCMD::Point_Control_with_Astar://6
-        planner_goal.pose.position.x = msg->desired_pos[0];
-        planner_goal.pose.position.y = msg->desired_pos[1];
-        goal_set = true; // 触发路径规划
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Point_Control_with_Astar!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        if(enable_astar)
+        {
+            planner_goal.pose.position.x = msg->desired_pos[0];
+            planner_goal.pose.position.y = msg->desired_pos[1];
+            goal_set = true; // 触发路径规划
+            text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Point_Control_with_Astar!";
+            cout << BLUE << text_info.data << TAIL << endl;
+        }else
+        {
+            text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " astar disable!! switch to hold";
+            cout << BLUE << text_info.data << TAIL << endl;
+            current_ugv_cmd.cmd = sunray_msgs::UGVControlCMD::INIT;
+        }
         break;
     default:
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Wrong!";
@@ -529,7 +541,7 @@ void UGV_CONTROL::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     ugv_state.odom_valid = true;
 }
 
-void UGV_CONTROL::gazebo_odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
+void UGV_CONTROL::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
     ugv_state.position[0] = msg->pose.pose.position.x;
     ugv_state.position[1] = msg->pose.pose.position.y;

@@ -28,6 +28,11 @@ namespace ego_planner
     nh.param("fsm/realworld_experiment", flag_realworld_experiment_, false);
     // 未知
     nh.param("fsm/fail_safe", enable_fail_safe_, true);
+    // odom是否固定高度
+    nh.param("fsm/fix_agent_height", fix_agent_height, true);
+    // 固定高度
+    nh.param("fsm/agent_height", agent_height, 1.0);
+
     // 真实实验中需要等待"/traj_start_trigger"话题
     have_trigger_ = !flag_realworld_experiment_;
     // 读取路径点
@@ -228,6 +233,14 @@ namespace ego_planner
     odom_pos_(0) = msg->pose.pose.position.x;
     odom_pos_(1) = msg->pose.pose.position.y;
     odom_pos_(2) = msg->pose.pose.position.z;
+
+    // 固定odom高度
+    // 目的1：用于无人机二维平面规划
+    // 目的2：用于无人车的规划路径（防止里程计高度漂移）
+    if(fix_agent_height)
+    {
+      odom_pos_(2) = agent_height;
+    }
 
     odom_vel_(0) = msg->twist.twist.linear.x;
     odom_vel_(1) = msg->twist.twist.linear.y;
