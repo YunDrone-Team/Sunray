@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
 
   unsigned int seed = rd();
   // unsigned int seed = 2433201515;
-  cout << "seed=" << seed << endl;
+  // cout << "seed=" << seed << endl;
   eng.seed(seed);
 
   // RandomMapGenerate();

@@ -18,6 +18,12 @@ namespace ego_planner
     nh.param("optimization/max_acc", max_acc_, -1.0);
 
     nh.param("optimization/order", order_, 3);
+    int id;
+    nh.param("manager/drone_id", id, -1);
+
+    node_name = "[BsplineOptimizer_uav" + std::to_string(id)+"] -- ";
+
+    cout << GREEN << node_name << "init." << TAIL << endl;
   }
 
   void BsplineOptimizer::setEnvironment(const GridMap::Ptr &map)
@@ -162,20 +168,20 @@ namespace ego_planner
           Eigen::Vector3d base_pt_reverse, base_vec_reverse;
           if (RichInfoSegs[i].first.base_point[j].size() != 1)
           {
-            cout << "RichInfoSegs[" << i << "].first.base_point[" << j << "].size()=" << RichInfoSegs[i].first.base_point[j].size() << endl;
-            ROS_ERROR("Wrong number of base_points!!! Should not be happen!.");
+            cout << GREEN << node_name << "RichInfoSegs[" << i << "].first.base_point[" << j << "].size()=" << RichInfoSegs[i].first.base_point[j].size() << TAIL << endl;
+            cout << RED << node_name << "Wrong number of base_points!!! Should not be happen!"<< TAIL << endl;
 
             cout << setprecision(5);
-            cout << "cps_" << endl;
-            cout << " clearance=" << cps_.clearance << " cps.size=" << cps_.size << endl;
+            cout << GREEN << node_name << "cps_" << TAIL << endl;
+            cout << GREEN << node_name << " clearance=" << cps_.clearance << " cps.size=" << cps_.size << TAIL << endl;
             for (int temp_i = 0; temp_i < cps_.size; temp_i++)
             {
               if (cps_.base_point[temp_i].size() > 1 && cps_.base_point[temp_i].size() < 1000)
               {
-                ROS_ERROR("Should not happen!!!");
-                cout << "######" << cps_.points.col(temp_i).transpose() << endl;
+                cout << RED << node_name << "Should not be happen!"<< TAIL << endl;
+                cout << GREEN << node_name << "######" << cps_.points.col(temp_i).transpose() << TAIL << endl;
                 for (size_t temp_j = 0; temp_j < cps_.base_point[temp_i].size(); temp_j++)
-                  cout << "      " << cps_.base_point[temp_i][temp_j].transpose() << " @ " << cps_.direction[temp_i][temp_j].transpose() << endl;
+                  cout << GREEN << node_name << "      " << cps_.base_point[temp_i][temp_j].transpose() << " @ " << cps_.direction[temp_i][temp_j].transpose() << TAIL << endl;
               }
             }
 
@@ -206,7 +212,7 @@ namespace ego_planner
             for (; l <= l_upbound; l += RESOLUTION)
             {
               Eigen::Vector3d base_pt_temp = base_pt_reverse + l * base_vec_reverse;
-              //cout << base_pt_temp.transpose() << endl;
+              //cout << GREEN << node_name << base_pt_temp.transpose() << TAIL << endl;
               if (!grid_map_->getInflateOccupancy(base_pt_temp))
               {
                 RichInfoSegs[i].second.base_point[j][0] = base_pt_temp;
@@ -234,7 +240,7 @@ namespace ego_planner
           else
           {
             ROS_WARN("base_point and control point are too close!");
-            cout << "base_point=" << RichInfoSegs[i].first.base_point[j][0].transpose() << " control point=" << RichInfoSegs[i].first.points.col(j).transpose() << endl;
+            cout << GREEN << node_name << "base_point=" << RichInfoSegs[i].first.base_point[j][0].transpose() << " control point=" << RichInfoSegs[i].first.points.col(j).transpose() << endl;
 
             segments.erase(segments.begin() + i);
             RichInfoSegs.erase(RichInfoSegs.begin() + i);
@@ -264,13 +270,13 @@ namespace ego_planner
       }
       else if (RichInfoSegs[i].first.size == 1)
       {
-        cout << "i=" << i << " RichInfoSegs.size()=" << RichInfoSegs.size() << endl;
-        cout << "RichInfoSegs[i].first.size=" << RichInfoSegs[i].first.size << endl;
-        cout << "RichInfoSegs[i].first.direction.size()=" << RichInfoSegs[i].first.direction.size() << endl;
-        cout << "RichInfoSegs[i].first.direction[0].size()=" << RichInfoSegs[i].first.direction[0].size() << endl;
-        cout << "RichInfoSegs[i].first.points.cols()=" << RichInfoSegs[i].first.points.cols() << endl;
-        cout << "RichInfoSegs[i].first.base_point.size()=" << RichInfoSegs[i].first.base_point.size() << endl;
-        cout << "RichInfoSegs[i].first.base_point[0].size()=" << RichInfoSegs[i].first.base_point[0].size() << endl;
+        cout << GREEN << node_name << "i=" << i << " RichInfoSegs.size()=" << RichInfoSegs.size() << TAIL << endl;
+        cout << GREEN << node_name << "RichInfoSegs[i].first.size=" << RichInfoSegs[i].first.size << TAIL << endl;
+        cout << GREEN << node_name << "RichInfoSegs[i].first.direction.size()=" << RichInfoSegs[i].first.direction.size() << TAIL << endl;
+        cout << GREEN << node_name << "RichInfoSegs[i].first.direction[0].size()=" << RichInfoSegs[i].first.direction[0].size() << TAIL << endl;
+        cout << GREEN << node_name << "RichInfoSegs[i].first.points.cols()=" << RichInfoSegs[i].first.points.cols() << TAIL << endl;
+        cout << GREEN << node_name << "RichInfoSegs[i].first.base_point.size()=" << RichInfoSegs[i].first.base_point.size() << TAIL << endl;
+        cout << GREEN << node_name << "RichInfoSegs[i].first.base_point[0].size()=" << RichInfoSegs[i].first.base_point[0].size() << TAIL << endl;
         Eigen::Vector3d base_vec_reverse = -RichInfoSegs[i].first.direction[0][0];
         Eigen::Vector3d base_pt_reverse = RichInfoSegs[i].first.points.col(0) + base_vec_reverse * (RichInfoSegs[i].first.base_point[0][0] - RichInfoSegs[i].first.points.col(0)).norm();
 
@@ -281,7 +287,7 @@ namespace ego_planner
           for (; l <= l_upbound; l += RESOLUTION)
           {
             Eigen::Vector3d base_pt_temp = base_pt_reverse + l * base_vec_reverse;
-            //cout << base_pt_temp.transpose() << endl;
+            //cout << GREEN << node_name << base_pt_temp.transpose() << TAIL << endl;
             if (!grid_map_->getInflateOccupancy(base_pt_temp))
             {
               RichInfoSegs[i].second.base_point[0][0] = base_pt_temp;
@@ -307,7 +313,7 @@ namespace ego_planner
         else
         {
           ROS_WARN("base_point and control point are too close!, 2");
-          cout << "base_point=" << RichInfoSegs[i].first.base_point[0][0].transpose() << " control point=" << RichInfoSegs[i].first.points.col(0).transpose() << endl;
+          cout << GREEN << node_name << "base_point=" << RichInfoSegs[i].first.base_point[0][0].transpose() << " control point=" << RichInfoSegs[i].first.points.col(0).transpose() << TAIL << endl;
 
           segments.erase(segments.begin() + i);
           RichInfoSegs.erase(RichInfoSegs.begin() + i);
@@ -323,7 +329,7 @@ namespace ego_planner
         i--;
       }
     }
-    // cout << "A3" << endl;
+    // cout << GREEN << node_name << "A3" << TAIL << endl;
 
     // Step 2. Assemble each segment to make up the new control point sequence.
     if (seg_upbound == 0) // After the erase operation above, segment legth will decrease to 0 again.
@@ -348,7 +354,8 @@ namespace ego_planner
         digit_id++;
         if (digit_id >= seg_upbound)
         {
-          ROS_ERROR("Should not happen!!! digit_id=%d, seg_upbound=%d", digit_id, seg_upbound);
+          // ROS_ERROR("Should not happen!!! digit_id=%d, seg_upbound=%d", digit_id, seg_upbound);
+          cout << RED << node_name << "Should not happen!!! digit_id = " <<digit_id << ", seg_upbound = " << seg_upbound << TAIL << endl;
         }
         selection[digit_id]++;
       }
@@ -360,18 +367,18 @@ namespace ego_planner
       int cp_id = 0, seg_id = 0, cp_of_seg_id = 0;
       while (/*seg_id < RichInfoSegs.size() ||*/ cp_id < cps_.size)
       {
-        //cout << "A ";
+        //cout << GREEN << node_name << "A ";
         // if ( seg_id >= RichInfoSegs.size() )
         // {
-        //   cout << "seg_id=" << seg_id << " RichInfoSegs.size()=" << RichInfoSegs.size() << endl;
+        //   cout << GREEN << node_name << "seg_id=" << seg_id << " RichInfoSegs.size()=" << RichInfoSegs.size() << TAIL << endl;
         // }
         // if ( cp_id >= cps_.base_point.size() )
         // {
-        //   cout << "cp_id=" << cp_id << " cps_.base_point.size()=" << cps_.base_point.size() << endl;
+        //   cout << GREEN << node_name << "cp_id=" << cp_id << " cps_.base_point.size()=" << cps_.base_point.size() << TAIL << endl;
         // }
         // if ( cp_of_seg_id >= RichInfoSegs[seg_id].first.base_point.size() )
         // {
-        //   cout << "cp_of_seg_id=" << cp_of_seg_id << " RichInfoSegs[seg_id].first.base_point.size()=" << RichInfoSegs[seg_id].first.base_point.size() << endl;
+        //   cout << GREEN << node_name << "cp_of_seg_id=" << cp_of_seg_id << " RichInfoSegs[seg_id].first.base_point.size()=" << RichInfoSegs[seg_id].first.base_point.size() << TAIL << endl;
         // }
 
         if (seg_id >= seg_upbound || cp_id < segments[seg_id].first || cp_id > segments[seg_id].second)
@@ -413,7 +420,7 @@ namespace ego_planner
         }
         else
         {
-          ROS_ERROR("Shold not happen!!!!, cp_id=%d, seg_id=%d, segments.front().first=%d, segments.back().second=%d, segments[seg_id].first=%d, segments[seg_id].second=%d",
+          ROS_ERROR("BsplineOptimizer Shold not happen!!!!, cp_id=%d, seg_id=%d, segments.front().first=%d, segments.back().second=%d, segments[seg_id].first=%d, segments[seg_id].second=%d",
                     cp_id, seg_id, segments.front().first, segments.back().second, segments[seg_id].first, segments[seg_id].second);
         }
 
@@ -452,13 +459,13 @@ namespace ego_planner
     int i_end = (int)init_points.cols() - order_ - ((int)init_points.cols() - 2 * order_) / 3; // only check closed 2/3 points.
     for (int i = order_; i <= i_end; ++i)
     {
-      //cout << " *" << i-1 << "*" ;
+      //cout << GREEN << node_name << " *" << i-1 << "*" ;
       for (double a = 1.0; a > 0.0; a -= step_size)
       {
         occ = grid_map_->getInflateOccupancy(a * init_points.col(i - 1) + (1 - a) * init_points.col(i));
-        //cout << " " << occ;
+        //cout << GREEN << node_name << " " << occ;
         // cout << setprecision(5);
-        // cout << (a * init_points.col(i-1) + (1-a) * init_points.col(i)).transpose() << " occ1=" << occ << endl;
+        // cout << GREEN << node_name << (a * init_points.col(i-1) + (1-a) * init_points.col(i)).transpose() << " occ1=" << occ << TAIL << endl;
 
         if (occ && !last_occ)
         {
@@ -497,11 +504,11 @@ namespace ego_planner
         }
       }
     }
-    // cout << endl;
+    // cout << TAIL << endl;
 
     // for (size_t i = 0; i < segment_ids.size(); i++)
     // {
-    //   cout << "segment_ids=" << segment_ids[i].first << " ~ " << segment_ids[i].second << endl;
+    //   cout << "segment_ids=" << segment_ids[i].first << " ~ " << segment_ids[i].second << TAIL << endl;
     // }
 
     // return in advance
@@ -515,7 +522,7 @@ namespace ego_planner
     vector<vector<Eigen::Vector3d>> a_star_pathes;
     for (size_t i = 0; i < segment_ids.size(); ++i)
     {
-      //cout << "in=" << in.transpose() << " out=" << out.transpose() << endl;
+      //cout << "in=" << in.transpose() << " out=" << out.transpose() << TAIL << endl;
       Eigen::Vector3d in(init_points.col(segment_ids[i].first)), out(init_points.col(segment_ids[i].second));
       if (a_star_->AstarSearch(/*(in-out).norm()/10+0.05*/ 0.1, in, out))
       {
@@ -523,7 +530,7 @@ namespace ego_planner
       }
       else
       {
-        ROS_ERROR("a star error, force return!");
+        cout << RED << node_name << "Astar error, force return!"<< TAIL << endl;
         vector<std::pair<int, int>> blank_ret;
         return blank_ret;
       }
@@ -561,10 +568,10 @@ namespace ego_planner
       bounds[i] = std::pair<int, int>(id_low_bound, id_up_bound);
     }
 
-    // cout << "+++++++++" << endl;
+    // cout << "+++++++++" << TAIL << endl;
     // for ( int j=0; j<bounds.size(); ++j )
     // {
-    //   cout << bounds[j].first << "  " << bounds[j].second << endl;
+    //   cout << bounds[j].first << "  " << bounds[j].second << TAIL << endl;
     // }
 
     /*** Adjust segment length ***/
@@ -575,7 +582,7 @@ namespace ego_planner
     {
       /*** Adjust segment length ***/
       num_points = segment_ids[i].second - segment_ids[i].first + 1;
-      //cout << "i = " << i << " first = " << segment_ids[i].first << " second = " << segment_ids[i].second << endl;
+      //cout << "i = " << i << " first = " << segment_ids[i].first << " second = " << segment_ids[i].second << TAIL << endl;
       if (num_points < minimum_points)
       {
         double add_points_each_side = (int)(((minimum_points - num_points) + 1.0f) / 2);
@@ -590,7 +597,7 @@ namespace ego_planner
         adjusted_segment_ids[i].second = segment_ids[i].second;
       }
 
-      //cout << "final:" << "i = " << i << " first = " << adjusted_segment_ids[i].first << " second = " << adjusted_segment_ids[i].second << endl;
+      //cout << "final:" << "i = " << i << " first = " << adjusted_segment_ids[i].first << " second = " << adjusted_segment_ids[i].second << TAIL << endl;
     }
     for (size_t i = 1; i < adjusted_segment_ids.size(); i++) // Avoid overlap
     {
@@ -638,7 +645,7 @@ namespace ego_planner
                  (ctrl_pts_law.dot(init_points.col(j) - a_star_pathes[i][Astar_id]) / ctrl_pts_law.dot(a_star_pathes[i][Astar_id] - a_star_pathes[i][last_Astar_id])) // = t
                 );
 
-            //cout << "i=" << i << " j=" << j << " Astar_id=" << Astar_id << " last_Astar_id=" << last_Astar_id << " intersection_point = " << intersection_point.transpose() << endl;
+            //cout << "i=" << i << " j=" << j << " Astar_id=" << Astar_id << " last_Astar_id=" << last_Astar_id << " intersection_point = " << intersection_point.transpose() << TAIL << endl;
 
             got_intersection_id = j;
             break;
@@ -661,7 +668,7 @@ namespace ego_planner
                   a += grid_map_->getResolution();
                 cps_.base_point[j].push_back((a / length) * intersection_point + (1 - a / length) * init_points.col(j));
                 cps_.direction[j].push_back((intersection_point - init_points.col(j)).normalized());
-                // cout << "A " << j << endl;
+                // cout << "A " << j << TAIL << endl;
                 break;
               }
             }
@@ -720,7 +727,7 @@ namespace ego_planner
           {
             cps_.base_point[j].push_back(cps_.base_point[j - 1].back());
             cps_.direction[j].push_back(cps_.direction[j - 1].back());
-            // cout << "AAA " << j << endl;
+            // cout << "AAA " << j << TAIL << endl;
           }
 
         for (int j = got_intersection_id - 1; j >= adjusted_segment_ids[i].first; --j)
@@ -728,7 +735,7 @@ namespace ego_planner
           {
             cps_.base_point[j].push_back(cps_.base_point[j + 1].back());
             cps_.direction[j].push_back(cps_.direction[j + 1].back());
-            // cout << "AAAA " << j << endl;
+            // cout << "AAAA " << j << TAIL << endl;
           }
 
         final_segment_ids.push_back(adjusted_segment_ids[i]);
@@ -746,8 +753,8 @@ namespace ego_planner
   int BsplineOptimizer::earlyExit(void *func_data, const double *x, const double *g, const double fx, const double xnorm, const double gnorm, const double step, int n, int k, int ls)
   {
     BsplineOptimizer *opt = reinterpret_cast<BsplineOptimizer *>(func_data);
-    // cout << "k=" << k << endl;
-    // cout << "opt->flag_continue_to_optimize_=" << opt->flag_continue_to_optimize_ << endl;
+    // cout << "k=" << k << TAIL << endl;
+    // cout << "opt->flag_continue_to_optimize_=" << opt->flag_continue_to_optimize_ << TAIL << endl;
     return (opt->force_stop_type_ == STOP_FOR_ERROR || opt->force_stop_type_ == STOP_FOR_REBOUND);
   }
 
@@ -841,7 +848,7 @@ namespace ego_planner
       {
         Eigen::Vector3d obj_prid = moving_objs_->evaluateConstVel(id, t_now + time);
         double dist = (cps_.points.col(i) - obj_prid).norm();
-        //cout /*<< "cps_.points.col(i)=" << cps_.points.col(i).transpose()*/ << " moving_objs_=" << obj_prid.transpose() << " dist=" << dist << endl;
+        //cout /*<< "cps_.points.col(i)=" << cps_.points.col(i).transpose()*/ << " moving_objs_=" << obj_prid.transpose() << " dist=" << dist << TAIL << endl;
         double dist_err = CLEARANCE - dist;
         Eigen::Vector3d dist_grad = (cps_.points.col(i) - obj_prid).normalized();
 
@@ -855,10 +862,10 @@ namespace ego_planner
           gradient.col(i) += -2.0 * dist_err * dist_grad;
         }
       }
-      // cout << "time=" << time << " i=" << i << " order_=" << order_ << " end_idx=" << end_idx << endl;
-      // cout << "--" << endl;
+      // cout << "time=" << time << " i=" << i << " order_=" << order_ << " end_idx=" << end_idx << TAIL << endl;
+      // cout << "--" << TAIL << endl;
     }
-    // cout << "---------------" << endl;
+    // cout << "---------------" << TAIL << endl;
   }
 
   void BsplineOptimizer::calcDistanceCostRebound(const Eigen::MatrixXd &q, double &cost,
@@ -1137,8 +1144,8 @@ namespace ego_planner
       {
         if (vi(j) > max_vel_)
         {
-          // cout << "zx-todo VEL" << endl;
-          // cout << vi(j) << endl;
+          // cout << "zx-todo VEL" << TAIL << endl;
+          // cout << vi(j) << TAIL << endl;
           cost += pow(vi(j) - max_vel_, 2) * ts_inv2; // multiply ts_inv3 to make vel and acc has similar magnitude
 
           gradient(j, i + 0) += -2 * (vi(j) - max_vel_) / ts * ts_inv2;
@@ -1240,7 +1247,7 @@ namespace ego_planner
         }
         if (j < 0) // fail to get the obs free point
         {
-          ROS_ERROR("ERROR! the drone is in obstacle. This should not happen.");
+          cout << RED << node_name << "The drone is in obstacle. This should not happen."<< TAIL << endl;
           in_id = 0;
         }
 
@@ -1281,7 +1288,7 @@ namespace ego_planner
         }
         else
         {
-          ROS_ERROR("a star error");
+          cout << RED << node_name << "Astar error."<< TAIL << endl;
           segment_ids.erase(segment_ids.begin() + i);
           i--;
         }
@@ -1487,7 +1494,8 @@ namespace ego_planner
           initControlPoints(cps_.points, false);
           new_lambda2_ *= 2;
 
-          printf("\033[32miter(+1)=%d,time(ms)=%5.3f, swarm too close, keep optimizing\n\033[0m", iter_num_, time_ms);
+          // printf("\033[32miter(+1)=%d,time(ms)=%5.3f, swarm too close, keep optimizing\n\033[0m", iter_num_, time_ms);
+          cout << GREEN << node_name << "iter(+1) = "<< iter_num_ << ", time(ms) = " << time_ms <<", swarm too close, keep optimizing" << TAIL << endl;
 
           continue;
         }
@@ -1510,7 +1518,10 @@ namespace ego_planner
               //      << cps_.points.col(2).transpose() << "\n"
               //      << cps_.points.col(3).transpose() << "\n"
               //      << cps_.points.col(4).transpose() << endl;
-              ROS_WARN("First 3 control points in obstacles! return false, t=%f", t);
+
+              cout << YELLOW << node_name << "First 3 control points in obstacles! return false, t = "<< t << TAIL << endl;
+
+              // ROS_WARN("First 3 control points in obstacles! return false, t=%f", t);
               return false;
             }
 
@@ -1568,7 +1579,9 @@ namespace ego_planner
 
         if (!flag_occ)
         {
-          printf("\033[32miter(+1)=%d,time(ms)=%5.3f,total_t(ms)=%5.3f,cost=%5.3f\n\033[0m", iter_num_, time_ms, total_time_ms, final_cost);
+          // printf("\033[32miter(+1)=%d,time(ms)=%5.3f,total_t(ms)=%5.3f,cost=%5.3f\n\033[0m", iter_num_, time_ms, total_time_ms, final_cost);
+          cout << GREEN << node_name << "iter(+1) = "<< iter_num_ << ", time(ms) = " << time_ms <<", total_t(ms) = "<<total_time_ms<< ", cost = " << final_cost << TAIL << endl;
+
           success = true;
         }
         else // restart
@@ -1577,18 +1590,19 @@ namespace ego_planner
           initControlPoints(cps_.points, false);
           new_lambda2_ *= 2;
 
-          printf("\033[32miter(+1)=%d,time(ms)=%5.3f, collided, keep optimizing\n\033[0m", iter_num_, time_ms);
+          // printf("\033[32miter(+1)=%d,time(ms)=%5.3f, collided, keep optimizing\n\033[0m", iter_num_, time_ms);
+          cout << GREEN << node_name << "iter(+1) = "<< iter_num_ << ", time(ms) = " << time_ms << ", collided, keep optimizing." << TAIL << endl;
         }
       }
       else if (result == lbfgs::LBFGSERR_CANCELED)
       {
         flag_force_return = true;
         rebound_times++;
-        cout << "iter=" << iter_num_ << ",time(ms)=" << time_ms << ",rebound." << endl;
+        cout << GREEN << node_name << "iter = "<< iter_num_ << ", time(ms) = " << time_ms << ", rebound." << TAIL << endl;
       }
       else
       {
-        ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
+        ROS_WARN("Bspline_optimizer: Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
         // while (ros::ok());
       }
 
@@ -1632,7 +1646,7 @@ namespace ego_planner
       }
       else
       {
-        ROS_ERROR("Solver error in refining!, return = %d, %s", result, lbfgs::lbfgs_strerror(result));
+        ROS_ERROR("BsplineOptimizer Solver error in refining!, return = %d, %s", result, lbfgs::lbfgs_strerror(result));
       }
 
       UniformBspline traj = UniformBspline(cps_.points, 3, bspline_interval_);
