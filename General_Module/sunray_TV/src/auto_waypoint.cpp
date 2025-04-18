@@ -43,7 +43,7 @@ public:
         uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10, &auto_waypoint::uav_state_callback, this);
 
         plan_points.push_back(tuple<float, float, float>(1, 1, 1));
-        plan_points.push_back(tuple<float, float, float>(1, -, 1));
+        plan_points.push_back(tuple<float, float, float>(1, -1, 1));
         plan_points.push_back(tuple<float, float, float>(-1, -1, 1));
         plan_points.push_back(tuple<float, float, float>(0, 0, 1));
 
