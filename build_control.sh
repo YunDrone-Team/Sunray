@@ -8,5 +8,5 @@ catkin_make --source General_Module/sunray_uav_control --build build/sunray_uav_
 catkin_make --source General_Module/sunray_tutorial --build build/sunray_tutorial
 # 编译sunray_simulator模块
 catkin_make --source Simulation/sunray_simulator --build build/sunray_simulator
-# 编译simulator_utils模块
-catkin_make --source Simulation/simulator_utils --build build/simulator_utils
+# 编译vrpn模块
+catkin_make --source External_Module/vrpn_client_ros --build build/vrpn_client_ros
