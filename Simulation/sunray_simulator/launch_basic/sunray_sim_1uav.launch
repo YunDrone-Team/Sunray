@@ -1,21 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- MAVROS posix SITL environment launch script -->
-    <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
-    <!-- vehicle model and world -->
-    <arg name="gazebo_enable" default="true"/>
-    <arg name="gui" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
-    <!-- 启动Gazebo -->
-    <group if="$(arg gazebo_enable)">
-        <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="world_name" value="$(arg world)"/>
-            <arg name="gui" value="$(arg gui)"/>
-            <!-- 室内定位gazebo需要为true -->
-            <arg name="use_sim_time" value="true"/>
-        </include>
-    </group>
-
     <!-- <arg name="vehicle" default="sunray150"/> -->
     <arg name="vehicle" default="sunray150_with_mid360"/>
 
