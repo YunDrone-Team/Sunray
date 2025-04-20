@@ -64,7 +64,7 @@
           </ray>
           <plugin name='3D_laser' filename='libgazebo_ros_velodyne_laser.so'>
             <topicName>livox</topicName>
-            <frameName>livox_laser</frameName>
+            <frameName>lidar</frameName>
             <organize_cloud>0</organize_cloud>
             <min_range>0.4</min_range>
             <max_range>20</max_range>

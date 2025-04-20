@@ -1,5 +1,5 @@
 <launch>
-    <arg name="world" default="$(find sunray_simulator)/worlds/ugv_test.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test_ugv.world"/>
 
 	<!-- Gazebo 配置 -->
     <arg name="gui" default="true"/>
@@ -13,11 +13,11 @@
         <arg name="debug" value="$(arg debug)"/>
         <arg name="verbose" value="$(arg verbose)"/>
         <arg name="paused" value="$(arg paused)"/>
-        <arg name="use_sim_time" value="false"/>
+        <arg name="use_sim_time" value="true"/>
     </include>
 
     <!-- RVIZ -->
-    <arg name="rivz_config" default="$(find sunray_simulator)/launch_ugv/rviz.rviz"/>
+    <arg name="rivz_config" default="$(find sunray_simulator)/launch_ugv/ugv.rviz"/>
     <node type="rviz" name="rviz_ugv" pkg="rviz" args="-d $(arg rivz_config)"/>
 </launch>
 
