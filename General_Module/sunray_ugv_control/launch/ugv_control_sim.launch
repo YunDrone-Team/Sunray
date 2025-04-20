@@ -2,7 +2,10 @@
     <node name="ugv_control_node" pkg="sunray_ugv_control" type="ugv_control_node" output="screen">
         <param name="ugv_id" value="1" />
         <param name="flag_printf" value="true" />
+        <param name="enable_rviz" value="true" />
+        <!-- zidingyi odom  -->
         <param name="pose_source" value="2" />
+        <param name="odom_topic" value="/car_odom" />
         <param name="vel_topic" value="/cmd_vel" />
         <!-- 控制参数 -->
         <param name="ugv_control_param/Kp_xy" value="1.4" />
@@ -17,15 +20,5 @@
         <!-- 地图参数 -->
         <param name="map/resolution" value="0.4" />
         <param name="map/inflate" value="0.4" />
-
-
-        <!-- map generator 模块使用 -->
-        <!-- odom_type 1:从 odom_topic中获取 其他:从ugv_state中获取-->
-        <param name="odom_type" value="2" />
-        <param name="odom_topic" value="/car_odom" />
-        <param name="laser_topic" value="/scan" />
-        <param name="octomap_topic" value="/octomap_full" />
-        <param name="occupancy_topic" value="/occupancy_grid" />
     </node>
-    
 </launch>

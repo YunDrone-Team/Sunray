@@ -693,7 +693,8 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     tfs.header.frame_id = "world";       //相对于世界坐标系
     tfs.header.stamp = ros::Time::now(); //时间戳
     //  |----坐标系 ID
-    tfs.child_frame_id = tf_name + "/base_link"; //子坐标系，无人机的坐标系
+    // tfs.child_frame_id = tf_name + "/base_link"; //子坐标系，无人机的坐标系
+    tfs.child_frame_id = "/lidar"; //子坐标系，无人机的坐标系
     //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
     tfs.transform.translation.x = ugv_state.position[0];
     tfs.transform.translation.y = ugv_state.position[1];
