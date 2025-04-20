@@ -57,7 +57,7 @@
 		<!-- 规划器状态机参数-->
 		<!-- 1 MANUAL_TARGET: use 2D Nav Goal to select goal  -->
 		<!-- 2 PRESET_TARGET: use global waypoints below  -->
-		<param name="fsm/flight_type" value="2" type="int"/>
+		<param name="fsm/flight_type" value="1" type="int"/>
 		<!-- 重规划时间间隔，如果要增大规划频率，则减小该数值 -->
 		<param name="fsm/thresh_replan_time" value="1.0" type="double"/>
 		<!-- 重规划阈值：距离终点小于该阈值时，停止规划 -->

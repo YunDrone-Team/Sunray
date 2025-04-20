@@ -10,7 +10,7 @@
 
     <!-- 1. start gazebo -->
     <arg name="gazebo_enable" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/cylindrical_forest.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
     <arg name="gui" default="true"/>
     <arg name="debug" default="false"/>
     <arg name="verbose" default="false"/>
@@ -29,17 +29,17 @@
 
     <!--无人机编号-->
     <arg name="uav_id" default="1"/>
-    <arg name="uav_init_x" default="0.0"/>
-    <arg name="uav_init_y" default="0.0"/>
-    <arg name="uav_init_yaw" default="0.0"/>
+    <arg name="uav1_init_x" default="1.0"/>
+    <arg name="uav1_init_y" default="1.0"/>
+    <arg name="uav1_init_yaw" default="0.0"/>
     <arg name="vehicle" default="sunray150_with_mid360"/>
     <group ns="uav$(arg uav_id)">
         <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
            <arg name="uav_id" value="$(arg uav_id)" />
             <arg name="vehicle" value="$(arg vehicle)" />
-            <arg name="uav_init_x" value="$(arg uav_init_x)"/>
-            <arg name="uav_init_y" value="$(arg uav_init_y)"/>
-            <arg name="uav_init_yaw" value="$(arg uav_init_yaw)"/>
+            <arg name="uav_init_x" value="$(arg uav1_init_x)"/>
+            <arg name="uav_init_y" value="$(arg uav1_init_y)"/>
+            <arg name="uav_init_yaw" value="$(arg uav1_init_yaw)"/>
         </include>
     </group>
 

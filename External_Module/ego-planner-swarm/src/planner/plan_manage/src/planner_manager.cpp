@@ -58,7 +58,7 @@ namespace ego_planner
   {
     static int count = 0;
 
-    cout << GREEN_IN_WHITE << node_name << "uav"<< pp_.drone_id << " replan " << count++ << TAIL << endl;
+    cout << GREEN_IN_WHITE << node_name << "uav"<< pp_.drone_id << " reboundReplan " << count++ << TAIL << endl;
 
     if ((start_pt - local_target_pt).norm() < 0.2)
     {
