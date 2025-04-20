@@ -1,9 +1,6 @@
-
 #include <plan_manage/ego_replan_fsm.h>
-
 namespace ego_planner
 {
-
   void EGOReplanFSM::init(ros::NodeHandle &nh)
   {
     current_wp_ = 0;
@@ -58,7 +55,7 @@ namespace ego_planner
     cout << GREEN << node_name << "init." << TAIL << endl;
 
     /* callback */
-    // 规划状态机定时器
+    // 规划状态机定时器,100Hz
     exec_timer_ = nh.createTimer(ros::Duration(0.01), &EGOReplanFSM::execFSMCallback, this);
     // 安全检查定时器
     safety_timer_ = nh.createTimer(ros::Duration(0.05), &EGOReplanFSM::checkCollisionCallback, this);
@@ -453,6 +450,7 @@ namespace ego_planner
     fsm_num++;
     if (fsm_num == 500)
     {
+      // printf current ExecState
       printFSMExecState();
       if (!have_odom_)
       {
@@ -485,14 +483,7 @@ namespace ego_planner
       // return;
       else
       {
-        // if ( planner_manager_->pp_.drone_id <= 0 )
-        // {
-        //   changeFSMExecState(GEN_NEW_TRAJ, "FSM");
-        // }
-        // else
-        // {
         changeFSMExecState(SEQUENTIAL_START, "FSM");
-        // }
       }
       break;
     }
@@ -529,10 +520,6 @@ namespace ego_planner
 
     case GEN_NEW_TRAJ:
     {
-
-      // Eigen::Vector3d rot_x = odom_orient_.toRotationMatrix().block(0, 0, 3, 1);
-      // start_yaw_(0)         = atan2(rot_x(1), rot_x(0));
-      // start_yaw_(1) = start_yaw_(2) = 0.0;
 
       bool success = planFromGlobalTraj(10); // zx-todo
       if (success)
@@ -574,7 +561,6 @@ namespace ego_planner
 
       Eigen::Vector3d pos = info->position_traj_.evaluateDeBoorT(t_cur);
 
-      /* && (end_pt_ - pos).norm() < 0.5 */
       if ((target_type_ == TARGET_TYPE::PRESET_TARGET) &&
           (wp_id_ < waypoint_num_ - 1) &&
           (end_pt_ - pos).norm() < no_replan_thresh_)
@@ -595,18 +581,18 @@ namespace ego_planner
             planNextWaypoint(wps_[wp_id_]);
           }
 
-          changeFSMExecState(WAIT_TARGET, "FSM");
+          changeFSMExecState(WAIT_TARGET, "FSM - EXEC_TRAJ");
           goto force_return;
           // return;
         }
         else if ((end_pt_ - pos).norm() > no_replan_thresh_ && t_cur > replan_thresh_)
         {
-          changeFSMExecState(REPLAN_TRAJ, "FSM");
+          changeFSMExecState(REPLAN_TRAJ, "FSM - EXEC_TRAJ");
         }
       }
       else if (t_cur > replan_thresh_)
       {
-        changeFSMExecState(REPLAN_TRAJ, "FSM");
+        changeFSMExecState(REPLAN_TRAJ, "FSM - EXEC_TRAJ");
       }
 
       break;
@@ -614,7 +600,6 @@ namespace ego_planner
 
     case EMERGENCY_STOP:
     {
-
       if (flag_escape_emergency_) // Avoiding repeated calls
       {
         callEmergencyStop(odom_pos_);
@@ -663,16 +648,26 @@ namespace ego_planner
   {
 
     LocalTrajData *info = &planner_manager_->local_data_;
+
     ros::Time time_now = ros::Time::now();
     double t_cur = (time_now - info->start_time_).toSec();
-
-    //cout << "info->velocity_traj_=" << info->velocity_traj_.get_control_points() << endl;
-
     start_pt_ = info->position_traj_.evaluateDeBoorT(t_cur);
     start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_cur);
     start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
 
-    bool success = callReboundReplan(false, false);
+    int new_point = false;
+
+    // uav meigenshang guiji
+    if((start_pt_-odom_pos_).norm()>0.2)
+    {
+      start_pt_ = odom_pos_;
+      start_vel_ = odom_vel_;
+      start_acc_.setZero();
+      new_point = true;
+      cout << YELLOW << node_name << "Trajectory tracking bad, reset start_pt!!!" << TAIL << endl;
+    }
+
+    bool success = callReboundReplan(new_point, false);
 
     if (!success)
     {
@@ -778,7 +773,6 @@ namespace ego_planner
 
   bool EGOReplanFSM::callReboundReplan(bool flag_use_poly_init, bool flag_randomPolyTraj)
   {
-
     getLocalTarget();
 
     bool plan_and_refine_success =
