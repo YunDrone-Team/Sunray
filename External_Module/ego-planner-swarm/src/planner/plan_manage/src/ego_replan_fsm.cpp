@@ -661,7 +661,8 @@ namespace ego_planner
     if((start_pt_-odom_pos_).norm()>0.2)
     {
       start_pt_ = odom_pos_;
-      start_vel_ = odom_vel_;
+      // start_vel_ = odom_vel_;
+      start_vel_.setZero();
       start_acc_.setZero();
       new_point = true;
       cout << YELLOW << node_name << "Trajectory tracking bad, reset start_pt!!!" << TAIL << endl;

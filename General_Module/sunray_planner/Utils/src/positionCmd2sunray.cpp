@@ -122,7 +122,7 @@ public:
             // XyPosYaw
             if (control_type == 0)
             {
-                ugv_cmd.cmd = 2;
+                ugv_cmd.cmd = 7;
             }
             // XyVelYaw
             else if (control_type == 1)

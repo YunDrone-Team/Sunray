@@ -137,9 +137,9 @@
 		<param name="manager/use_distinctive_trajs" value="true" type="bool"/>
 		
 		<!-- B样条优化参数 -->
-		<!-- 平滑系数 -->
-		<param name="optimization/lambda_smooth" value="1.0" type="double"/>
-		<!-- 避障系数 -->
+		<!-- 平滑系数:较高的‌lambda_smooth‌值会使轨迹更加平滑，减少急剧的转向和加速，从而提高行驶的稳定性和舒适性 -->
+		<param name="optimization/lambda_smooth" value="2.0" type="double"/>
+		<!-- 避障系数:较低的‌lambda_smooth‌值可能会使轨迹更接近障碍物，但有助于更好地避开障碍物，尤其是在复杂环境中 -->
 		<param name="optimization/lambda_collision" value="0.5" type="double"/>
 		<!-- 可行性系数 -->
 		<param name="optimization/lambda_feasibility" value="0.1" type="double"/>

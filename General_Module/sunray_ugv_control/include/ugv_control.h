@@ -125,6 +125,7 @@ class UGV_CONTROL
         void pos_control(double x_ref, double y_ref, double yaw_ref);
         void pos_control_diff(double x_ref, double y_ref, double yaw_ref);
         void path_control();
+        geometry_msgs::Twist pos_vel_control_enu();
         float constrain_function(float data, float Max, float Min);
         Eigen::Vector3d quaternion_to_euler(const Eigen::Quaterniond &q);
         double get_yaw_error(double yaw_ref, double yaw_now);
