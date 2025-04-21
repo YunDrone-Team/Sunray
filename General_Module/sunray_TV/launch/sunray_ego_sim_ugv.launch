@@ -138,7 +138,7 @@
 		
 		<!-- B样条优化参数 -->
 		<!-- 平滑系数 -->
-		<param name="optimization/lambda_smooth" value="1.0" type="double"/>
+		<param name="optimization/lambda_smooth" value="2.0" type="double"/>
 		<!-- 避障系数 -->
 		<param name="optimization/lambda_collision" value="0.5" type="double"/>
 		<!-- 可行性系数 -->

@@ -13,11 +13,14 @@
         <arg name="debug" value="$(arg debug)"/>
         <arg name="verbose" value="$(arg verbose)"/>
         <arg name="paused" value="$(arg paused)"/>
-        <arg name="use_sim_time" value="true"/>
+        <arg name="use_sim_time" value="false"/>
     </include>
 
     <!-- RVIZ -->
+    <arg name="rviz_enable" default="true"/>
     <arg name="rivz_config" default="$(find sunray_simulator)/launch_ugv/ugv.rviz"/>
-    <node type="rviz" name="rviz_ugv" pkg="rviz" args="-d $(arg rivz_config)"/>
+    <group if="$(arg rviz_enable)">
+        <node type="rviz" name="rviz_ugv" pkg="rviz" args="-d $(arg rivz_config)"/>
+    </group>
 </launch>
 

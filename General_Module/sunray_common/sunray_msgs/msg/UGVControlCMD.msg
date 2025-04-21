@@ -11,6 +11,7 @@ uint8 POS_CONTROL_BODY=3            ## 车体系位置控制, 需要配合desire
 uint8 VEL_CONTROL_ENU=4             ## 惯性系速度控制, 需要配合desired_vel和desired_yaw使用
 uint8 VEL_CONTROL_BODY=5            ## 车体系速度控制, 需要配合desired_vel和desired_yaw使用
 uint8 Point_Control_with_Astar=6    ## Astar避障控制
+uint8 POS_VEL_CONTROL_ENU= 7
 
 ## 偏航角类型 0 角速度 1 角度（需要有定位支持）
 uint8 yaw_type

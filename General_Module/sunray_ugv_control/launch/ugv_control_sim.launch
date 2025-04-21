@@ -8,15 +8,15 @@
         <param name="odom_topic" value="/car_odom" />
         <param name="vel_topic" value="/cmd_vel" />
         <!-- 控制参数 -->
-        <param name="ugv_control_param/Kp_xy" value="1.4" />
-        <param name="ugv_control_param/Kp_yaw" value="1.5" />
-        <param name="ugv_control_param/max_vel_xy" value="0.5" />
-        <param name="ugv_control_param/max_vel_yaw" value="1.57" />
+        <param name="ugv_control_param/Kp_xy" value="2.0" />
+        <param name="ugv_control_param/Kp_yaw" value="3.14" />
+        <param name="ugv_control_param/max_vel_xy" value="1.5" />
+        <param name="ugv_control_param/max_vel_yaw" value="6" />
         <!-- 地理围栏参数 -->
-        <param name="ugv_geo_fence/max_x" value="10.0" />
-        <param name="ugv_geo_fence/min_x" value="-10.0" />
-        <param name="ugv_geo_fence/max_y" value="10.0" />
-        <param name="ugv_geo_fence/min_y" value="-10.0" />
+        <param name="ugv_geo_fence/max_x" value="100.0" />
+        <param name="ugv_geo_fence/min_x" value="-100.0" />
+        <param name="ugv_geo_fence/max_y" value="100.0" />
+        <param name="ugv_geo_fence/min_y" value="-100.0" />
         <!-- 地图参数 -->
         <param name="map/resolution" value="0.4" />
         <param name="map/inflate" value="0.4" />

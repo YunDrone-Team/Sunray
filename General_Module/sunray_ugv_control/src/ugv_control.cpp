@@ -138,6 +138,7 @@ void UGV_CONTROL::mainloop()
     // 定位数据丢失情况下，不执行控制指令并直接返回，直到动捕恢复
     if (!ugv_state.odom_valid)
     {
+        cout << YELLOW << "odom_valid: false" << TAIL << endl;
         desired_vel.linear.x = 0.0;
         desired_vel.linear.y = 0.0;
         desired_vel.linear.z = 0.0;
@@ -194,6 +195,11 @@ void UGV_CONTROL::mainloop()
         desired_vel = enu_to_body(current_ugv_cmd.desired_vel[0], current_ugv_cmd.desired_vel[1]);
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
+    case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU:
+        // 由于UGV底层控制指令为车体系，所以需要将收到的惯性系速度转换为车体系速度
+        desired_vel = pos_vel_control_enu();
+        ugv_cmd_vel_pub.publish(desired_vel);
+        break;
     case sunray_msgs::UGVControlCMD::Point_Control_with_Astar:
         // A*算法
         path_control();
@@ -208,7 +214,12 @@ void UGV_CONTROL::mainloop()
 void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
 {
     current_ugv_cmd = *msg;
-    
+    ugv_state.pos_setpoint[0] = current_ugv_cmd.desired_pos[0];
+    ugv_state.pos_setpoint[1] = current_ugv_cmd.desired_pos[1];
+    ugv_state.vel_setpoint[0] = current_ugv_cmd.desired_vel[0];
+    ugv_state.vel_setpoint[1] = current_ugv_cmd.desired_vel[1];
+    ugv_state.yaw_setpoint = current_ugv_cmd.desired_yaw;
+
     switch (msg->cmd)
     {
     // 收到INIT指令
@@ -224,22 +235,26 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
     // 收到POS_CONTROL指令
     case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU://2
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_ENU!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        // cout << BLUE << text_info.data << TAIL << endl;
         break;
     // 收到VEL_CONTROL_BODY指令：此处不做任何处理，在主循环中处理
     case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY://5
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        // cout << BLUE << text_info.data << TAIL << endl;
         break;
     // 收到VEL_CONTROL_ENU指令：此处不做任何处理，在主循环中处理
     case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU://4
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        // cout << BLUE << text_info.data << TAIL << endl;
         break;
     //收到POS_CONTROL_BODY指令
     case sunray_msgs::UGVControlCMD::POS_CONTROL_BODY://3
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_BODY!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        // cout << BLUE << text_info.data << TAIL << endl;
+        break;
+    case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU://7
+        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_VEL_CONTROL_ENU!";
+        // cout << BLUE << text_info.data << TAIL << endl;
         break;
     case sunray_msgs::UGVControlCMD::Point_Control_with_Astar://6
         if(enable_astar)
@@ -263,6 +278,61 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
         break;
     }
     // text_info_pub.publish(text_info);
+}
+
+// 位置控制算法
+void UGV_CONTROL::pos_control(double x_ref, double y_ref, double yaw_ref)
+{
+    float cmd_body[2];
+    float cmd_enu[2];
+    // 控制指令计算：使用简易P控制 - XY
+    cmd_enu[0] = (x_ref - ugv_state.position[0]) * ugv_control_param.Kp_xy;
+    cmd_enu[1] = (y_ref - ugv_state.position[1]) * ugv_control_param.Kp_xy;
+    // 惯性系 -> body frame
+    rotation_yaw(ugv_state.yaw, cmd_body, cmd_enu);
+    desired_vel.linear.x = cmd_body[0];
+    desired_vel.linear.y = cmd_body[1];
+    desired_vel.linear.z = 0.0;
+    // YAW误差计算
+    double yaw_error = get_yaw_error(yaw_ref, ugv_state.yaw);
+    // 控制指令计算：使用简易P控制 - YAW
+    desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
+
+    // 控制指令限幅
+    desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, 0.0);
+    desired_vel.linear.y = constrain_function(desired_vel.linear.y, ugv_control_param.max_vel_xy, 0.0);
+    desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, 0.01);
+
+    // 发布控制指令
+    ugv_cmd_vel_pub.publish(desired_vel);
+}
+
+geometry_msgs::Twist UGV_CONTROL::pos_vel_control_enu()
+{
+    geometry_msgs::Twist body_cmd;
+    // 惯性系 -> body frame
+    float cmd_body_vel[2];
+    float cmd_enu_vel[2];
+    // 控制指令计算：使用简易P控制 - XY
+    cmd_enu_vel[0] = (current_ugv_cmd.desired_pos[0] - ugv_state.position[0]) * ugv_control_param.Kp_xy + current_ugv_cmd.desired_vel[0];
+    cmd_enu_vel[1] = (current_ugv_cmd.desired_pos[1] - ugv_state.position[1]) * ugv_control_param.Kp_xy + current_ugv_cmd.desired_vel[1];
+
+    rotation_yaw(ugv_state.yaw, cmd_body_vel, cmd_enu_vel);
+    body_cmd.linear.x = cmd_body_vel[0];
+    body_cmd.linear.y = cmd_body_vel[1];
+    body_cmd.linear.z = 0.0;
+    body_cmd.angular.x = 0.0;
+    body_cmd.angular.y = 0.0;
+    // 控制指令计算：使用简易P控制 - YAW
+    double yaw_error = get_yaw_error(current_ugv_cmd.desired_yaw, ugv_state.yaw);
+    body_cmd.angular.z = yaw_error * ugv_control_param.Kp_yaw;
+
+    // 控制指令限幅
+    body_cmd.linear.x = constrain_function(body_cmd.linear.x, ugv_control_param.max_vel_xy, 0.0);
+    body_cmd.linear.y = constrain_function(body_cmd.linear.y, ugv_control_param.max_vel_xy, 0.0);
+    body_cmd.angular.z = constrain_function(body_cmd.angular.z, ugv_control_param.max_vel_yaw, 0.01);
+
+    return body_cmd;
 }
 
 // 惯性系->机体系
@@ -308,32 +378,7 @@ double UGV_CONTROL::get_yaw_error(double yaw_ref, double yaw_now)
     return error;
 }
 
-// 位置控制算法
-void UGV_CONTROL::pos_control(double x_ref, double y_ref, double yaw_ref)
-{
-    float cmd_body[2];
-    float cmd_enu[2];
-    // 控制指令计算：使用简易P控制 - XY
-    cmd_enu[0] = (x_ref - ugv_state.position[0]) * ugv_control_param.Kp_xy;
-    cmd_enu[1] = (y_ref - ugv_state.position[1]) * ugv_control_param.Kp_xy;
-    // 惯性系 -> body frame
-    rotation_yaw(ugv_state.yaw, cmd_body, cmd_enu);
-    desired_vel.linear.x = cmd_body[0];
-    desired_vel.linear.y = cmd_body[1];
-    desired_vel.linear.z = 0.0;
-    // YAW误差计算
-    double yaw_error = get_yaw_error(yaw_ref, ugv_state.yaw);
-    // 控制指令计算：使用简易P控制 - YAW
-    desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
 
-    // 控制指令限幅
-    desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, 0.0);
-    desired_vel.linear.y = constrain_function(desired_vel.linear.y, ugv_control_param.max_vel_xy, 0.0);
-    desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, 0.01);
-
-    // 发布控制指令
-    ugv_cmd_vel_pub.publish(desired_vel);
-}
 
 // 位置控制，差速驱动
 void UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, double yaw_ref)
@@ -556,6 +601,7 @@ void UGV_CONTROL::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
 	ugv_state.attitude[2] = ugv_att.z();
 
     ugv_state.yaw = ugv_att.z();
+    get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
     ugv_state.odom_valid = true;
 }
 
