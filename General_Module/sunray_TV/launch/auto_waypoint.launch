@@ -4,5 +4,6 @@
         <param name="uav_name" value="uav" />
         <param name="task_type" value="1" />
         <param name="move_type" value="1" />
+        <param name="waypoint_file" value="/home/yundrone/Sunray/General_Module/sunray_TV/launch/waypoint.yml" />
     </node>
 </launch>

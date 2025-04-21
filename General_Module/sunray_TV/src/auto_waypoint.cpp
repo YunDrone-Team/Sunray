@@ -4,6 +4,7 @@
 #include <csignal>
 #include "printf_format.h"
 #include "thread"
+#include <yaml-cpp/yaml.h>
 
 using namespace sunray_logger;
 using namespace std;
@@ -30,6 +31,8 @@ public:
         // 【参数】移动类型 0 位置控制 1 规划控制
         nh.param<int>("move_type", move_type, 1);
 
+        nh.param<std::string>("waypoint_file", waypoint_file, "~/Sunray/General_Module/sunray_TV/launch/waypoint.yml");
+
         uav_name = uav_name + std::to_string(uav_id);
         string topic_prefix = "/" + uav_name;
 
@@ -42,14 +45,46 @@ public:
         px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 10, &auto_waypoint::px4_state_callback, this);
         uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10, &auto_waypoint::uav_state_callback, this);
 
-        plan_points.push_back(tuple<float, float, float>(3.65, 0, 1));
-        plan_points.push_back(tuple<float, float, float>(3.57, -2.96, 1));
-        plan_points.push_back(tuple<float, float, float>(3.68, -9.98, 1));
-        plan_points.push_back(tuple<float, float, float>(-1, -10.4, 1));
-        plan_points.push_back(tuple<float, float, float>(-1.5, -16.5, 1));
-        plan_points.push_back(tuple<float, float, float>(-2.79, -16.7, 1));
-        plan_points.push_back(tuple<float, float, float>(-2.2, -27.4, 1));
-        plan_points.push_back(tuple<float, float, float>(-9.6, -27.3, 1));
+        try
+        {
+            
+            // 读取yaml文件
+            YAML::Node config = YAML::LoadFile(waypoint_file);
+
+            // 获取航点数量
+            int num_points = config["num_points"].as<int>();
+            std::cout<<"num_points: "<<num_points<<std::endl;
+ 
+            // 遍历每个航点
+            for (int i = 1; i <= num_points; i++)
+            {
+                std::string waypoint_name = "waypoint" + std::to_string(i);
+                YAML::Node waypoint = config[waypoint_name];
+
+                // 获取航点坐标
+                double x = waypoint["x"].as<double>();
+                double y = waypoint["y"].as<double>();
+                double z = waypoint["z"].as<double>();
+                plan_points.push_back(tuple<float, float, float>(x, y, z));
+
+                // 输出航点坐标
+                std::cout << "航点" << i << "坐标：(" << x << ", " << y << ", " << z << ")" << std::endl;
+            }
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "读取文件或解析文件内容出错：" << std::endl;
+            return;
+        }
+
+        // plan_points.push_back(tuple<float, float, float>(3.65, 0, 1));
+        // plan_points.push_back(tuple<float, float, float>(3.57, -2.96, 1));
+        // plan_points.push_back(tuple<float, float, float>(3.68, -9.98, 1));
+        // plan_points.push_back(tuple<float, float, float>(-1, -10.4, 1));
+        // plan_points.push_back(tuple<float, float, float>(-1.5, -16.5, 1));
+        // plan_points.push_back(tuple<float, float, float>(-2.79, -16.7, 1));
+        // plan_points.push_back(tuple<float, float, float>(-2.2, -27.4, 1));
+        // plan_points.push_back(tuple<float, float, float>(-9.6, -27.3, 1));
 
         state = 0;
         next_step = 0;
@@ -197,7 +232,7 @@ public:
             abs(uav_state.position[2] - get<2>(plan_points[plan_step])) < 0.20)
         {
             plan_step++;
-            Logger::info("The current point has been reached: ", plan_step);
+            Logger::warning("The current point has been reached: ", plan_step);
             if (task_type == 1)
             {
                 next_plan = 1;
@@ -207,7 +242,7 @@ public:
 
     void print_state()
     {
-        Logger::info("------------------------------------");
+        Logger::print_color(int(LogColor::blue), LOG_BOLD, "---------------------------------");
         Logger::info("state: ", state);
         Logger::info("plan_step: ", plan_step);
     }
@@ -303,6 +338,7 @@ private:
 
     int uav_id;
     string uav_name;
+    std::string waypoint_file;
     int next_step;
     int next_plan;
     int plan_step;
