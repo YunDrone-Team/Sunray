@@ -54,7 +54,7 @@ include_directories(
 ###############################
 
 add_executable(auto_waypoint src/auto_waypoint.cpp)
-target_link_libraries(auto_waypoint ${catkin_LIBRARIES})
+target_link_libraries(auto_waypoint ${catkin_LIBRARIES} yaml-cpp)
 
 # catkin_install_python(PROGRAMS
 # scripts/key_move_car.py
