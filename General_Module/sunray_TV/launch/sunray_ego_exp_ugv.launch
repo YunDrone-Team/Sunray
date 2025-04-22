@@ -19,9 +19,9 @@
 	<arg name="planning_horizon" default="7.5"/>
 
 	<!-- topic of your odometry such as VIO or LIO -->
-    <arg name="odom_topic" default="/uav1/sunray/uav_odom" />
+    <arg name="odom_topic" default="/baton/stereo3/odometry" />
 	<!-- 点云信息，仿真中由map_generator产生 -->
-	<arg name="cloud_topic" default="pcl_render_node/cloud"/>
+	<arg name="cloud_topic" default="/berxel_pointCloud"/>
 	<!-- 相机及深度信息仿真中没有使用，此处可忽略(真机中使用) -->
 	<arg name="camera_pose_topic" default="pcl_render_node/camera_pose"/>
 	<arg name="depth_topic" default="pcl_render_node/depth"/>
@@ -90,7 +90,7 @@
 		<param name="grid_map/obstacles_inflation"     value="0.2" /> 
 		<param name="grid_map/local_map_margin" value="10"/>
 		<!-- 地面高度 -->
-		<param name="grid_map/ground_height"        value="0.2"/>
+		<param name="grid_map/ground_height"        value="-0.5"/>
 		<!-- 虚拟天花板高度 -->
 		<param name="grid_map/virtual_ceil_height"   value="2.0"/>
 		<param name="grid_map/visualization_truncate_height"   value="1.8"/>
