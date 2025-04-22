@@ -63,6 +63,11 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
         // 【订阅】订阅Odom数据
         gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::odom_cb, this);
     }
+    else if (pose_source == 3)
+    {
+        // 【订阅】订阅viobot数据
+        gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::viobot_cb, this);
+    }
     else
     {
         cout << RED << "Pose source: Unknown" << TAIL << endl;
@@ -601,6 +606,48 @@ void UGV_CONTROL::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
 	ugv_state.attitude[2] = ugv_att.z();
 
     ugv_state.yaw = ugv_att.z();
+    get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
+    ugv_state.odom_valid = true;
+}
+
+void UGV_CONTROL::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+    ugv_state.position[0] = msg->pose.pose.position.x;
+    ugv_state.position[1] = msg->pose.pose.position.y;
+
+   
+
+    tf2::Quaternion q;
+    q.setW(msg->pose.pose.orientation.w);
+    q.setX(msg->pose.pose.orientation.x);
+    q.setY(msg->pose.pose.orientation.y);
+    q.setZ(msg->pose.pose.orientation.z);
+    // 绕 Z 轴旋转 90°
+    tf2::Quaternion q_z;
+    q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90°
+
+    // 绕 Y 轴旋转 -90°
+    tf2::Quaternion q_y;
+    q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90°
+
+    // 组合旋转（顺序：先 q_z，再 q_y）
+    q = q * q_z * q_y;
+
+    // 转欧拉角
+    tf2::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+	ugv_state.attitude[0] = roll;
+    ugv_state.attitude[1] = pitch;
+	ugv_state.attitude[2] = yaw;
+
+    // ugv_state.attitude_q.x = q.x();
+    // ugv_state.attitude_q.y = q.y();
+    // ugv_state.attitude_q.z = q.z();
+    // ugv_state.attitude_q.w = q.w();
+
+    ugv_state.yaw = yaw;
     get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
     ugv_state.odom_valid = true;
 }
