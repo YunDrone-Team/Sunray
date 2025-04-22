@@ -19,9 +19,9 @@
 	<arg name="planning_horizon" default="7.5"/>
 
 	<!-- topic of your odometry such as VIO or LIO -->
-    <arg name="odom_topic" default="/uav1/sunray/uav_odom" />
+    <arg name="odom_topic" default="/baton/stereo3/odometry" />
 	<!-- 点云信息，仿真中由map_generator产生 -->
-	<arg name="cloud_topic" default="pcl_render_node/cloud"/>
+	<arg name="cloud_topic" default="/berxel_pointCloud"/>
 	<!-- 相机及深度信息仿真中没有使用，此处可忽略(真机中使用) -->
 	<arg name="camera_pose_topic" default="pcl_render_node/camera_pose"/>
 	<arg name="depth_topic" default="pcl_render_node/depth"/>
@@ -182,6 +182,6 @@
         <param name="offset" value="1.1" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="true" />
-        <param name="z_hight" value="1.0" />
+        <param name="z_hight" value="0.8" />
     </node>
 </launch>
