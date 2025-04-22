@@ -30,7 +30,8 @@ public:
         nh.param<int>("task_type", task_type, 1);
         // 【参数】移动类型 0 位置控制 1 规划控制
         nh.param<int>("move_type", move_type, 1);
-
+        nh.param<string>("odom_topic", odom_topic, "/odom");
+        
         nh.param<std::string>("waypoint_file", waypoint_file, "~/Sunray/General_Module/sunray_TV/launch/waypoint.yml");
 
         uav_name = uav_name + std::to_string(uav_id);
@@ -44,6 +45,7 @@ public:
 
         px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 10, &auto_waypoint::px4_state_callback, this);
         uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10, &auto_waypoint::uav_state_callback, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 10, &auto_waypoint::odom_callback, this);
 
         try
         {
@@ -152,6 +154,12 @@ public:
         uav_state = *msg;
     }
 
+    void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
+    {
+        vehicle_odom = *msg;
+    }
+    
+
     void switchMode(int i)
     {
         switch (i)
@@ -227,9 +235,9 @@ public:
             }
             next_plan = 0;
         }
-        if (abs(uav_state.position[0] - get<0>(plan_points[plan_step])) < 0.20 &&
-            abs(uav_state.position[1] - get<1>(plan_points[plan_step])) < 0.20 &&
-            abs(uav_state.position[2] - get<2>(plan_points[plan_step])) < 0.20)
+        if (abs(vehicle_odom.pose.pose.position.x - get<0>(plan_points[plan_step])) < 0.20 &&
+            abs(vehicle_odom.pose.pose.position.y - get<1>(plan_points[plan_step])) < 0.20 &&
+            abs(vehicle_odom.pose.pose.position.z - get<2>(plan_points[plan_step])) < 0.20)
         {
             plan_step++;
             Logger::warning("The current point has been reached: ", plan_step);
@@ -329,16 +337,19 @@ private:
     ros::Publisher goal_pub;
     ros::Subscriber px4_state_sub;
     ros::Subscriber uav_state_sub;
+    ros::Subscriber odom_sub;
     sunray_msgs::UAVControlCMD uav_cmd;
     sunray_msgs::UAVSetup setup;
     sunray_msgs::PX4State px4_state;
     sunray_msgs::UAVState uav_state;
+    nav_msgs::Odometry vehicle_odom;
     geometry_msgs::PoseStamped goal_point;
     thread keyboard_thread;
 
     int uav_id;
     string uav_name;
     std::string waypoint_file;
+    std::string odom_topic;
     int next_step;
     int next_plan;
     int plan_step;
