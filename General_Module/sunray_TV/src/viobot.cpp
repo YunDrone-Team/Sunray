@@ -15,7 +15,7 @@
 #include <pcl/common/transforms.h>
 
 ros::Publisher cloud_pub;
-//ros::Publisher odom_pub;
+ros::Publisher odom_pub;
 
 pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
 
@@ -74,17 +74,17 @@ void subCallback(const nav_msgs::OdometryConstPtr &odom_ptr, const sensor_msgs::
     pcl::toROSMsg(*output_cloud, output_cloud_ros);
     output_cloud_ros.header = odom_ptr->header;
 
-  //  nav_msgs::Odometry odom_ros;
-  //  odom_ros.pose.pose.position.x = t.x();
-  //  odom_ros.pose.pose.position.y = t.y();
-  //  odom_ros.pose.pose.position.z = t.z();
-  //  odom_ros.pose.pose.orientation.x = q.x();
-  //  odom_ros.pose.pose.orientation.y = q.y();
-  //  odom_ros.pose.pose.orientation.z = q.z();
-  //  odom_ros.pose.pose.orientation.w = q.w();
-  //  odom_ros.header = odom_ptr->header;
+   nav_msgs::Odometry odom_ros;
+   odom_ros.pose.pose.position.x = t.x();
+   odom_ros.pose.pose.position.y = t.y();
+   odom_ros.pose.pose.position.z = t.z();
+   odom_ros.pose.pose.orientation.x = q.x();
+   odom_ros.pose.pose.orientation.y = q.y();
+   odom_ros.pose.pose.orientation.z = q.z();
+   odom_ros.pose.pose.orientation.w = q.w();
+   odom_ros.header = odom_ptr->header;
 
-  //  odom_pub.publish(odom_ros);
+   odom_pub.publish(odom_ros);
     cloud_pub.publish(output_cloud_ros);
 }
 
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     sync_odom.registerCallback(boost::bind(&subCallback, _1, _2));
 
     cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/berxel_pointCloud", 1);
-    //odom_pub = nh.advertise<nav_msgs::Odometry>("/berxel_odom", 1);
+    odom_pub = nh.advertise<nav_msgs::Odometry>("/berxel_odom", 1);
     ros::spin();
 
     return 0;
