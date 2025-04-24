@@ -112,6 +112,7 @@ class UGV_CONTROL
         void mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
         void mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
         void odom_cb(const nav_msgs::Odometry::ConstPtr &msg);
+        void viobot_cb(const nav_msgs::Odometry::ConstPtr &msg);
         void ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg);
         void goal_point_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
         void battery_cb(const std_msgs::Float32::ConstPtr &msg);

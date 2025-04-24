@@ -1,0 +1,10 @@
+<launch>
+    <node name="auto_waypoint" pkg="sunray_TV" type="depth_avoid" output="screen">
+        <param name="uav_id" value="1" />
+        <param name="uav_name" value="uav" />
+        <param name="task_type" value="0" />
+        <param name="move_speed" value="0.2" />
+        <param name="start_sate" value="0" />
+        <param name="odom_topic" value="/uav1/sunray/gazebo_pose" />
+    </node>
+</launch>

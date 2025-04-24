@@ -16,7 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   sunray_msgs
   tf2_geometry_msgs
   mavros_msgs
-
+  cv_bridge
+  image_transport
   message_filters
 )
 
@@ -26,20 +27,21 @@ find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
+find_package(OpenCV REQUIRED)
 
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs 
-  nav_msgs
-  sensor_msgs
-  std_msgs
+# generate_messages(
+#   DEPENDENCIES
+#   geometry_msgs 
+#   nav_msgs
+#   sensor_msgs
+#   std_msgs
 
-)
+# )
 
 
 catkin_package(
@@ -54,6 +56,7 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
   ${EIGEN3_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${OPENCV_INCLUDE_DIRS}
 )
 
 
@@ -64,10 +67,20 @@ include_directories(
 add_executable(auto_waypoint src/auto_waypoint.cpp)
 target_link_libraries(auto_waypoint ${catkin_LIBRARIES} yaml-cpp)
 
+add_executable(depth_avoid src/depth_avoid.cpp)
+target_link_libraries(depth_avoid ${catkin_LIBRARIES})
+
 add_executable(viobot_pointCloud  src/viobot.cpp)
 target_link_libraries(viobot_pointCloud
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
+)
+
+add_executable(depth_stop src/depth.cpp)
+target_link_libraries(depth_stop
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 # catkin_install_python(PROGRAMS
