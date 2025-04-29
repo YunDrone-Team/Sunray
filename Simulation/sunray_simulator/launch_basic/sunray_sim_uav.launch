@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- <arg name="vehicle" default="sunray150"/> -->
+    <arg name="vehicle" default="sunray150_with_mid360"/>
+
+    <!-- 启动1号无人机仿真 -->
+    <!--无人机编号-->
+    <arg name="uav1_id" default="1"/>
+    <!-- 无人机初始位置 -->
+    <arg name="uav1_init_x" default="0.0"/>
+    <arg name="uav1_init_y" default="0.0"/>
+    <arg name="uav1_init_yaw" default="0.0"/>
+    <group ns="uav$(arg uav1_id)">
+        <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
+            <arg name="uav_id" value="$(arg uav1_id)" />
+            <arg name="vehicle" value="$(arg vehicle)" />
+            <arg name="uav_init_x" value="$(arg uav1_init_x)"/>
+            <arg name="uav_init_y" value="$(arg uav1_init_y)"/>
+            <arg name="uav_init_yaw" value="$(arg uav1_init_yaw)"/>
+        </include>
+    </group>
+</launch>
