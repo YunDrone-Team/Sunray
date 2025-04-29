@@ -16,23 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 add_message_files(
-  DIRECTORY mavlink_msgs
-  FILES
-  Heartbeat.msg
-  SysStatus.msg
-  Attitude.msg
-  AttitudeQuaternion.msg
-  LocalPositionNED.msg
-  AttitudeSetpoint.msg
-  AttitudeTarget.msg
-  GlobalPositionSetpoint.msg
-  LocalPositionSetpoint.msg
-  PositionTargetLocalNED.msg
-  VisionPositionEstimate.msg
-  RCChannels.msg
-)
-
-add_message_files(
   DIRECTORY msg
   FILES
   UAVControlCMD.msg
@@ -52,12 +35,6 @@ add_message_files(
   TargetsInFrameMsg.msg
   UGVControlCMD.msg
   UGVState.msg
-)
-
-add_service_files(
-  DIRECTORY srv
-  FILES
-  ArmCmd.srv
 )
 
 generate_messages(

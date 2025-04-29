@@ -1,7 +1,7 @@
 <launch>
-    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test_ugv.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
 
-	<!-- Gazebo 配置 -->
+    <!-- Gazebo 配置 -->
     <arg name="gui" default="true"/>
     <arg name="debug" default="false"/>
     <arg name="verbose" default="false"/>
@@ -16,11 +16,25 @@
         <arg name="use_sim_time" value="false"/>
     </include>
 
+    <arg name="ugv_id" default="1"/>
+    <arg name="ugv_name" default="ugv"/>
+    <arg name="ugv_model" default="wheeltec_diff" />
+
+    <arg name="init_x" default="0"/>
+    <arg name="init_y" default="0"/>
+    <arg name="init_z" default="0"/>
+
+    <arg name="init_yaw" default="0"/>
+
+    <group ns="$(arg ugv_name)$(arg ugv_id)">
+        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_id) -x $(arg init_x) -y $(arg init_y) -z $(arg init_z) -Y $(arg init_yaw)" output="screen"/>
+    </group>
+
     <!-- RVIZ -->
     <arg name="rviz_enable" default="true"/>
     <arg name="rivz_config" default="$(find sunray_simulator)/launch_ugv/ugv.rviz"/>
-    <group if="$(arg rviz_enable)">
+    <!-- <group if="$(arg rviz_enable)">
         <node type="rviz" name="rviz_ugv" pkg="rviz" args="-d $(arg rivz_config)"/>
-    </group>
+    </group> -->
 </launch>
 
