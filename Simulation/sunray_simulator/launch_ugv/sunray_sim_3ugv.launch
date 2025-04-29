@@ -1,0 +1,62 @@
+<launch>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+
+    <!-- Gazebo 配置 -->
+    <arg name="gui" default="true"/>
+    <arg name="debug" default="false"/>
+    <arg name="verbose" default="false"/>
+    <arg name="paused" default="false"/>
+    <!-- Gazebo sim -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="false"/>
+    </include>
+
+    <arg name="ugv_1_id" default="1"/>
+    <arg name="ugv_2_id" default="2"/>
+    <arg name="ugv_3_id" default="3"/>
+    <arg name="ugv_name" default="ugv"/>
+    <arg name="ugv_model" default="wheeltec" />
+
+    <arg name="init_1_x" default="0"/>
+    <arg name="init_1_y" default="0"/>
+    <arg name="init_1_z" default="0"/>
+    <arg name="init_1_yaw" default="0"/>
+
+    <arg name="init_2_x" default="0"/>
+    <arg name="init_2_y" default="1"/>
+    <arg name="init_2_z" default="0"/>
+    <arg name="init_2_yaw" default="0" />
+
+    <arg name="init_3_x" default="0"/>
+    <arg name="init_3_y" default="-1"/>
+    <arg name="init_3_z" default="0"/>
+    <arg name="init_3_yaw" default="0" />
+
+
+
+
+    <group ns="$(arg ugv_name)$(arg ugv_1_id)">
+        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_1_id) -x $(arg init_1_x) -y $(arg init_1_y) -z $(arg init_1_z) -Y $(arg init_1_yaw)" output="screen"/>
+    </group>
+
+    <group ns="$(arg ugv_name)$(arg ugv_2_id)">
+        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_2_id) -x $(arg init_2_x) -y $(arg init_2_y) -z $(arg init_2_z) -Y $(arg init_2_yaw)" output="screen"/>
+    </group>
+
+    <group ns="$(arg ugv_name)$(arg ugv_3_id)">
+        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_3_id) -x $(arg init_3_x) -y $(arg init_3_y) -z $(arg init_3_z) -Y $(arg init_3_yaw)" output="screen"/>
+    </group>
+
+    <!-- RVIZ -->
+    <arg name="rviz_enable" default="true"/>
+    <arg name="rivz_config" default="$(find sunray_simulator)/launch_ugv/ugv.rviz"/>
+    <!-- <group if="$(arg rviz_enable)">
+        <node type="rviz" name="rviz_ugv" pkg="rviz" args="-d $(arg rivz_config)"/>
+    </group> -->
+</launch>
+

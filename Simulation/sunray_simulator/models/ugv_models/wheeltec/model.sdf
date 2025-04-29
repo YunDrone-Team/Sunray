@@ -1,7 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
   <model name="wheeltec">
-
     <link name="base_link">
       <pose>0 0 0.16 0 0 0</pose>
       <inertial>
@@ -38,9 +37,9 @@
       <inertial>
         <mass>0.3844</mass>
         <inertia>
-          <ixx>0.000324824</ixx>
+          <ixx>0.000480000</ixx>
           <iyy>0.000480000</iyy>
-          <izz>0.000324824</izz>
+          <izz>0.000480000</izz>
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyz>0</iyz>
@@ -57,12 +56,17 @@
         <surface>
           <friction>
             <ode>
-              <mu>0.8</mu>
-              <mu2>0.6</mu2>
-              <slip1>0.5</slip1>
-              <slip2>0.5</slip2>
+              <mu>0.5</mu>
+              <mu2>0.3</mu2>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="visual">
@@ -80,9 +84,9 @@
       <inertial>
         <mass>0.3844</mass>
         <inertia>
-          <ixx>0.000324824</ixx>
+          <ixx>0.000480000</ixx>
           <iyy>0.000480000</iyy>
-          <izz>0.000324824</izz>
+          <izz>0.000480000</izz>
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyz>0</iyz>
@@ -99,12 +103,17 @@
         <surface>
           <friction>
             <ode>
-              <mu>0.8</mu>
-              <mu2>0.6</mu2>
-              <slip1>0.5</slip1>
-              <slip2>0.5</slip2>
+              <mu>0.5</mu>
+              <mu2>0.3</mu2>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="visual">
@@ -123,9 +132,9 @@
       <inertial>
         <mass>0.3844</mass>
         <inertia>
-          <ixx>0.000324824</ixx>
+          <ixx>0.000480000</ixx>
           <iyy>0.000480000</iyy>
-          <izz>0.000324824</izz>
+          <izz>0.000480000</izz>
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyz>0</iyz>
@@ -142,12 +151,17 @@
         <surface>
           <friction>
             <ode>
-              <mu>0.8</mu>
-              <mu2>0.6</mu2>
-              <slip1>0.5</slip1>
-              <slip2>0.5</slip2>
+              <mu>0.5</mu>
+              <mu2>0.3</mu2>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="visual">
@@ -165,9 +179,9 @@
       <inertial>
         <mass>0.3844</mass>
         <inertia>
-          <ixx>0.000324824</ixx>
+          <ixx>0.000480000</ixx>
           <iyy>0.000480000</iyy>
-          <izz>0.000324824</izz>
+          <izz>0.000480000</izz>
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyz>0</iyz>
@@ -184,12 +198,17 @@
         <surface>
           <friction>
             <ode>
-              <mu>0.8</mu>
-              <mu2>0.6</mu2>
-              <slip1>0.5</slip1>
-              <slip2>0.5</slip2>
+              <mu>0.5</mu>
+              <mu2>0.3</mu2>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="visual">
@@ -270,17 +289,26 @@
       </axis>
     </joint>
 
+
     <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
-      <commandTopic>/cmd_vel</commandTopic>
-      <odometryTopic>/car_odom</odometryTopic>
-      <odometryFrame>world</odometryFrame>
-      <leftFrontJoint>left_front_wheel_joint</leftFrontJoint>
-      <rightFrontJoint>right_front_wheel_joint</rightFrontJoint>
-      <leftRearJoint>right_after_wheel_joint</leftRearJoint>
-      <rightRearJoint>wheel_rb_joint</rightRearJoint>
-      <odometryRate>20.0</odometryRate>
-      <robotBaseFrame>/base_link</robotBaseFrame>
-    </plugin>
+            <updateRate>100.0</updateRate>
+            <cmdTimeout>0.1</cmdTimeout>
+            <leftFrontJoint>left_front_wheel_joint</leftFrontJoint>
+            <rightFrontJoint>right_front_wheel_joint</rightFrontJoint>
+            <leftRearJoint>left_after_wheel_joint</leftRearJoint>
+            <rightRearJoint>right_after_wheel_joint</rightRearJoint>
+            <wheelSeparation>0.1</wheelSeparation>
+            <wheelDiameter>0.07</wheelDiameter>
+            <torque>2</torque>
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryFrame>world</odometryFrame> 
+            <odometryTopic>odom</odometryTopic>
+            <robotBaseFrame>base_link</robotBaseFrame> 
+            <broadcastTF>0</broadcastTF>
+            <publishTf>0</publishTf>
+            <publishWheelJointState>true</publishWheelJointState>
+            <alwaysOn>true</alwaysOn>
+        </plugin>
 
   </model>
 </sdf>
