@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sunray_ground)
+project(sunray_communication_bridge)
 
 find_package(catkin REQUIRED COMPONENTS
   message_generation  
@@ -61,13 +61,12 @@ file(GLOB COMMUNICATION_SRCS "include/Communication/*.cpp")
 
 # ${COMMUNICATION_SRCS}将找到的.cpp文件添加到项目中
 add_library(${PROJECT_NAME}
-  src/ground_control.cpp
+  src/communication_bridge.cpp
   ${COMMUNICATION_SRCS}
 )
 
-add_executable(ground_control_node src/ground_control_node.cpp)
-# add_dependencies(ground_control_node sunray_control_gencpp)
-target_link_libraries(ground_control_node ${catkin_LIBRARIES} ${PROJECT_NAME})
+add_executable(communication_bridge_node src/communication_bridge_node.cpp)
+target_link_libraries(communication_bridge_node ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 # add_executable(send_test src/send_test.cpp)
 # target_link_libraries(send_test ${catkin_LIBRARIES} ${PROJECT_NAME})

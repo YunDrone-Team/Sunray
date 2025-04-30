@@ -1,9 +1,9 @@
 #include <string>
 #include <iostream>
 #include <thread>
-#include "ground_control.h"
+#include "communication_bridge.h"
 
-void GroundControl::init(ros::NodeHandle &nh)
+void communication_bridge::init(ros::NodeHandle &nh)
 {
 
     nh.param<int>("uav_num", uav_num, 0);                           // 【参数】无人机真机数量
@@ -25,7 +25,7 @@ void GroundControl::init(ros::NodeHandle &nh)
         //  无人机名字 = 无人机名字前缀 + 无人机ID
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
         // 【订阅】无人机状态 外部节点 -> 本节点
-        uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, i)));
+        uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
         // 【发布】无人机控制指令 本节点 -> 外部节点
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
         // 【发布】无人机设置指令 本节点 -> 外部节点
@@ -39,7 +39,7 @@ void GroundControl::init(ros::NodeHandle &nh)
         //  无人机名字 = 无人机名字前缀 + 无人机ID
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
         // 【订阅】无人机状态 外部节点 -> 本节点
-        uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&GroundControl::uav_state_cb, this, _1, uav_id)));
+        uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
         // 【发布】无人机控制指令 本节点 -> 外部节点
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
         // 【发布】无人机设置指令 本节点 -> 外部节点
@@ -63,7 +63,7 @@ void GroundControl::init(ros::NodeHandle &nh)
         //  无人车名字 = 无人车名字前缀 + 无人车ID
         std::string topic_prefix = "/" + ugv_name + std::to_string(i);
         // 【订阅】无人车状态 外部节点 -> 本节点
-        ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&GroundControl::ugv_state_cb, this, _1, i)));
+        ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&communication_bridge::ugv_state_cb, this, _1, i)));
         // 【发布】无人车控制指令 本节点 -> 外部节点
         ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
     }
@@ -73,7 +73,7 @@ void GroundControl::init(ros::NodeHandle &nh)
         //  无人车名字 = 无人车名字前缀 + 无人车ID
         std::string topic_prefix = "/" + ugv_name + std::to_string(ugv_id);
         // 【订阅】无人车状态 外部节点 -> 本节点
-        ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&GroundControl::ugv_state_cb, this, _1, ugv_id)));
+        ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&communication_bridge::ugv_state_cb, this, _1, ugv_id)));
         // 【发布】无人车控制指令 本节点 -> 外部节点
         ugv_controlCMD_pub.insert(std::make_pair(ugv_id, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
     }
@@ -89,15 +89,15 @@ void GroundControl::init(ros::NodeHandle &nh)
     }
 
     // 【定时器】 定时发送TCP心跳包到地面站
-    HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &GroundControl::sendHeartbeatPacket, this);
+    HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
     // 【定时器】 定时检测启动的子进程是否存活
-    CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &GroundControl::CheckChildProcessCallBack, this);
+    CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
     // 【定时器】 定时发布无人机状态信息（机间通信）
-    InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendInterAircraftStatusInformation, this);
+    InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterAircraftStatusInformation, this);
     // 【定时器】 定时发送数据到地面站
-    SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendGroundStationData, this);
+    SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
     // 【定时器】 定时发布无人车状态信息（车间通信）
-    InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &GroundControl::sendInterVehicleStatusInformation, this);
+    InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterVehicleStatusInformation, this);
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -106,9 +106,9 @@ void GroundControl::init(ros::NodeHandle &nh)
     // 【TCP服务器】 TCP服务器设置监听模式和最大连接数
     tcpServer.Listen(30);
     // 【TCP服务器】 TCP服务器读取数据信号连接回调函数
-    tcpServer.sigTCPServerReadData.connect(boost::bind(&GroundControl::TCPServerCallBack, this, _1));
+    tcpServer.sigTCPServerReadData.connect(boost::bind(&communication_bridge::TCPServerCallBack, this, _1));
     // 【TCP服务器】 TCP服务器状态信号连接回调函数
-    tcpServer.sigLinkState.connect(boost::bind(&GroundControl::TCPLinkState, this, _1, _2));
+    tcpServer.sigLinkState.connect(boost::bind(&communication_bridge::TCPLinkState, this, _1, _2));
     // 【TCP服务器】 TCP服务器启动
     tcpServer.setRunState(true);
 
@@ -119,7 +119,7 @@ void GroundControl::init(ros::NodeHandle &nh)
     // 【UDP通信】 绑定UDP监听端口
     udpSocket->Bind(static_cast<unsigned short>(udp_port));
     // 【UDP通信】 UDP通信读取数据信号连接回调函数
-    udpSocket->sigUDPUnicastReadData.connect(boost::bind(&GroundControl::UDPCallBack, this, _1));
+    udpSocket->sigUDPUnicastReadData.connect(boost::bind(&communication_bridge::UDPCallBack, this, _1));
     // 【UDP通信】 UDP通信启动
     udpSocket->setRunState(true);
 
@@ -128,7 +128,7 @@ void GroundControl::init(ros::NodeHandle &nh)
 
 }
 
-void GroundControl::TCPLinkState(bool state, std::string IP)
+void communication_bridge::TCPLinkState(bool state, std::string IP)
 {
 
     std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
@@ -143,7 +143,7 @@ void GroundControl::TCPLinkState(bool state, std::string IP)
     }
 }
 
-uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
+uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
 {
     uint8_t back;
     if (modeStr == "MANUAL")
@@ -175,7 +175,7 @@ uint8_t GroundControl::getPX4ModeEnum(std::string modeStr)
     return back;
 }
 
-void GroundControl::UDPCallBack(ReceivedParameter readData)
+void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
     int back;
     // std::cout << " GroundControl::UDPCallBack: " << (int)readData.messageID << std::endl;
@@ -230,7 +230,7 @@ void GroundControl::UDPCallBack(ReceivedParameter readData)
     }
 }
 
-pid_t GroundControl::CheckChildProcess(pid_t pid)
+pid_t communication_bridge::CheckChildProcess(pid_t pid)
 {
 
     // WIFEXITED(status)：若子进程正常退出，该宏会返回 true。
@@ -266,7 +266,7 @@ pid_t GroundControl::CheckChildProcess(pid_t pid)
     return terminated_pid;
 }
 
-pid_t GroundControl::OrderCourse(std::string orderStr)
+pid_t communication_bridge::OrderCourse(std::string orderStr)
 {
     pid_t pid = fork();
     if (pid == -1)
@@ -293,7 +293,7 @@ pid_t GroundControl::OrderCourse(std::string orderStr)
     return pid;
 }
 
-void GroundControl::executiveDemo(std::string orderStr)
+void communication_bridge::executiveDemo(std::string orderStr)
 {
     pid_t pid = fork();
     if (pid == -1)
@@ -328,7 +328,7 @@ void GroundControl::executiveDemo(std::string orderStr)
     }
 }
 
-void GroundControl::TCPServerCallBack(ReceivedParameter readData)
+void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
 {
     // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
    
@@ -337,7 +337,7 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     uint32_t time_stamp;
     uint8_t robot_id;
 
-    std::cout << "GroundControl::TCPServerCallBack:" << readData.messageID << std::endl;
+    std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
     switch (readData.messageID)
     {
     case MessageID::ControlMessageID:
@@ -460,10 +460,10 @@ void GroundControl::TCPServerCallBack(ReceivedParameter readData)
     default:
         break;
     }
-    // std::cout << "GroundControl::TCPServerCallBack end" << std::endl;
+    // std::cout << "communication_bridge::TCPServerCallBack end" << std::endl;
 }
 
-bool GroundControl::PublishUGVControlTopic(UGVControlData Data)
+bool communication_bridge::PublishUGVControlTopic(UGVControlData Data)
 {
     auto it = ugv_controlCMD_pub.find(Data.robotID);
     if (it == ugv_controlCMD_pub.end())
@@ -484,7 +484,7 @@ bool GroundControl::PublishUGVControlTopic(UGVControlData Data)
     return true;
 }
 
-bool GroundControl::SynchronizationUGVState(UGVStateData Data)
+bool communication_bridge::SynchronizationUGVState(UGVStateData Data)
 {
     auto it = ugv_state_pub.find(Data.ugvID);
 
@@ -519,7 +519,7 @@ bool GroundControl::SynchronizationUGVState(UGVStateData Data)
     return true;
 }
 
-bool GroundControl::SynchronizationUAVState(StateData Data)
+bool communication_bridge::SynchronizationUAVState(StateData Data)
 {
 
     auto it = uav_state_pub.find(Data.uavID);
@@ -571,7 +571,7 @@ bool GroundControl::SynchronizationUAVState(StateData Data)
     return true;
 }
 
-void GroundControl::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
+void communication_bridge::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
 {
     // 无人机机间组播链路发送
     for (int i = uav_id; i < uav_id + simulation_num; i++)
@@ -581,7 +581,7 @@ void GroundControl::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
     }
 }
 
-void GroundControl::sendGroundStationData(const ros::TimerEvent &e)
+void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
 {
     std::vector<std::string> tempVec;
     for (int i = uav_id; i < uav_id + simulation_num; i++)
@@ -611,7 +611,7 @@ void GroundControl::sendGroundStationData(const ros::TimerEvent &e)
     tempVec.clear();
 }
 
-void GroundControl::sendInterVehicleStatusInformation(const ros::TimerEvent &e)
+void communication_bridge::sendInterVehicleStatusInformation(const ros::TimerEvent &e)
 {
     // 无人车车间组播链路发送
     for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
@@ -621,7 +621,7 @@ void GroundControl::sendInterVehicleStatusInformation(const ros::TimerEvent &e)
     }
 }
 
-void GroundControl::CheckChildProcessCallBack(const ros::TimerEvent &e)
+void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
 {
     std::vector<std::string> keysToRemove;
     for (const auto &pair : nodeMap)
@@ -634,7 +634,7 @@ void GroundControl::CheckChildProcessCallBack(const ros::TimerEvent &e)
         nodeMap.erase(key);
 }
 
-void GroundControl::sendHeartbeatPacket(const ros::TimerEvent &e)
+void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
 {
     if (HeartbeatState)
     {
@@ -656,7 +656,7 @@ void GroundControl::sendHeartbeatPacket(const ros::TimerEvent &e)
     }
 }
 
-void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
+void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
 {
 
     int index = robot_id - 1;
@@ -709,7 +709,7 @@ void GroundControl::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int
     
 }
 
-void GroundControl::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
+void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
 {
     int index = robot_id - 1;
     ugvStateData[index].ugvState.init();

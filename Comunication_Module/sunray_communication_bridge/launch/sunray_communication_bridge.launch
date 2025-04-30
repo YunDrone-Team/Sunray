@@ -14,7 +14,7 @@
     <arg name="udp_ground_port" default="9696" />   <!-- 组播目标端口，用于机间通信-->
    
 
-    <node name="ground_control" pkg="sunray_ground" type="ground_control_node" output="screen">
+    <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
         <param name="uav_num" value="$(arg uav_num)" />
         <param name="simulation_num" value="$(arg simulation_num)" />
         <param name="uav_name" value="$(arg uav_name)" />

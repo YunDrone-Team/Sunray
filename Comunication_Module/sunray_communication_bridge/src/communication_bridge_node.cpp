@@ -1,4 +1,4 @@
-#include "ground_control.h"
+#include "communication_bridge.h"
 #include <signal.h>
 
 void mySigintHandler(int sig)
@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 
     signal(SIGINT, mySigintHandler);
 
-    GroundControl ground_control;
+    communication_bridge ground_control;
     ground_control.init(nh);
 
     // ros::spin();    100Hz太快
