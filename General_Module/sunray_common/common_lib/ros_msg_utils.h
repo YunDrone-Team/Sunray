@@ -17,18 +17,6 @@
 #include <sunray_msgs/UGVControlCMD.h>
 #include <sunray_msgs/UGVState.h>
 
-
-
-
-// #include <sunray_msgs/FMTState.h>
-#include <sunray_msgs/Heartbeat.h>
-#include <sunray_msgs/Attitude.h>
-#include <sunray_msgs/LocalPositionNED.h>
-#include <sunray_msgs/ArmCmd.h>
-#include <sunray_msgs/AttitudeSetpoint.h>
-#include <sunray_msgs/GlobalPositionSetpoint.h>
-#include <sunray_msgs/LocalPositionSetpoint.h>
-#include <sunray_msgs/VisionPositionEstimate.h>
 #include <sunray_msgs/PositionCommand.h>
 #include <sunray_msgs/OrcaCmd.h>
 #include <sunray_msgs/TargetMsg.h>
