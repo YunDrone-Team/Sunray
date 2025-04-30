@@ -2,7 +2,11 @@
 <launch>
 
     <arg name="vehicle" default="sunray150_with_cam"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/land_aruco.world"/>
+    <!-- <arg name="world" default="$(find sunray_simulator)/worlds/move_car_land.world"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/move_car_down.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/move_car_forward.world"/> -->
+    
     <arg name="gazebo_enable" default="true"/>
 
     <!-- gazebo configs -->
