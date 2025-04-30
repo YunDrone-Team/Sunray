@@ -13,7 +13,7 @@
         <material>
           <script>
             <uri>model://single_aruco/single_aruco.material</uri>
-            <name>arcuo_92</name>
+            <name>aruco_92</name>
           </script>
         </material>
         </visual>

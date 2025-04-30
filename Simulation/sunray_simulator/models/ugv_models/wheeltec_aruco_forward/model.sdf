@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="tag_car_forward">
+  <model name="wheeltec_aruco_forward">
 
     <include>
-      <uri>model://move_car</uri>
+      <uri>model://wheeltec</uri>
     </include>
 
     <link name='tag'>
@@ -47,7 +47,7 @@
         <material>
           <script>
             <uri>model://single_aruco/single_aruco.material</uri>
-            <name>arcuo_92</name>
+            <name>aruco_92</name>
           </script>
         </material>
       </visual>
@@ -112,7 +112,7 @@
     <joint name='cylinder_link' type='fixed'>
       <pose>0 0 0 0 -0 0</pose>
       <child>cylinder_link</child>
-      <parent>move_car::chassis</parent>
+      <parent>wheeltec::base_link</parent>
     </joint>
 
     </model>

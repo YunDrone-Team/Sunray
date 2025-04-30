@@ -1,4 +1,4 @@
-material arcuo_91
+material aruco_91
 {
  technique
  {
@@ -6,13 +6,13 @@ material arcuo_91
    {
      texture_unit
      {
-       texture arcuo_91.png
+       texture aruco_91.png
        scale 1.0 1.0
      }
    }
  }
 }
-material arcuo_92
+material aruco_92
 {
  technique
  {
@@ -20,7 +20,7 @@ material arcuo_92
    {
      texture_unit
      {
-       texture arcuo_92.png
+       texture aruco_92.png
        scale 1.0 1.0
      }
    }
