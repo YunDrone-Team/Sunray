@@ -2,6 +2,7 @@
 #define TCPCLIENT_H
 #include "CommunicationTCPSocket.h"
 
+
 #include <mutex>
 
 #define ClientNumber 20
@@ -12,6 +13,7 @@ struct ConnectStr
     std::string TargetIP;
     unsigned short TargetPort;
     bool State;
+    DecoderInterfaceBase* decoderInterfacePtr=nullptr;
 };
 
 struct TCPClientErrorStr
@@ -33,11 +35,11 @@ public:
 
     TCPClient();
     ~TCPClient();
-    void createClient(unsigned short listeningPort,std::string ip=nullptr,unsigned short targetPort=9696);
+    void createClient(unsigned short listeningPort,DecoderInterfaceBase* ptr,std::string ip=nullptr,unsigned short targetPort=9696);
     void setRunState(int state);
 
     int  clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp);      //服务端发送数据接口,目的ip
-    void closeLine(std::string ip);//新功能，待测
+    void closeLine(std::string ip);
     CommunicationTCPSocket* client[ClientNumber]={nullptr};
     void createThread();
     void onRun();

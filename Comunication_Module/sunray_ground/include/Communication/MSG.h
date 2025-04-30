@@ -6,56 +6,8 @@
 #include <vector>
 #include <string>
 
-#define CONTROL_TYPE_XYZ_POS 1
-#define CONTROL_TYPE_XYZ_VEL 2
-#define CONTROL_TYPE_XY_VEL_Z_POS 3
-#define CONTROL_TYPE_XYZ_ATT 4
-#define CONTROL_TYPE_TRAJECTORY 5
 
-
-/* 需要根据这个补充枚举值
-    uint8 XyzPos            = 1             # XYZ位置 不带偏航角
-    uint8 XyzVel            = 2             # XYZ速度 不带偏航角
-    uint8 XyVelZPos         = 3             # XY速度 Z位置 不带偏航角
-    uint8 XyzPosYaw         = 4             # XYZ位置 带偏航角
-    uint8 XyzPosYawrate     = 5             # XYZ位置 带偏航角速率
-    uint8 XyzVelYaw         = 6             # XYZ速度 带偏航角
-    uint8 XyzVelYawrate     = 7             # XYZ速度 带偏航角速率
-    uint8 XyVelZPosYaw      = 8             # XY速度 Z位置 带偏航角
-    uint8 XyVelZPosYawrate  = 9             # XY速度 Z位置 带偏航角速率
-    uint8 XyzPosVelYaw      = 10            # XYZ位置速度 带偏航角
-    uint8 XyzPosVelYawrate  = 11            # XYZ位置速度 带偏航角速率
-    uint8 PosVelAccYaw      = 12            # XYZ位置速度加速度 带偏航角        地面站不需要支持
-    uint8 PosVelAccYawrate  = 13            # XYZ位置速度加速度 带偏航角速率     地面站不需要支持
-    uint8 XyzPosYawBody     = 14            # XYZ位置 带偏航角 机体坐标系
-    uint8 XyzVelYawBody     = 15            # XYZ速度 带偏航角 机体坐标系
-    uint8 XyVelZPosYawBody  = 16            # XY速度 Z位置 带偏航角 机体坐标系
-    uint8 GlobalPos         = 17            # 全局坐标(绝对坐标系下的经纬度)
-
-    uint8 Takeoff           = 100           # 起飞
-    uint8 Land              = 101           # 降落
-    uint8 Hover             = 102           # 悬停
-    uint8 Waypoint          = 103           # 航点        特殊模式 需要传入多个航点 后续再适配
-    uint8 Return            = 104           # 返航
-*/
-
-
-/*旧
- TakeoffControlType = 1  ,           //home点上方悬停
-    HoverControlType = 2,               //当前位置上方悬停
-    LandControlType = 3 ,               //原地降落
-    XYZ_POSControlType = 4  ,           //惯性系定点控制
-    XY_VEL_Z_POSControlType = 5  ,      //惯性系定高速度控制
-    XYZ_VELControlType = 6 ,            //惯性系速度控制
-    XYZ_POS_BODYControlType = 7 ,       //机体系位置控制
-    XYZ_VEL_BODYControlType = 8 ,       //机体系速度控制
-    XY_VEL_Z_POS_BODYControlType = 9 ,  //机体系定高速度控制
-    TRAJECTORYControlType = 10 ,        //轨迹追踪控制
-    XYZ_ATTControlType = 11 ,           //姿态控制（来自外部控制器）
-    LAT_LON_ALTControlType = 12 ,       //绝对坐标系下的经纬度
-*/
-
-//takeoff hover land
+//
 enum ControlType
 {
     XyzPos                      =1,           //XYZ位置 不带偏航角
@@ -95,43 +47,19 @@ enum ControlMode // 无人机控制模式
   WITHOUT_CONTROL   = 4,     // 无控制
 };
 
-/*
-    Vehicle control type
-*/
-#define VEHICLE_DISARM 0
-#define VEHICLE_ARM 1
-#define VEHICLE_TAKEOFF 2
-#define VEHICLE_LAND 3
-#define VEHICLE_HOVER 4
-#define VEHICLE_KILL 5
+enum class UGVControlMode // 无人车控制模式
+{
+  INIT              = 0,     // 初始模式
+  HOLD              = 1,     //
+  POS_CONTROL       = 2,     //
+  POS_CONTROL_BODY  = 3,     //
+  VEL_CONTROL       = 4,     //
+  VEL_CONTROL_BODY  = 5,
+  Planner_Control   = 6,
 
-/*
-    MESSAGE ID
-*/
-#define HEARTBEAT_MESSAGE 1
-#define STATE_MESSAGE 2
-#define TAKEOFF_MESSAGE 101
-#define CONTROL_MESSAGE 102
-#define MODE_MESSAGE 103
-#define VEHICLE_MESSAGE 104
+};
 
-/*
-    PX4 fly mode  stop
-*/
-#define MODE_TYPE_OFFBOARD 1
-#define MODE_TYPE_POSITION 2
-#define MODE_TYPE_HOLD 3
-#define MODE_TYPE_STABILIZED 4
-#define MODE_TYPE_MANUAL 5
 
-/*
-    size of struct
-*/
-#define SIZE_HEARTBEAT 8
-#define SIZE_TAKEOFF 15
-#define SIZE_MODE 15
-#define SIZE_CONTROL 39
-#define SIZE_STATUS 63
 
 //stop
 enum ModelType
@@ -161,28 +89,20 @@ enum VehicleControlType
 //MESSAGE ID
 enum MessageID
 {
-    HeartbeatMessageID = 1,
-    StateMessageID     = 2,
-//    TakeoffMessageID   = 101,
-    ControlMessageID   = 102,
-    VehicleMessageID   = 103,
-    WaypointMessageID  = 104,
-    SearchMessageID    = 200,
-    ACKMessageID       = 201,
-    DemoMessageID      = 202,
+    HeartbeatMessageID    = 1,
+    StateMessageID        = 2,
+    UGVStateMessageID     = 20,
+//    TakeoffMessageID    = 101,
+    ControlMessageID      = 102,
+    VehicleMessageID      = 103,
+    WaypointMessageID     = 104,
+    UGVControlMessageID   = 120,
+    SearchMessageID       = 200,
+    ACKMessageID          = 201,
+    DemoMessageID         = 202,
 };
 
 
-
-//待修改 大小有变化,size of struct
-enum StructSize
-{
-    HeartbeatSize  = 8,
-    TakeoffSize    = 15,
-    ModeSize       = 15,
-    ControlSize    = 39,
-    StatusSize     = 63,
-};
 
 
 //1.INIT；2.RC_CONTROL；3.CMD_CONTROL；4.LAND_CONTROL
@@ -218,11 +138,6 @@ enum TCPClientState
     ConnectionTimeout       =4,
 };
 
-enum demoLaunch
-{
-  runDemo= 0,           // run_demo.launch
-
-};
 
 
 enum WaypointType
@@ -245,60 +160,7 @@ enum WaypointYawType
     CirclePoint     =3,
 };
 
-//uint8_t getPX4ModeEnum(std::string modeStr)
-//{
-//    uint8_t back;
-//    if(modeStr=="MANUAL")
-//        back=PX4ModeType::ManualType;
-//    else if(modeStr=="STABILIZED")
-//        back=PX4ModeType::StabilizedType;
-//    else if(modeStr=="ACRO")
-//        back=PX4ModeType::AcroType;
-//    else if(modeStr=="RATTITUDE")
-//        back=PX4ModeType::RattitudeType;
-//    else if(modeStr=="ALTITUDE")
-//        back=PX4ModeType::AltitudeType;
-//    else if(modeStr=="OFFBOARD")
-//        back=PX4ModeType::OffboardType;
-//    else if(modeStr=="POSITION")
-//        back=PX4ModeType::PositionType;
-//    else if(modeStr=="HOLD")
-//        back=PX4ModeType::HoldType;
-//    else if(modeStr=="MISSION")
-//        back=PX4ModeType::MissionType;
-//    else if(modeStr=="RETURN")
-//        back=PX4ModeType::ReturnType;
-//    else if(modeStr=="FOLLOW ME")
-//        back=PX4ModeType::FollowMeType;
-//    else if(modeStr=="PRECISION LAND")
-//        back=PX4ModeType::PrecisionLandType;
-//    else
-//        back=0;
-//    return back;
-//};
 
-//std::string getControlStateStr(int state)
-//{
-//    std::string backStr;
-//    backStr.clear();
-//    switch (state)
-//    {
-//    case ControlState::Init:
-//        backStr="INIT";
-//        break;
-//    case ControlState::RcControl:
-//        backStr="RC_CONTROL；3";
-//        break;
-//    case ControlState::CMDControl:
-//        backStr="CMD_CONTROL";
-//        break;
-//    case ControlState::LandControl:
-//        backStr="LAND_CONTROL";
-//        break;
-//    default:break;
-//    }
-//    return backStr;
-//}
 
 //
 //struct TakeoffData     //停用
@@ -309,13 +171,7 @@ enum WaypointYawType
 //    uint8_t takeoff;     /**< @param takeoff takeoff flag */
 //};
 
-//struct ModeData
-//{
-//    uint8_t robotID; /**< @param robot_id robot ID */
-//    uint8_t msgType;
-//    uint64_t timestamp; /**< @param time_stamp timestamp */
-//    uint8_t uavMode;    /**< @param uav_mode UAV mode */
-//};
+
 
 struct VehicleData
 {
@@ -341,6 +197,11 @@ struct SpaceCoordinates
     float x;//r
     float y;//p
     float z;//y
+};
+
+struct FloatPair {
+    float x;
+    float y;
 };
 
 struct QuaternionData
@@ -394,7 +255,37 @@ struct ControlData
     }
 };
 
+struct UGVControlData
+{
+    uint8_t robotID;    /**< @param robot_id robot ID */
+    uint8_t msgType;
+    uint64_t timestamp; /**< @param time_stamp timestamp */
+    uint8_t controlMode;        /**< @param type control type */
+    uint8_t yawType;        // 偏航角类型 0 角速度 1 角度（需要有定位支持）,地面站默认是1
 
+    FloatPair desiredPos;      // [m]
+    FloatPair desiredVel;      // [m/s]
+
+    float desiredYaw;
+    float angularVel;          //[rad/s] 地面站不接入，默认给0
+
+
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        timestamp=0;
+        controlMode=0;
+        yawType=1;
+        desiredPos.x=0;
+        desiredPos.y=0;
+        desiredVel.x=0;
+        desiredVel.y=0;
+        desiredYaw=0;
+        angularVel=0;
+
+    }
+};
 
 struct StateData
 {
@@ -472,12 +363,68 @@ struct StateData
 
 };
 
+
+struct UGVStateData
+{
+    uint8_t  robotID;  /**< @param robot_id robot ID */
+    uint8_t  msgType;
+    uint64_t timestamp; /**< @param time_stamp timestamp */
+    uint8_t  ugvID;   /**< @param uav_id UGV ID */
+    uint8_t locationSource;          // 0: Mocap, 1: RTK, 2: Gazebo, 3:
+    bool connected;   /**< @param connected connection status */
+    bool odom_valid;                  // 0: invalid, 1: valid
+    FloatPair position;      // [m]
+    FloatPair velocity;      // [m/s]
+    float yaw;
+
+    FloatPair posSetpoint;      // [m]
+    FloatPair velSetpoint;      // [m/s]
+    float yawSetpoint;
+
+    float batteryState;      // [V]
+    float batteryPercentage; // [0-1]
+
+    uint8_t controlMode;
+
+
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        timestamp=0;
+
+        ugvID=0;
+        connected=false;
+        locationSource=0;
+        odom_valid=false;
+
+        position.x=0;
+        position.y=0;
+        velocity.x=0;
+        velocity.y=0;
+        yaw=0;
+
+        posSetpoint.x=0;
+        posSetpoint.y=0;
+        velSetpoint.x=0;
+        velSetpoint.y=0;
+        yawSetpoint=0;
+
+        batteryState=0;
+        batteryPercentage=0;
+
+        controlMode=0;
+    }
+
+};
+
 // Message structures 心跳包
 struct HeartbeatData
 {
     uint8_t robotID;  /**< @param robot_id robot ID */
     uint8_t msgType;
-    uint64_t timestamp; /**< @param head message header */
+    uint64_t timestamp;
+    uint8_t agentType;
     int32_t count;       /**< @param head message header 心跳包计数，未启用 */
 
     void init()
@@ -486,6 +433,7 @@ struct HeartbeatData
         msgType=0;
         timestamp=0;
         count=0;
+        agentType=0;
     }
 };
 
@@ -493,7 +441,7 @@ struct SearchData
 {
     uint8_t robotID;
     uint8_t msgType;
-    uint64_t timestamp; /**< @param head message header */
+    uint64_t timestamp;
     uint64_t port;
 
     void init()
@@ -509,8 +457,9 @@ struct ACKData
 {
     uint8_t robotID;
     uint8_t msgType;
-    uint64_t timestamp; /**< @param head message header */
-    uint8_t uavID;
+    uint64_t timestamp;
+    uint8_t agentType;
+    uint8_t ID;
     uint16_t port;
 
     void init()
@@ -518,7 +467,8 @@ struct ACKData
         robotID=0;
         msgType=0;
         timestamp=0;
-        uavID=0;
+        agentType=0;
+        ID=0;
         port=0;
     }
 };
@@ -638,64 +588,15 @@ struct WaypointData
     }
 };
 
-//// Message structures
-//struct TakeoffMessage   //停用
-//{
-//    uint16_t head;       /**< @param head message header */
-//    uint32_t length;     /**< @param length message length */
-//    uint8_t msgID;      /**< @param msg_id message ID */
-//    TakeoffData payload; /**< @param payload takeoff message payload */
-//    uint16_t check;      /**< @param check checksum */
 
-//};
-
-//停用
-//struct ModeMessage
-//{
-//    uint16_t head;    /**< @param head message header */
-//    uint32_t length;  /**< @param length message length */
-//    uint8_t msgID;   /**< @param msg_id message ID */
-//    ModeData payload; /**< @param payload mode message payload */
-//    uint16_t check;   /**< @param check checksum */
-//};
-
-// Vehicle_Message
-//struct VehicleMessage
-//{
-//    uint16_t head;       /**< @param head message header */
-//    uint32_t length;     /**< @param length message length */
-//    uint8_t msgID;      /**< @param msg_id message ID */
-//    VehicleData payload; /**< @param payload vehicle message payload */
-//    uint16_t check;      /**< @param check checksum */
-//};
-
-//struct ControlMessage
-//{
-//    uint16_t head;       /**< @param head message header */
-//    uint32_t length;     /**< @param length message length */
-//    uint8_t msgID;      /**< @param msg_id message ID */
-//    ControlData payload; /**< @param payload control message payload */
-//    uint16_t check;      /**< @param check checksum */
-//};
-
-//struct StateMessage
-//{
-//    uint16_t head;     /**< @param head message header */
-//    uint32_t length;   /**< @param length message length */
-//    uint8_t msgID;    /**< @param msg_id message ID */
-//    StateData payload; /**< @param payload state message payload */
-//    uint16_t check;    /**< @param check checksum */
-//};
-
-//CommunicationType
 
 //通信数据包
 struct CommunicationPack
 {
-    std::vector<char> sendData;//数据
-    std::string targetIp;//目标ip
-    uint16_t targetPort;//目标端口，TCP可不填
-    uint8_t communicationType;//通信类型
+    std::vector<char> sendData; //数据
+    std::string targetIp;       //目标ip
+    uint16_t targetPort;        //目标端口，TCP可不填
+    uint8_t communicationType;  //通信类型
 };
 
 //通信类型
@@ -712,12 +613,14 @@ union unionData
 {
     HeartbeatData heartbeat;
     VehicleData vehicle;
-    ControlData contro;
+    ControlData control;
     StateData state;
     SearchData search;
     ACKData ack;
     DemoData demo;
     WaypointData waypointData;
+    UGVStateData ugvState;
+    UGVControlData ugvControl;
 };
 
 //接受到的数据参数结构体
@@ -730,13 +633,15 @@ struct ReceivedParameter
     unsigned short port;
 };
 
-//UDP设备参数
+//设备参数
 struct DeviceData
 {
-    int UAVID;
+    int agentType;
+    int ID;
     std::string ip;
     unsigned short port;
 };
+
 
 struct CommunicationState
 {
