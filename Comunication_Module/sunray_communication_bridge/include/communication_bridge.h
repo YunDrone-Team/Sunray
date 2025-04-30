@@ -2,8 +2,6 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
-#include "ground_msg.h"
-#include "SunrayServer.h"
 #include "ros_msg_utils.h"
 #include "Communication/TCPServer.h"
 #include "Communication/CommunicationUDPSocket.h"
@@ -24,12 +22,12 @@
 #define UGVType 1
 
 using namespace std;
-class GroundControl
+class communication_bridge
 {
 public:
-    GroundControl() {};
+    communication_bridge() {};
 
-    ~GroundControl()
+    ~communication_bridge()
     {
         tcpServer.Close();
         for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it)
@@ -92,7 +90,6 @@ private:
     ros::Timer SendGroundStationDataTimer;
     ros::Timer InterVehicleTimer;
 
-    TcpServer tcp_server;
     // UDPServer udp_server;
 
     TCPServer tcpServer;

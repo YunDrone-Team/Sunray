@@ -10,3 +10,5 @@ catkin_make --source General_Module/sunray_tutorial --build build/sunray_tutoria
 catkin_make --source Simulation/sunray_simulator --build build/sunray_simulator
 # 编译simulator_utils模块
 catkin_make --source Simulation/simulator_utils --build build/simulator_utils
+#编译sunray_communication_bridge模块
+catkin_make --source Comunication_Module/sunray_communication_bridge --build build/sunray_communication_bridge

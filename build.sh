@@ -25,8 +25,6 @@ catkin_make --source External_Module/ego-planner-swarm --build build/ego-planner
 # 编译FUEL模块
 # catkin_make --source External_Module/FUEL --build build/FUEL
 # 编译simulator_utils模块
-
-
 catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # 编译sunray_formation模块
 catkin_make --source sunray_formation --build build/sunray_formation
