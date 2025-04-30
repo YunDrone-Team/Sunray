@@ -23,82 +23,166 @@ TCPClient::~TCPClient()
 //            client[i]=nullptr;
 //        }
 //    }
+    std::cout << "TCPClient::~TCPClient()"<<std::endl;
+
     threadState=false;
     createThreadRun=false;
+    std::cout << "TCPClient::~TCPClient() end"<<std::endl;
+
 }
 
 
 
 void TCPClient::onRun()
 {
+//    int back;
+//    while (threadState)
+//    {
+//        if(!runState)
+//            continue;
+//        if(clientVector.size()<=0 )
+//        {
+//            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // 休眠5200毫秒
+//            continue;
+//        }
+
+
+//        std::vector<CommunicationTCPSocket*> temp;
+//        std::unique_lock<std::mutex> lockRun(mutexRun);
+//        if(clientVector.size()>0)
+//        {
+//            for (const auto& item : clientVector)
+//            {
+//                back=item->TCPClientOnRun();
+//                if(!back)
+//                    temp.push_back(item);
+//            }
+//        }
+
+//        lockRun.unlock();
+//        if(temp.size()>0)
+//        {
+//            for (const auto& itDelete : temp)
+//            {
+//                std::unique_lock<std::mutex> lockDelete(mutexRun);
+
+//                auto it =std::find(clientVector.begin(), clientVector.end(), itDelete);
+//                if (it != clientVector.end())
+//                {
+//                    // 删除元素之前，先释放内存（如果使用原始指针的话）
+//                    delete *it; // 注意是delete *it，因为it是指向指针的指针
+
+//                    // 然后从vector中删除指针（不删除对象，只删除指针）
+//                    clientVector.erase(it);
+//                }
+//                lockDelete.unlock();
+//            }
+//            temp.clear();
+//        }
+
+
+////        for(int i=0;i<ClientNumber;++i)
+////        {
+////            if(client[i]!=nullptr)
+////            {
+////                back=client[i]->TCPClientOnRun();
+////                if(!back)
+////                {
+////                    client[i]->Close();
+////                    delete client[i];
+////                    client[i]=nullptr;
+////                }
+////            }
+
+////        }
+
+//    }
+
+
+//    std::unique_lock<std::mutex> lockRun(mutexRun);
+//    if(clientVector.size()>0)
+//    {
+//        for (const auto& item : clientVector)
+//        {
+//            item->Close();
+//            delete item;
+//        }
+//    }
+//    clientVector.clear();
+//    lockRun.unlock();
+//    std::cout << "TCP Client thread termination!"<<std::endl;
+
+
+
     int back;
     while (threadState)
     {
-        if(!runState)
-            continue;
-        std::vector<CommunicationTCPSocket*> temp;
-        std::unique_lock<std::mutex> lockRun(mutexRun);
-        if(clientVector.size()>0)
+        if (!runState)
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 当runState为false时休眠
+            continue;
+        }
+
+        std::vector<CommunicationTCPSocket*> temp;
+        {
+            std::unique_lock<std::mutex> lockRun(mutexRun);
+            if (clientVector.empty())
+            {
+                lockRun.unlock();
+                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 休眠100毫秒
+                continue;
+            }
+
+            // 记录需要删除的元素，减少锁的持有时间
             for (const auto& item : clientVector)
             {
-                back=item->TCPClientOnRun();
-                if(!back)
-                    temp.push_back(item);
-            }
-        }
-
-        lockRun.unlock();
-        if(temp.size()>0)
-        {
-            for (const auto& itDelete : temp)
-            {
-                std::unique_lock<std::mutex> lockDelete(mutexRun);
-
-                auto it =std::find(clientVector.begin(), clientVector.end(), itDelete);
-                if (it != clientVector.end())
+                back = item->TCPClientOnRun();
+                if (!back)
                 {
-                    // 删除元素之前，先释放内存（如果使用原始指针的话）
-                    delete *it; // 注意是delete *it，因为it是指向指针的指针
-
-                    // 然后从vector中删除指针（不删除对象，只删除指针）
-                    clientVector.erase(it);
+                    temp.push_back(item);
                 }
-                lockDelete.unlock();
             }
+        } // 锁在作用域结束时自动释放
+
+//        if (!temp.empty())
+//        {
+//            // 使用std::remove_if和erase优化删除操作
+//            auto it = std::remove_if(clientVector.begin(), clientVector.end(), [&temp](CommunicationTCPSocket* elem) {
+//                    return std::find(temp.begin(), temp.end(), elem) != temp.end();
+//        });
+//            {
+//                std::unique_lock<std::mutex> lockDelete(mutexRun);
+//                clientVector.erase(it, clientVector.end());
+//            }
+//            temp.clear();
+//        }
+        if (!temp.empty())
+        {
+            std::unique_lock<std::mutex> lockDelete(mutexRun);
+            auto it = std::remove_if(clientVector.begin(), clientVector.end(), [&temp](CommunicationTCPSocket* elem)
+            {
+                    return std::find(temp.begin(), temp.end(), elem) != temp.end();
+            });
+            for (auto toDelete = it; toDelete != clientVector.end(); ++toDelete)
+            {
+                (*toDelete)->Close();
+                delete *toDelete;
+            }
+            clientVector.erase(it, clientVector.end());
+            lockDelete.unlock();
             temp.clear();
         }
-
-
-//        for(int i=0;i<ClientNumber;++i)
-//        {
-//            if(client[i]!=nullptr)
-//            {
-//                back=client[i]->TCPClientOnRun();
-//                if(!back)
-//                {
-//                    client[i]->Close();
-//                    delete client[i];
-//                    client[i]=nullptr;
-//                }
-//            }
-
-//        }
-
     }
 
-
     std::unique_lock<std::mutex> lockRun(mutexRun);
-    if(clientVector.size()>0)
+    for (auto item : clientVector)
     {
-        for (const auto& item : clientVector)
-        {
-            item->Close();
-            delete item;
-        }
+        item->Close();
+        delete item;
     }
     clientVector.clear();
     lockRun.unlock();
+    std::cout << "TCP Client thread termination!"<<std::endl;
 }
 
 
@@ -153,13 +237,13 @@ void TCPClient::setRunState(int state)
 int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp)
 {
     int sendResult = 0;
-//std::cout << "TCPClient::clientSendTCPData clientVector"<<clientVector.size()<<std::endl;
+std::cout << "TCPClient::clientSendTCPData clientVector "<<clientVector.size()<<" "<<sendData.size()<<std::endl;
     if(sendData.size()<=0)
         return -1;
 
     for (const auto& item : clientVector)
     {
-        //std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
+        std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
 
         if(targetIp!=item->getTCPClientTargetIP())
                    continue;
@@ -178,6 +262,7 @@ int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targ
                 perror("send failed"); // 使用perror打印错误消息，它会自动使用errno
                 std::cout << "send failed "<<sendData.size()<<std::endl;
             }
+            std::cout << "Socket: "<<item->getTCPClientSocket()<<" sendResult "<<sendResult<<std::endl;
         }
 
     }
@@ -207,7 +292,7 @@ int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targ
 //    }
 
 
-
+    std::cout << "return sendResult "<<std::endl;
     return sendResult;
 }
 
@@ -224,6 +309,7 @@ void TCPClient::createThread()
                 ConnectStr temp=item;
                 CommunicationTCPSocket* TCPSocket=new CommunicationTCPSocket;
                 TCPSocket->InitSocket();
+                TCPSocket->setDecoderInterfacePtr(temp.decoderInterfacePtr);
                 int back;
 //                 back=TCPSocket->Bind(temp.ListeningPort);
 //                std::cout << "绑定端口号back "<<back<< std::endl;
@@ -281,16 +367,19 @@ void TCPClient::createThread()
 
         }else {
             lock.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(200)); // 休眠500毫秒
+            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // 休眠5200毫秒
             continue;
         }
 
     }
+
+    std::cout << "TCP Client createThread termination!"<<std::endl;
+
 }
 
 
 
-void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigned short targetPort)
+void TCPClient::createClient(unsigned short listeningPort,DecoderInterfaceBase* ptr,std::string ip,unsigned short targetPort)
 {   //重新连接服务器没处理
 
         //std::cout << "TCPClient::createClient "<<std::endl;
@@ -298,6 +387,7 @@ void TCPClient::createClient(unsigned short listeningPort,std::string ip,unsigne
         connectData.ListeningPort=listeningPort;
         connectData.TargetIP=ip;
         connectData.TargetPort=targetPort;
+        connectData.decoderInterfacePtr=ptr;
         connectData.State=false;
 
         std::unique_lock<std::mutex> lock(mutexConnect);

@@ -44,7 +44,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
+  ${PROJECT_SOURCE_DIR}/../../General_Module/sunray_common/common_lib
 )
 
 

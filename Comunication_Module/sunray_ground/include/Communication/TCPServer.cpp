@@ -80,7 +80,10 @@ void TCPServer::TCPServerManagingData(std::vector<uint8_t> &data, std::string IP
 
             std::vector<uint8_t> waitCheckVector(start, end);
 
-            uint16_t checksum = codec.getChecksum(waitCheckVector);
+
+            uint16_t checksum=0;
+            if(decoderInterfacePtr!=nullptr)
+                checksum=decoderInterfacePtr->getChecksum(waitCheckVector);
 
             uint16_t BackChecksum = static_cast<uint16_t>(data[index + size - 1]) |
                                     (static_cast<uint16_t>(data[index + size - 2]) << 8);
@@ -97,7 +100,9 @@ void TCPServer::TCPServerManagingData(std::vector<uint8_t> &data, std::string IP
             ReceivedParameter readData;
             readData.communicationType = CommunicationType::TCPServerCommunicationType;
 
-            codec.decoder(std::vector<uint8_t>(data.begin() + index, data.begin() + index + size), readData.messageID, readData.data);
+            if(decoderInterfacePtr!=nullptr)
+                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+
             // 清除已处理数据
             data.erase(data.begin() + index, data.begin() + index + size);
             copyData.erase(copyData.begin() + index, copyData.begin() + +index + size); // 待测试
@@ -280,6 +285,8 @@ bool TCPServer::resetMaxSock()
             std::string clientIP = itDelete->first;
             sigLinkState(linkState, clientIP);
             ipSocketMap.erase(itDelete);
+
+
         }
     }
     deleteVector.clear();
@@ -306,6 +313,7 @@ bool TCPServer::TCPServerOnRun()
             // select出问题了
             sigTCPServerError(errno);
             std::cout << "select出问题了 " << ret << " " << maxSock + 1 << std::endl;
+
             bool fl = false;
             if (errno == EBADF)
                 fl = resetMaxSock();
