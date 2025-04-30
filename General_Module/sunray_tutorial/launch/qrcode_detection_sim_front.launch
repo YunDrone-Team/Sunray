@@ -15,7 +15,7 @@
         <param name="y_bias" type="double" value="0" />
         <param name="draw_tag_detections_image" type="bool" value="true" />
 
-        <param name="rotate" type="int" value="1" /> <!-- 0: no rotation, 1: rotate 180 degree clockwise, 2: rotate 90 degree clockwise  3: rotate -90 degree clockwise-->
+        <param name="rotate" type="int" value="0" /> <!-- 0: no rotation, 1: rotate 180 degree clockwise, 2: rotate 90 degree clockwise  3: rotate -90 degree clockwise-->
 
         <param name="algorithm_parameters" type="str" value="$(find sunray_tutorial)/config/qrcode_detector_params_sim.json" />
         <param name="camera_parameters" type="str" value="$(find sunray_tutorial)/config/head_camera_sim.yaml" />

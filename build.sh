@@ -18,11 +18,15 @@ catkin_make --source General_Module/sunray_ground --build build/sunray_ground
 catkin_make --source General_Module/sunray_media --build build/sunray_media
 # 编译sunray_ugv_control模块
 catkin_make --source General_Module/sunray_ugv_control --build build/sunray_ugv_control
+
+## 注意：ego-planner与FUEL不能同时编译 会存在一些链接上的问题
 # 编译ego-planner-swarm模块
 catkin_make --source External_Module/ego-planner-swarm --build build/ego-planner
 # 编译FUEL模块
-catkin_make --source External_Module/FUEL --build build/FUEL
+# catkin_make --source External_Module/FUEL --build build/FUEL
 # 编译simulator_utils模块
+
+
 catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # 编译sunray_formation模块
 catkin_make --source sunray_formation --build build/sunray_formation
