@@ -17,17 +17,30 @@
     </include>
 
     <arg name="ugv_id" default="1"/>
+    <!-- 无人车的ID -->
     <arg name="ugv_name" default="ugv"/>
-    <arg name="ugv_model" default="wheeltec_diff" />
+    <!-- 无人车的名称 -->
+    <arg name="ugv_model" default="wheeltec" />
+    <!-- 无人车的模型 -->
 
+    <!-- 无人车的初始位置坐标 -->
     <arg name="init_x" default="0"/>
     <arg name="init_y" default="0"/>
     <arg name="init_z" default="0"/>
-
     <arg name="init_yaw" default="0"/>
 
+    <!-- 命名空间 -->
     <group ns="$(arg ugv_name)$(arg ugv_id)">
-        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_id) -x $(arg init_x) -y $(arg init_y) -z $(arg init_z) -Y $(arg init_yaw)" output="screen"/>
+        <!-- 启动文件 -->
+        <include file="$(find sunray_simulator)/launch_ugv/sunray_sim_ugv.launch">
+            <!-- 传递参数 -->
+            <arg name="ugv_id" value="$(arg ugv_id)" />
+            <arg name="ugv_model" value="$(arg ugv_model)" />
+            <arg name="init_x" value="$(arg init_x)"/>
+            <arg name="init_y" value="$(arg init_y)"/>
+            <arg name="init_z" value="$(arg init_z)"/>
+            <arg name="init_yaw" value="$(arg init_yaw)"/>
+        </include>
     </group>
 
     <!-- RVIZ -->

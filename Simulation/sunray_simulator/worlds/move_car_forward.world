@@ -60,7 +60,7 @@
     <model name='target'>  <!--模型名字-->
     	<pose frame=''>2 0 0  0 0 3.14159</pose>  <!--模型相对于世界坐标系所放位置-->
       <include>
-      <uri>model://tag_car_forward</uri>
+      <uri>model://wheeltec_aruco_forward</uri>
     </include>
     </model>
 

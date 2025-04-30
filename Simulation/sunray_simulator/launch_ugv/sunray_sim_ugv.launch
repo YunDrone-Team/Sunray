@@ -1,0 +1,25 @@
+<launch>
+    <!-- 用于指定仿真环境文件，默认为sunray_simulator包下的worlds文件夹中的sunray_empty_world.world文件 -->
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+
+    <!-- 定义无人车ID，默认为1 -->
+    <arg name="ugv_id" default="1"/>
+    <!-- 定义无人车名称，默认为ugv -->
+    <arg name="ugv_name" default="ugv"/>
+    <!-- 定义无人车模型，默认为wheeltec -->
+    <arg name="ugv_model" default="wheeltec" />
+
+
+    <!-- 用于指定无人车初始位置x坐标，默认为0 -->
+    <arg name="init_x" default="0"/>
+    <!-- 用于指定无人车初始位置y坐标，默认为0 -->
+    <arg name="init_y" default="0"/>
+    <!-- 用于指定无人车初始位置z坐标，默认为0 -->
+    <arg name="init_z" default="0"/>
+    <!-- 定义无人车初始朝向，默认为0 -->
+    <arg name="init_yaw" default="0"/>
+    <!-- 在Gazebo中生成无人车模型 -->
+    <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_id) -x $(arg init_x) -y $(arg init_y) -z $(arg init_z) -Y $(arg init_yaw)" output="screen"/>
+
+</launch>
+

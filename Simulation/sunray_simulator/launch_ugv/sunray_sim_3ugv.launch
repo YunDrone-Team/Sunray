@@ -16,40 +16,67 @@
         <arg name="use_sim_time" value="false"/>
     </include>
 
+    <!-- ID -->
     <arg name="ugv_1_id" default="1"/>
     <arg name="ugv_2_id" default="2"/>
     <arg name="ugv_3_id" default="3"/>
+    <!-- name -->
     <arg name="ugv_name" default="ugv"/>
+    <!-- 模型 -->
     <arg name="ugv_model" default="wheeltec" />
 
+    <!-- ugv1初始位置 -->
     <arg name="init_1_x" default="0"/>
     <arg name="init_1_y" default="0"/>
     <arg name="init_1_z" default="0"/>
     <arg name="init_1_yaw" default="0"/>
 
+    <!-- ugv2初始位置 -->
     <arg name="init_2_x" default="0"/>
     <arg name="init_2_y" default="1"/>
     <arg name="init_2_z" default="0"/>
     <arg name="init_2_yaw" default="0" />
 
+    <!-- ugv3初始位置 -->
     <arg name="init_3_x" default="0"/>
     <arg name="init_3_y" default="-1"/>
     <arg name="init_3_z" default="0"/>
     <arg name="init_3_yaw" default="0" />
 
-
-
-
+    <!-- ugv1 -->
     <group ns="$(arg ugv_name)$(arg ugv_1_id)">
-        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_1_id) -x $(arg init_1_x) -y $(arg init_1_y) -z $(arg init_1_z) -Y $(arg init_1_yaw)" output="screen"/>
+        <include file="$(find sunray_simulator)/launch_ugv/sunray_sim_ugv.launch">
+            <arg name="ugv_id" value="$(arg ugv_1_id)" />
+            <arg name="ugv_model" value="$(arg ugv_model)" />
+            <arg name="init_x" value="$(arg init_1_x)"/>
+            <arg name="init_y" value="$(arg init_1_y)"/>
+            <arg name="init_z" value="$(arg init_1_z)"/>
+            <arg name="init_yaw" value="$(arg init_1_yaw)"/>
+        </include>
     </group>
 
+    <!-- ugv2 -->
     <group ns="$(arg ugv_name)$(arg ugv_2_id)">
-        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_2_id) -x $(arg init_2_x) -y $(arg init_2_y) -z $(arg init_2_z) -Y $(arg init_2_yaw)" output="screen"/>
+        <include file="$(find sunray_simulator)/launch_ugv/sunray_sim_ugv.launch">
+            <arg name="ugv_id" value="$(arg ugv_2_id)" />
+            <arg name="ugv_model" value="$(arg ugv_model)" />
+            <arg name="init_x" value="$(arg init_2_x)"/>
+            <arg name="init_y" value="$(arg init_2_y)"/>
+            <arg name="init_z" value="$(arg init_2_z)"/>
+            <arg name="init_yaw" value="$(arg init_2_yaw)"/>
+        </include>
     </group>
 
+    <!-- ugv3 -->
     <group ns="$(arg ugv_name)$(arg ugv_3_id)">
-        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_3_id) -x $(arg init_3_x) -y $(arg init_3_y) -z $(arg init_3_z) -Y $(arg init_3_yaw)" output="screen"/>
+        <include file="$(find sunray_simulator)/launch_ugv/sunray_sim_ugv.launch">
+            <arg name="ugv_id" value="$(arg ugv_3_id)" />
+            <arg name="ugv_model" value="$(arg ugv_model)" />
+            <arg name="init_x" value="$(arg init_3_x)"/>
+            <arg name="init_y" value="$(arg init_3_y)"/>
+            <arg name="init_z" value="$(arg init_3_z)"/>
+            <arg name="init_yaw" value="$(arg init_3_yaw)"/>
+        </include>
     </group>
 
     <!-- RVIZ -->
