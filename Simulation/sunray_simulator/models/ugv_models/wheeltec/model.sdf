@@ -292,7 +292,7 @@
 
     <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
             <updateRate>100.0</updateRate>
-            <cmdTimeout>0.1</cmdTimeout>
+            <cmdTimeout>0.01</cmdTimeout>
             <leftFrontJoint>left_front_wheel_joint</leftFrontJoint>
             <rightFrontJoint>right_front_wheel_joint</rightFrontJoint>
             <leftRearJoint>left_after_wheel_joint</leftRearJoint>

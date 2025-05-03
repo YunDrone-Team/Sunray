@@ -12,8 +12,7 @@
         </geometry>
       </visual>
       <inertial>
-        <mass>0.05</mass>        <!--质量-->
-        <!--惯性标签，定义模型当前link的惯性矩，是一个对称正定3x3矩阵-->
+        <mass>0.05</mass>  
         <inertia>
           <ixx>0.0025</ixx>
           <ixy>0</ixy>
@@ -43,10 +42,9 @@
         </surface>
       </collision>
 
-      <!-- Add a ray sensor, and give it a name -->
-      <sensor type="ray" name="head_hokuyo_sensor">
+      <sensor type="ray" name="2d_lidar">
         <pose>0 0 0 0 0 0</pose>
-        <visualize>true</visualize>
+        <visualize>0</visualize>
         <update_rate>10</update_rate>
         <ray>
           <scan>
@@ -68,7 +66,7 @@
             <stddev>0.01</stddev>
           </noise>
         </ray>
-        <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <plugin name="2d_lidar" filename="libgazebo_ros_laser.so">
           <topicName>/scan</topicName>
           <frameName>/base_link</frameName>
         </plugin>

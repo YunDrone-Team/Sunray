@@ -13,7 +13,7 @@
           <!-- 使用Gazebo预置红色材质 -->
           <script>
             <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Green</name>
+            <name>Gazebo/Blue</name>
           </script>
           <!-- 或直接使用RGBA值 -->
           <!-- <ambient>1 0 0 1</ambient>

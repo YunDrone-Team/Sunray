@@ -19,6 +19,12 @@
             <uri>model://circle_window_90cm/meshes/circle_window_90cm.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Red</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
       </visual>
     </link>
   </model>

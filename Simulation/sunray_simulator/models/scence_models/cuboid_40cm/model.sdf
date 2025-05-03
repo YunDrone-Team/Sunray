@@ -1,4 +1,5 @@
-<sdf version="1.7">
+<?xml version="1.0"?>
+<sdf version="1.6">
   <model name="red_cuboid">
     <link name="link">
       <!-- 视觉属性 -->

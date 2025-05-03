@@ -1,14 +1,12 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
   <model name='camera_down'>
-
     <!-- 下视相机link -->
     <link name='Monocular_down_link'>
-      <!--物理属性-->
       <inertial>
         <mass>0.001</mass>
         <inertia>
-          <ixx>1e-6</ixx>  <!-- 10^-6 -->
+          <ixx>1e-6</ixx> 
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyy>1e-6</iyy>
@@ -16,9 +14,7 @@
           <izz>1e-6</izz>
         </inertia>
       </inertial>
-      <!--可视化标签，定义一些图形界面的视觉效果-->
       <visual name='visual'>
-      <!--geometry标签，定义当前link的几何形状-->
         <geometry>
           <box>
             <size>0.01 0.01 0.01</size>
@@ -33,12 +29,12 @@
           </box>
         </geometry>
       </collision>
+
       <!--传感器标签，定义一个名叫camera的传感器，它的类型是camera-->
       <sensor name='camera' type='camera'>
-      <!--相机标签，在其中定义一些相机的属性-->
         <camera name='__default__'>
-          <!-- FOV,71度 -->
-          <horizontal_fov>1.239</horizontal_fov><!--定义水平视野场，此处为71度-->
+          <!--定义水平视野场，此处为71度-->
+          <horizontal_fov>1.239</horizontal_fov>
           <!--image标签，功能是定义以像素为单位的图片大小和图片格式-->
           <image>
             <width>640</width>
@@ -49,7 +45,7 @@
             <near>0.1</near>
             <far>100</far>
           </clip>
-           <!--噪音标签，定义噪音模型，它将应用到生成的图片上-->
+          <!--噪音标签，定义噪音模型，它将应用到生成的图片上-->
           <noise>
             <type>gaussian</type>
             <mean>0.0</mean>

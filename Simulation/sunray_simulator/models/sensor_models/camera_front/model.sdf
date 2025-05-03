@@ -28,39 +28,38 @@
 						<size>0.01 0.01 0.01</size>
           </box>
         </geometry>
-        <surface>
-          <contact>
-            <ode>
-              <min_depth>0.001</min_depth>
-              <max_vel>0</max_vel>
-            </ode>
-          </contact>
-          <friction>
-            <ode/>
-          </friction>
-        </surface>
       </collision>
+
+      <!--传感器标签，定义一个名叫camera的传感器，它的类型是camera-->
       <sensor name='camera' type='camera'>
         <camera name='__default__'>
-          <!-- FOV,71度 -->
+          <!--定义水平视野场，此处为71度-->
           <horizontal_fov>1.239</horizontal_fov>
+          <!--image标签，功能是定义以像素为单位的图片大小和图片格式-->
           <image>
             <width>640</width>
             <height>480</height>
           </image>
+          <!--定义远、近剪裁面，不会渲染远、近剪裁平面之外的对象-->
           <clip>
             <near>0.1</near>
             <far>100</far>
           </clip>
+          <!--噪音标签，定义噪音模型，它将应用到生成的图片上-->
           <noise>
             <type>gaussian</type>
             <mean>0.0</mean>
             <stddev>0.001</stddev>
           </noise>
         </camera>
+
+        <!--bool值，定义传感器是否更新，1为true,即传感器会根据update_rate参数定义的频率更新-->
         <always_on>1</always_on>
+         <!--更新频率参数，默认值为0-->
         <update_rate>30</update_rate>
+        <!--传感器可视化参数，bool变量，1即为true,表示允许传感器在图形界面被观察到-->
         <visualize>1</visualize>
+
         <plugin name='camera_plugin' filename='libgazebo_ros_camera.so'>
             <robotNamespace>/sunray/camera</robotNamespace>
             <alwaysOn>true</alwaysOn>
@@ -84,6 +83,5 @@
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
     </link>
-
   </model>
 </sdf>

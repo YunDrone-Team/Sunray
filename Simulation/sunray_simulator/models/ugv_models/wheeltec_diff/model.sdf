@@ -304,6 +304,9 @@
       <odometryFrame>world</odometryFrame>
       <robotBaseFrame>base_link</robotBaseFrame>
       <broadcastTF>0</broadcastTF>
+      <covariance_x>0.0001</covariance_x>
+      <covariance_y>0.0001</covariance_y>
+      <covariance_yaw>0.0001</covariance_yaw>
     </plugin>
 
   </model>
