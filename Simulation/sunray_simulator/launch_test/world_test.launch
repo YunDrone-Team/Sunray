@@ -1,6 +1,6 @@
 <launch>
     <!-- world配置，注意选择正确的路径 -->
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/move_car_land.world"/>
     <!-- <arg name="world" default="$(find sunray_simulator)/worlds/land_marker.world"/> -->
     <!-- <arg name="world" default="$(find sunray_simulator)/worlds/single_aruco.world"/> -->
     <!-- <arg name="world" default="$(find sunray_simulator)/worlds/land_aruco.world"/> -->

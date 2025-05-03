@@ -33,7 +33,7 @@
 
     <!-- UAV1 -->
     <group ns="uav$(arg uav_id)">
-        <include file="$(find sunray_simulator)/launch_basic/sunray_sim_base.launch">
+        <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
             <arg name="uav_id" value="$(arg uav_id)" />
             <arg name="vehicle" value="$(arg vehicle)" />
             <arg name="uav_init_x" value="$(arg uav_init_x)"/>
