@@ -93,6 +93,7 @@ public:
         // 初始化外部定位状态
         external_odom.header.stamp = ros::Time::now();
         external_odom.external_source = external_source;
+        external_odom.odom_valid = false;
         external_odom.position[0] = -0.01;
         external_odom.position[1] = -0.01;
         external_odom.position[2] = -0.01;
@@ -270,9 +271,9 @@ public:
 
     void timerCallback(const ros::TimerEvent &event)
     {
-        bool is_timeout = (ros::Time::now() - external_odom.header.stamp).toSec() > 1.0;
+        bool is_timeout = (ros::Time::now() - external_odom.header.stamp).toSec() > 0.5;
         external_odom.odom_valid = !is_timeout;
-        odom_state_pub.publish(external_odom);
+        // odom_state_pub.publish(external_odom);
     }
 
     sunray_msgs::ExternalOdom GetExternalOdom()

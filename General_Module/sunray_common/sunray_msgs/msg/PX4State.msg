@@ -13,7 +13,7 @@ float32 battery_state           ## 电池电压，单位：[V]
 float32 battery_percentage       ## 电池百分比，[0-1]
 
 ## 外部定位数据的原始值 - 与发送到~/mavros/vision_pose的内容一致
-ExternalOdom external_odom
+sunray_msgs/ExternalOdom external_odom
 
 ## 无人机本地定位信息（位置） - 来自~/mavros/local_position/pose
 float32[3] position                 ## 位置，单位：[m]
