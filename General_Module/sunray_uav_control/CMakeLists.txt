@@ -59,6 +59,8 @@ target_link_libraries(uav_control_node ${catkin_LIBRARIES})
 target_link_libraries(uav_control_node uav_control)
 
 add_library(externalFusion src/externalFusion.cpp)
+target_link_libraries(externalFusion ${catkin_LIBRARIES})
+
 add_executable(external_fusion_node src/external_fusion_node.cpp)
 add_dependencies(external_fusion_node sunray_control_gencpp)
 target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
@@ -70,6 +72,10 @@ target_link_libraries(external_fusion_node externalFusion)
 add_executable(uav_command_pub utils/uav_command_pub.cpp)
 add_dependencies(uav_command_pub sunray_control_gencpp)
 target_link_libraries(uav_command_pub ${catkin_LIBRARIES})
+
+add_executable(test_node src/test_node.cpp)
+add_dependencies(test_node sunray_control_gencpp)
+target_link_libraries(test_node ${catkin_LIBRARIES})
 
 add_executable(waypoint_pub utils/waypoint_pub.cpp)
 add_dependencies(waypoint_pub sunray_control_gencpp)

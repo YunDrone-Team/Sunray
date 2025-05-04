@@ -1,68 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- 启动 PX4 SITL -->
-	<!-- PX4源码中与此相关的文件： -->
-	<!-- PX4 SITL rcS启动脚本路径：~/PX4/ROMFS/px4fmu_common/init.d-posix/rcS -->
-	<!-- PX4 SITL 无人机模型文件：~/PX4/ROMFS/px4fmu_common/init.d-posix/1046_p230 或 1045_p450-->
-
     <!-- vehicle model and world -->
-    <arg name="est" default="ekf2"/>
-    <!-- 无人机模型名字 -->
-    <arg name="vehicle" default="sunray150"/>
-
-    <!-- PX4仿真环境变量 -->
-    <!-- 对应文件：ROMFS/px4fmu_common/init.d-posix/airframes/10020_gazebo-classic_sunray，可以在这个文件里面更改默认PX4仿真参数 -->
-    <env name="PX4_SIM_MODEL" value="gazebo-classic_sunray" />
-
-	<!-- 无人机编号说明 -->
-	<!-- uav_id为Sunray中对无人机编号的定义，从1开始 -->
-	<!-- ID为本文件中对无人机编号的定义，用于标识不同设备或实例的唯一标识符，从0开始 -->
-	<!-- MAV_SYS_ID为PX4中无人机编号的定义，在rcS文件中可以发现：MAV_SYS_ID = ID + 1，即从1开始--> 
-    <arg name="uav_id" default="1"/>
-    <arg name="ID" value="$(eval arg('uav_id') - 1)"/>
-        
-    <!-- 
-        PX4端端口号说明
-        mavlink_id：mavlink_id用于区分无人机
-        mavlink_udp_port: MAVLink通信所使用的UDP端口号
-        mavlink_tcp_port: MAVLink通信所使用的TCP端口号，mavlink_tcp_port = simulator_tcp_port = 4560 + ID
-        SDF文件中的mavlink_tcp_port与rcS文件中的simulator_tcp_port应当一致，并随着无人机编号递增
-        mavlink_cam_udp_port: MAVLink相机通信所使用的UDP端口号（不重要）
-        gst_udp_port: GStreamer（流媒体处理软件）所使用的UDP端口号（不重要）
-        video_uri: 视频流的URI地址（不重要）
-    -->
-    <arg name="mavlink_id" value="$(eval 1 + arg('ID'))" />
-    <arg name="mavlink_udp_port" value="$(eval 14560 + arg('ID'))"/>
-    <arg name="mavlink_tcp_port" value="$(eval 4560 + arg('ID'))"/>
-    <arg name="mavlink_cam_udp_port" value="$(eval 14530 + arg('ID'))"/>
-    <arg name="gst_udp_port" value="$(eval 5600 + arg('ID'))"/>
-    <arg name="video_uri" value="$(eval 5600 + arg('ID'))"/>
-
-    <!-- generate sdf vehicle model -->
-    <arg name="cmd" default="$(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=$(arg mavlink_udp_port) 
-                                --mavlink_tcp_port=$(arg mavlink_tcp_port) --gst_udp_port=$(arg gst_udp_port) --video_uri=$(arg video_uri) 
-                                --mavlink_cam_udp_port=$(arg mavlink_cam_udp_port) $(find sunray_simulator)/models/drone_models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find sunray_simulator)"/>
-    <param command="$(arg cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
-
-    <!-- 启动PX4 SITL -->
-    <arg name="interactive" default="true"/>
-    <arg unless="$(arg interactive)" name="px4_command_arg1" value=""/>
-    <arg     if="$(arg interactive)" name="px4_command_arg1" value="-d"/>
-    <node name="px4_sitl_$(arg uav_id)" pkg="px4" type="px4" output="screen" 
-        args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) $(arg px4_command_arg1)">
-    </node>
-
-    <!-- 加载Gazebo模型 -->
-    <!-- uav_init_x, uav_init_y, uav_init_z: 无人机的初始位置 -->
-    <!-- uav_init_roll, uav_init_pitch, uav_init_yaw: 无人机的初始姿态 -->
-    <arg name="uav_init_x" default="0"/>
-    <arg name="uav_init_y" default="0"/>
-    <arg name="uav_init_z" default="0"/>
-    <arg name="uav_init_roll" default="0"/>
-    <arg name="uav_init_pitch" default="0"/>
-    <arg name="uav_init_yaw" default="0"/>
-    <node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model" output="screen" 
-        args="-sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg uav_init_x) -y $(arg uav_init_y) -z $(arg uav_init_z) -R $(arg uav_init_roll) -P $(arg uav_init_pitch) -Y $(arg uav_init_yaw)"/>
+    <arg name="ID" default="0"/>
 
     <!-- 
         Mavros端端口号说明
@@ -77,13 +16,13 @@
     <arg name="respawn_mavros" default="false" />
 
     <!-- 启动MAVROS -->
-	<node pkg="mavros" type="mavros_node" name="mavros" required="$(eval not respawn_mavros)" clear_params="true" output="screen" respawn="$(arg respawn_mavros)">
-		<param name="fcu_url" value="$(arg fcu_url)" />
-		<param name="gcs_url" value="$(arg gcs_url)" />
-		<param name="target_system_id" value="$(eval 1 + arg('ID'))"/>
-		<param name="target_component_id" value="1" />
-		<param name="fcu_protocol" value="v2.0" />
+    <node pkg="mavros" type="mavros_node" name="mavros" output="screen" launch-prefix="bash -c 'sleep 8; $0 $@'">
+        <param name="fcu_url" value="$(arg fcu_url)" />
+        <param name="gcs_url" value="$(arg gcs_url)" />
+        <param name="target_system_id" value="$(eval 1 + arg('ID'))"/>
+        <param name="target_component_id" value="1" />
+        <param name="fcu_protocol" value="v2.0" />
         <rosparam command="load" file="$(find sunray_simulator)/config/px4_config.yaml" />
         <rosparam command="load" file="$(find sunray_simulator)/config/px4_pluginlists.yaml" />
-	</node>
+    </node>
 </launch>

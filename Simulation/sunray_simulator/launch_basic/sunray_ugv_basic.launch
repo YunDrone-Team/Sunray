@@ -15,8 +15,11 @@
     <arg name="init_z" default="0"/>
     <!-- 定义无人车初始朝向，默认为0 -->
     <arg name="init_yaw" default="0"/>
-    <!-- 在Gazebo中生成无人车模型 -->
-    <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_id) -x $(arg init_x) -y $(arg init_y) -z $(arg init_z) -Y $(arg init_yaw)" output="screen"/>
 
+    <!-- 使用group标签来对不同的无人机进行分组，因此，不同无人机的话题会带上前缀，如/uav0、/uav1等 -->
+    <group ns="/ugv$(arg ugv_id)">
+        <!-- 在Gazebo中生成无人车模型 -->
+        <node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find sunray_simulator)/models/ugv_models/$(arg ugv_model)/model.sdf -sdf -model $(arg ugv_name)$(arg ugv_id) -x $(arg init_x) -y $(arg init_y) -z $(arg init_z) -Y $(arg init_yaw)" output="screen"/>
+    </group>
 </launch>
 

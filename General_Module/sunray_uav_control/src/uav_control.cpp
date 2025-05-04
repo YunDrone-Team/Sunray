@@ -39,7 +39,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);               // 【参数】是否使用遥控器控制
     nh.param<bool>("system_params/use_offset", system_params.use_offset, false);              // 【参数】是否使用位置偏移
 
-    // 【订阅】无人机PX4模式 - 飞控 -> mavros -> 本节点
+    // 【订阅】无人机PX4模式 - 飞控 -> mavros ->  external_fusion_node -> 本节点
     px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state",
                                                         10, &UAVControl::px4_state_callback, this);
     // 【订阅】无人机控制指令 - 外部节点 -> 本节点

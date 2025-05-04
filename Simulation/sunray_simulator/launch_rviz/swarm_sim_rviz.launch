@@ -1,0 +1,8 @@
+<launch>
+    <arg name="enable_rviz" default="true"/>
+    <arg name="rivz_config" default="$(find sunray_simulator)/launch_rviz/sunray_sim_swarm.rviz"/>
+    <!-- 启动Rviz-->
+    <group if="$(arg enable_rviz)">
+        <node type="rviz" name="rviz_sim" pkg="rviz" args="-d $(arg rivz_config)"/>
+    </group>
+</launch>

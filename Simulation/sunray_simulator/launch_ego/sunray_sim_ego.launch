@@ -1,67 +1,37 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- 1. start gazebo -->
-    <!-- 2. start sunray_sim_base with 3Dlidar sensor-->
-    <!-- 3. start exrtexternal_fusion -->
-    <!-- 4. start uav_control_node -->
-    <!-- 5. start ego -->
-
-
-
-    <!-- 1. start gazebo -->
+	<!-- Gazebo 配置 -->
     <arg name="gazebo_enable" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
     <arg name="gui" default="true"/>
-    <arg name="debug" default="false"/>
-    <arg name="verbose" default="false"/>
-    <arg name="paused" default="false"/>
-    <!-- Gazebo sim -->
+    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
+    <!-- 启动 Gazebo -->
     <group if="$(arg gazebo_enable)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="gui" value="$(arg gui)"/>
             <arg name="world_name" value="$(arg world)"/>
-            <arg name="debug" value="$(arg debug)"/>
-            <arg name="verbose" value="$(arg verbose)"/>
-            <arg name="paused" value="$(arg paused)"/>
-            <arg name="use_sim_time" value="true"/>
+            <arg name="gui" value="$(arg gui)"/>
+            <!-- /use_sim_time true  # 使用仿真时间 -->
+            <!-- /use_sim_time false # 使用系统时间（默认） -->
+            <!-- 如果需要在rviz中正常显示，需要设置为true -->
+			<arg name="use_sim_time" value="true"/>
         </include>
     </group>
 
+    <!-- 无人机配置 -->
+    <!-- 无人机模型名称 -->
+    <arg name="vehicle" default="sunray150_with_mid360"/>
     <!--无人机编号-->
     <arg name="uav_id" default="1"/>
-    <arg name="uav1_init_x" default="1.0"/>
-    <arg name="uav1_init_y" default="1.0"/>
-    <arg name="uav1_init_yaw" default="0.0"/>
-    <arg name="vehicle" default="sunray150_with_mid360"/>
-    <group ns="uav$(arg uav_id)">
-        <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
-           <arg name="uav_id" value="$(arg uav_id)" />
-            <arg name="vehicle" value="$(arg vehicle)" />
-            <arg name="uav_init_x" value="$(arg uav1_init_x)"/>
-            <arg name="uav_init_y" value="$(arg uav1_init_y)"/>
-            <arg name="uav_init_yaw" value="$(arg uav1_init_yaw)"/>
-        </include>
-    </group>
+    <!-- 无人机初始位置 -->
+    <arg name="uav_init_x" default="-1.0"/>
+    <arg name="uav_init_y" default="0.0"/>
+    <arg name="uav_init_yaw" default="0.0"/>
 
-
-    <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
-    <arg name="external_source" default="2" />
-    <arg name="uav_name" default="uav" />
-    <arg name="position_topic" default="/uav1/sunray/gazebo_pose" />
-    <arg name="enable_range_sensor" default="false" />
-    <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
-        <param name="uav_id" value="$(arg uav_id)" />
-        <param name="external_source" value="$(arg external_source)" />
-        <param name="uav_name" value="$(arg uav_name)" />
-        <param name="position_topic" value="$(arg position_topic)" />
-        <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
-    </node>
-
-    <!-- 启动 sunray_control_node -->
-	<node pkg="sunray_uav_control" type="uav_control_node" name="uav_control_$(arg uav_id)" output="screen">
-		<param name="uav_id" value="$(arg uav_id)" />
-        <rosparam command="load" file="$(find sunray_uav_control)/config/uav_control_param.yaml" />
-	</node>
-
-
+    <!-- UAV1 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
+        <arg name="uav_id" value="$(arg uav_id)" />
+        <arg name="vehicle" value="$(arg vehicle)" />
+        <arg name="uav_init_x" value="$(arg uav_init_x)"/>
+        <arg name="uav_init_y" value="$(arg uav_init_y)"/>
+        <arg name="uav_init_yaw" value="$(arg uav_init_yaw)"/>
+    </include>
 </launch>

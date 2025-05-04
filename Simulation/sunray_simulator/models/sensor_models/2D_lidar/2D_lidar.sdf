@@ -67,8 +67,8 @@
           </noise>
         </ray>
         <plugin name="2d_lidar" filename="libgazebo_ros_laser.so">
-          <topicName>/scan</topicName>
-          <frameName>/base_link</frameName>
+          <topicName>scan</topicName>
+          <frameName>base_link</frameName>
         </plugin>
       </sensor>
     </link>

@@ -5,7 +5,7 @@
     3.将外部定位数据通过~/mavros/vision_pose/pose话题转发到PX4中，用于给无人机做位姿估计
     4.将外部定位数据打包成一个话题发布，~/sunray/external_odom_state
     5.订阅PX4相关话题（多个），打包为一个自定义消息话题PX4State发布，~/sunray/px4_state
-    6.发布相关无人机位置、轨迹、mesh等话题用于rviz显示
+    6.发布相关无人机位置、轨迹、mesh等话题用于rviz显示(包括TF转换)
 
 添加自定义外部定位数据：
     1.参考相关程序在 【include/ExternalPosition.h】 中实现自己的解析类
@@ -14,6 +14,7 @@
 
 #include "externalFusion.h"
 #include <signal.h>
+#include "tf2_ros/transform_broadcaster.h"  //发布动态坐标关系
 
 using namespace std;
 using namespace sunray_logger;
@@ -134,11 +135,13 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
         px4_state.connected = false;
     }
 
-    // 发布PX4State
-    px4_state.external_odom = external_odom;
     px4_state.header.stamp = ros::Time::now();
+    // external_odom来自external_position类
+    px4_state.external_odom = external_odom;
+    // 发布PX4State
     px4_state_pub.publish(px4_state);
 
+    // 打印debug信息
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
         // 检查超时
@@ -210,7 +213,7 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     uav_pos.pose.orientation = px4_state.attitude_q;
     uav_pos_vector.insert(uav_pos_vector.begin(), uav_pos);
     // 轨迹滑窗
-    if (uav_pos_vector.size() > 40)
+    if (uav_pos_vector.size() > 50)
     {
         uav_pos_vector.pop_back();
     }
@@ -244,26 +247,23 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     rviz_mesh.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
     uav_mesh_pub.publish(rviz_mesh);
 
-    // // 发布TF用于RVIZ显示（用于lidar）
-    // static tf2_ros::TransformBroadcaster broadcaster;
-    // geometry_msgs::TransformStamped tfs;
-    // //  |----头设置
-    // tfs.header.frame_id = "world";       // 相对于世界坐标系
-    // tfs.header.stamp = ros::Time::now(); // 时间戳
-    // //  |----坐标系 ID
-    // tfs.child_frame_id = uav_prefix + "/lidar_link"; // 子坐标系，无人机的坐标系
-    // // tfs.child_frame_id = "/lidar_link"; //子坐标系，无人机的坐标系
-    // //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
-    // tfs.transform.translation.x = external_odom.position[0];
-    // tfs.transform.translation.y = external_odom.position[1];
-    // tfs.transform.translation.z = external_odom.position[2];
-    // //  |--------- 四元数设置
-    // tfs.transform.rotation.x = external_state.att_x;
-    // tfs.transform.rotation.y = external_state.att_y;
-    // tfs.transform.rotation.z = external_state.att_z;
-    // tfs.transform.rotation.w = external_state.att_w;
-    // //  |--------- 广播器发布数据
-    // broadcaster.sendTransform(tfs);
+    // 发布TF用于RVIZ显示（用于sensor显示）
+    static tf2_ros::TransformBroadcaster broadcaster;
+    geometry_msgs::TransformStamped tfs;
+    //  世界坐标系
+    tfs.header.frame_id = "world";    
+    tfs.header.stamp = ros::Time::now();
+    //  局部坐标系（如传感器坐标系）
+    tfs.child_frame_id = uav_name + "/base_link"; 
+    //  坐标系相对信息设置，局部坐标系相对于世界坐标系的坐标（偏移量）
+    tfs.transform.translation.x = px4_state.position[0];
+    tfs.transform.translation.y = px4_state.position[1];
+    tfs.transform.translation.z = px4_state.position[2];
+    tfs.transform.rotation.x = px4_state.attitude_q.x;
+    tfs.transform.rotation.y = px4_state.attitude_q.y;
+    tfs.transform.rotation.z = px4_state.attitude_q.z;
+    tfs.transform.rotation.w = px4_state.attitude_q.w;
+    broadcaster.sendTransform(tfs);
 
     // // q_orig  是原姿态转换的tf的四元数
     // // q_rot   旋转四元数

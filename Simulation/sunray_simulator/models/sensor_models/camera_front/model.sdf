@@ -61,7 +61,7 @@
         <visualize>1</visualize>
 
         <plugin name='camera_plugin' filename='libgazebo_ros_camera.so'>
-            <robotNamespace>/sunray/camera</robotNamespace>
+            <robotNamespace></robotNamespace>
             <alwaysOn>true</alwaysOn>
             <imageTopicName>image_raw</imageTopicName>
             <cameraInfoTopicName>camera_info</cameraInfoTopicName>
