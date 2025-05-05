@@ -1,7 +1,9 @@
 #include "ros_msg_utils.h"
 #include "type_mask.h"
 #include "printf_format.h"
-#include "pos_controller.h"
+#include "pos_controller_pid.h"
+#include "geometry_utils.h"
+#include "math_utils.h"
 
 using namespace sunray_logger;
 
@@ -16,7 +18,6 @@ private:
     sunray_msgs::UAVControlCMD control_cmd;               // 当前时刻无人机控制指令（来自任务节点）
     sunray_msgs::UAVControlCMD last_control_cmd;          // 上一时刻无人机控制指令（来自任务节点）
     sunray_msgs::UAVState uav_state;                      // 当前时刻无人机状态（本节点发布）
-    sunray_msgs::PX4State px4_state;                      // 当前时刻无人机状态（来自external_fusion_node）
     sunray_msgs::RcState rc_state;                        // 无人机遥控器状态（来自遥控器输入节点）
     mavros_msgs::PositionTarget local_setpoint;           // PX4的本地位置设定点（待发布）
     mavros_msgs::GlobalPositionTarget global_setpoint;    // PX4的全局位置设定点（待发布）
@@ -116,6 +117,7 @@ private:
     };
     Waypoint_Params wp_params;
 
+
     // 添加每个基础移动模式对应的 typemask的映射
     std::map<int, uint16_t> moveModeMap =
         {
@@ -200,7 +202,8 @@ private:
     void set_auto_land();                                                                     // 调用px4 auto.land
     void reboot_px4();                                                                        // 重启
     void emergencyStop();                                                                     // 紧急停止出来
-    void set_px4_flight_mode(std::string mode);                                               // 设置模式
+    void set_px4_flight_mode(std::string mode);   
+    void send_attitude_setpoint(Eigen::Vector4d &u_att);                                            // 设置模式
     void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);        // 【发布】发送控制指令
     void setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint); // 【发布】发送控制指令
     void handle_cmd_control();                                                                // CMD_CONTROL模式下获取期望值
@@ -231,6 +234,10 @@ private:
 public:
     UAVControl() {};
     ~UAVControl() {};
+
+    sunray_msgs::PX4State px4_state;                      // 当前时刻无人机状态（来自external_fusion_node）
+
+    PosControlPID pos_controller_pid;
 
     void mainLoop();
     void show_ctrl_state();                                           // 打印状态

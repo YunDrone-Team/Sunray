@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     signal(SIGINT, mySigintHandler);
     ExternalFusion external_fusion;
     external_fusion.init(nh);
-    ros::Time now = ros::Time::now();
+    ros::Time last_time = ros::Time::now();
 
     // 主循环
     while (ros::ok)
@@ -36,10 +36,10 @@ int main(int argc, char **argv)
         ros::spinOnce();
 
         // 定时打印状态
-        if (ros::Time::now() - now > ros::Duration(1.0) && flag_printf)
+        if (ros::Time::now() - last_time > ros::Duration(1.0) && flag_printf)
         {
             external_fusion.show_px4_state();
-            now = ros::Time::now();
+            last_time = ros::Time::now();
         }
 
         rate.sleep();

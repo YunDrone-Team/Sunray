@@ -8,7 +8,7 @@
 #include <mavros_msgs/RCIn.h>
 #include <nav_msgs/Path.h>
 
-// #include "controller_test.h"
+#include "traj_generator.h"
 #include "printf_utils.h"
 #include <signal.h>
 #include "ros_msg_utils.h"
@@ -22,6 +22,8 @@ sunray_msgs::UAVState uav_control_state;
 std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
 
 bool flag = false;
+int Trjectory_mode;
+int trajectory_total_time;
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
@@ -53,6 +55,9 @@ int main(int argc, char **argv)
     nh.param("uav_num", uav_num, 1);
     nh.param<string>("uav_name", uav_name, "uav");
 
+    //用于控制器测试的类，功能例如：生成圆形轨迹，8字轨迹等
+    TRAJ_GENERATOR traj_generator;
+
     uav_name = uav_name + std::to_string(uav_id);
     string topic_prefix = "/" + uav_name;
     // 【订阅】状态信息
@@ -60,6 +65,10 @@ int main(int argc, char **argv)
 
     // 【订阅】无人机控制信息
     ros::Subscriber uav_contorl_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state_cmd", 1, uav_control_state_cb);
+
+    //【发布】UAVCommand
+    ros::Publisher ref_trajectory_pub = nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/reference_trajectory", 10);
+
 
     // 【发布】UAVCommand
     std::vector<ros::Publisher> uav_command_pub;
@@ -107,7 +116,8 @@ int main(int argc, char **argv)
                 << YELLOW << " 105 " << GREEN << "land,"
                 << YELLOW << " 106 " << GREEN << "return,"
                 << YELLOW << " 107 " << GREEN << "waypoint,"
-                << YELLOW << " 108 " << GREEN << "goalpoint"<< TAIL << endl;
+                << YELLOW << " 108 " << GREEN << "goalpoint"
+                << YELLOW << " 110 " << GREEN << "tajectory test,"<< TAIL << endl;
         cout << GREEN << "CMD: "
                 << YELLOW << "1 " << GREEN << "(XYZ_POS),"
                 << YELLOW << " 2 " << GREEN << "(XyzVel),"
@@ -518,6 +528,65 @@ int main(int argc, char **argv)
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = 103;
             uav_command_pub[0].publish(uav_cmd);
+        case 110:
+
+            cout << "For safety, please move the drone near to the trajectory start point firstly!!!" << endl;
+            cout << "Please choose the trajectory type: 0 for Circle, 1 for Eight Shape, 2 for Step, 3 for Line" << endl;
+            cin >> Trjectory_mode;
+            cout << "Input the trajectory_total_time:" << endl;
+            cin >> trajectory_total_time;
+            time_trajectory = 0.0;
+
+            while (time_trajectory < trajectory_total_time)
+            {
+
+                if (Trjectory_mode == 0)
+                {
+                    uav_cmd = traj_generator.Circle_trajectory_generation(time_trajectory);
+                }
+                else if (Trjectory_mode == 1)
+                {
+                    uav_cmd = traj_generator.Eight_trajectory_generation(time_trajectory);
+                }
+                else if (Trjectory_mode == 2)
+                {
+                    uav_cmd = traj_generator.Step_trajectory_generation(time_trajectory);
+                }
+                else if (Trjectory_mode == 3)
+                {
+                    uav_cmd = traj_generator.Line_trajectory_generation(time_trajectory);
+                }
+
+                uav_cmd.header.stamp = ros::Time::now();
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::PosVelAccYaw;
+                uav_command_pub[0].publish(uav_cmd);
+
+                time_trajectory = time_trajectory + 0.01;
+                cout << "Trajectory tracking: " << time_trajectory << " / " << trajectory_total_time << " [ s ]" << endl;
+
+                geometry_msgs::PoseStamped reference_pose;
+
+                reference_pose.header.stamp = ros::Time::now();
+                reference_pose.header.frame_id = "world";
+
+                reference_pose.pose.position.x = uav_cmd.desired_pos[0];
+                reference_pose.pose.position.y = uav_cmd.desired_pos[1];
+                reference_pose.pose.position.z = uav_cmd.desired_pos[2];
+
+                posehistory_vector_.insert(posehistory_vector_.begin(), reference_pose);
+                if (posehistory_vector_.size() > TRA_WINDOW)
+                {
+                    posehistory_vector_.pop_back();
+                }
+
+                nav_msgs::Path reference_trajectory;
+                reference_trajectory.header.stamp = ros::Time::now();
+                reference_trajectory.header.frame_id = "world";
+                reference_trajectory.poses = posehistory_vector_;
+                ref_trajectory_pub.publish(reference_trajectory);
+
+                ros::Duration(0.01).sleep();
+            }
         }
 
         ros::Duration(0.5).sleep();

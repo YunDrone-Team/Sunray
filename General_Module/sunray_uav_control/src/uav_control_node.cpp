@@ -30,6 +30,7 @@ int main(int argc, char **argv)
             Logger::print_color(int(LogColor::red), "Unable to connnect to PX4!!!");
     }
 
+    ros::Time last_time = ros::Time::now();
     // 主循环
     while (ros::ok())
     {
@@ -39,10 +40,11 @@ int main(int argc, char **argv)
         uav_ctrl.mainLoop();
 
         // 定时打印状态
-        if (ros::Time::now() - now > ros::Duration(1.0) && flag_printf)
+        if (ros::Time::now() - last_time > ros::Duration(1.0) && flag_printf)
         {
             uav_ctrl.show_ctrl_state();
-            now = ros::Time::now();
+            uav_ctrl.pos_controller_pid.printf_debug();
+            last_time = ros::Time::now();
         }
 
         rate.sleep();
