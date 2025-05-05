@@ -2,6 +2,9 @@
 #define EXTERNALPOSITION_H
 
 #include "ros_msg_utils.h"
+#include "printf_format.h"
+
+using namespace sunray_logger;
 
 // 滑动平均滤波器
 class MovingAverageFilter
@@ -67,28 +70,31 @@ private:
     int index;
 };
 
+
+#define ODOM_TIMEOUT 0.3
+#define DISTANCE_SENSOR_TIMEOUT 0.3
+
 class ExternalPosition
 {
 public:
     ExternalPosition()
     {
     }
+    
+    sunray_msgs::ExternalOdom external_odom;                // 声明一个自定义话题 - sunray_msgs::ExternalOdom
+    sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
 
-    // 声明一个自定义话题 - sunray_msgs::ExternalOdom
-    sunray_msgs::ExternalOdom external_odom;
-
-    void init(ros::NodeHandle &nh, std::string source_topic = "Odometry", int external_source = 0)
+    void init(ros::NodeHandle &nh, int external_source = 0, std::string source_topic_name = "Odometry", bool range_sensor = false)
     {
         // 初始化参数
         nh.param<int>("uav_id", uav_id, 1);
         nh.param<std::string>("uav_name", uav_name, "uav");
-        source_topic_name = source_topic;
+        uav_name = "/" + uav_name + std::to_string(uav_id);
 
-        std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
+        enable_range_sensor = range_sensor;
 
-        // 【发布】外部定位状态 - 本节点 -> uav_control_node
-        odom_state_pub = nh.advertise<sunray_msgs::ExternalOdom>(topic_prefix + "/sunray/external_odom_state", 10);
-        timer_pub_odom_state = nh.createTimer(ros::Duration(0.05), &ExternalPosition::timerCallback, this);
+        // 定时检查外部定位数据是否超时
+        timer_check_timeout = nh.createTimer(ros::Duration(0.05), &ExternalPosition::timer_check_timeout_cb, this);
 
         // 初始化外部定位状态
         external_odom.header.stamp = ros::Time::now();
@@ -117,28 +123,36 @@ public:
             pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(source_topic_name, 10, &ExternalPosition::PosCallback, this);
             break;
         case sunray_msgs::ExternalOdom::GAZEBO:
-            source_topic = topic_prefix + "/sunray/gazebo_pose";
+            source_topic_name = uav_name + "/sunray/gazebo_pose";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
             break;
         case sunray_msgs::ExternalOdom::MOCAP:
             // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
-            pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/pose", 1, &ExternalPosition::PosCallback, this);
+            pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/pose", 1, &ExternalPosition::PosCallback, this);
             // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn -> 本节点
-            vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + topic_prefix + "/twist", 1, &ExternalPosition::VelCallback, this);
+            vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/twist", 1, &ExternalPosition::VelCallback, this);
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
             moving_average_filter.setSize(1);
-            source_topic = "/baton_mini/odometry";
-            odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic, 10, &ExternalPosition::viobotCallback, this);
-            break;
-        case sunray_msgs::ExternalOdom::GPS:
-            source_topic = topic_prefix + "/mavros/global_position/local";
-            odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::OdomCallback, this);
+            source_topic_name = "/baton_mini/odometry";
+            odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
             break;
         default:
-            // Logger::error("Unknown external position source type: ", type);
+            Logger::print_color(int(LogColor::red), LOG_BOLD, "Unknown external position source type - [", external_source, "]");
             break;
         }
+
+        if(enable_range_sensor)
+        {
+            // 【订阅】无人机上的激光定高原始数据
+            range_sub = nh.subscribe<sensor_msgs::Range>(uav_name + "/mavros/distance_sensor/hrlv_ez4_pub", 1, &ExternalPosition::px4_distance_callback, this);
+        }
+    }
+
+    // 回调函数：接收PX4距离传感器原始数据
+    void px4_distance_callback(const sensor_msgs::Range::ConstPtr &msg)
+    {
+        distance_sensor = *msg;
     }
 
     // 实现外部定位源话题回调函数
@@ -260,6 +274,13 @@ public:
         external_odom.attitude[0] = roll;
         external_odom.attitude[1] = pitch;
         external_odom.attitude[2] = yaw;
+
+        // 如果使能了距离传感器（且没有超时），则使用距离传感器的高度
+        if (enable_range_sensor && !distance_timeout)
+        {
+            external_odom.position[2] = distance_sensor.range;
+        }
+
     }
 
     void VelCallback(const geometry_msgs::TwistStamped::ConstPtr &msg)
@@ -269,11 +290,15 @@ public:
         external_odom.velocity[2] = msg->twist.linear.z;
     }
 
-    void timerCallback(const ros::TimerEvent &event)
+    void timer_check_timeout_cb(const ros::TimerEvent &event)
     {
-        bool is_timeout = (ros::Time::now() - external_odom.header.stamp).toSec() > 0.5;
-        external_odom.odom_valid = !is_timeout;
-        // odom_state_pub.publish(external_odom);
+        odom_timeout = (ros::Time::now() - external_odom.header.stamp).toSec() > ODOM_TIMEOUT;
+        external_odom.odom_valid = !odom_timeout;
+
+        if (enable_range_sensor)
+        {
+            distance_timeout = (ros::Time::now() - distance_sensor.header.stamp).toSec() > DISTANCE_SENSOR_TIMEOUT;
+        }
     }
 
     sunray_msgs::ExternalOdom GetExternalOdom()
@@ -286,11 +311,13 @@ private:
     ros::Subscriber odom_sub;
     ros::Subscriber pos_sub;
     ros::Subscriber vel_sub;
-    ros::Publisher odom_state_pub; // 【发布】发布定位状态
-    ros::Timer timer_pub_odom_state;
+    ros::Subscriber range_sub;
+    ros::Timer timer_check_timeout;
+    bool odom_timeout;
+    bool distance_timeout;
+    bool enable_range_sensor;
     int uav_id;
     std::string uav_name;
-    std::string source_topic_name;
     MovingAverageFilter moving_average_filter;
 };
 
