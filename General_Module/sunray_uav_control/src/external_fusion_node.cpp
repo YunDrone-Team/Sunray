@@ -21,6 +21,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "external_fusion_node");
     ros::NodeHandle nh("~");
     ros::Rate rate(200.0);
+    bool flag_printf = false; // 是否打印状态
     nh.param<bool>("flag_printf", flag_printf, true);           
 
     // 中断信号注册 

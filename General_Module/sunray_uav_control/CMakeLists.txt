@@ -73,10 +73,6 @@ add_executable(uav_command_pub utils/uav_command_pub.cpp)
 add_dependencies(uav_command_pub sunray_control_gencpp)
 target_link_libraries(uav_command_pub ${catkin_LIBRARIES})
 
-add_executable(test_node src/test_node.cpp)
-add_dependencies(test_node sunray_control_gencpp)
-target_link_libraries(test_node ${catkin_LIBRARIES})
-
 add_executable(waypoint_pub utils/waypoint_pub.cpp)
 add_dependencies(waypoint_pub sunray_control_gencpp)
 target_link_libraries(waypoint_pub ${catkin_LIBRARIES})

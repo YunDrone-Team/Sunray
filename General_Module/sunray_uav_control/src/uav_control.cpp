@@ -39,29 +39,25 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);               // 【参数】是否使用遥控器控制
     nh.param<bool>("system_params/use_offset", system_params.use_offset, false);              // 【参数】是否使用位置偏移
 
-    // 【订阅】无人机PX4模式 - 飞控 -> mavros ->  external_fusion_node -> 本节点
-    px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state",
-                                                        10, &UAVControl::px4_state_callback, this);
+    // 【订阅】PX4无人机综合状态 - 飞控 -> mavros ->  external_fusion_node -> 本节点
+    px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10, &UAVControl::px4_state_callback, this);
     // 【订阅】无人机控制指令 - 外部节点 -> 本节点
-    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd",
-                                                               10, &UAVControl::control_cmd_callback, this);
+    control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 10, &UAVControl::control_cmd_callback, this);
     // 【订阅】无人机设置指令 - 外部节点 -> 本节点
-    setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup",
-                                                    1, &UAVControl::uav_setup_callback, this);
+    setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 10, &UAVControl::uav_setup_callback, this);
     // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_input -> 本节点
-    rc_state_sub = nh.subscribe<sunray_msgs::RcState>(uav_name + "/sunray/rc_state", 1,
-                                                      &UAVControl::rc_state_callback, this);
+    rc_state_sub = nh.subscribe<sunray_msgs::RcState>(uav_name + "/sunray/rc_state", 10, &UAVControl::rc_state_callback, this);
     // 【订阅】无人机航点数据 -- 外部节点 -> 本节点
-    uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_name + "/sunray/uav_waypoint", 1,
-                                                              &UAVControl::waypoint_callback, this);
+    uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_name + "/sunray/uav_waypoint", 10, &UAVControl::waypoint_callback, this);
+
+    // 【发布】无人机状态（接收到vision_pose节点的无人机状态，加上无人机控制模式，重新发布出去）- 本节点 -> 其他控制&任务节点/地面站
+    uav_state_pub = nh.advertise<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1); 
     // 【发布】PX4位置环控制指令（包括期望位置、速度、加速度等接口，坐标系:ENU系） - 本节点 -> mavros -> 飞控
     px4_setpoint_local_pub = nh.advertise<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/local", 1);
     // 【发布】PX4全局位置控制指令（包括期望经纬度等接口 坐标系:WGS84坐标系）- 本节点 -> mavros -> 飞控
     px4_setpoint_global_pub = nh.advertise<mavros_msgs::GlobalPositionTarget>(uav_name + "/mavros/setpoint_raw/global", 1);
     // 【发布】PX4姿态环控制指令（包括期望姿态等接口）- 本节点 -> mavros -> 飞控
     px4_setpoint_attitude_pub = nh.advertise<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/attitude", 1);
-    // 【发布】无人机状态（接收到vision_pose节点的无人机状态，加上无人机控制模式，重新发布出去）- 本节点 -> 其他控制&任务节点
-    uav_state_pub = nh.advertise<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1);
     // 【发布】 一个geometry_msgs::PoseStamped类型的消息，用于指定规划目标位置，与控制节点无关 - 本节点 -> 其他控制&任务节点
     goal_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_" + std::to_string(uav_id), 1);
 
@@ -73,9 +69,6 @@ void UAVControl::init(ros::NodeHandle &nh)
     px4_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(uav_name + "/mavros/cmd/command");
     // 【服务】重启PX4飞控 -- 本节点 -> mavros -> 飞控
     px4_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(uav_name + "/mavros/cmd/command");
-
-    // 【定时器】定时打印无人机状态
-    print_timer = nh.createTimer(ros::Duration(1), &UAVControl::print_state, this);
 
     // 初始化各个部分参数
     system_params.control_mode = Control_Mode::INIT;
@@ -99,7 +92,9 @@ void UAVControl::init(ros::NodeHandle &nh)
 // 检查当前模式 并进入对应的处理函数中
 void UAVControl::mainLoop()
 {
+    // 安全检查 + 发布状态话题 ~/sunray/uav_state
     check_state();
+    
     // 无人机控制状态机：控制模式由遥控器话题（遥控器拨杆）进行切换
     switch (system_params.control_mode)
     {
@@ -110,6 +105,7 @@ void UAVControl::mainLoop()
         {
             set_px4_flight_mode("POSCTL");
         }
+        resetThrustMapping();
         break;
 
     // 遥控器控制模式（RC_CONTROL）
@@ -491,7 +487,7 @@ void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg
 }
 
 // 打印状态
-void UAVControl::print_state(const ros::TimerEvent &event)
+void UAVControl::show_ctrl_state()
 {
     Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>>>", uav_name, "<<<<<<<<<<<<<<<");
     if (px4_state.connected)
@@ -712,6 +708,7 @@ void UAVControl::check_state()
     uav_state.connected = px4_state.connected;
     uav_state.armed = px4_state.armed;
     uav_state.mode = px4_state.mode;
+    uav_state.landed_state = px4_state.landed_state;
     uav_state.location_source = system_params.location_source;
     uav_state.odom_valid = system_params.odom_valid;
     for (int i = 0; i < 3; i++)
@@ -794,10 +791,31 @@ void UAVControl::handle_cmd_control()
 
         setpoint_global_pub(system_params.type_mask, global_setpoint);
     }
-    // else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Att)
-    // {
-    //     // 姿态控制模式
-    // }
+    else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Att)
+    {
+        // 期望信息
+        pos_ctrl.des.p = control_cmd.desired_pos;
+        pos_ctrl.des.v = control_cmd.desired_vel;
+        pos_ctrl.des.a = control_cmd.desired_acc;
+        pos_ctrl.des.j = control_cmd.desired_jerk;
+        pos_ctrl.des.p = control_cmd.desired_pos;
+        pos_ctrl.des.yaw = control_cmd.desired_yaw;
+        pos_ctrl.des.yaw_rate = control_cmd.desired_yaw_rate;
+        // 当前位置信息
+        pos_ctrl.odom.p = px4_state.position;
+        pos_ctrl.odom.v = px4_state.velocity;
+        pos_ctrl.odom.q.x = px4_state.attitude_q.x;
+        pos_ctrl.odom.q.y = px4_state.attitude_q.y;
+        pos_ctrl.odom.q.z = px4_state.attitude_q.z;
+        pos_ctrl.odom.q.w = px4_state.attitude_q.w;
+
+        pos_ctrl.imu_q = pos_ctrl.odom.q;
+
+        Controller_Output_t u;
+
+        // 运行控制算法
+        u = pos_ctrl.update();
+    }
     else
     {
         // std::cout<<"baseMode"<<std::endl;
@@ -877,6 +895,41 @@ void UAVControl::handle_cmd_control()
     }
 
     last_control_cmd = control_cmd;
+}
+
+// 姿态控制器
+void UAVControl::attitude_control()
+{
+    //compute disired acceleration
+    Eigen::Vector3d des_acc(0.0, 0.0, 0.0);
+
+    // 期望加速度
+    des_acc = att_ctrl_des.a + flight_params.Kv.asDiagonal() * (att_ctrl_des.v - odom.v) + flight_params.Kp.asDiagonal() * (att_ctrl_des.p - odom.p);
+    des_acc += Eigen::Vector3d(0,0,flight_params.gravity);
+
+    // 推力估计
+    controller.estimateThrustModel(imu_data.a,param);
+
+    // 计算推力
+    u.thrust = des_acc(2) / thr2acc_;
+
+
+
+    double roll,pitch,yaw,yaw_imu;
+    double yaw_odom = fromQuaternion2yaw(odom.q);
+    double sin = std::sin(yaw_odom);
+    double cos = std::cos(yaw_odom);
+    roll = (des_acc(0) * sin - des_acc(1) * cos )/ param_.gra;
+    pitch = (des_acc(0) * cos + des_acc(1) * sin )/ param_.gra;
+    // yaw = fromQuaternion2yaw(att_ctrl_des.q);
+    yaw_imu = fromQuaternion2yaw(imu.q);
+    // Eigen::Quaterniond q = Eigen::AngleAxisd(yaw,Eigen::Vector3d::UnitZ())
+    //   * Eigen::AngleAxisd(roll,Eigen::Vector3d::UnitX())
+    //   * Eigen::AngleAxisd(pitch,Eigen::Vector3d::UnitY());
+    Eigen::Quaterniond q = Eigen::AngleAxisd(att_ctrl_des.yaw,Eigen::Vector3d::UnitZ())
+    * Eigen::AngleAxisd(pitch,Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(roll,Eigen::Vector3d::UnitX());
+    u.q = imu.q * odom.q.inverse() * q;
 }
 
 // 从遥控器状态中获取并计算期望值
