@@ -8,6 +8,7 @@
 #include "math_utils.h"
 #include "printf_utils.h"
 
+using namespace sunray_logger;
 class PosControlPID
 {
 public:
@@ -68,13 +69,6 @@ public:
 // 期望姿态 + 期望油门
 Eigen::Vector4d PosControlPID::ctrl_update(float controller_hz)
 {
-    // 定点控制的时候才积分，即追踪轨迹或者速度追踪时不进行积分
-	if (desired_state.vel(0) != 0.0 || desired_state.vel(1) != 0.0 || desired_state.vel(2) != 0.0) 
-    {
-        PCOUT(2, YELLOW, "PosControlPID: Reset integration.");
-		int_e_v.setZero();
-	}
-
     // 位置误差
     Eigen::Vector3d pos_error = desired_state.pos - current_state.pos;
     Eigen::Vector3d vel_error = desired_state.vel - current_state.vel;
@@ -117,7 +111,7 @@ Eigen::Vector4d PosControlPID::ctrl_update(float controller_hz)
     }
 
     // 积分项 - Z
-    float int_start_error = 0.5;
+    float int_start_error = 1.0;
     if(abs(pos_error[2]) < int_start_error && px4_state.mode == "OFFBOARD")
     {
         int_e_v[2] += pos_error[2] / controller_hz;
@@ -131,6 +125,14 @@ Eigen::Vector4d PosControlPID::ctrl_update(float controller_hz)
     {
         int_e_v[2] = 0;
     }
+
+    // 定点控制的时候才积分，即追踪轨迹或者速度追踪时不进行积分
+	if (desired_state.vel(0) != 0.0 || desired_state.vel(1) != 0.0 || desired_state.vel(2) != 0.0) 
+    {
+        // PCOUT(2, YELLOW, "PosControlPID: Reset XY integration.");
+		int_e_v[0] = 0;
+        int_e_v[1] = 0;
+	}
 
     // 期望加速度（控制输出） = 期望加速度(前馈) + Kp * 位置误差 + Kv * 速度误差 + Kv * 积分项
     Eigen::Vector3d des_acc = desired_state.acc + ctrl_param.Kp * pos_error + ctrl_param.Kv * vel_error + ctrl_param.Kvi* int_e_v;
@@ -241,30 +243,65 @@ void PosControlPID::init(ros::NodeHandle& nh)
 
 void PosControlPID::printf_debug()
 {
-    //固定的浮点显示
-    cout.setf(ios::fixed);
-    //左对齐
-    cout.setf(ios::left);
-    // 强制显示小数点
-    cout.setf(ios::showpoint);
-    // 强制显示符号
-    cout.setf(ios::showpos);
-    cout<<setprecision(2);
-    cout << BLUE << "----> PID Position Controller Debug Info      : " << TAIL << endl;
-    cout << BLUE << "----> pos_des         : " << desired_state.pos(0) << " [ m ] " << desired_state.pos(1) << " [ m ] " << desired_state.pos(2) << " [ m ] "<< TAIL << endl;
-    cout << BLUE << "----> vel_des         : " << desired_state.vel(0) << " [ m ] " << desired_state.vel(1) << " [ m ] " << desired_state.vel(2) << " [ m ] "<< TAIL << endl;
-    cout << BLUE << "----> acc_des         : " << desired_state.acc(0) << " [ m ] " << desired_state.acc(1) << " [ m ] " << desired_state.acc(2) << " [ m ] "<< TAIL << endl;
-    cout << BLUE << "----> pos_now         : " << current_state.pos(0) << " [ m ] " << current_state.pos(1) << " [ m ] " << current_state.pos(2) << " [ m ] "<< TAIL << endl;
-    cout << BLUE << "----> vel_now         : " << current_state.vel(0) << " [ m ] " << current_state.vel(1) << " [ m ] " << current_state.vel(2) << " [ m ] "<< TAIL << endl;
+
+    Logger::print_color(int(LogColor::green), "pos_des [X Y Z]:",
+                        desired_state.pos[0],
+                        desired_state.pos[1],
+                        desired_state.pos[2],
+                        "[ m ]");
+    Logger::print_color(int(LogColor::green), "vel_des [X Y Z]:",
+                        desired_state.vel[0],
+                        desired_state.vel[1],
+                        desired_state.vel[2],
+                        "[m/s]");   
+    Logger::print_color(int(LogColor::green), "acc_des [X Y Z]:",
+                        desired_state.acc[0],
+                        desired_state.acc[1],
+                        desired_state.acc[2],
+                        "[m/s^2]"); 
+    Logger::print_color(int(LogColor::green), "yaw_des [X Y Z]:",
+                        desired_state.yaw / M_PI * 180,
+                        "[deg]");  
+
+    Logger::print_color(int(LogColor::green), "int_e_v [X Y Z]:",
+                        int_e_v[0],
+                        int_e_v[1],
+                        int_e_v[2],
+                        "[ N ]"); 
+
+    Logger::print_color(int(LogColor::green), "F_des [X Y Z]:",
+                        F_des[0],
+                        F_des[1],
+                        F_des[2],
+                        "[ N ]"); 
+
+    Logger::print_color(int(LogColor::green), "controller_output [R P Y]:",
+                        u_att[0] / M_PI * 180,
+                        u_att[1] / M_PI * 180,
+                        u_att[2] / M_PI * 180,
+                        "[deg]"); 
+
+
+    Logger::print_color(int(LogColor::green), "controller_output [thrust]:",
+                        u_att[3] * 100,
+                        "[ % ]"); 
+
+    Logger::print_color(int(LogColor::green), "tracking_error.pos_error_mean:",
+                        tracking_error.pos_error_mean,
+                        "[ m ]"); 
+    Logger::print_color(int(LogColor::green), "tracking_error.vel_error_mean:",
+                        tracking_error.vel_error_mean,
+                        "[m/s]"); 
+
+    // cout << BLUE << "----> pos_now         : " << current_state.pos(0) << " [ m ] " << current_state.pos(1) << " [ m ] " << current_state.pos(2) << " [ m ] "<< TAIL << endl;
+    // cout << BLUE << "----> vel_now         : " << current_state.vel(0) << " [ m ] " << current_state.vel(1) << " [ m ] " << current_state.vel(2) << " [ m ] "<< TAIL << endl;
     
-    cout << BLUE << "----> int_e_v         : " << int_e_v(0) << " [N] "<< int_e_v(1) << " [N] "<< int_e_v(2) << " [N] "<< TAIL << endl;
+    // cout << BLUE << "----> int_e_v         : " << int_e_v(0) << " [N] "<< int_e_v(1) << " [N] "<< int_e_v(2) << " [N] "<< TAIL << endl;
     
-    cout << BLUE << "----> F_des           : " << F_des(0) << " [N] "<< F_des(1) << " [N] "<< F_des(2) << " [N] "<< TAIL << endl;
+    // cout << BLUE << "----> F_des           : " << F_des(0) << " [N] "<< F_des(1) << " [N] "<< F_des(2) << " [N] "<< TAIL << endl;
     
-    cout << BLUE << "----> u_attitude      : " << u_att(0)*180/3.14 << " [deg] "<< u_att(1)*180/3.14 << " [deg] "<< u_att(2)*180/3.14 << " [deg] "<< TAIL << endl;
-    cout << BLUE << "----> u_throttle      : " << u_att(3) << " [0-1] "<< TAIL << endl;
-    cout << BLUE << "----> pos_error_mean  : " << tracking_error.pos_error_mean <<" [m] "<< TAIL <<endl;
-    cout << BLUE << "----> vel_error_mean  : " << tracking_error.vel_error_mean <<" [m/s] "<< TAIL <<endl;
+    // cout << BLUE << "----> pos_error_mean  : " << tracking_error.pos_error_mean <<" [m] "<< TAIL <<endl;
+    // cout << BLUE << "----> vel_error_mean  : " << tracking_error.vel_error_mean <<" [m/s] "<< TAIL <<endl;
 }
 
 // 【打印参数函数】

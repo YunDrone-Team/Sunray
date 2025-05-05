@@ -51,7 +51,7 @@ class Tracking_Error_Evaluation
         double pos_error_mean{0};
         double vel_error_mean{0};
 
-        void input_error(Eigen::Vector3d pos_error,Eigen::Vector3d vel_error)
+        void input_error(Eigen::Vector3d pos_error, Eigen::Vector3d vel_error)
         {
             double track_error_pos = pos_error.norm();
             double track_error_vel = vel_error.norm();
