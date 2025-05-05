@@ -11,12 +11,24 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "uav_control_node");
     ros::NodeHandle nh("~");
-    ros::Rate rate(50.0);
-    
+    ros::Rate rate(100.0);
+    bool flag_printf = false; // 是否打印状态
+    nh.param<bool>("flag_printf", flag_printf, true);  
+
     // 声明控制类
     UAVControl uav_ctrl;
     // 控制类初始化
     uav_ctrl.init(nh);
+
+    // 初始化检查：等待PX4连接
+    int trials = 0;
+    while (ros::ok() && !uav_ctrl.px4_state.connected)
+    {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (trials++ > 5)
+            Logger::print_color(int(LogColor::red), "Unable to connnect to PX4!!!");
+    }
 
     // 主循环
     while (ros::ok())
@@ -25,6 +37,13 @@ int main(int argc, char **argv)
         
         // 控制类主循环函数
         uav_ctrl.mainLoop();
+
+        // 定时打印状态
+        if (ros::Time::now() - now > ros::Duration(1.0) && flag_printf)
+        {
+            uav_ctrl.show_ctrl_state();
+            now = ros::Time::now();
+        }
 
         rate.sleep();
     }

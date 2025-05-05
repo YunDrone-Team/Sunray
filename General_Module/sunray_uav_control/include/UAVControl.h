@@ -1,6 +1,7 @@
 #include "ros_msg_utils.h"
 #include "type_mask.h"
 #include "printf_format.h"
+#include "pos_controller.h"
 
 using namespace sunray_logger;
 
@@ -15,14 +16,12 @@ private:
     sunray_msgs::UAVControlCMD control_cmd;               // 当前时刻无人机控制指令（来自任务节点）
     sunray_msgs::UAVControlCMD last_control_cmd;          // 上一时刻无人机控制指令（来自任务节点）
     sunray_msgs::UAVState uav_state;                      // 当前时刻无人机状态（本节点发布）
-    sunray_msgs::PX4State px4_state;                      // 当前时刻无人机状态（本节点发布）
+    sunray_msgs::PX4State px4_state;                      // 当前时刻无人机状态（来自external_fusion_node）
     sunray_msgs::RcState rc_state;                        // 无人机遥控器状态（来自遥控器输入节点）
     mavros_msgs::PositionTarget local_setpoint;           // PX4的本地位置设定点（待发布）
     mavros_msgs::GlobalPositionTarget global_setpoint;    // PX4的全局位置设定点（待发布）
     mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
     float default_home_x, default_home_y, default_home_z; // 默认home点？
-
-
 
     // 无人机控制状态机
     enum Control_Mode
@@ -70,6 +69,9 @@ private:
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0};    // 悬停点
         Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
         Eigen::Vector3d relative_pos{0.0, 0.0, 0.0}; // 相对位置
+        Eigen::Vector3d Kp{0.0, 0.0, 0.0};           // 位置环控制参数
+        Eigen::Vector3d Kv{0.0, 0.0, 0.0};           // 位置环控制参数
+        double gravity = 9.8;                        // 重力
     };
     FlightParams flight_params;
 
@@ -192,9 +194,6 @@ private:
     ros::ServiceClient px4_set_mode_client;  // 【服务】px4模式设置
     ros::ServiceClient px4_reboot_client;    // 【服务】px4重启
     ros::ServiceClient px4_emergency_client; // 【服务】px4紧急停止
-    // 定时器
-    ros::Timer cmd_timer;   // 【定时器】指令定时器
-    ros::Timer print_timer; // 【定时器】状态定时器
 
     int safetyCheck();                                                                        // 安全检查
     void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
@@ -208,7 +207,6 @@ private:
     void handle_rc_control();                                                                 // RC_CONTROL模式下获取期望值
     void handle_land_control();                                                               // LAND_CONTROL模式下获取期望值
     void set_desired_from_hover();                                                            // Hover模式下获取期望值
-    void print_state(const ros::TimerEvent &event);                                           // 打印状态
     void check_state();                                                                       // 安全检查 + 发布状态
     void set_hover_pos();                                                                     // 设置悬停位置
     void set_default_local_setpoint();                                                        // 设置默认期望值
@@ -235,5 +233,6 @@ public:
     ~UAVControl() {};
 
     void mainLoop();
+    void show_ctrl_state();                                           // 打印状态
     void init(ros::NodeHandle &nh);
 };

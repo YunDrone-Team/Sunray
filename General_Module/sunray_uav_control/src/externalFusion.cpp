@@ -52,6 +52,8 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     uav_name = "/" + uav_name + std::to_string(uav_id);
     // 【订阅】无人机PX4模式 - 飞控 -> mavros -> 本节点
     px4_state_sub = nh.subscribe<mavros_msgs::State>(uav_name + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
+    // 【订阅】无人机PX4状态（是否降落） - 飞控 -> mavros -> 本节点
+    px4_extended_state_sub = nh.subscribe<mavros_msgs::ExtendedState>(uav_name + "/mavros/extended_state", 10, &ExternalFusion::px4_extended_state_callback, this);
     // 【订阅】无人机电池状态 - 飞控 -> mavros -> 本节点
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(uav_name + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
     // 【订阅】PX4中的无人机位置（坐标系:ENU系） - 飞控 -> mavros -> 本节点
@@ -343,6 +345,12 @@ void ExternalFusion::px4_state_callback(const mavros_msgs::State::ConstPtr &msg)
     px4_state.connected = msg->connected;
     px4_state.armed = msg->armed;
     px4_state.mode = msg->mode;
+}
+
+// 回调函数：PX4状态
+void ExternalFusion::px4_extended_state_callback(const mavros_msgs::ExtendedState::ConstPtr &msg)
+{
+    px4_state.landed_state = msg->landed_state;
 }
 
 // 回调函数：PX4电池

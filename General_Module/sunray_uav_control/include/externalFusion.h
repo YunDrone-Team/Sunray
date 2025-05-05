@@ -35,6 +35,7 @@ private:
 
     ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
+    ros::Subscriber px4_extended_state_sub; // 【订阅】无人机状态订阅
     ros::Subscriber px4_battery_sub;        // 【订阅】无人机电池状态订阅
     ros::Subscriber px4_pose_sub;           // 【订阅】无人机位置订阅
     ros::Subscriber px4_vel_sub;            // 【订阅】无人机速度订阅
@@ -65,6 +66,7 @@ public:
     void init(ros::NodeHandle &nh);                                                 // 初始化
     void show_px4_state();                                                          // 显示无人机状态
     void px4_state_callback(const mavros_msgs::State::ConstPtr &msg);               // 无人机状态回调函数
+    void px4_extended_state_callback(const mavros_msgs::ExtendedState::ConstPtr &msg);               // 无人机状态回调函数
     void px4_battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);      // 无人机电池状态回调函数
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);                   // 无人机姿态回调函数 从imu获取解析
     void timer_pub_px4_state_cb(const ros::TimerEvent &event);                      // 定时器回调函数
