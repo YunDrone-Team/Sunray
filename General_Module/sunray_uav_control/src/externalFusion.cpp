@@ -87,7 +87,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10);
 
     // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
-    timer_pub_px4_state = nh.createTimer(ros::Duration(0.05), &ExternalFusion::timer_pub_px4_state_cb, this);
+    timer_pub_px4_state = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_px4_state_cb, this);
     // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
     if (enable_vision_pose)
     {

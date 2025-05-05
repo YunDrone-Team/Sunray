@@ -34,8 +34,8 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<float>("geo_fence/z_min", uav_geo_fence.z_min, -1.0);  // 【参数】地理围栏最小z坐标
     nh.param<float>("geo_fence/z_max", uav_geo_fence.z_max, 3.0);   // 【参数】地理围栏最大z坐标
     // 【参数】运行系统相关参数
-    nh.param<bool>("system_params/check_cmd_timeout", system_params.check_cmd_timeout, true); // 【参数】是否检查命令超时
-    nh.param<float>("system_params/cmd_timeout", system_params.cmd_timeout, 2.0);             // 【参数】命令超时时间
+    nh.param<bool>("system_params/check_cmd_timeout", system_params.check_cmd_timeout, true); // 【参数】是否检查无人机控制指令超时
+    nh.param<float>("system_params/cmd_timeout", system_params.cmd_timeout, 2.0);             // 【参数】无人机控制指令超时阈值
     nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);               // 【参数】是否使用遥控器控制
     nh.param<bool>("system_params/use_offset", system_params.use_offset, false);              // 【参数】是否使用位置偏移
 
@@ -81,6 +81,9 @@ void UAVControl::init(ros::NodeHandle &nh)
     flight_params.home_pos[1] = default_home_y;
     flight_params.home_pos[2] = default_home_z;
 
+    // 【控制器】PID控制器初始化
+    pos_controller_pid.init(nh);
+
     // 绑定高级模式对应的实现函数
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Takeoff] = std::bind(&UAVControl::set_takeoff, this);
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Land] = std::bind(&UAVControl::set_land, this);
@@ -105,7 +108,6 @@ void UAVControl::mainLoop()
         {
             set_px4_flight_mode("POSCTL");
         }
-        resetThrustMapping();
         break;
 
     // 遥控器控制模式（RC_CONTROL）
@@ -568,6 +570,28 @@ void UAVControl::set_hover_pos()
     flight_params.hover_yaw = px4_state.attitude[2];
 }
 
+// 发送角度期望值至飞控（输入: 期望角度-四元数,期望推力）
+void UAVControl::send_attitude_setpoint(Eigen::Vector4d &u_att)
+{
+    mavros_msgs::AttitudeTarget att_setpoint;
+    // Mappings: If any of these bits are set, the corresponding input should be ignored:
+    // bit 1: body roll rate, bit 2: body pitch rate, bit 3: body yaw rate. bit 4-bit 6: reserved, bit 7: throttle, bit 8: attitude
+    //  0b00000111;
+    att_setpoint.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ROLL_RATE |
+                             mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE |
+                             mavros_msgs::AttitudeTarget::IGNORE_YAW_RATE;
+
+    Eigen::Vector3d att_des;
+    att_des << u_att(0), u_att(1), u_att(2);
+    Eigen::Quaterniond q_des = quaternion_from_rpy(att_des);
+    att_setpoint.orientation.x = q_des.x();
+    att_setpoint.orientation.y = q_des.y();
+    att_setpoint.orientation.z = q_des.z();
+    att_setpoint.orientation.w = q_des.w();
+    att_setpoint.thrust = u_att(3);
+    px4_setpoint_attitude_pub.publish(att_setpoint);
+}
+
 // 发布惯性系下的目标点
 void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
@@ -791,30 +815,25 @@ void UAVControl::handle_cmd_control()
 
         setpoint_global_pub(system_params.type_mask, global_setpoint);
     }
-    else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Att)
+    else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::PosVelAccYaw)
     {
-        // 期望信息
-        pos_ctrl.des.p = control_cmd.desired_pos;
-        pos_ctrl.des.v = control_cmd.desired_vel;
-        pos_ctrl.des.a = control_cmd.desired_acc;
-        pos_ctrl.des.j = control_cmd.desired_jerk;
-        pos_ctrl.des.p = control_cmd.desired_pos;
-        pos_ctrl.des.yaw = control_cmd.desired_yaw;
-        pos_ctrl.des.yaw_rate = control_cmd.desired_yaw_rate;
-        // 当前位置信息
-        pos_ctrl.odom.p = px4_state.position;
-        pos_ctrl.odom.v = px4_state.velocity;
-        pos_ctrl.odom.q.x = px4_state.attitude_q.x;
-        pos_ctrl.odom.q.y = px4_state.attitude_q.y;
-        pos_ctrl.odom.q.z = px4_state.attitude_q.z;
-        pos_ctrl.odom.q.w = px4_state.attitude_q.w;
-
-        pos_ctrl.imu_q = pos_ctrl.odom.q;
-
-        Controller_Output_t u;
-
-        // 运行控制算法
-        u = pos_ctrl.update();
+        // 期望值
+        Desired_State_t desired_state;
+        for (int i = 0; i < 3; i++)
+        {
+            desired_state.pos[i] = control_cmd.desired_pos[i];
+            desired_state.vel[i] = control_cmd.desired_vel[i];
+            desired_state.acc[i] = control_cmd.desired_acc[i];
+        }
+        desired_state.yaw = control_cmd.desired_yaw;
+        desired_state.q = geometry_utils::yaw_to_quaternion((double)control_cmd.desired_yaw);
+        // 设定期望值
+        pos_controller_pid.set_desired_state(desired_state);
+        // 设定当前值
+        pos_controller_pid.set_current_state(px4_state);
+        // 控制器更新
+        Eigen::Vector4d u_att = pos_controller_pid.ctrl_update(200.0);
+        send_attitude_setpoint(u_att);
     }
     else
     {
@@ -895,41 +914,6 @@ void UAVControl::handle_cmd_control()
     }
 
     last_control_cmd = control_cmd;
-}
-
-// 姿态控制器
-void UAVControl::attitude_control()
-{
-    //compute disired acceleration
-    Eigen::Vector3d des_acc(0.0, 0.0, 0.0);
-
-    // 期望加速度
-    des_acc = att_ctrl_des.a + flight_params.Kv.asDiagonal() * (att_ctrl_des.v - odom.v) + flight_params.Kp.asDiagonal() * (att_ctrl_des.p - odom.p);
-    des_acc += Eigen::Vector3d(0,0,flight_params.gravity);
-
-    // 推力估计
-    controller.estimateThrustModel(imu_data.a,param);
-
-    // 计算推力
-    u.thrust = des_acc(2) / thr2acc_;
-
-
-
-    double roll,pitch,yaw,yaw_imu;
-    double yaw_odom = fromQuaternion2yaw(odom.q);
-    double sin = std::sin(yaw_odom);
-    double cos = std::cos(yaw_odom);
-    roll = (des_acc(0) * sin - des_acc(1) * cos )/ param_.gra;
-    pitch = (des_acc(0) * cos + des_acc(1) * sin )/ param_.gra;
-    // yaw = fromQuaternion2yaw(att_ctrl_des.q);
-    yaw_imu = fromQuaternion2yaw(imu.q);
-    // Eigen::Quaterniond q = Eigen::AngleAxisd(yaw,Eigen::Vector3d::UnitZ())
-    //   * Eigen::AngleAxisd(roll,Eigen::Vector3d::UnitX())
-    //   * Eigen::AngleAxisd(pitch,Eigen::Vector3d::UnitY());
-    Eigen::Quaterniond q = Eigen::AngleAxisd(att_ctrl_des.yaw,Eigen::Vector3d::UnitZ())
-    * Eigen::AngleAxisd(pitch,Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(roll,Eigen::Vector3d::UnitX());
-    u.q = imu.q * odom.q.inverse() * q;
 }
 
 // 从遥控器状态中获取并计算期望值
