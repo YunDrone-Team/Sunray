@@ -20,7 +20,8 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "external_fusion_node");
     ros::NodeHandle nh("~");
-    ros::Rate rate(50);
+    ros::Rate rate(200.0);
+    nh.param<bool>("flag_printf", flag_printf, true);           
 
     // 中断信号注册 
     signal(SIGINT, mySigintHandler);
@@ -33,7 +34,8 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        if (ros::Time::now() - now > ros::Duration(1.0))
+        // 定时打印状态
+        if (ros::Time::now() - now > ros::Duration(1.0) && flag_printf)
         {
             external_fusion.show_px4_state();
             now = ros::Time::now();

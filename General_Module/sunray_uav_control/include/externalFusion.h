@@ -6,6 +6,9 @@
 
 using namespace sunray_logger;
 
+#define PX4_TIMEOUT 2.0       // px4状态超时
+#define TRAJECTORY_WINDOW 50  // 轨迹窗口大小
+
 std::map<int, std::string> ERR_MSG =
     {
         {1, "Warning: The error between external state and px4 state is too large!"},
@@ -20,15 +23,15 @@ private:
     std::string source_topic{""};                           // 外部定位数据来源
     int uav_id;                                             // 无人机编号
     int external_source;                                    // 外部定位数据来源
-    sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
+    bool enable_vision_pose{true};
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     std::set<int> err_msg;                                  // 错误信息集合
     ros::Time px4_state_time;                               // 无人机状态时间戳
-    sunray_msgs::ExternalOdom external_odom;                // 外部里程计数据
-    sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
-    ExternalPosition external_position;                     // 外部定位源的回调和处理
     bool enable_range_sensor;                               // 是否使用距离传感器数据
+    sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
+
+    ExternalPosition ext_pos;                     // 外部定位源的回调和处理
 
     ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
