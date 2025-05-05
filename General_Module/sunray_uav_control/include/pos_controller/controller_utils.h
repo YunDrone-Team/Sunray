@@ -7,16 +7,18 @@
 
 using namespace std;
 
-struct Desired_State
+struct Desired_State_t
 {
     Eigen::Vector3d pos;
     Eigen::Vector3d vel;
     Eigen::Vector3d acc;
+    Eigen::Vector3d jerk;
     Eigen::Quaterniond q;
     double yaw;
+    double yaw_rate;
 };
 
-struct Current_State
+struct Current_State_t
 {
     Eigen::Vector3d pos;
     Eigen::Vector3d vel;
@@ -26,40 +28,15 @@ struct Current_State
 
 struct Ctrl_Param_PID
 {
-    float quad_mass;
-    float tilt_angle_max;
-    float hov_percent;
+    double quad_mass;
+    double tilt_angle_max;      //rad
+    double hov_percent;
     Eigen::Vector3d g;
-    Eigen::Vector3f int_max;
+    Eigen::Vector3d int_max;
     Eigen::Matrix3d Kp;
     Eigen::Matrix3d Kv;
     Eigen::Matrix3d Kvi;
     Eigen::Matrix3d Ka;
-};
-
-struct Ctrl_Param_UDE
-{
-    double T_ude;
-    float tilt_angle_max;
-    float quad_mass;
-    float hov_percent;
-    Eigen::Vector3d g;
-    Eigen::Vector3f int_max;
-    Eigen::Matrix3d Kp;
-    Eigen::Matrix3d Kd;
-};
-
-struct Ctrl_Param_NE
-{
-    Eigen::Matrix3d Kp;
-    Eigen::Matrix3d Kd;
-    double T_ude;
-    double T_ne;
-    float tilt_angle_max;
-    float quad_mass;
-    float hov_percent;
-    Eigen::Vector3d g;
-    Eigen::Vector3f int_max;
 };
 
 // 追踪误差评估
@@ -98,12 +75,4 @@ class Tracking_Error_Evaluation
 
         int Slide_window=100;
 };
-
-
-namespace controller_utils 
-{
-
-
-
-}
 #endif
