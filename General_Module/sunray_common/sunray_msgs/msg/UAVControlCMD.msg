@@ -8,6 +8,8 @@ uint8 cmd
 
 ## 注意：以下控制类型随PX4版本同、机型不同等，可能存在差异，请根据实际使用情况调整
 ## 控制命令枚举
+
+## 控制命令枚举 - 基础移动模式
 uint8 XyzPos = 1                # 移动指令：惯性系定点控制 保持当前偏航角，需要配合desired_pos使用
 uint8 XyzPosYaw = 4             # 移动指令：惯性系定点控制 带偏航角, 需要配合desired_pos和desired_yaw使用
 uint8 XyzPosYawrate = 5         # 移动指令：惯性系定点控制 带偏航角速率, 需要配合desired_pos和desired_yaw_rate使用
@@ -31,6 +33,11 @@ uint8 XyzVelYawBody = 15        # 移动指令：机体坐标系XYZ速度 带偏
 uint8 XyVelZPosYawBody = 16     # 移动指令：机体坐标系XY速度 Z位置 带偏航角，需要配合desired_vel[0]、desired_vel[1]、desired_pos[2]和desired_yaw使用
 uint8 GlobalPos = 17            # 移动指令：全局坐标 经纬度海拔，需要配合latitude、longitude、altitude使用
 
+## 控制命令枚举 - 使用自定义位置控制器进行控制（默认发送期望姿态至PX4飞控）
+uint8 CTRL_XyzPos = 50          # 移动指令：惯性系定点控制 带偏航角, 需要配合desired_pos和desired_yaw使用
+uint8 CTRL_Traj = 51            # 移动指令：轨迹追踪 需要配合desired_pos、desired_vel、desired_acc和desired_yaw使用
+
+## 控制命令枚举 - 特殊指令（高级模式）
 uint8 Point = 30                # 特殊指令：路径规划的目标点
 uint8 Takeoff = 100             # 特殊指令：起飞，home点上方悬停
 uint8 Land = 101                # 特殊指令：原地降落

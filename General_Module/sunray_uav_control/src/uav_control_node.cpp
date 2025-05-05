@@ -43,7 +43,6 @@ int main(int argc, char **argv)
         if (ros::Time::now() - last_time > ros::Duration(1.0) && flag_printf)
         {
             uav_ctrl.show_ctrl_state();
-            uav_ctrl.pos_controller_pid.printf_debug();
             last_time = ros::Time::now();
         }
 

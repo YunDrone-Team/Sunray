@@ -435,22 +435,22 @@ void ExternalFusion::px4_pos_target_callback(const mavros_msgs::PositionTarget::
 // 打印状态
 void ExternalFusion::show_px4_state()
 {
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>> external_fusion_node - [", uav_name, "] <<<<<<<<<<<");
+    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>> external_fusion_node - [", uav_name, "] <<<<<<<<<<<<<<");
 
     if(!px4_state.connected)
     {
-        Logger::print_color(int(LogColor::red), "PX4 FCU:", "UNCONNECTED");
+        Logger::print_color(int(LogColor::red), "PX4 FCU:", "[ UNCONNECTED ]");
         Logger::print_color(int(LogColor::red), "Wait for PX4 FCU connection...");
         return;
     }
 
     // 基本信息 - 连接状态、飞控模式、电池状态
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>> TOPIC: ~/sunray/px4_state (Sunray get from PX4 via Mavros) <<<");
-    Logger::print_color(int(LogColor::green), "PX4 FCU:", "CONNECTED");
+    Logger::print_color(int(LogColor::blue), ">>> TOPIC: ~/sunray/px4_state (Sunray get from PX4 via Mavros) <<<");
+    Logger::print_color(int(LogColor::green), "PX4 FCU:", "[ CONNECTED ]");
     if (px4_state.armed)
-        Logger::print_color(int(LogColor::green), "MODE: [", px4_state.mode, "]  ", LOG_GREEN, "ARMED");
+        Logger::print_color(int(LogColor::green), "MODE: [", px4_state.mode, "]  ", LOG_GREEN, "[ ARMED ]");
     else
-        Logger::print_color(int(LogColor::green), "MODE: [", px4_state.mode, "]  ", LOG_RED, "DISARMED");
+        Logger::print_color(int(LogColor::green), "MODE: [", px4_state.mode, "]  ", LOG_RED, "[ DISARMED ]");
     Logger::print_color(int(LogColor::green), "BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
 
     // 位置和姿态
@@ -499,30 +499,30 @@ void ExternalFusion::show_px4_state()
     }
 
     // 外部定位信息
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>> TOPIC: ~/mavros/vision_pose (Sunray send to PX4 for state fusion) <<<");
+    Logger::print_color(int(LogColor::blue), ">>> TOPIC: ~/mavros/vision_pose (Sunray send to PX4 for state fusion) <<<");
 
     switch (px4_state.external_odom.external_source)
     {
         case sunray_msgs::ExternalOdom::ODOM:
-            Logger::print_color(int(LogColor::green), "external_source: [ODOM]");
+            Logger::print_color(int(LogColor::green), "external_source: [ ODOM ]");
             break;
         case sunray_msgs::ExternalOdom::POSE:
-            Logger::print_color(int(LogColor::green), "external_source: [POSE]");
+            Logger::print_color(int(LogColor::green), "external_source: [ POSE ]");
             break;
         case sunray_msgs::ExternalOdom::GAZEBO:
-            Logger::print_color(int(LogColor::green), "external_source: [GAZEBO]");
+            Logger::print_color(int(LogColor::green), "external_source: [ GAZEBO ]");
             break;
         case sunray_msgs::ExternalOdom::MOCAP:
-            Logger::print_color(int(LogColor::green), "external_source: [MOCAP]");
+            Logger::print_color(int(LogColor::green), "external_source: [ MOCAP ]");
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
-            Logger::print_color(int(LogColor::green), "external_source: [VIOBOT]");
+            Logger::print_color(int(LogColor::green), "external_source: [ VIOBOT ]");
             break;
         case sunray_msgs::ExternalOdom::GPS:
-            Logger::print_color(int(LogColor::green), "external_source: [GPS]");
+            Logger::print_color(int(LogColor::green), "external_source: [ GPS ]");
             break;
         default:
-            Logger::print_color(int(LogColor::red), "external_source: [UNKNOW]");
+            Logger::print_color(int(LogColor::red), "external_source: [ UNKNOW ]");
             break;
     }
 
@@ -530,11 +530,11 @@ void ExternalFusion::show_px4_state()
     {
         if (ext_pos.external_odom.odom_valid)
         {
-            Logger::print_color(int(LogColor::green), "external_odom: [VALID]");
+            Logger::print_color(int(LogColor::green), "external_odom: [ VALID ]");
         }
         else
         {
-            Logger::print_color(int(LogColor::red), "external_odom: [INVALID]");
+            Logger::print_color(int(LogColor::red), "external_odom: [ INVALID ]");
         }
 
         Logger::print_color(int(LogColor::green), "POS [X Y Z]:",

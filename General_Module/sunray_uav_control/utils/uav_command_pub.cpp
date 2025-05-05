@@ -558,7 +558,7 @@ int main(int argc, char **argv)
                 }
 
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::PosVelAccYaw;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::CTRL_Traj;
                 uav_command_pub[0].publish(uav_cmd);
 
                 time_trajectory = time_trajectory + 0.01;

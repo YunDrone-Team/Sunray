@@ -10,31 +10,31 @@ using namespace sunray_logger;
 class UAVControl
 {
 private:
-    int uav_id;                                           // 无人机ID
-    bool rcState_cb;                                      // 遥控器状态回调
-    bool allow_lock;                                      // 允许临时解锁 特殊模式下允许跳过解锁检查
-    std::string uav_name;                                 // 无人机名称
     std::string uav_ns;                                   // 节点名称
-    sunray_msgs::UAVControlCMD control_cmd;               // 当前时刻无人机控制指令（来自任务节点）
-    sunray_msgs::UAVControlCMD last_control_cmd;          // 上一时刻无人机控制指令（来自任务节点）
-    sunray_msgs::UAVState uav_state;                      // 当前时刻无人机状态（本节点发布）
-    sunray_msgs::RcState rc_state;                        // 无人机遥控器状态（来自遥控器输入节点）
-    mavros_msgs::PositionTarget local_setpoint;           // PX4的本地位置设定点（待发布）
-    mavros_msgs::GlobalPositionTarget global_setpoint;    // PX4的全局位置设定点（待发布）
-    mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
-    float default_home_x, default_home_y, default_home_z; // 默认home点？
-
-    // 无人机控制状态机
-    enum Control_Mode
+    int uav_id;                                           // 无人机ID
+    std::string uav_name;                                 // 无人机名称
+    
+    // 无人机飞行相关参数
+    struct FlightParams
     {
-        INIT = 0,           // 初始模式
-        RC_CONTROL = 1,     // 遥控器控制模式
-        CMD_CONTROL = 2,    // 外部指令控制模式
-        LAND_CONTROL = 3,   // 降落模式
-        WITHOUT_CONTROL = 4 // 无控制模式
+        float takeoff_height;                        // 起飞高度
+        int land_type = 0;                           // 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
+        float disarm_height;                         // 锁桨高度
+        float land_speed;                            // 降落速度
+        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
+        float land_yaw = 0.0;                        // 降落点航向
+        float land_end_time;                         // 降落最后一段时间
+        float land_end_speed;                        // 降落最后一段速度
+        bool set_home = false;                       // 起飞点是否设置
+        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 起飞点
+        float home_yaw = 0.0;                        // 起飞点航向
+        Eigen::Vector3d hover_pos{0.0, 0.0, 0.0};    // 悬停点
+        float hover_yaw = 0.0;                       // 无人机目标航向
+        Eigen::Vector3d relative_pos{0.0, 0.0, 0.0}; // 相对位置
     };
+    FlightParams flight_params;
 
-    // 地理围栏
+    // 无人机地理围栏 - 超出围栏后无人机自动降落
     struct geo_fence
     {
         float x_min = 5.0;
@@ -46,36 +46,7 @@ private:
     };
     geo_fence uav_geo_fence;
 
-    struct RCControlParams
-    {
-        float max_vel_xy = 1.0;  // 最大水平速度
-        float max_vel_z = 1.0;   // 最大垂直速度
-        float max_vel_yaw = 1.5; // 最大偏航速度
-    };
-    RCControlParams rc_control_params;
-
-    struct FlightParams
-    {
-        int land_type = 0;                           // 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
-        float home_yaw = 0.0;                        // 起飞点航向
-        float hover_yaw = 0.0;                       // 无人机目标航向
-        float land_yaw = 0.0;                        // 降落点航向
-        float takeoff_height;                        // 起飞高度
-        float disarm_height;                         // 锁桨高度
-        float land_end_time;                         // 降落最后一段时间
-        float land_end_speed;                        // 降落最后一段速度
-        float land_speed;                            // 降落速度
-        bool set_home = false;                       // 起飞点是否设置
-        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 起飞点
-        Eigen::Vector3d hover_pos{0.0, 0.0, 0.0};    // 悬停点
-        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
-        Eigen::Vector3d relative_pos{0.0, 0.0, 0.0}; // 相对位置
-        Eigen::Vector3d Kp{0.0, 0.0, 0.0};           // 位置环控制参数
-        Eigen::Vector3d Kv{0.0, 0.0, 0.0};           // 位置环控制参数
-        double gravity = 9.8;                        // 重力
-    };
-    FlightParams flight_params;
-
+    // 无人机系统参数
     struct SystemParams
     {
         uint16_t type_mask;       // 控制指令类型
@@ -94,6 +65,37 @@ private:
         ros::Time last_rc_time;   // 上一个rc控制时间点
     };
     SystemParams system_params;
+
+    sunray_msgs::UAVControlCMD control_cmd;               // 当前时刻无人机控制指令（来自任务节点）
+    sunray_msgs::UAVControlCMD last_control_cmd;          // 上一时刻无人机控制指令（来自任务节点）
+    sunray_msgs::UAVState uav_state;                      // 当前时刻无人机状态（本节点发布）
+    sunray_msgs::RcState rc_state;                        // 无人机遥控器状态（来自遥控器输入节点）
+    mavros_msgs::PositionTarget local_setpoint;           // PX4的本地位置设定点（待发布）
+    mavros_msgs::GlobalPositionTarget global_setpoint;    // PX4的全局位置设定点（待发布）
+    mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
+    float default_home_x, default_home_y, default_home_z; // 默认home点？
+
+    bool rcState_cb;                                      // 遥控器状态回调
+    bool allow_lock;                                      // 允许临时解锁 特殊模式下允许跳过解锁检查
+
+    // 无人机控制状态机
+    enum Control_Mode
+    {
+        INIT = 0,           // 初始模式
+        RC_CONTROL = 1,     // 遥控器控制模式
+        CMD_CONTROL = 2,    // 外部指令控制模式
+        LAND_CONTROL = 3,   // 降落模式
+        WITHOUT_CONTROL = 4 // 无控制模式
+    };
+
+    struct RCControlParams
+    {
+        float max_vel_xy = 1.0;  // 最大水平速度
+        float max_vel_z = 1.0;   // 最大垂直速度
+        float max_vel_yaw = 1.5; // 最大偏航速度
+    };
+    RCControlParams rc_control_params;
+
 
     struct Waypoint_Params
     {
@@ -158,7 +160,8 @@ private:
             {sunray_msgs::UAVControlCMD::XyzVelYawBody, "XyzVelYawBody"},
             {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, "XyVelZPosYawBody"},
             {sunray_msgs::UAVControlCMD::GlobalPos, "GlobalPos"},
-            // {sunray_msgs::UAVControlCMD::Att, "Att"},
+            {sunray_msgs::UAVControlCMD::CTRL_XyzPos, "CTRL_XyzPos"},
+            {sunray_msgs::UAVControlCMD::CTRL_Traj, "CTRL_Traj"},
             {sunray_msgs::UAVControlCMD::Takeoff, "Takeoff"},
             {sunray_msgs::UAVControlCMD::Land, "Land"},
             {sunray_msgs::UAVControlCMD::Hover, "Hover"},
@@ -174,6 +177,7 @@ private:
             {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
             {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
 
+    // 绑定高级模式对应的实现函数
     std::map<int, std::function<void()>> advancedModeFuncMap;
 
     // 订阅节点句柄
@@ -197,6 +201,7 @@ private:
     ros::ServiceClient px4_reboot_client;    // 【服务】px4重启
     ros::ServiceClient px4_emergency_client; // 【服务】px4紧急停止
 
+    void printf_params();   
     int safetyCheck();                                                                        // 安全检查
     void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
     void set_auto_land();                                                                     // 调用px4 auto.land
@@ -225,6 +230,7 @@ private:
     float get_yaw_from_waypoint(int type, float point_x, float point_y);                      // 获取航点航向
     float get_vel_from_waypoint(float point_x, float point_y);                                // 获取航点速度
     void publish_goal();                                                                      // 发布规划点
+    void pos_controller();
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
