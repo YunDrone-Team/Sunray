@@ -433,7 +433,7 @@ void Map_Generator::GeneratePlanningTestMap2()
     generate_small_cylinder(6.0, -2.0);
     generate_small_cylinder(6.0, 0.0);
     generate_small_cylinder(6.0, 2.0);
-    
+
     global_map_pcl.width = global_map_pcl.points.size();
     global_map_pcl.height = 1;
     global_map_pcl.is_dense = true;
@@ -516,7 +516,7 @@ void Map_Generator::GeneratePlanningTestMap3()
     generate_small_cylinder(-9.0, 6.0);
     generate_small_cylinder(-9.0, 8.0);
     generate_small_cylinder(-9.0, 10.0);
-    
+
     // cylinder_large_1 (a-g)
     generate_large_cylinder(3.0, -9.0);
     generate_large_cylinder(3.0, -6.0);
@@ -558,7 +558,6 @@ void Map_Generator::GeneratePlanningTestMap3()
     cout << GREEN << "[map_generator] Finished generate map [ planning_test 3]. Map points:" << global_map_pcl.width << TAIL << endl;
 }
 
-
 void Map_Generator::uav_odom_cb(const nav_msgs::Odometry::ConstPtr &odom, int uav_id)
 {
     uav_odom_ok[uav_id] = true;
@@ -584,21 +583,21 @@ void Map_Generator::pub_local_map_cb(const ros::TimerEvent &event, int uav_id)
 {
     if (!global_map_ok || !uav_odom_ok[uav_id])
     {
-        if(local_map_ready)
+        if (local_map_ready)
         {
             cout << RED << "[map_generator] pub local map fail." << TAIL << endl;
         }
         local_map_ready = false;
         return;
-    }else
+    }
+    else
     {
-        if(!local_map_ready)
+        if (!local_map_ready)
         {
             cout << GREEN << "[map_generator] pub local map success." << TAIL << endl;
         }
         local_map_ready = true;
-        
-    } 
+    }
 
     // 读取无人机姿态
     Eigen::Quaterniond q;

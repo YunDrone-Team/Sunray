@@ -1,4 +1,4 @@
-//ROS 头文件
+// ROS 头文件
 #include <ros/ros.h>
 #include <iostream>
 #include <gazebo_msgs/ModelState.h>
@@ -38,5 +38,4 @@ int main(int argc, char **argv)
     }
 
     return 0;
-
 }

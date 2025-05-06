@@ -14,71 +14,69 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_STEPPER_DETAIL_ROTATING_BUFFER_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_STEPPER_DETAIL_ROTATING_BUFFER_HPP_INCLUDED
 
 #include <boost/array.hpp>
 
-namespace boost {
-namespace numeric {
-namespace odeint {
-namespace detail {
-
-template< class T , size_t N >
-class rotating_buffer
+namespace boost
 {
-public:
-
-    typedef T value_type;
-    const static size_t dim = N;
-
-    rotating_buffer( void ) : m_first( 0 )
-    { }
-
-    size_t size( void ) const
+    namespace numeric
     {
-        return dim;
-    }
+        namespace odeint
+        {
+            namespace detail
+            {
 
-    value_type& operator[]( size_t i )
-    {
-        return m_data[ get_index( i ) ];
-    }
+                template <class T, size_t N>
+                class rotating_buffer
+                {
+                public:
+                    typedef T value_type;
+                    const static size_t dim = N;
 
-    const value_type& operator[]( size_t i ) const
-    {
-        return m_data[ get_index( i ) ];
-    }
+                    rotating_buffer(void) : m_first(0)
+                    {
+                    }
 
-    void rotate( void )
-    {
-        if( m_first == 0 )
-            m_first = dim-1;
-        else
-            --m_first;
-    }
+                    size_t size(void) const
+                    {
+                        return dim;
+                    }
 
-protected:
+                    value_type &operator[](size_t i)
+                    {
+                        return m_data[get_index(i)];
+                    }
 
-    value_type m_data[N];
+                    const value_type &operator[](size_t i) const
+                    {
+                        return m_data[get_index(i)];
+                    }
 
-private:
+                    void rotate(void)
+                    {
+                        if (m_first == 0)
+                            m_first = dim - 1;
+                        else
+                            --m_first;
+                    }
 
-    size_t get_index( size_t i ) const
-    {
-        return ( ( i + m_first ) % dim );
-    }
+                protected:
+                    value_type m_data[N];
 
-    size_t m_first;
+                private:
+                    size_t get_index(size_t i) const
+                    {
+                        return ((i + m_first) % dim);
+                    }
 
-};
+                    size_t m_first;
+                };
 
-
-} // detail
-} // odeint
-} // numeric
+            } // detail
+        } // odeint
+    } // numeric
 } // boost
-
 
 #endif // BOOST_NUMERIC_ODEINT_STEPPER_DETAIL_ROTATING_BUFFER_HPP_INCLUDED

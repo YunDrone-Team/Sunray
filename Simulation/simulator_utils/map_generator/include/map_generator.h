@@ -29,7 +29,7 @@ using namespace Eigen;
 class Map_Generator
 {
 public:
-    Map_Generator(){};
+    Map_Generator() {};
     void init(ros::NodeHandle &nh);
 
     int swarm_num;                                     // 集群数量

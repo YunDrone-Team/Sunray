@@ -14,7 +14,6 @@
   copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
-
 #ifndef LIBS_NUMERIC_ODEINT_TEST_DUMMY_BOOST_UNITS_HPP_DEFINED
 #define LIBS_NUMERIC_ODEINT_TEST_DUMMY_BOOST_UNITS_HPP_DEFINED
 
@@ -26,34 +25,29 @@
 
 #include <boost/fusion/container.hpp>
 
-
-
 typedef double value_type;
-typedef boost::units::quantity< boost::units::si::time , value_type > time_type;
-typedef boost::units::quantity< boost::units::si::length , value_type > length_type;
-typedef boost::units::quantity< boost::units::si::velocity , value_type > velocity_type;
-typedef boost::units::quantity< boost::units::si::acceleration , value_type > acceleration_type;
-
-
+typedef boost::units::quantity<boost::units::si::time, value_type> time_type;
+typedef boost::units::quantity<boost::units::si::length, value_type> length_type;
+typedef boost::units::quantity<boost::units::si::velocity, value_type> velocity_type;
+typedef boost::units::quantity<boost::units::si::acceleration, value_type> acceleration_type;
 
 struct oscillator_mom_func_units
 {
-    template< class Coor , class MomDeriv >
-    void operator()( const Coor &q , MomDeriv &dp ) const
+    template <class Coor, class MomDeriv>
+    void operator()(const Coor &q, MomDeriv &dp) const
     {
-        const boost::units::quantity< boost::units::si::frequency , value_type > omega = 1.0 * boost::units::si::hertz;
-        boost::fusion::at_c< 0 >( dp ) = - omega * omega * boost::fusion::at_c< 0 >( q );
+        const boost::units::quantity<boost::units::si::frequency, value_type> omega = 1.0 * boost::units::si::hertz;
+        boost::fusion::at_c<0>(dp) = -omega * omega * boost::fusion::at_c<0>(q);
     }
 };
 
 struct oscillator_coor_func_units
 {
-    template< class Mom , class CoorDeriv >
-    void operator()( const Mom &p , CoorDeriv &dq ) const
+    template <class Mom, class CoorDeriv>
+    void operator()(const Mom &p, CoorDeriv &dq) const
     {
-        boost::fusion::at_c< 0 >( dq ) = boost::fusion::at_c< 0 >( p );
+        boost::fusion::at_c<0>(dq) = boost::fusion::at_c<0>(p);
     }
 };
-
 
 #endif // LIBS_NUMERIC_ODEINT_TEST_DUMMY_BOOST_UNITS_HPP_DEFINED

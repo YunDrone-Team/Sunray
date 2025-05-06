@@ -14,7 +14,6 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_HPP_INCLUDED
 
@@ -70,6 +69,5 @@
 #include <boost/numeric/odeint/integrate/observer_collection.hpp>
 
 #include <boost/numeric/odeint/stepper/generation.hpp>
-
 
 #endif // BOOST_NUMERIC_ODEINT_HPP_INCLUDED

@@ -14,13 +14,10 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_UTIL_UNWRAP_REFERENCE_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_UTIL_UNWRAP_REFERENCE_HPP_INCLUDED
 
-
 #include <boost/numeric/odeint/config.hpp>
-
 
 #if BOOST_NUMERIC_ODEINT_CXX11
 #include <functional>
@@ -28,60 +25,64 @@
 #include <boost/ref.hpp>
 #endif
 
-namespace boost {
+namespace boost
+{
 
 #if BOOST_NUMERIC_ODEINT_CXX11
-template<typename T> class reference_wrapper;
+    template <typename T>
+    class reference_wrapper;
 
-template<typename T> class unwrap_reference;
+    template <typename T>
+    class unwrap_reference;
 #endif
 
-namespace numeric {
-namespace odeint {
-
+    namespace numeric
+    {
+        namespace odeint
+        {
 
 #if BOOST_NUMERIC_ODEINT_CXX11
 
-template<typename T>
-struct unwrap_reference
-{
-    typedef typename std::remove_reference<T>::type type;
-};
+            template <typename T>
+            struct unwrap_reference
+            {
+                typedef typename std::remove_reference<T>::type type;
+            };
 
-template<typename T>
-struct unwrap_reference< std::reference_wrapper<T> >
-{
-    typedef typename std::remove_reference<T>::type type;
-};
+            template <typename T>
+            struct unwrap_reference<std::reference_wrapper<T>>
+            {
+                typedef typename std::remove_reference<T>::type type;
+            };
 
-template<typename T>
-struct unwrap_reference< boost::reference_wrapper<T> >
-{
-        typedef typename boost::unwrap_reference<T>::type type;
-};
+            template <typename T>
+            struct unwrap_reference<boost::reference_wrapper<T>>
+            {
+                typedef typename boost::unwrap_reference<T>::type type;
+            };
 
 #else
 
-using ::boost::unwrap_reference;
+            using ::boost::unwrap_reference;
 
 #endif
 
-namespace detail
-{
+            namespace detail
+            {
 
 #if BOOST_NUMERIC_ODEINT_CXX11
 
-using ::std::ref;
+                using ::std::ref;
 
 #else
 
-using ::boost::ref;
+                using ::boost::ref;
 
 #endif
-}
+            }
 
-}
-}
+        }
+    }
 }
 
 #endif // BOOST_NUMERIC_ODEINT_UTIL_UNWRAP_REFERENCE_HPP_INCLUDED

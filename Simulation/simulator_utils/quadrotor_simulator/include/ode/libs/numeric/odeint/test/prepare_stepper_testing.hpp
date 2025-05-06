@@ -34,19 +34,33 @@ namespace fusion = boost::fusion;
 using namespace boost::numeric::odeint;
 
 /* the state types that will be tested */
-typedef std::vector< double > vector_type;
-typedef vector_space_1d< double > vector_space_type;
-typedef boost::array< double , 1 > array_type;
+typedef std::vector<double> vector_type;
+typedef vector_space_1d<double> vector_space_type;
+typedef boost::array<double, 1> array_type;
 
-typedef mpl::vector< vector_type , vector_space_type , array_type >::type container_types;
+typedef mpl::vector<vector_type, vector_space_type, array_type>::type container_types;
 
 /* choose the right algebra */
-template< class State > struct algebra_dispatcher { typedef range_algebra type; };
-template<> struct algebra_dispatcher< array_type > { typedef array_algebra type; };
-template<> struct algebra_dispatcher< vector_space_type > { typedef vector_space_algebra type; };
-template<> struct algebra_dispatcher< double > { typedef vector_space_algebra type; };
-
-
+template <class State>
+struct algebra_dispatcher
+{
+    typedef range_algebra type;
+};
+template <>
+struct algebra_dispatcher<array_type>
+{
+    typedef array_algebra type;
+};
+template <>
+struct algebra_dispatcher<vector_space_type>
+{
+    typedef vector_space_algebra type;
+};
+template <>
+struct algebra_dispatcher<double>
+{
+    typedef vector_space_algebra type;
+};
 
 /*
 typedef mpl::vector

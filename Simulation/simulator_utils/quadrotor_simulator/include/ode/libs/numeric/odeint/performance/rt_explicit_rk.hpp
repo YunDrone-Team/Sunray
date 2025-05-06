@@ -9,7 +9,6 @@
  * copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef RT_EXPLICIT_RK_HPP_
 #define RT_EXPLICIT_RK_HPP_
 
@@ -19,26 +18,26 @@
 
 using namespace std;
 
-template< class StateType >
+template <class StateType>
 class rt_explicit_rk
 {
 public:
     typedef StateType state_type;
-    typedef double* const * coeff_a_type;
-    typedef vector< double > coeff_b_type;
-    typedef vector< double > coeff_c_type;
+    typedef double *const *coeff_a_type;
+    typedef vector<double> coeff_b_type;
+    typedef vector<double> coeff_c_type;
 
-    rt_explicit_rk( size_t stage_count ) : m_s( stage_count )
+    rt_explicit_rk(size_t stage_count) : m_s(stage_count)
     {
-        m_F = new state_type[ m_s ];
+        m_F = new state_type[m_s];
     }
 
-    rt_explicit_rk( const size_t stage_count , 
-                    const coeff_a_type a , 
-                    const coeff_b_type &b , const coeff_c_type &c )
-        : m_s( stage_count ) , m_a( a ) , m_b( b ) , m_c( c )
+    rt_explicit_rk(const size_t stage_count,
+                   const coeff_a_type a,
+                   const coeff_b_type &b, const coeff_c_type &c)
+        : m_s(stage_count), m_a(a), m_b(b), m_c(c)
     {
-        m_F = new state_type[ m_s ];
+        m_F = new state_type[m_s];
     }
 
     ~rt_explicit_rk()
@@ -53,26 +52,25 @@ public:
         m_c = c;
         }*/
 
-    template< class System >
-    void do_step( System sys , state_type &x , const double t , const double dt )
+    template <class System>
+    void do_step(System sys, state_type &x, const double t, const double dt)
     {
         // first stage separately
-        sys( x , m_F[0] , t + m_c[0]*t );
-        if( m_s == 1 )
-            rt_algebra::foreach( x , x , &m_b[0] , m_F , dt , 1 );
+        sys(x, m_F[0], t + m_c[0] * t);
+        if (m_s == 1)
+            rt_algebra::foreach (x, x, &m_b[0], m_F, dt, 1);
         else
-            rt_algebra::foreach( m_x_tmp , x , m_a[0] , m_F , dt , 1 );
+            rt_algebra::foreach (m_x_tmp, x, m_a[0], m_F, dt, 1);
 
-        for( size_t stage = 2 ; stage <= m_s ; ++stage )
+        for (size_t stage = 2; stage <= m_s; ++stage)
         {
-            sys( m_x_tmp , m_F[stage-1] , t + m_c[stage-1]*dt );
-            if( stage == m_s )
-                rt_algebra::foreach( x , x , &m_b[0] , m_F , dt , stage-1 );
+            sys(m_x_tmp, m_F[stage - 1], t + m_c[stage - 1] * dt);
+            if (stage == m_s)
+                rt_algebra::foreach (x, x, &m_b[0], m_F, dt, stage - 1);
             else
-                rt_algebra::foreach( m_x_tmp , x , m_a[stage-1] , m_F , dt , stage-1 );
+                rt_algebra::foreach (m_x_tmp, x, m_a[stage - 1], m_F, dt, stage - 1);
         }
     }
-
 
 private:
     const size_t m_s;

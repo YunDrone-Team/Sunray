@@ -41,7 +41,8 @@ int _GLX_SIZE, _GLY_SIZE, _GLZ_SIZE;
 
 ros::Time last_odom_stamp = ros::TIME_MAX;
 
-inline Eigen::Vector3d gridIndex2coord(const Eigen::Vector3i& index) {
+inline Eigen::Vector3d gridIndex2coord(const Eigen::Vector3i &index)
+{
   Eigen::Vector3d pt;
   pt(0) = ((double)index(0) + 0.5) * _resolution + _gl_xl;
   pt(1) = ((double)index(1) + 0.5) * _resolution + _gl_yl;
@@ -50,7 +51,8 @@ inline Eigen::Vector3d gridIndex2coord(const Eigen::Vector3i& index) {
   return pt;
 };
 
-inline Eigen::Vector3i coord2gridIndex(const Eigen::Vector3d& pt) {
+inline Eigen::Vector3i coord2gridIndex(const Eigen::Vector3d &pt)
+{
   Eigen::Vector3i idx;
   idx(0) = std::min(std::max(int((pt(0) - _gl_xl) * _inv_resolution), 0),
                     _GLX_SIZE - 1);
@@ -62,7 +64,8 @@ inline Eigen::Vector3i coord2gridIndex(const Eigen::Vector3d& pt) {
   return idx;
 };
 
-void rcvOdometryCallbck(const nav_msgs::Odometry& odom) {
+void rcvOdometryCallbck(const nav_msgs::Odometry &odom)
+{
   /*if(!has_global_map)
     return;*/
   has_odom = true;
@@ -78,8 +81,10 @@ vector<int> _pointIdxRadiusSearch;
 vector<float> _pointRadiusSquaredDistance;
 
 void rcvGlobalPointCloudCallBack(
-    const sensor_msgs::PointCloud2& pointcloud_map) {
-  if (has_global_map) return;
+    const sensor_msgs::PointCloud2 &pointcloud_map)
+{
+  if (has_global_map)
+    return;
 
   ROS_WARN("Global Pointcloud received..");
 
@@ -95,8 +100,10 @@ void rcvGlobalPointCloudCallBack(
   has_global_map = true;
 }
 
-void renderSensedPoints(const ros::TimerEvent& event) {
-  if (!has_global_map || !has_odom) return;
+void renderSensedPoints(const ros::TimerEvent &event)
+{
+  if (!has_global_map || !has_odom)
+    return;
 
   Eigen::Quaterniond q;
   q.x() = _odom.pose.pose.orientation.x;
@@ -118,8 +125,10 @@ void renderSensedPoints(const ros::TimerEvent& event) {
   pcl::PointXYZ pt;
   if (_kdtreeLocalMap.radiusSearch(searchPoint, sensing_horizon,
                                    _pointIdxRadiusSearch,
-                                   _pointRadiusSquaredDistance) > 0) {
-    for (size_t i = 0; i < _pointIdxRadiusSearch.size(); ++i) {
+                                   _pointRadiusSquaredDistance) > 0)
+  {
+    for (size_t i = 0; i < _pointIdxRadiusSearch.size(); ++i)
+    {
       pt = _cloud_all_map.points[_pointIdxRadiusSearch[i]];
 
       // if ((fabs(pt.z - _odom.pose.pose.position.z) / (pt.x - _odom.pose.pose.position.x)) >
@@ -127,17 +136,20 @@ void renderSensedPoints(const ros::TimerEvent& event) {
       //   continue;
       if ((fabs(pt.z - _odom.pose.pose.position.z) / sensing_horizon) >
           tan(M_PI / 6.0))
-        continue; 
+        continue;
 
       Vector3d pt_vec(pt.x - _odom.pose.pose.position.x,
                       pt.y - _odom.pose.pose.position.y,
                       pt.z - _odom.pose.pose.position.z);
 
-      if (pt_vec.normalized().dot(yaw_vec) < 0.5) continue; 
+      if (pt_vec.normalized().dot(yaw_vec) < 0.5)
+        continue;
 
       _local_map.points.push_back(pt);
     }
-  } else {
+  }
+  else
+  {
     return;
   }
 
@@ -152,11 +164,13 @@ void renderSensedPoints(const ros::TimerEvent& event) {
 }
 
 void rcvLocalPointCloudCallBack(
-    const sensor_msgs::PointCloud2& pointcloud_map) {
+    const sensor_msgs::PointCloud2 &pointcloud_map)
+{
   // do nothing, fix later
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   ros::init(argc, argv, "pcl_render");
   ros::NodeHandle nh("~");
 
@@ -194,7 +208,8 @@ int main(int argc, char** argv) {
 
   ros::Rate rate(100);
   bool status = ros::ok();
-  while (status) {
+  while (status)
+  {
     ros::spinOnce();
     status = ros::ok();
     rate.sleep();

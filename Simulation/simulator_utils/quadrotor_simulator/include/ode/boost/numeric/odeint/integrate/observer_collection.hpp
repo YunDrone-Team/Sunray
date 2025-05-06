@@ -14,7 +14,6 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_INTEGRATE_OBSERVER_COLLECTION_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_INTEGRATE_OBSERVER_COLLECTION_HPP_INCLUDED
 
@@ -22,35 +21,35 @@
 
 #include <boost/function.hpp>
 
-namespace boost {
-namespace numeric {
-namespace odeint {
-
-template< class State , class Time >
-class observer_collection
+namespace boost
 {
-public:
-
-    typedef boost::function< void( const State& , const Time& ) > observer_type;
-    typedef std::vector< observer_type > collection_type;
-
-    void operator()( const State& x , Time t )
+    namespace numeric
     {
-        for( size_t i=0 ; i<m_observers.size() ; ++i )
-            m_observers[i]( x , t );
-    }
+        namespace odeint
+        {
 
-    collection_type& observers( void ) { return m_observers; }
-    const collection_type& observers( void ) const { return m_observers; }
+            template <class State, class Time>
+            class observer_collection
+            {
+            public:
+                typedef boost::function<void(const State &, const Time &)> observer_type;
+                typedef std::vector<observer_type> collection_type;
 
-private:
+                void operator()(const State &x, Time t)
+                {
+                    for (size_t i = 0; i < m_observers.size(); ++i)
+                        m_observers[i](x, t);
+                }
 
-    collection_type m_observers;
-};
+                collection_type &observers(void) { return m_observers; }
+                const collection_type &observers(void) const { return m_observers; }
 
-} // namespace odeint
-} // namespace numeric
+            private:
+                collection_type m_observers;
+            };
+
+        } // namespace odeint
+    } // namespace numeric
 } // namespace boost
-
 
 #endif // BOOST_NUMERIC_ODEINT_INTEGRATE_OBSERVER_COLLECTION_HPP_INCLUDED

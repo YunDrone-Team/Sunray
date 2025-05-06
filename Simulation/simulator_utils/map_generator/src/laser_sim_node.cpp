@@ -157,7 +157,7 @@ void renderSensedPoints(const ros::TimerEvent &event)
         continue;
       Eigen::Vector3d pt_vec(pt.x - _odom.pose.pose.position.x, pt.y - _odom.pose.pose.position.y, pt.z - _odom.pose.pose.position.z);
       double dis_curr_pt = pt_vec.norm();
-      
+
       if (_use_resolution_filter)
       {
         double vtc_rad = idx[1] * _vtc_resolution_rad - _vtc_laser_range_rad / 2.0;
@@ -170,17 +170,19 @@ void renderSensedPoints(const ros::TimerEvent &event)
         for (int d_hrz_idx = -tmp1; d_hrz_idx <= tmp1; ++d_hrz_idx)
           for (int d_vtc_idx = -tmp2; d_vtc_idx <= tmp2; ++d_vtc_idx)
           {
-            int hrz_idx = (idx[0] + d_hrz_idx + _hrz_laser_line_num) % _hrz_laser_line_num;// it's a ring in hrz coordiante
+            int hrz_idx = (idx[0] + d_hrz_idx + _hrz_laser_line_num) % _hrz_laser_line_num; // it's a ring in hrz coordiante
             int vtc_idx = idx[1] + d_vtc_idx;
-            if (vtc_idx >= _vtc_laser_line_num) continue;
-            if (vtc_idx < 0) continue;
+            if (vtc_idx >= _vtc_laser_line_num)
+              continue;
+            if (vtc_idx < 0)
+              continue;
             // ROS_INFO_STREAM("hrz_idx " << hrz_idx << ", vtc_idx " << vtc_idx);
             if (dis_curr_pt < dis_map(hrz_idx, vtc_idx))
             {
               idx_map(hrz_idx, vtc_idx) = i;
               dis_map(hrz_idx, vtc_idx) = dis_curr_pt;
             }
-          } 
+          }
       }
       else
       {
@@ -201,12 +203,14 @@ void renderSensedPoints(const ros::TimerEvent &event)
         // // ROS_WARN_STREAM("_pointIdxRadiusSearch[idx_map(x, y)]: " << _pointIdxRadiusSearch[idx_map(x, y)]);
         // pt = _cloud_all_map.points[_pointIdxRadiusSearch[idx_map(x, y)]];
         // _local_map.points.push_back(pt);
-        
+
         Eigen::Vector3d p;
         if (idx_map(x, y) == -1)
         {
           idx2Pt(x, y, laser_t, rot, _sensing_horizon + _pc_resolution, p);
-          pt.x = p[0]; pt.y = p[1]; pt.z = p[2];
+          pt.x = p[0];
+          pt.y = p[1];
+          pt.z = p[2];
           _local_map.points.push_back(pt);
         }
         else
@@ -253,11 +257,11 @@ int main(int argc, char **argv)
   _hrz_resolution_rad = 2 * M_PI / (double)_hrz_laser_line_num;
   _half_vtc_resolution_and_half_range = (_vtc_laser_range_rad + _vtc_resolution_rad) / 2.0;
 
-  //subscribe point cloud
+  // subscribe point cloud
   _global_map_sub = nh.subscribe("global_map", 1, rcvGlobalPointCloudCallBack);
   _odom_sub = nh.subscribe("odometry", 50, rcvOdometryCallbck);
 
-  //publisher depth image and color image
+  // publisher depth image and color image
   _pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("local_pointcloud", 10);
   double sensing_duration = 1.0 / _sensing_rate;
   _local_sensing_timer = nh.createTimer(ros::Duration(sensing_duration), renderSensedPoints);
