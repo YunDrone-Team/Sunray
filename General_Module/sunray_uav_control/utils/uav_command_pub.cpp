@@ -57,6 +57,7 @@ int main(int argc, char **argv)
 
     //用于控制器测试的类，功能例如：生成圆形轨迹，8字轨迹等
     TRAJ_GENERATOR traj_generator;
+    traj_generator.init(nh);
 
     uav_name = uav_name + std::to_string(uav_id);
     string topic_prefix = "/" + uav_name;

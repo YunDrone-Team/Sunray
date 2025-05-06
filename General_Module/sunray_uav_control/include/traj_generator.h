@@ -12,27 +12,10 @@ using namespace std;
 class TRAJ_GENERATOR
 {
     public:
-        //构造函数
-        TRAJ_GENERATOR(void):
-            nh("~")
-        {
-            nh.param<float>("TRAJ_GENERATOR/Circle/Center_x", circle_center[0], 0.0);
-            nh.param<float>("TRAJ_GENERATOR/Circle/Center_y", circle_center[1], 0.0);
-            nh.param<float>("TRAJ_GENERATOR/Circle/Center_z", circle_center[2], 1.0);
-            nh.param<float>("TRAJ_GENERATOR/Circle/circle_radius", circle_radius, 2.0);
-            nh.param<float>("TRAJ_GENERATOR/Circle/linear_vel", linear_vel, 0.5);
-            nh.param<float>("TRAJ_GENERATOR/Circle/direction", direction, 1.0);
+        TRAJ_GENERATOR() {};
+        ~TRAJ_GENERATOR() {};
 
-            nh.param<float>("TRAJ_GENERATOR/Eight/Center_x", eight_origin_[0], 0.0);
-            nh.param<float>("TRAJ_GENERATOR/Eight/Center_y", eight_origin_[1], 0.0);
-            nh.param<float>("TRAJ_GENERATOR/Eight/Center_z", eight_origin_[2], 1.0);
-            nh.param<float>("TRAJ_GENERATOR/Eight/omega", eight_omega_, 0.5);
-            nh.param<float>("TRAJ_GENERATOR/Eight/radial", radial, 2.0);
-
-            nh.param<float>("TRAJ_GENERATOR/Step/step_length", step_length, 0.0);
-            nh.param<float>("TRAJ_GENERATOR/Step/step_interval", step_interval, 0.0);
-        }
-
+        void init(ros::NodeHandle &nh);
         //Printf the TRAJ_GENERATOR parameter
         void printf_param();
 
@@ -46,9 +29,6 @@ class TRAJ_GENERATOR
         sunray_msgs::UAVControlCMD Line_trajectory_generation(float time_from_start);
 
     private:
-
-        ros::NodeHandle nh;
-
         // Circle Parameter
         Eigen::Vector3f circle_center;
         float circle_radius;
@@ -66,6 +46,24 @@ class TRAJ_GENERATOR
         
 };
 
+void TRAJ_GENERATOR::init(ros::NodeHandle &nh)
+{
+    nh.param<float>("TRAJ_GENERATOR/Circle/Center_x", circle_center[0], 0.0);
+    nh.param<float>("TRAJ_GENERATOR/Circle/Center_y", circle_center[1], 0.0);
+    nh.param<float>("TRAJ_GENERATOR/Circle/Center_z", circle_center[2], 1.0);
+    nh.param<float>("TRAJ_GENERATOR/Circle/circle_radius", circle_radius, 2.0);
+    nh.param<float>("TRAJ_GENERATOR/Circle/linear_vel", linear_vel, 0.5);
+    nh.param<float>("TRAJ_GENERATOR/Circle/direction", direction, 1.0);
+
+    nh.param<float>("TRAJ_GENERATOR/Eight/Center_x", eight_origin_[0], 0.0);
+    nh.param<float>("TRAJ_GENERATOR/Eight/Center_y", eight_origin_[1], 0.0);
+    nh.param<float>("TRAJ_GENERATOR/Eight/Center_z", eight_origin_[2], 1.0);
+    nh.param<float>("TRAJ_GENERATOR/Eight/omega", eight_omega_, 0.5);
+    nh.param<float>("TRAJ_GENERATOR/Eight/radial", radial, 2.0);
+
+    nh.param<float>("TRAJ_GENERATOR/Step/step_length", step_length, 0.0);
+    nh.param<float>("TRAJ_GENERATOR/Step/step_interval", step_interval, 0.0);
+}
 
 sunray_msgs::UAVControlCMD TRAJ_GENERATOR::Circle_trajectory_generation(float time_from_start)
 {

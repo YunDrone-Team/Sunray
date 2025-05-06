@@ -70,6 +70,10 @@ target_link_libraries(external_fusion_node externalFusion)
 # add_executable(external_fusion_node src/externalFusion.cpp)
 # target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 
+add_executable(control_evaluation_node utils/control_evaluation_node.cpp)
+add_dependencies(control_evaluation_node sunray_control_gencpp)
+target_link_libraries(control_evaluation_node ${catkin_LIBRARIES})
+
 add_executable(uav_command_pub utils/uav_command_pub.cpp)
 add_dependencies(uav_command_pub sunray_control_gencpp)
 target_link_libraries(uav_command_pub ${catkin_LIBRARIES})
