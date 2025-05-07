@@ -23,23 +23,13 @@
         </inertia>
       </inertial>
       <collision name='collision'>
-        <pose frame=''>0 0 0.03 0 0 0</pose>
+        <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.05 0.05 0.05</size>
-          </box>
+          <cylinder>
+            <radius>0.035</radius>
+            <length>0.035</length>
+          </cylinder>
         </geometry>
-        <surface>
-          <contact>
-            <ode>
-              <min_depth>0.001</min_depth>
-              <max_vel>0</max_vel>
-            </ode>
-          </contact>
-          <friction>
-            <ode/>
-          </friction>
-        </surface>
       </collision>
 
       <sensor type="ray" name="2d_lidar">

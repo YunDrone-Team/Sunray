@@ -7,11 +7,11 @@
     <!-- <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="0 0 0 0 0 0 base_link laser_livox 50" /> -->
 
     <node name="point_cloud_transform" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
-        <param name="input_point_topic" value="/uav1/livox" />
-        <param name="output_point_topic" value="/uav1/livox_world" />
+        <param name="input_point_topic" value="/uav1/mid360_points" />
+        <param name="output_point_topic" value="/uav1/global_points" />
         <!-- <param name="odom_topic" value="/Odometry" /> -->
         <param name="odom_topic" value="/uav1/sunray/gazebo_pose" />
         <param name="frame_id" value="world" />
-        <param name="child_frame_id" value="livox_frame" />
+        <param name="child_frame_id" value="uav1/base_link" />
     </node>
 </launch>

@@ -18,10 +18,18 @@
 
 	<arg name="planning_horizon" default="7.5"/>
 
+	<!-- 局部坐标系下的点云话题 -->
+    <arg name="local_pointcloud_topic" default="/uav1/mid360_points"/>
+
+    <!-- 转换出来的世界坐标系下的点云话题 -->
+    <arg name="global_pointcloud_topic" default="/uav1/global_points"/>
+
 	<!-- topic of your odometry such as VIO or LIO -->
     <arg name="odom_topic" default="/uav1/sunray/gazebo_pose" />
 	<!-- 点云信息，仿真中由map_generator产生 or 激光雷达 -->
-	<arg name="cloud_topic" default="/uav1/livox_point"/>
+	<arg name="cloud_topic" default="/uav1/mid360_point"/>
+
+	
 	<!-- 相机及深度信息仿真中没有使用，此处可忽略(真机中使用) -->
 	<arg name="camera_pose_topic" default="pcl_render_node/camera_pose"/>
 	<arg name="depth_topic" default="pcl_render_node/depth"/>
@@ -45,7 +53,7 @@
 		<!-- 地图中的odom话题 -->
     	<remap from="~grid_map/odom" to="$(arg odom_topic)"/>
 		<!-- 地图中点云话题 -->
-    	<remap from="~grid_map/cloud" to="$(arg cloud_topic)"/>
+    	<remap from="~grid_map/cloud" to="$(arg global_pointcloud_topic)"/>
 		<!-- 地图中相机位姿话题 -->
     	<remap from="~grid_map/pose"   to = "$(arg camera_pose_topic)"/> 
 		<!-- 地图中相机深度话题 -->
@@ -88,7 +96,7 @@
 		<param name="grid_map/local_update_range_y"  value="5.5" /> 
 		<param name="grid_map/local_update_range_z"  value="4.5" /> 
 		<!-- 膨胀距离 -->
-		<param name="grid_map/obstacles_inflation"     value="0.099" /> 
+		<param name="grid_map/obstacles_inflation"     value="0.25" /> 
 		<param name="grid_map/local_map_margin" value="10"/>
 		<!-- 地面高度 -->
 		<param name="grid_map/ground_height"        value="0.1"/>
@@ -173,6 +181,15 @@
         <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
         <param name="control_type" value="$(arg control_type)"/>
         <param name="enable_yaw" value="$(arg enable_yaw)"/>
+    </node>
+
+	<!-- 点云转换为世界坐标系 -->
+    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+        <param name="input_point_topic" value="$(arg local_pointcloud_topic)" />
+        <param name="output_point_topic" value="$(arg global_pointcloud_topic)" />
+        <param name="odom_topic" value="$(arg odom_topic)" />
+        <param name="frame_id" value="world" />
+        <param name="child_frame_id" value="uav1/base_link" />
     </node>
 
     <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 将其转为多个平行的目标点发送到ego中的每个规划器-->

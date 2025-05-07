@@ -6,7 +6,7 @@
     </include>
    <include>
       <uri>model://livox_mid360</uri>
-      <pose>0 0 0.295 0 0 0</pose>
+      <pose>0 -0.0155 0.28 0 0 0</pose>
     </include>
     <joint name="mid360_joint" type="fixed">
       <child>livox_mid360::link</child>
