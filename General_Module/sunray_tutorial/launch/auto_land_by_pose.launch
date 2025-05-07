@@ -2,6 +2,7 @@
 	<arg name="uav_id" default="1"/>
     <arg name="sim_mode" default="false"/>
     <arg name="flag_printf" default="true"/>
+    <arg name="auto_fly" default="true"/>
     <arg name="uav_name" default="uav" />
     <arg name="k_p_xy" default="0.9" />
     <arg name="k_p_z" default="0.5" />
@@ -13,9 +14,11 @@
     <arg name="error_z" default="0.25" />
     <arg name="land_vel" default="-0.3" />
     <arg name="last_land_time" default="1.5" />
+    <arg name="hight" default="2.5"/>
     
 	<node pkg="sunray_tutorial" type="auto_land_by_pose" name="auto_land_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
+        <param name="auto_fly" value="$(arg auto_fly)" />
 		<param name="uav_name" value="$(arg uav_name)" />
         <param name="sim_mode" value="$(arg sim_mode)" />
 		<param name="flag_printf" value="$(arg flag_printf)" />
@@ -29,6 +32,7 @@
         <param name="error_z" value="$(arg error_z)" />
         <param name="land_vel" value="$(arg land_vel)" />
         <param name="last_land_time" value="$(arg last_land_time)" />
+        <param name="hight" value="$(arg hight)" />
 
 	</node>
 </launch>
