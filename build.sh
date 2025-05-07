@@ -11,7 +11,7 @@ catkin_make --source General_Module/sunray_tutorial --build build/sunray_tutoria
 # 编译sunray_simulator模块
 catkin_make --source Simulation/sunray_simulator --build build/sunray_simulator
 # 编译sunray_planner模块
-catkin_make --source General_Module/sunray_planner --build build/sunray_planner
+catkin_make --source General_Module/sunray_planner_utils --build build/sunray_planner_utils
 # 编译sunray_ground模块
 catkin_make --source General_Module/sunray_ground --build build/sunray_ground
 # 编译sunray_media模块

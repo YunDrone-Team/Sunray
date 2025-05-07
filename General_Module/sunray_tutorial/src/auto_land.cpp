@@ -97,13 +97,13 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
-    bool auto_fly = false;
+    bool auto_takeoff = false;
     int uav_id;
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);
     nh.param<bool>("flag_printf", flag_printf, true);
-    nh.param<bool>("auto_fly", auto_fly, false);
+    nh.param<bool>("auto_takeoff", auto_takeoff, false);
     //error_xy   error_z
     double error_xy,error_z;
     //land_v
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
     cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
 
-    if(auto_fly)
+    if(auto_takeoff)
     {
         ros::Duration(10).sleep();
 

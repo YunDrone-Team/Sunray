@@ -45,7 +45,7 @@ public:
         pcl_conversions::toPCL(*input, pcl_pc2);
 
         pcl::fromPCLPointCloud2(pcl_pc2, *temp_cloud);
-        pcl_ros::transformPointCloud(*temp_cloud, *cloud_transformed, transform_);
+        pcl_ros::transformPointCloud(*temp_cloud, *cloud_transformed, transform);
 
         pcl::toROSMsg(*cloud_transformed, cloud_publish);
         cloud_publish.header = input->header;
@@ -55,13 +55,12 @@ public:
     }
 
     void odomCallback(const nav_msgs::Odometry::ConstPtr& odom_msg) {
-        tf::StampedTransform transform;
         transform.stamp_ = odom_msg->header.stamp;
         transform.frame_id_ = frame_id_;
         transform.child_frame_id_ = child_frame_id_;
         transform.setOrigin(tf::Vector3(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z));
         transform.setRotation(tf::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y, odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
-        br_.sendTransform(transform);
+        // br_.sendTransform(transform);
     }
 
     void run() {
@@ -71,11 +70,11 @@ public:
         ros::spinOnce();
         ros::Duration(1.0).sleep();
         while (nh_.ok()) {
-            try {
-                listener.lookupTransform(frame_id_, child_frame_id_, ros::Time(), transform_);
-            } catch (tf::TransformException ex) {
-                ROS_WARN("%s", ex.what());
-            }
+            // try {
+            //     listener.lookupTransform(frame_id_, child_frame_id_, ros::Time(), transform_);
+            // } catch (tf::TransformException ex) {
+            //     ROS_WARN("%s", ex.what());
+            // }
 
             ros::spinOnce();
             rate.sleep();
@@ -90,7 +89,7 @@ private:
     ros::Publisher pub_;
     ros::Subscriber odom_sub_;
     tf::TransformBroadcaster br_;
-    tf::StampedTransform transform_;
+    tf::StampedTransform transform;
     ros::Publisher cmd_pub_;
     sunray_msgs::UAVControlCMD cmd_;
 
