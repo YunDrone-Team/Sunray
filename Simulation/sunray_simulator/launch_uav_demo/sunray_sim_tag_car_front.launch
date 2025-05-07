@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <arg name="vehicle" default="sunray150_with_cam"/>
+    <arg name="vehicle" default="sunray150"/>
     <arg name="world" default="$(find sunray_simulator)/worlds/move_car_forward.world"/>
     <arg name="gazebo_enable" default="true"/>
 

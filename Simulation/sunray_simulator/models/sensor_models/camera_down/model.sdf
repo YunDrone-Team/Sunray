@@ -58,7 +58,7 @@
          <!--更新频率参数，默认值为0-->
         <update_rate>30</update_rate>
         <!--传感器可视化参数，bool变量，1即为true,表示允许传感器在图形界面被观察到-->
-        <visualize>1</visualize>
+        <visualize>0</visualize>
 
         <plugin name='camera_plugin' filename='libgazebo_ros_camera.so'>
             <robotNamespace></robotNamespace>

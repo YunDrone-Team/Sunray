@@ -13,6 +13,8 @@
     <arg name="error_z" default="0.25" />
     <arg name="land_vel" default="-0.3" />
     <arg name="last_land_time" default="1.5" />
+    <arg name="auto_fly" default="true"/>
+    <arg name="hight" default="2.5"/>
     
 	<node pkg="sunray_tutorial" type="auto_land" name="auto_land_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
@@ -29,6 +31,8 @@
         <param name="error_z" value="$(arg error_z)" />
         <param name="land_vel" value="$(arg land_vel)" />
         <param name="last_land_time" value="$(arg last_land_time)" />
+        <param name="auto_fly" value="$(arg auto_fly)" />
+        <param name="hight" value="$(arg hight)" />
 
 	</node>
 </launch>

@@ -81,7 +81,7 @@
     <model name='land_aruco'>
       <static>true</static>
       <link name="land_aruco">
-        <pose frame=''> -3.5 1.5 0.02 0.0 0.0 0.0</pose>
+        <pose frame=''> 1.0 1.0 0.02 0.0 0.0 0.0</pose>
         <collision name="platform_collision">
           <geometry>
             <box>
