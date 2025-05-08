@@ -5,7 +5,6 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_dev
   gazebo_msgs
   gazebo_ros
-  message_generation      
   roscpp
   geometry_msgs
   sensor_msgs
