@@ -3,7 +3,7 @@
 	<!-- Gazebo 配置 -->
     <arg name="gazebo_enable" default="true"/>
     <arg name="gui" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
     <!-- 启动 Gazebo -->
     <group if="$(arg gazebo_enable)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -15,12 +15,12 @@
 
     <!-- 无人机配置 -->
     <!-- 无人机模型名称 -->
-    <arg name="vehicle" default="sunray150"/>
+    <arg name="vehicle" default="sunray150_with_mid360"/>
     <!--无人机编号-->
     <arg name="uav_id" default="1"/>
     <!-- 无人机初始位置 -->
     <arg name="uav_init_x" default="0.0"/>
-    <arg name="uav_init_y" default="0.0"/>
+    <arg name="uav_init_y" default="1.0"/>
     <arg name="uav_init_yaw" default="0.0"/>
 
     <!-- UAV1 -->

@@ -26,7 +26,7 @@
     <arg name="map_generator_enable" default="true"/>
 	<group if="$(arg map_generator_enable)">
         <!-- map_generator_node: 生成随机地图，并发布全局、局部点云 -->
-        <node pkg="sunray_map_generator" name="map_generator_node" type="map_generator_node" launch-prefix="gnome-terminal --tab --">
+        <node pkg="sunray_map_generator" name="map_generator_node" type="map_generator_node">
             <param name="swarm_num" value="$(arg swarm_num)"/>
             <param name="map_name" 	value="$(arg map_name)" />  
         </node>
