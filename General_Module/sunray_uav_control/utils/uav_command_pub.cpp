@@ -529,65 +529,7 @@ int main(int argc, char **argv)
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = 103;
             uav_command_pub[0].publish(uav_cmd);
-        case 110:
-
-            cout << "For safety, please move the drone near to the trajectory start point firstly!!!" << endl;
-            cout << "Please choose the trajectory type: 0 for Circle, 1 for Eight Shape, 2 for Step, 3 for Line" << endl;
-            cin >> Trjectory_mode;
-            cout << "Input the trajectory_total_time:" << endl;
-            cin >> trajectory_total_time;
-            time_trajectory = 0.0;
-
-            while (time_trajectory < trajectory_total_time)
-            {
-
-                if (Trjectory_mode == 0)
-                {
-                    uav_cmd = traj_generator.Circle_trajectory_generation(time_trajectory);
-                }
-                else if (Trjectory_mode == 1)
-                {
-                    uav_cmd = traj_generator.Eight_trajectory_generation(time_trajectory);
-                }
-                else if (Trjectory_mode == 2)
-                {
-                    uav_cmd = traj_generator.Step_trajectory_generation(time_trajectory);
-                }
-                else if (Trjectory_mode == 3)
-                {
-                    uav_cmd = traj_generator.Line_trajectory_generation(time_trajectory);
-                }
-
-                uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::CTRL_Traj;
-                uav_command_pub[0].publish(uav_cmd);
-
-                time_trajectory = time_trajectory + 0.01;
-                cout << "Trajectory tracking: " << time_trajectory << " / " << trajectory_total_time << " [ s ]" << endl;
-
-                geometry_msgs::PoseStamped reference_pose;
-
-                reference_pose.header.stamp = ros::Time::now();
-                reference_pose.header.frame_id = "world";
-
-                reference_pose.pose.position.x = uav_cmd.desired_pos[0];
-                reference_pose.pose.position.y = uav_cmd.desired_pos[1];
-                reference_pose.pose.position.z = uav_cmd.desired_pos[2];
-
-                posehistory_vector_.insert(posehistory_vector_.begin(), reference_pose);
-                if (posehistory_vector_.size() > TRA_WINDOW)
-                {
-                    posehistory_vector_.pop_back();
-                }
-
-                nav_msgs::Path reference_trajectory;
-                reference_trajectory.header.stamp = ros::Time::now();
-                reference_trajectory.header.frame_id = "world";
-                reference_trajectory.poses = posehistory_vector_;
-                ref_trajectory_pub.publish(reference_trajectory);
-
-                ros::Duration(0.01).sleep();
-            }
+            break;
         }
 
         ros::Duration(0.5).sleep();
