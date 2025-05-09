@@ -22,6 +22,7 @@
 
 #define UAVType 0
 #define UGVType 1
+#define MAX_AGENT_NUM 30
 
 using namespace std;
 class communication_bridge
@@ -53,7 +54,7 @@ private:
     uint32_t last_time_stamp;
     int uav_num;
     int ugv_num;
-    int simulation_num;
+    int uav_simulation_num;
     int uav_id;
     int ugv_id;
     int ugv_simulation_num;
@@ -97,8 +98,8 @@ private:
     TCPServer tcpServer;
     CommunicationUDPSocket *udpSocket;
     Codec codec;
-    unionData uavStateData[30];
-    unionData ugvStateData[30]; 
+    unionData uavStateData[MAX_AGENT_NUM];
+    unionData ugvStateData[MAX_AGENT_NUM]; 
 
     std::mutex _mutexUDP;       // 互斥锁
     std::mutex _mutexTCPServer; // 互斥锁
