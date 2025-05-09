@@ -5,11 +5,10 @@
 
 void communication_bridge::init(ros::NodeHandle &nh)
 {
-
-    nh.param<int>("uav_num", uav_num, 0);               // 【参数】无人机真机数量
+    nh.param<int>("uav_num", uav_num, 0);               // 【参数】无人机真机数量（用于智能体之间的通信）
     nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
     nh.param<string>("uav_name", uav_name, "uav");      // 【参数】无人机名字前缀
-    nh.param<int>("simulation_num", simulation_num, 1); // 【参数】仿真无人机数量
+    nh.param<int>("uav_simulation_num", uav_simulation_num, 1); // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
 
     nh.param<int>("ugv_num", ugv_num, 0);                       // 【参数】无人车真车数量
     nh.param<int>("ugv_id", ugv_id, 1);                         // 【参数】无人车编号
@@ -20,25 +19,27 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
     nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
-    for (int i = uav_id; i < uav_id + simulation_num; i++)
+    // Sunray与地面站之间的通信（无人机）
+    for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
     {
         //  无人机名字 = 无人机名字前缀 + 无人机ID
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
-        // 【订阅】无人机状态 外部节点 -> 本节点
+        // 【订阅】无人机状态 uav_control_node -> 本节点 -> 地面站
         uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
-        // 【发布】无人机控制指令 本节点 -> 外部节点
+        // 【发布】无人机控制指令 地面站 -> 本节点 -> uav_control_node
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
-        // 【发布】无人机设置指令 本节点 -> 外部节点
+        // 【发布】无人机设置指令 地面站 -> 本节点 -> uav_control_node
         uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1));
-        // 【发布】无人机航点数据 本节点 -> 外部节点
+        // 【发布】无人机航点数据 地面站 -> 本节点 -> uav_control_node
         uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
     }
 
+    // 本无人机Sunray和其他无人机/车Sunray之间的通信
     if (uav_num > 0)
     {
         //  无人机名字 = 无人机名字前缀 + 无人机ID
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
-        // 【订阅】无人机状态 外部节点 -> 本节点
+        // 【订阅】无人机状态 uav_control_node -> 本节点 -> 其他无人机 TODOBUG
         uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
         // 【发布】无人机控制指令 本节点 -> 外部节点
         control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
@@ -54,10 +55,11 @@ void communication_bridge::init(ros::NodeHandle &nh)
             continue;
         //  无人机名字 = 无人机名字前缀 + 无人机ID
         std::string topic_prefix = "/" + uav_name + std::to_string(i);
-        // 【发布】无人机状态 本节点 -> 外部节点
+        // 【发布】无人机状态 本节点 -> 外部节点 TODOBUG
         uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray/uav_state", 1))));
     }
 
+    // Sunray与地面站之间的通信（无人车）
     for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
     {
         //  无人车名字 = 无人车名字前缀 + 无人车ID
@@ -92,9 +94,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
     // 【定时器】 定时检测启动的子进程是否存活
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
-    // 【定时器】 定时发布无人机状态信息（机间通信）
+    // 【定时器】 定时发布无人机状态信息（机间通信） - TODOBUG 不是无人机和无人机之间通信 ，是智能体之间通信
     InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterAircraftStatusInformation, this);
-    // 【定时器】 定时发送数据到地面站
+    // 【定时器】 定时发送数据到地面站 Sunray -> 地面站
     SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
     // 【定时器】 定时发布无人车状态信息（车间通信）
     InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterVehicleStatusInformation, this);
@@ -105,7 +107,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     tcpServer.setDecoderInterfacePtr(new Codec);
     // 【TCP服务器】 TCP服务器设置监听模式和最大连接数
     tcpServer.Listen(30);
-    // 【TCP服务器】 TCP服务器读取数据信号连接回调函数
+    // 【TCP服务器】 TCP服务器读取数据信号连接回调函数（地面站->Sunray）
     tcpServer.sigTCPServerReadData.connect(boost::bind(&communication_bridge::TCPServerCallBack, this, _1));
     // 【TCP服务器】 TCP服务器状态信号连接回调函数
     tcpServer.sigLinkState.connect(boost::bind(&communication_bridge::TCPLinkState, this, _1, _2));
@@ -187,7 +189,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
     {
         // std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         unionData backData;
-        for (int i = uav_id; i < uav_id + simulation_num; i++)
+        for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
             backData.ack.init();
             backData.ack.robotID = i;
@@ -631,18 +633,19 @@ bool communication_bridge::SynchronizationUAVState(StateData Data)
 
 void communication_bridge::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
 {
-    // 无人机机间组播链路发送
-    for (int i = uav_id; i < uav_id + simulation_num; i++)
+    // 无人机机间组播链路发送 TODO 为啥发这么多？发自己的不就行了
+    for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
     {
         std::lock_guard<std::mutex> lock(_mutexUDP);
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[i - 1]), udp_port);
     }
 }
 
+// 
 void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
 {
     std::vector<std::string> tempVec;
-    for (int i = uav_id; i < uav_id + simulation_num; i++)
+    for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
     {
         std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
         for (const auto &ip : GSIPHash)
@@ -653,7 +656,7 @@ void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
         }
     }
 
-    for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
+    for (int i = ugv_id; i <= ugv_id + uav_simulation_num; i++)
     {
         std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
         for (const auto &ip : GSIPHash)
@@ -672,7 +675,7 @@ void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
 void communication_bridge::sendInterVehicleStatusInformation(const ros::TimerEvent &e)
 {
     // 无人车车间组播链路发送
-    for (int i = ugv_id; i <= ugv_id + simulation_num; i++)
+    for (int i = ugv_id; i <= ugv_id + uav_simulation_num; i++)
     {
         std::lock_guard<std::mutex> lock(_mutexUDP);
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), udp_port);
@@ -698,7 +701,7 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
     if (HeartbeatState)
     {
         unionData Heartbeatdata;
-        for (int i = uav_id; i < simulation_num + uav_id; i++)
+        for (int i = uav_id; i < uav_simulation_num + uav_id; i++)
         {
             Heartbeatdata.heartbeat.robotID = i;
             Heartbeatdata.heartbeat.agentType = UAVType;
@@ -714,9 +717,9 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
     }
 }
 
+// UAVState回调函数 - 将读取到的数据按照id顺序存储在uavStateData数组中
 void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
 {
-
     int index = robot_id - 1;
     uavStateData[index].state.init();
     uavStateData[index].state.robotID = robot_id;
