@@ -30,4 +30,6 @@ float32[3] att_setpoint             ## 姿态控制设定值，单位：[rad]
 
 ## 无人机电池状态
 float32 battery_state               ## 电池电压，单位：[V]
-float32 battery_percentage           ## 电池百分比，[0-1]
+float32 battery_percentage          ## 电池百分比，[0-1]
+
+
