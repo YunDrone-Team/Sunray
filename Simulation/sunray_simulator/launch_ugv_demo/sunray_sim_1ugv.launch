@@ -11,7 +11,7 @@
             <!-- /use_sim_time true  # 使用仿真时间 -->
             <!-- /use_sim_time false # 使用系统时间（默认） -->
             <!-- 如果需要在rviz中正常显示，需要设置为true -->
-			<arg name="use_sim_time" value="true"/>
+			<arg name="use_sim_time" value="false"/>
         </include>
     </group>
 
