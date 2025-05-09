@@ -7,6 +7,6 @@ gnome-terminal --window -e 'bash -c "roslaunch sunray_uav_control sunray_mavros_
 --tab -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control terminal_control.launch uav_id:=1; exec bash"' \
 
 gnome-terminal --window -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial landmark_detection.launch; exec bash"' \
---tab -e 'bash -c "sleep 5.0; rqt_image_view; exec bash"' \
+--tab -e 'bash -c "sleep 5.0; rosrun rqt_image_view rqt_image_view; exec bash"' \
 --tab -e 'bash -c "sleep 8.0; roslaunch sunray_tutorial auto_land_by_pose.launch; exec bash"' \
 # --tab -e 'bash -c "sleep 8.0; roslaunch sunray_tutorial auto_land.launch; exec bash"' \
