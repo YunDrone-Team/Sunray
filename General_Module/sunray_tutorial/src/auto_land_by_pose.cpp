@@ -19,6 +19,9 @@ float target_yaw;
 // 停止标志
 bool stop_flag{false};
 
+// 自动起飞标志
+// bool auto_takeoff = false;
+
 // 全局变量存储无人机和车的坐标和朝向
 double uav_x, uav_y, uav_z, uav_yaw, uav_vx, uav_vy, uav_vz;
 double x_rel, y_rel, z_rel, yaw_rel;
@@ -96,20 +99,20 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
-
+    bool auto_takeoff = false;
     int uav_id;
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);
     nh.param<bool>("flag_printf", flag_printf, true);
-
+    nh.param<bool>("auto_takeoff", auto_takeoff, false);
     // error_xy   error_z
     double error_xy, error_z;
     // land_v
     double land_v;
     // land_time
     double land_time;
-
+    double hight;
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
@@ -124,6 +127,7 @@ int main(int argc, char **argv)
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4); // 已弃用 预留参数 当数据输出波动较为剧烈时可以降低偏航抽搐 需要将程序中相应的计算注释打开
+    nh.param<double>("hight", hight, 8.0);
 
     // 降落相关参数
     // 当无人机当前位置与标签位置(x,y)误差小于error_xy且z小于error_z时 无人机直接降落 不再进行姿态调整了
@@ -179,6 +183,39 @@ int main(int argc, char **argv)
     cout << GREEN << "sim_mode                  : " << sim_mode << " " << TAIL << endl;
     cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
     cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
+
+    if(auto_takeoff)
+    {
+        ros::Duration(10).sleep();
+
+        ros::Duration(0.5).sleep();
+        // 解锁
+        cout << "arm" << endl;
+        setup.cmd = 1;
+        uav_setup_pub.publish(setup);
+        ros::Duration(1.5).sleep();
+
+        // 切换到指令控制模式
+        cout << "switch CMD_CONTROL" << endl;
+        setup.cmd = 4;
+        setup.control_mode = "CMD_CONTROL";
+        uav_setup_pub.publish(setup);
+        ros::Duration(1.0).sleep();
+
+        // 起飞
+        cout << "takeoff" << endl;
+        uav_cmd.cmd = 100;
+        control_cmd_pub.publish(uav_cmd);
+        ros::Duration(5).sleep();
+
+        cout << "rising" << endl;
+        uav_cmd.cmd = 1;
+        uav_cmd.desired_pos[0] = 0.0;
+        uav_cmd.desired_pos[1] = 0.0;
+        uav_cmd.desired_pos[2] = hight;
+        control_cmd_pub.publish(uav_cmd);
+        ros::Duration(2).sleep();
+    }
 
     ros::Duration(0.5).sleep();
     ros::spinOnce();

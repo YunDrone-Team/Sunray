@@ -9,7 +9,6 @@
  * copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #include <gsl/gsl_odeiv.h>
 
 #include "rk_performance_test_case.hpp"
@@ -21,10 +20,9 @@ const size_t dim = 3;
 class gsl_wrapper
 {
 public:
-
     gsl_wrapper()
     {
-        m_s = gsl_odeiv_step_alloc( gsl_odeiv_step_rk4 , dim);
+        m_s = gsl_odeiv_step_alloc(gsl_odeiv_step_rk4, dim);
         m_sys.function = lorenz_gsl;
         m_sys.jacobian = 0;
         m_sys.dimension = dim;
@@ -39,18 +37,20 @@ public:
         m_t = 0.0;
     }
 
-    inline void do_step( const double dt )
+    inline void do_step(const double dt)
     {
-        gsl_odeiv_step_apply ( m_s , m_t , dt , m_x , m_x_err , 0 , 0 , &m_sys );
-        //m_t += dt;
+        gsl_odeiv_step_apply(m_s, m_t, dt, m_x, m_x_err, 0, 0, &m_sys);
+        // m_t += dt;
     }
 
-    double state( const size_t i ) const
-    { return m_x[i]; }
+    double state(const size_t i) const
+    {
+        return m_x[i];
+    }
 
     ~gsl_wrapper()
     {
-        gsl_odeiv_step_free( m_s );
+        gsl_odeiv_step_free(m_s);
     }
 
 private:
@@ -61,11 +61,9 @@ private:
     gsl_odeiv_system m_sys;
 };
 
-
-
 int main()
 {
     gsl_wrapper stepper;
 
-    run( stepper , 20000000 / 3 , 1E-10 * 3);
+    run(stepper, 20000000 / 3, 1E-10 * 3);
 }

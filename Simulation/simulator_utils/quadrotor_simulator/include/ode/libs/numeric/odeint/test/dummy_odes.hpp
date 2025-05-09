@@ -14,7 +14,6 @@
   copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
-
 #ifndef LIBS_NUMERIC_ODEINT_TEST_DUMMY_ODES_HPP_DEFINED
 #define LIBS_NUMERIC_ODEINT_TEST_DUMMY_ODES_HPP_DEFINED
 
@@ -22,18 +21,13 @@
 
 #include <boost/fusion/include/at_c.hpp>
 
-
-
-
-
-
 /*
  * rhs functors/functions for different state types
  */
 struct constant_system_functor_standard
 {
-    template< class State , class Deriv , class Time >
-    void operator()( const State &x , Deriv &dxdt , const Time t ) const
+    template <class State, class Deriv, class Time>
+    void operator()(const State &x, Deriv &dxdt, const Time t) const
     {
         dxdt[0] = 1.0;
     }
@@ -41,8 +35,8 @@ struct constant_system_functor_standard
 
 struct constant_system_functor_vector_space
 {
-    template< class State , class Deriv , class Time >
-    void operator()( const State &x , Deriv &dxdt , const Time t  ) const
+    template <class State, class Deriv, class Time>
+    void operator()(const State &x, Deriv &dxdt, const Time t) const
     {
         dxdt.m_x = 1.0;
     }
@@ -50,41 +44,38 @@ struct constant_system_functor_vector_space
 
 struct constant_system_functor_fusion
 {
-    template< class State , class Deriv , class Time >
-    void operator()( const State &x , Deriv &dxdt , const Time t ) const
+    template <class State, class Deriv, class Time>
+    void operator()(const State &x, Deriv &dxdt, const Time t) const
     {
-        boost::fusion::at_c< 0 >( dxdt ) = boost::fusion::at_c< 0 >( x ) / Time( 1.0 );
+        boost::fusion::at_c<0>(dxdt) = boost::fusion::at_c<0>(x) / Time(1.0);
     }
 };
 
-template< class State , class Deriv , class Time >
-void constant_system_standard( const State &x , Deriv &dxdt , const Time t )
+template <class State, class Deriv, class Time>
+void constant_system_standard(const State &x, Deriv &dxdt, const Time t)
 {
     dxdt[0] = 1.0;
 }
 
-template< class State , class Deriv , class Time >
-void constant_system_vector_space( const State &x , Deriv &dxdt , const Time t ) 
+template <class State, class Deriv, class Time>
+void constant_system_vector_space(const State &x, Deriv &dxdt, const Time t)
 {
     dxdt.m_x = 1.0;
 }
 
-template< class State , class Deriv , class Time >
-void constant_system_fusion( const State &x , Deriv &dxdt , const Time t ) 
+template <class State, class Deriv, class Time>
+void constant_system_fusion(const State &x, Deriv &dxdt, const Time t)
 {
-    boost::fusion::at_c< 0 >( dxdt ) = boost::fusion::at_c< 0 >( x ) / Time( 1.0 );
+    boost::fusion::at_c<0>(dxdt) = boost::fusion::at_c<0>(x) / Time(1.0);
 }
-
-
-
 
 /*
  * rhs functors for symplectic steppers
  */
 struct constant_mom_func
 {
-    template< class StateIn , class StateOut >
-    void operator()( const StateIn &q , StateOut &dp ) const
+    template <class StateIn, class StateOut>
+    void operator()(const StateIn &q, StateOut &dp) const
     {
         dp[0] = 1.0;
     }
@@ -92,19 +83,17 @@ struct constant_mom_func
 
 struct default_coor_func
 {
-    template< class StateIn , class StateOut >
-    void operator()( const StateIn &p , StateOut &dq ) const
+    template <class StateIn, class StateOut>
+    void operator()(const StateIn &p, StateOut &dq) const
     {
         dq[0] = p[0];
     }
 };
 
-
-
 struct constant_mom_func_vector_space_1d
 {
-    template< class T >
-    void operator()( const vector_space_1d< T > &q , vector_space_1d< T > &dp ) const
+    template <class T>
+    void operator()(const vector_space_1d<T> &q, vector_space_1d<T> &dp) const
     {
         dp.m_x = 1.0;
     }
@@ -112,15 +101,11 @@ struct constant_mom_func_vector_space_1d
 
 struct default_coor_func_vector_space_1d
 {
-    template< class T >
-    void operator()( const vector_space_1d< T > &p , vector_space_1d< T > &dq ) const
+    template <class T>
+    void operator()(const vector_space_1d<T> &p, vector_space_1d<T> &dq) const
     {
         dq.m_x = p.m_x;
     }
 };
-
-
-
-
 
 #endif // LIBS_NUMERIC_ODEINT_TEST_DUMMY_ODES_HPP_DEFINED

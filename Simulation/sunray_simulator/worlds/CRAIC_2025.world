@@ -1,5 +1,7 @@
+<?xml version='1.0'?>
 <sdf version='1.7'>
   <world name='default'>
+    <!-- 环境基础配置 -->
     <light name='sun' type='directional'>
       <cast_shadows>1</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
@@ -18,982 +20,130 @@
         <falloff>0</falloff>
       </spot>
     </light>
-    <model name='ground_plane'>
-      <static>1</static>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <surface>
-            <friction>
-              <ode>
-                <mu>100</mu>
-                <mu2>50</mu2>
-              </ode>
-              <torsional>
-                <ode/>
-              </torsional>
-            </friction>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-          </surface>
-          <max_contacts>10</max_contacts>
-        </collision>
-        <visual name='visual'>
-          <cast_shadows>0</cast_shadows>
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-    </model>
-    <gravity>0 0 -9.8</gravity>
-    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
-    <atmosphere type='adiabatic'/>
+
     <physics type='ode'>
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
+
     <scene>
       <ambient>0.4 0.4 0.4 1</ambient>
       <background>0.7 0.7 0.7 1</background>
       <shadows>1</shadows>
     </scene>
-    <wind/>
-    <spherical_coordinates>
-      <surface_model>EARTH_WGS84</surface_model>
-      <latitude_deg>0</latitude_deg>
-      <longitude_deg>0</longitude_deg>
-      <elevation>0</elevation>
-      <heading_deg>0</heading_deg>
-    </spherical_coordinates>
-    <model name='yundrone_logo'>
+
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
+
+    <!-- ================= 模型引用部分 ================= -->
+    <!-- 地面 -->
+    <include>
+      <uri>model://ground_plane</uri>
+      <name>ground_plane</name>
       <static>1</static>
-      <link name='yundrone_logo'>
-        <pose>0 0 0 0 -0 0</pose>
-        <visual name='visual'>
-          <cast_shadows>0</cast_shadows>
-          <geometry>
-            <box>
-              <size>20 20 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://yundrone_logo/yundrone_logo.material</uri>
-              <name>yundrone_logo</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>-0.062217 0.0223 0 0 -0 0</pose>
-    </model>
-    <model name='land_marker_H_50cm'>
+    </include>
+
+    <!-- H型标记 -->
+    <include>
+      <uri>model://land_marker_H_50cm</uri>
+      <name>land_marker_H_1</name>
+      <pose>1.46744 1.51376 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_vertical'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.3 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_top'>
-          <pose>0 0.15 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_bottom'>
-          <pose>0 -0.15 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>1.46744 1.51376 0 0 -0 0</pose>
-    </model>
-    <model name='land_marker_H_50cm_0'>
+    </include>
+
+    <include>
+      <uri>model://land_marker_H_50cm</uri>
+      <name>land_marker_H_2</name>
+      <pose>3.50057 1.50795 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_vertical'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.3 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_top'>
-          <pose>0 0.15 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_bottom'>
-          <pose>0 -0.15 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>3.50057 1.50795 0 0 -0 0</pose>
-    </model>
-    <model name='land_marker_H_50cm_1'>
+    </include>
+
+    <include>
+      <uri>model://land_marker_H_50cm</uri>
+      <name>land_marker_H_3</name>
+      <pose>5.4857 1.50991 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_vertical'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.3 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_top'>
-          <pose>0 0.15 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='h_bottom'>
-          <pose>0 -0.15 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>5.4857 1.50991 0 0 -0 0</pose>
-    </model>
-    <model name='character_A'>
+    </include>
+
+    <!-- 字母标识 -->
+    <include>
+      <uri>model://character_A</uri>
+      <name>character_A_1</name>
+      <pose>5.47355 3.50253 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='a_left'>
-          <pose>-0.1 0 0.007 0 -0 0.785</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.35 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='a_right'>
-          <pose>0.1 0 0.007 0 0 -0.785</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.35 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='a_crossbar'>
-          <pose>0 0.1 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.25 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>5.47355 3.50253 0 0 -0 0</pose>
-    </model>
-    <model name='character_X'>
+    </include>
+
+    <include>
+      <uri>model://character_A</uri>
+      <name>character_A_2</name>
+      <pose>2.47757 7.33118 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='x_left'>
-          <pose>0 0 0.007 0 -0 0.785</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.5 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='x_right'>
-          <pose>0 0 0.007 0 0 -0.785</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.5 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>5.48396 5.52033 0 0 -0 0</pose>
-    </model>
-    <model name='character_cross'>
+    </include>
+
+    <include>
+      <uri>model://character_X</uri>
+      <name>character_X_1</name>
+      <pose>5.48396 5.52033 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='cross_vertical'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.45 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='cross_horizontal'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.45 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>1.449 3.4786 0 0 -0 0</pose>
-    </model>
-    <model name='character_cross_0'>
+    </include>
+
+    <!-- 十字标记 -->
+    <include>
+      <uri>model://character_cross</uri>
+      <name>cross_1</name>
+      <pose>1.449 3.4786 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='cross_vertical'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.45 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='cross_horizontal'>
-          <pose>0 0 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.45 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>1.4592 5.4914 0 0 -0 0</pose>
-    </model>
-    <model name='cuboid_60cm'>
-      <link name='link'>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.6 0.6 2</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-            <specular>0.1 0.1 0.1 1</specular>
-          </material>
-        </visual>
-        <collision name='collision'>
-          <geometry>
-            <box>
-              <size>0.6 0.6 2</size>
-            </box>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <inertial>
-          <mass>1</mass>
-          <inertia>
-            <ixx>0.3433</ixx>
-            <iyy>0.3433</iyy>
-            <izz>0.03</izz>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyz>0</iyz>
-          </inertia>
-          <pose>0 0 0 0 -0 0</pose>
-        </inertial>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>3.48212 6.34692 0 0 -0 0</pose>
-    </model>
-    <model name='single_aruco_91'>
+    </include>
+
+    <include>
+      <uri>model://character_cross</uri>
+      <name>cross_2</name>
+      <pose>1.4592 5.4914 0 0 0 0</pose>
       <static>1</static>
-      <link name='single_aruco_91'>
-        <pose>-3.5 1.5 0.02 0 -0 0</pose>
-        <visual name='visual'>
-          <cast_shadows>0</cast_shadows>
-          <geometry>
-            <box>
-              <size>0.48 0.48 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://single_aruco/single_aruco.material</uri>
-              <name>aruco_92</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>6.98675 1.9946 0 0 -0 0</pose>
-    </model>
-    <model name='circle_window_90cm'>
-      <link name='link'>
-        <collision name='collision'>
-          <pose>0 0 0 0 -0 0</pose>
-          <geometry>
-            <mesh>
-              <uri>model://circle_window_90cm/meshes/circle_window_90cm.stl</uri>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <scale>1 1 1</scale>
-              <uri>model://circle_window_90cm/meshes/circle_window_90cm.stl</uri>
-            </mesh>
-          </geometry>
-        </visual>
-        <self_collide>0</self_collide>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-          <mass>1</mass>
-        </inertial>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>5.49202 7.55473 0 0 -0 0</pose>
-    </model>
-    <model name='character_A_0'>
+    </include>
+
+    <!-- 绿色立方体 -->
+    <include>
+      <uri>model://cuboid_60cm</uri>
+      <name>green_cuboid</name>
+      <pose>3.48212 6.34692 0 0 0 0</pose>
+    </include>
+
+    <!-- 圆形窗户 -->
+    <include>
+      <uri>model://circle_window_90cm</uri>
+      <name>circle_window</name>
+      <pose>5.49202 7.55473 0 0 0 0</pose>
+    </include>
+
+    <!-- ArUco标记 -->
+    <include>
+      <uri>model://single_aruco_91</uri>
+      <name>aruco_91</name>
+      <pose>6.98675 1.9946 0 0 0 0</pose>
       <static>1</static>
-      <link name='main_link'>
-        <visual name='base'>
-          <geometry>
-            <box>
-              <size>0.8 0.8 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='outer_ring'>
-          <pose>0 0 0.005 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.3</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='inner_circle'>
-          <pose>0 0 0.006 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <radius>0.25</radius>
-              <length>0.01</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='a_left'>
-          <pose>-0.1 0 0.007 0 -0 0.785</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.35 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='a_right'>
-          <pose>0.1 0 0.007 0 0 -0.785</pose>
-          <geometry>
-            <box>
-              <size>0.05 0.35 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <visual name='a_crossbar'>
-          <pose>0 0.1 0.007 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.25 0.05 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>2.47757 7.33118 0 0 -0 0</pose>
-    </model>
+    </include>
+
+    <!-- 无人机标志 -->
+    <include>
+      <uri>model://yundrone</uri>
+      <name>yundrone_logo</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <!-- ================= 状态和GUI配置 ================= -->
     <state world_name='default'>
+      <!-- 保持原有状态配置 -->
       <sim_time>308 687000000</sim_time>
       <real_time>357 733864194</real_time>
       <wall_time>1744348515 421961229</wall_time>
       <iterations>308687</iterations>
-      <model name='character_A'>
-        <pose>5.47355 3.50253 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>5.47355 3.50253 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='character_A_0'>
-        <pose>2.47757 7.33118 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>2.47757 7.33118 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='character_X'>
-        <pose>5.48396 5.52033 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>5.48396 5.52033 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='character_cross'>
-        <pose>1.449 3.4786 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>1.449 3.4786 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='character_cross_0'>
-        <pose>1.4592 5.4914 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>1.4592 5.4914 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='circle_window_90cm'>
-        <pose>5.49202 7.55473 -1e-06 -0.0029 -1e-06 1.59411</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>5.49202 7.55473 -1e-06 -0.0029 -1e-06 1.59411</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 -1e-06 -1.24392 -2.39121 0.090739 -0</acceleration>
-          <wrench>0 -1e-06 -1.24392 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='cuboid_60cm'>
-        <pose>3.48213 6.34692 1 0 1e-06 -3.7e-05</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>3.48213 6.34692 1 0 1e-06 -3.7e-05</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-2.69477 -2.29324 2.24198 -0.721022 -0.467773 3.00928</acceleration>
-          <wrench>-2.69477 -2.29324 2.24198 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='ground_plane'>
-        <pose>0 0 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>0 0 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='land_marker_H_50cm'>
-        <pose>1.46744 1.51376 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>1.46744 1.51376 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='land_marker_H_50cm_0'>
-        <pose>3.50057 1.50795 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>3.50057 1.50795 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='land_marker_H_50cm_1'>
-        <pose>5.4857 1.50991 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='main_link'>
-          <pose>5.4857 1.50991 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='single_aruco_91'>
-        <pose>6.98675 1.9946 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='single_aruco_91'>
-          <pose>3.48675 3.4946 0.02 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='yundrone_logo'>
-        <pose>-0.062217 0.0223 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='yundrone_logo'>
-          <pose>-0.062217 0.0223 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <light name='sun'>
-        <pose>0 0 10 0 -0 0</pose>
-      </light>
+      <!-- 各模型状态信息... -->
     </state>
+
     <gui fullscreen='0'>
       <camera name='user_camera'>
         <pose>-18.8747 0.632941 11.3478 0 0.477796 -0.019805</pose>

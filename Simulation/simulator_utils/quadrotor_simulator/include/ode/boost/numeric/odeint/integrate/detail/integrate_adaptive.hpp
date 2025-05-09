@@ -14,7 +14,6 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_INTEGRATE_DETAIL_INTEGRATE_ADAPTIVE_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_INTEGRATE_DETAIL_INTEGRATE_ADAPTIVE_HPP_INCLUDED
 
@@ -29,126 +28,121 @@
 
 #include <boost/numeric/odeint/util/detail/less_with_sign.hpp>
 
-
 #include <iostream>
 
-namespace boost {
-namespace numeric {
-namespace odeint {
-namespace detail {
-
-// forward declaration
-template< class Stepper , class System , class State , class Time , class Observer>
-size_t integrate_const(
-        Stepper stepper , System system , State &start_state ,
-        Time start_time , Time end_time , Time dt ,
-        Observer observer , stepper_tag );
-
-/*
- * integrate_adaptive for simple stepper is basically an integrate_const + some last step
- */
-template< class Stepper , class System , class State , class Time , class Observer >
-size_t integrate_adaptive(
-        Stepper stepper , System system , State &start_state ,
-        Time start_time , Time end_time , Time dt ,
-        Observer observer , stepper_tag
-)
+namespace boost
 {
-    size_t steps = detail::integrate_const( stepper , system , start_state , start_time ,
-                                            end_time , dt , observer , stepper_tag() );
-    Time end = start_time + dt*steps;
-    if( less_with_sign( end , end_time , dt ) )
-    {   //make a last step to end exactly at end_time
-        stepper.do_step( system , start_state , end , end_time - end );
-        steps++;
-        typename odeint::unwrap_reference< Observer >::type &obs = observer;
-        obs( start_state , end_time );
-    }
-    return steps;
-}
-
-
-/*
- * classical integrate adaptive
- */
-template< class Stepper , class System , class State , class Time , class Observer >
-size_t integrate_adaptive(
-        Stepper stepper , System system , State &start_state ,
-        Time &start_time , Time end_time , Time &dt ,
-        Observer observer , controlled_stepper_tag
-)
-{
-    typename odeint::unwrap_reference< Observer >::type &obs = observer;
-
-    const size_t max_attempts = 1000;
-    const char *error_string = "Integrate adaptive : Maximal number of iterations reached. A step size could not be found.";
-    size_t count = 0;
-    while( less_with_sign( start_time , end_time , dt ) )
+    namespace numeric
     {
-        obs( start_state , start_time );
-        if( less_with_sign( end_time , start_time + dt , dt ) )
+        namespace odeint
         {
-            dt = end_time - start_time;
-        }
+            namespace detail
+            {
 
-        size_t trials = 0;
-        controlled_step_result res = success;
-        do
-        {
-            res = stepper.try_step( system , start_state , start_time , dt );
-            ++trials;
-        }
-        while( ( res == fail ) && ( trials < max_attempts ) );
-        if( trials == max_attempts ) throw std::overflow_error( error_string );
+                // forward declaration
+                template <class Stepper, class System, class State, class Time, class Observer>
+                size_t integrate_const(
+                    Stepper stepper, System system, State &start_state,
+                    Time start_time, Time end_time, Time dt,
+                    Observer observer, stepper_tag);
 
-        ++count;
-    }
-    obs( start_state , start_time );
-    return count;
-}
+                /*
+                 * integrate_adaptive for simple stepper is basically an integrate_const + some last step
+                 */
+                template <class Stepper, class System, class State, class Time, class Observer>
+                size_t integrate_adaptive(
+                    Stepper stepper, System system, State &start_state,
+                    Time start_time, Time end_time, Time dt,
+                    Observer observer, stepper_tag)
+                {
+                    size_t steps = detail::integrate_const(stepper, system, start_state, start_time,
+                                                           end_time, dt, observer, stepper_tag());
+                    Time end = start_time + dt * steps;
+                    if (less_with_sign(end, end_time, dt))
+                    { // make a last step to end exactly at end_time
+                        stepper.do_step(system, start_state, end, end_time - end);
+                        steps++;
+                        typename odeint::unwrap_reference<Observer>::type &obs = observer;
+                        obs(start_state, end_time);
+                    }
+                    return steps;
+                }
 
+                /*
+                 * classical integrate adaptive
+                 */
+                template <class Stepper, class System, class State, class Time, class Observer>
+                size_t integrate_adaptive(
+                    Stepper stepper, System system, State &start_state,
+                    Time &start_time, Time end_time, Time &dt,
+                    Observer observer, controlled_stepper_tag)
+                {
+                    typename odeint::unwrap_reference<Observer>::type &obs = observer;
 
-/*
- * integrate adaptive for dense output steppers
- *
- * step size control is used if the stepper supports it
- */
-template< class Stepper , class System , class State , class Time , class Observer >
-size_t integrate_adaptive(
-        Stepper stepper , System system , State &start_state ,
-        Time start_time , Time end_time , Time dt ,
-        Observer observer , dense_output_stepper_tag )
-{
-    typename odeint::unwrap_reference< Observer >::type &obs = observer;
+                    const size_t max_attempts = 1000;
+                    const char *error_string = "Integrate adaptive : Maximal number of iterations reached. A step size could not be found.";
+                    size_t count = 0;
+                    while (less_with_sign(start_time, end_time, dt))
+                    {
+                        obs(start_state, start_time);
+                        if (less_with_sign(end_time, start_time + dt, dt))
+                        {
+                            dt = end_time - start_time;
+                        }
 
-    size_t count = 0;
-    stepper.initialize( start_state , start_time , dt );
+                        size_t trials = 0;
+                        controlled_step_result res = success;
+                        do
+                        {
+                            res = stepper.try_step(system, start_state, start_time, dt);
+                            ++trials;
+                        } while ((res == fail) && (trials < max_attempts));
+                        if (trials == max_attempts)
+                            throw std::overflow_error(error_string);
 
-    while( less_with_sign( stepper.current_time() , end_time , stepper.current_time_step() ) )
-    {
-        while( less_eq_with_sign( stepper.current_time() + stepper.current_time_step() ,
-               end_time ,
-               stepper.current_time_step() ) )
-        {   //make sure we don't go beyond the end_time
-            obs( stepper.current_state() , stepper.current_time() );
-            stepper.do_step( system );
-            ++count;
-        }
-        stepper.initialize( stepper.current_state() , stepper.current_time() , end_time - stepper.current_time() );
-    }
-    obs( stepper.current_state() , stepper.current_time() );
-    // overwrite start_state with the final point
-    boost::numeric::odeint::copy( stepper.current_state() , start_state );
-    return count;
-}
+                        ++count;
+                    }
+                    obs(start_state, start_time);
+                    return count;
+                }
 
+                /*
+                 * integrate adaptive for dense output steppers
+                 *
+                 * step size control is used if the stepper supports it
+                 */
+                template <class Stepper, class System, class State, class Time, class Observer>
+                size_t integrate_adaptive(
+                    Stepper stepper, System system, State &start_state,
+                    Time start_time, Time end_time, Time dt,
+                    Observer observer, dense_output_stepper_tag)
+                {
+                    typename odeint::unwrap_reference<Observer>::type &obs = observer;
 
+                    size_t count = 0;
+                    stepper.initialize(start_state, start_time, dt);
 
+                    while (less_with_sign(stepper.current_time(), end_time, stepper.current_time_step()))
+                    {
+                        while (less_eq_with_sign(stepper.current_time() + stepper.current_time_step(),
+                                                 end_time,
+                                                 stepper.current_time_step()))
+                        { // make sure we don't go beyond the end_time
+                            obs(stepper.current_state(), stepper.current_time());
+                            stepper.do_step(system);
+                            ++count;
+                        }
+                        stepper.initialize(stepper.current_state(), stepper.current_time(), end_time - stepper.current_time());
+                    }
+                    obs(stepper.current_state(), stepper.current_time());
+                    // overwrite start_state with the final point
+                    boost::numeric::odeint::copy(stepper.current_state(), start_state);
+                    return count;
+                }
 
-} // namespace detail
-} // namespace odeint
-} // namespace numeric
+            } // namespace detail
+        } // namespace odeint
+    } // namespace numeric
 } // namespace boost
-
 
 #endif // BOOST_NUMERIC_ODEINT_INTEGRATE_DETAIL_INTEGRATE_ADAPTIVE_HPP_INCLUDED

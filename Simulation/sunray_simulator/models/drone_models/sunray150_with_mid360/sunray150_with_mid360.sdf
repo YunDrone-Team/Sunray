@@ -372,7 +372,7 @@
 
     <include>
       <uri>model://livox_mid360</uri>
-      <pose>0.036 0 0.285 0 0 0</pose>
+      <pose>0.036 -0.0155 0.275 0 0 0</pose>
     </include>
 
     <!-- 下视相机关节 -->

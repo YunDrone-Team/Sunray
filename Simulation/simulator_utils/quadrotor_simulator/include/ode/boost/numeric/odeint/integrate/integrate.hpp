@@ -14,7 +14,6 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_INTEGRATE_INTEGRATE_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_INTEGRATE_INTEGRATE_HPP_INCLUDED
 
@@ -23,83 +22,77 @@
 #include <boost/numeric/odeint/integrate/null_observer.hpp>
 #include <boost/numeric/odeint/integrate/integrate_adaptive.hpp>
 
-
-
-namespace boost {
-namespace numeric {
-namespace odeint {
-
-
-/*
- * ToDo :
- *
- * determine type of dxdt for units
- *
- */
-template< class System , class State , class Time , class Observer >
-size_t integrate( System system , State &start_state , Time start_time , Time end_time , Time dt , Observer observer )
+namespace boost
 {
-    return integrate_adaptive( controlled_runge_kutta< runge_kutta_dopri5< State > >() , system , start_state , start_time , end_time , dt , observer );
-}
+    namespace numeric
+    {
+        namespace odeint
+        {
 
+            /*
+             * ToDo :
+             *
+             * determine type of dxdt for units
+             *
+             */
+            template <class System, class State, class Time, class Observer>
+            size_t integrate(System system, State &start_state, Time start_time, Time end_time, Time dt, Observer observer)
+            {
+                return integrate_adaptive(controlled_runge_kutta<runge_kutta_dopri5<State>>(), system, start_state, start_time, end_time, dt, observer);
+            }
 
+            /*
+             * the two overloads are needed in order to solve the forwarding problem
+             */
+            template <class System, class State, class Time>
+            size_t integrate(System system, State &start_state, Time start_time, Time end_time, Time dt)
+            {
+                return integrate(system, start_state, start_time, end_time, dt, null_observer());
+            }
 
-/*
- * the two overloads are needed in order to solve the forwarding problem
- */
-template< class System , class State , class Time >
-size_t integrate( System system , State &start_state , Time start_time , Time end_time , Time dt )
-{
-    return integrate( system , start_state , start_time , end_time , dt , null_observer() );
-}
+            /**
+             * \fn integrate( System system , State &start_state , Time start_time , Time end_time , Time dt , Observer observer )
+             * \brief Integrates the ODE.
+             *
+             * Integrates the ODE given by system from start_time to end_time starting
+             * with start_state as initial condition and dt as initial time step.
+             * This function uses a dense output dopri5 stepper and performs an adaptive
+             * integration with step size control, thus dt changes during the integration.
+             * This method uses standard error bounds of 1E-6.
+             * After each step, the observer is called.
+             *
+             * \param system The system function to solve, hence the r.h.s. of the
+             * ordinary differential equation.
+             * \param start_state The initial state.
+             * \param start_time Start time of the integration.
+             * \param end_time End time of the integration.
+             * \param dt Initial step size, will be adjusted during the integration.
+             * \param observer Observer that will be called after each time step.
+             * \return The number of steps performed.
+             */
 
+            /**
+             * \fn integrate( System system , State &start_state , Time start_time , Time end_time , Time dt )
+             * \brief Integrates the ODE without observer calls.
+             *
+             * Integrates the ODE given by system from start_time to end_time starting
+             * with start_state as initial condition and dt as initial time step.
+             * This function uses a dense output dopri5 stepper and performs an adaptive
+             * integration with step size control, thus dt changes during the integration.
+             * This method uses standard error bounds of 1E-6.
+             * No observer is called.
+             *
+             * \param system The system function to solve, hence the r.h.s. of the
+             * ordinary differential equation.
+             * \param start_state The initial state.
+             * \param start_time Start time of the integration.
+             * \param end_time End time of the integration.
+             * \param dt Initial step size, will be adjusted during the integration.
+             * \return The number of steps performed.
+             */
 
-/**
- * \fn integrate( System system , State &start_state , Time start_time , Time end_time , Time dt , Observer observer )
- * \brief Integrates the ODE.
- *
- * Integrates the ODE given by system from start_time to end_time starting 
- * with start_state as initial condition and dt as initial time step.
- * This function uses a dense output dopri5 stepper and performs an adaptive
- * integration with step size control, thus dt changes during the integration.
- * This method uses standard error bounds of 1E-6.
- * After each step, the observer is called.
- *
- * \param system The system function to solve, hence the r.h.s. of the 
- * ordinary differential equation.
- * \param start_state The initial state.
- * \param start_time Start time of the integration.
- * \param end_time End time of the integration.
- * \param dt Initial step size, will be adjusted during the integration.
- * \param observer Observer that will be called after each time step.
- * \return The number of steps performed.
- */
-
-
-/**
- * \fn integrate( System system , State &start_state , Time start_time , Time end_time , Time dt )
- * \brief Integrates the ODE without observer calls.
- *
- * Integrates the ODE given by system from start_time to end_time starting 
- * with start_state as initial condition and dt as initial time step.
- * This function uses a dense output dopri5 stepper and performs an adaptive
- * integration with step size control, thus dt changes during the integration.
- * This method uses standard error bounds of 1E-6.
- * No observer is called.
- *
- * \param system The system function to solve, hence the r.h.s. of the 
- * ordinary differential equation.
- * \param start_state The initial state.
- * \param start_time Start time of the integration.
- * \param end_time End time of the integration.
- * \param dt Initial step size, will be adjusted during the integration.
- * \return The number of steps performed.
- */
-
-} // namespace odeint
-} // namespace numeric
+        } // namespace odeint
+    } // namespace numeric
 } // namespace boost
-
-
 
 #endif // BOOST_NUMERIC_ODEINT_INTEGRATE_INTEGRATE_HPP_INCLUDED

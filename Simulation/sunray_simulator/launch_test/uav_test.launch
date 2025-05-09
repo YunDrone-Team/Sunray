@@ -17,7 +17,7 @@
         <arg name="debug" value="$(arg debug)"/>
         <arg name="verbose" value="$(arg verbose)"/>
         <arg name="paused" value="$(arg paused)"/>
-        <arg name="use_sim_time" value="true"/>
+        <arg name="use_sim_time" value="false"/>
     </include>
 
 

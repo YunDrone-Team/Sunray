@@ -15,16 +15,14 @@
 
 #include <boost/numeric/odeint.hpp>
 
-typedef boost::array< double , 1 > state_type;
+typedef boost::array<double, 1> state_type;
 
 using namespace boost::numeric::odeint;
-
 
 //[ generation_functions_own_steppers
 class custom_stepper
 {
 public:
-
     typedef double value_type;
     // ...
 };
@@ -40,38 +38,51 @@ class custom_dense_output
 };
 //]
 
-
 //[ generation_functions_get_controller
-namespace boost { namespace numeric { namespace odeint {
-
-template<>
-struct get_controller< custom_stepper >
+namespace boost
 {
-    typedef custom_controller type;
-};
+    namespace numeric
+    {
+        namespace odeint
+        {
 
-} } }
+            template <>
+            struct get_controller<custom_stepper>
+            {
+                typedef custom_controller type;
+            };
+
+        }
+    }
+}
 //]
 
 //[ generation_functions_controller_factory
-namespace boost { namespace numeric { namespace odeint {
-
-template<>
-struct controller_factory< custom_stepper , custom_controller >
+namespace boost
 {
-    custom_controller operator()( double abs_tol , double rel_tol , const custom_stepper & ) const
+    namespace numeric
     {
-        return custom_controller();
-    }
-};
+        namespace odeint
+        {
 
-} } }
+            template <>
+            struct controller_factory<custom_stepper, custom_controller>
+            {
+                custom_controller operator()(double abs_tol, double rel_tol, const custom_stepper &) const
+                {
+                    return custom_controller();
+                }
+            };
+
+        }
+    }
+}
 //]
 
-int main( int argc , char **argv )
+int main(int argc, char **argv)
 {
     {
-        typedef runge_kutta_dopri5< state_type > stepper_type;
+        typedef runge_kutta_dopri5<state_type> stepper_type;
 
         /*
         //[ generation_functions_syntax_auto
@@ -81,8 +92,8 @@ int main( int argc , char **argv )
         */
 
         //[ generation_functions_syntax_result_of
-        boost::numeric::odeint::result_of::make_controlled< stepper_type >::type stepper3 = make_controlled( 1.0e-6 , 1.0e-6 , stepper_type() );
-        boost::numeric::odeint::result_of::make_dense_output< stepper_type >::type stepper4 = make_dense_output( 1.0e-6 , 1.0e-6 , stepper_type() );
+        boost::numeric::odeint::result_of::make_controlled<stepper_type>::type stepper3 = make_controlled(1.0e-6, 1.0e-6, stepper_type());
+        boost::numeric::odeint::result_of::make_dense_output<stepper_type>::type stepper4 = make_dense_output(1.0e-6, 1.0e-6, stepper_type());
         //]
     }
 
@@ -93,7 +104,7 @@ int main( int argc , char **argv )
         //]
         */
 
-        boost::numeric::odeint::result_of::make_controlled< custom_stepper >::type stepper5 = make_controlled( 1.0e-6 , 1.0e-6 , custom_stepper() );
+        boost::numeric::odeint::result_of::make_controlled<custom_stepper>::type stepper5 = make_controlled(1.0e-6, 1.0e-6, custom_stepper());
     }
     return 0;
 }

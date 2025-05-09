@@ -20,80 +20,74 @@
 
 namespace odeint = boost::numeric::odeint;
 
-typedef boost::array< double , 3 > state_type;
+typedef boost::array<double, 3> state_type;
 
 //[ ode_wrapper
-template< class Obj , class Mem >
+template <class Obj, class Mem>
 class ode_wrapper
 {
     Obj m_obj;
     Mem m_mem;
 
 public:
+    ode_wrapper(Obj obj, Mem mem) : m_obj(obj), m_mem(mem) {}
 
-    ode_wrapper( Obj obj , Mem mem ) : m_obj( obj ) , m_mem( mem ) { }
-
-    template< class State , class Deriv , class Time >
-    void operator()( const State &x , Deriv &dxdt , Time t )
+    template <class State, class Deriv, class Time>
+    void operator()(const State &x, Deriv &dxdt, Time t)
     {
-        (m_obj.*m_mem)( x , dxdt , t );
+        (m_obj.*m_mem)(x, dxdt, t);
     }
 };
 
-template< class Obj , class Mem >
-ode_wrapper< Obj , Mem > make_ode_wrapper( Obj obj , Mem mem )
+template <class Obj, class Mem>
+ode_wrapper<Obj, Mem> make_ode_wrapper(Obj obj, Mem mem)
 {
-    return ode_wrapper< Obj , Mem >( obj , mem );
+    return ode_wrapper<Obj, Mem>(obj, mem);
 }
 //]
 
-
-template< class Obj , class Mem >
+template <class Obj, class Mem>
 class observer_wrapper
 {
     Obj m_obj;
     Mem m_mem;
 
 public:
+    observer_wrapper(Obj obj, Mem mem) : m_obj(obj), m_mem(mem) {}
 
-    observer_wrapper( Obj obj , Mem mem ) : m_obj( obj ) , m_mem( mem ) { }
-
-    template< class State , class Time >
-    void operator()( const State &x , Time t )
+    template <class State, class Time>
+    void operator()(const State &x, Time t)
     {
-        (m_obj.*m_mem)( x , t );
+        (m_obj.*m_mem)(x, t);
     }
 };
 
-template< class Obj , class Mem >
-observer_wrapper< Obj , Mem > make_observer_wrapper( Obj obj , Mem mem )
+template <class Obj, class Mem>
+observer_wrapper<Obj, Mem> make_observer_wrapper(Obj obj, Mem mem)
 {
-    return observer_wrapper< Obj , Mem >( obj , mem );
+    return observer_wrapper<Obj, Mem>(obj, mem);
 }
-
-
 
 //[ bind_member_function
 struct lorenz
 {
-    void ode( const state_type &x , state_type &dxdt , double t ) const
+    void ode(const state_type &x, state_type &dxdt, double t) const
     {
-        dxdt[0] = 10.0 * ( x[1] - x[0] );
+        dxdt[0] = 10.0 * (x[1] - x[0]);
         dxdt[1] = 28.0 * x[0] - x[1] - x[0] * x[2];
         dxdt[2] = -8.0 / 3.0 * x[2] + x[0] * x[1];
     }
 };
 
-int main( int argc , char *argv[] )
+int main(int argc, char *argv[])
 {
     using namespace boost::numeric::odeint;
-    state_type x = {{ 10.0 , 10.0 , 10.0 }};
-    integrate_const( runge_kutta4< state_type >() , make_ode_wrapper( lorenz() , &lorenz::ode ) ,
-                     x , 0.0 , 10.0 , 0.01 );
+    state_type x = {{10.0, 10.0, 10.0}};
+    integrate_const(runge_kutta4<state_type>(), make_ode_wrapper(lorenz(), &lorenz::ode),
+                    x, 0.0, 10.0, 0.01);
     return 0;
 }
 //]
-
 
 /*
 struct lorenz

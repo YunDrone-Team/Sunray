@@ -17,7 +17,7 @@
 // disable checked iterator warning for msvc
 #include <boost/config.hpp>
 #ifdef BOOST_MSVC
-    #pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #endif
 
 #define BOOST_TEST_MODULE odeint_resize
@@ -36,63 +36,60 @@
 #include <boost/units/systems/si/acceleration.hpp>
 #include <boost/units/systems/si/io.hpp>
 
-
 using namespace boost::unit_test;
 using namespace boost::numeric::odeint;
 
-BOOST_AUTO_TEST_CASE( test_vector )
+BOOST_AUTO_TEST_CASE(test_vector)
 {
-    std::vector< double > x1( 10 );
-    std::vector< double > x2;
-    resize( x2 , x1 );
-    BOOST_CHECK( x2.size() == 10 );
+    std::vector<double> x1(10);
+    std::vector<double> x2;
+    resize(x2, x1);
+    BOOST_CHECK(x2.size() == 10);
 }
 
-
-BOOST_AUTO_TEST_CASE( test_fusion_vector_of_vector )
+BOOST_AUTO_TEST_CASE(test_fusion_vector_of_vector)
 {
-    typedef boost::fusion::vector< std::vector< double > , std::vector< double > > state_type;
+    typedef boost::fusion::vector<std::vector<double>, std::vector<double>> state_type;
     state_type x1;
-    boost::fusion::at_c< 0 >( x1 ).resize( 10 );
-    boost::fusion::at_c< 1 >( x1 ).resize( 10 );
+    boost::fusion::at_c<0>(x1).resize(10);
+    boost::fusion::at_c<1>(x1).resize(10);
     state_type x2;
-    resize( x2 , x1 );
-    BOOST_CHECK( boost::fusion::at_c< 0 >( x2 ).size() == 10 );
-    BOOST_CHECK( boost::fusion::at_c< 1 >( x2 ).size() == 10 );
+    resize(x2, x1);
+    BOOST_CHECK(boost::fusion::at_c<0>(x2).size() == 10);
+    BOOST_CHECK(boost::fusion::at_c<1>(x2).size() == 10);
 }
 
-
-BOOST_AUTO_TEST_CASE( test_fusion_vector_mixed1 )
+BOOST_AUTO_TEST_CASE(test_fusion_vector_mixed1)
 {
-    typedef boost::fusion::vector< std::vector< double > , double > state_type;
+    typedef boost::fusion::vector<std::vector<double>, double> state_type;
     state_type x1;
-    boost::fusion::at_c< 0 >( x1 ).resize( 10 );
+    boost::fusion::at_c<0>(x1).resize(10);
     state_type x2;
-    resize( x2 , x1 );
-    BOOST_CHECK( boost::fusion::at_c< 0 >( x2 ).size() == 10 );
+    resize(x2, x1);
+    BOOST_CHECK(boost::fusion::at_c<0>(x2).size() == 10);
 }
 
-BOOST_AUTO_TEST_CASE( test_fusion_vector_mixed2 )
+BOOST_AUTO_TEST_CASE(test_fusion_vector_mixed2)
 {
-    typedef boost::fusion::vector< double , std::vector< double > , double > state_type;
+    typedef boost::fusion::vector<double, std::vector<double>, double> state_type;
     state_type x1;
-    boost::fusion::at_c< 1 >( x1 ).resize( 10 );
+    boost::fusion::at_c<1>(x1).resize(10);
     state_type x2;
-    resize( x2 , x1 );
-    BOOST_CHECK( boost::fusion::at_c< 1 >( x2 ).size() == 10 );
+    resize(x2, x1);
+    BOOST_CHECK(boost::fusion::at_c<1>(x2).size() == 10);
 }
 
-BOOST_AUTO_TEST_CASE( test_fusion_quantity_sequence )
+BOOST_AUTO_TEST_CASE(test_fusion_quantity_sequence)
 {
     namespace units = boost::units;
     namespace si = boost::units::si;
 
     typedef double value_type;
-    typedef units::quantity< si::time , value_type > time_type;
-    typedef units::quantity< si::length , value_type > length_type;
-    typedef units::quantity< si::velocity , value_type > velocity_type;
-    typedef boost::fusion::vector< length_type , velocity_type > state_type;
+    typedef units::quantity<si::time, value_type> time_type;
+    typedef units::quantity<si::length, value_type> length_type;
+    typedef units::quantity<si::velocity, value_type> velocity_type;
+    typedef boost::fusion::vector<length_type, velocity_type> state_type;
 
-    state_type x1 , x2;
-    resize( x2 , x1 );
+    state_type x1, x2;
+    resize(x2, x1);
 }

@@ -9,7 +9,8 @@
     <arg name="max_vel" default="0.2" />
     <arg name="max_vel_z" default="0.2" />
     <arg name="max_yaw" default="5" />
-	
+    <arg name="auto_takeoff" default="true"/>
+	<arg name="hight" default="1.0"/>
     
 	<node pkg="sunray_tutorial" type="follow_a_tag" name="follow_a_tag_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
@@ -22,6 +23,8 @@
         <param name="max_vel" value="$(arg max_vel)" />
         <param name="max_vel_z" value="$(arg max_vel_z)" />
         <param name="max_yaw" value="$(arg max_yaw)" />
+        <param name="auto_takeoff" value="$(arg auto_takeoff)" />
+        <param name="hight" value="$(arg hight)" />
 	</node>
 </launch>
 

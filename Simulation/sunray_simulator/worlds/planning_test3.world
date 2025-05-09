@@ -1,8 +1,7 @@
-<sdf version='1.7'>
-  <world name='custom_grid'>
-
-    <!-- 动力学库 -->
-    <physics type='ode'>
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="custom_grid">
+    <physics type="ode">
       <gravity>0 0 -9.8066</gravity>
       <ode>
         <solver>
@@ -24,15 +23,13 @@
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
 
-    <!-- 初始视角 -->
-    <gui fullscreen='0'>
-      <camera name='user_camera'>
+    <gui fullscreen="0">
+      <camera name="user_camera">
         <pose>-13.0 0.0 12.0 0 0.75 0.0</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>
 
-    <!-- 光源 -->
     <light type="directional" name="sun">
       <cast_shadows>false</cast_shadows>
       <pose>0 0 100 0 0 0</pose>
@@ -51,3958 +48,582 @@
       <shadows>0</shadows>
     </scene>
 
-    <!-- A ground plane -->
     <include>
       <uri>model://ground_plane</uri>
     </include>
+     <include>
+      <uri>model://yundrone</uri>
+      <name>yundrone</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
 
-    <model name='cylinder_green_-9_-10.0'>
-      <pose>-9 -10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_-8.0'>
-      <pose>-9 -8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_-6.0'>
-      <pose>-9 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_-4.0'>
-      <pose>-9 -4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_-2.0'>
-      <pose>-9 -2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_0.0'>
-      <pose>-9 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_2.0'>
-      <pose>-9 2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_4.0'>
-      <pose>-9 4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_6.0'>
-      <pose>-9 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_8.0'>
-      <pose>-9 8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-9_10.0'>
-      <pose>-9 10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_-10.0'>
-      <pose>-5 -10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_-8.0'>
-      <pose>-5 -8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_-6.0'>
-      <pose>-5 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_-4.0'>
-      <pose>-5 -4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_-2.0'>
-      <pose>-5 -2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_0.0'>
-      <pose>-5 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_2.0'>
-      <pose>-5 2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_4.0'>
-      <pose>-5 4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_6.0'>
-      <pose>-5 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_8.0'>
-      <pose>-5 8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-5_10.0'>
-      <pose>-5 10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_-10.0'>
-      <pose>-1 -10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_-8.0'>
-      <pose>-1 -8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_-6.0'>
-      <pose>-1 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_-4.0'>
-      <pose>-1 -4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_-2.0'>
-      <pose>-1 -2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_0.0'>
-      <pose>-1 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_2.0'>
-      <pose>-1 2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_4.0'>
-      <pose>-1 4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_6.0'>
-      <pose>-1 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_8.0'>
-      <pose>-1 8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_-1_10.0'>
-      <pose>-1 10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_-10.0'>
-      <pose>1 -10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_-8.0'>
-      <pose>1 -8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_-6.0'>
-      <pose>1 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_-4.0'>
-      <pose>1 -4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_-2.0'>
-      <pose>1 -2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_0.0'>
-      <pose>1 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_2.0'>
-      <pose>1 2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_4.0'>
-      <pose>1 4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_6.0'>
-      <pose>1 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_8.0'>
-      <pose>1 8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_1_10.0'>
-      <pose>1 10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_-10.0'>
-      <pose>5 -10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_-8.0'>
-      <pose>5 -8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_-6.0'>
-      <pose>5 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_-4.0'>
-      <pose>5 -4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_-2.0'>
-      <pose>5 -2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_0.0'>
-      <pose>5 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_2.0'>
-      <pose>5 2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_4.0'>
-      <pose>5 4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_6.0'>
-      <pose>5 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_8.0'>
-      <pose>5 8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_5_10.0'>
-      <pose>5 10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_-10.0'>
-      <pose>9 -10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_-8.0'>
-      <pose>9 -8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_-6.0'>
-      <pose>9 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_-4.0'>
-      <pose>9 -4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_-2.0'>
-      <pose>9 -2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_0.0'>
-      <pose>9 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_2.0'>
-      <pose>9 2 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_4.0'>
-      <pose>9 4 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_6.0'>
-      <pose>9 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_8.0'>
-      <pose>9 8 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_green_9_10.0'>
-      <pose>9 10 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0 1 0 1</ambient>
-            <diffuse>0 1 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_-9.0'>
-      <pose>-7 -9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_-6.0'>
-      <pose>-7 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_-3.0'>
-      <pose>-7 -3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_0.0'>
-      <pose>-7 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_3.0'>
-      <pose>-7 3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_6.0'>
-      <pose>-7 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-7_9.0'>
-      <pose>-7 9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_-9.0'>
-      <pose>-3 -9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_-6.0'>
-      <pose>-3 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_-3.0'>
-      <pose>-3 -3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_0.0'>
-      <pose>-3 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_3.0'>
-      <pose>-3 3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_6.0'>
-      <pose>-3 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_-3_9.0'>
-      <pose>-3 9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_-9.0'>
-      <pose>3 -9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_-6.0'>
-      <pose>3 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_-3.0'>
-      <pose>3 -3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_0.0'>
-      <pose>3 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_3.0'>
-      <pose>3 3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_6.0'>
-      <pose>3 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_3_9.0'>
-      <pose>3 9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_-9.0'>
-      <pose>7 -9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_-6.0'>
-      <pose>7 -6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_-3.0'>
-      <pose>7 -3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_0.0'>
-      <pose>7 0 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_3.0'>
-      <pose>7 3 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_6.0'>
-      <pose>7 6 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
-    <model name='cylinder_red_7_9.0'>
-      <pose>7 9 1 0 -0 0</pose>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.4</radius>
-              <length>2</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-    </model>
+    <!-- Green cylinders -->
+    
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-10.0</name>
+      <pose>-9 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-8.0</name>
+      <pose>-9 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-6.0</name>
+      <pose>-9 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-4.0</name>
+      <pose>-9 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-2.0</name>
+      <pose>-9 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_0.0</name>
+      <pose>-9 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_2.0</name>
+      <pose>-9 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_4.0</name>
+      <pose>-9 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_6.0</name>
+      <pose>-9 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_8.0</name>
+      <pose>-9 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_10.0</name>
+      <pose>-9 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-10.0</name>
+      <pose>-5 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-8.0</name>
+      <pose>-5 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-6.0</name>
+      <pose>-5 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-4.0</name>
+      <pose>-5 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-2.0</name>
+      <pose>-5 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_0.0</name>
+      <pose>-5 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_2.0</name>
+      <pose>-5 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_4.0</name>
+      <pose>-5 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_6.0</name>
+      <pose>-5 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_8.0</name>
+      <pose>-5 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_10.0</name>
+      <pose>-5 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-10.0</name>
+      <pose>-1 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-8.0</name>
+      <pose>-1 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-6.0</name>
+      <pose>-1 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-4.0</name>
+      <pose>-1 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-2.0</name>
+      <pose>-1 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_0.0</name>
+      <pose>-1 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_2.0</name>
+      <pose>-1 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_4.0</name>
+      <pose>-1 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_6.0</name>
+      <pose>-1 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_8.0</name>
+      <pose>-1 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_10.0</name>
+      <pose>-1 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-10.0</name>
+      <pose>1 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-8.0</name>
+      <pose>1 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-6.0</name>
+      <pose>1 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-4.0</name>
+      <pose>1 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-2.0</name>
+      <pose>1 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_0.0</name>
+      <pose>1 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_2.0</name>
+      <pose>1 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_4.0</name>
+      <pose>1 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_6.0</name>
+      <pose>1 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_8.0</name>
+      <pose>1 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_10.0</name>
+      <pose>1 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-10.0</name>
+      <pose>5 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-8.0</name>
+      <pose>5 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-6.0</name>
+      <pose>5 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-4.0</name>
+      <pose>5 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-2.0</name>
+      <pose>5 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_0.0</name>
+      <pose>5 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_2.0</name>
+      <pose>5 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_4.0</name>
+      <pose>5 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_6.0</name>
+      <pose>5 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_8.0</name>
+      <pose>5 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_10.0</name>
+      <pose>5 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-10.0</name>
+      <pose>9 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-8.0</name>
+      <pose>9 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-6.0</name>
+      <pose>9 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-4.0</name>
+      <pose>9 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-2.0</name>
+      <pose>9 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_0.0</name>
+      <pose>9 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_2.0</name>
+      <pose>9 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_4.0</name>
+      <pose>9 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_6.0</name>
+      <pose>9 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_8.0</name>
+      <pose>9 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_10.0</name>
+      <pose>9 10 1 0 0 0</pose>
+    </include>
+
+    <!-- Red cylinders -->
+    
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_-9.0</name>
+      <pose>-7 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_-6.0</name>
+      <pose>-7 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_-3.0</name>
+      <pose>-7 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_0.0</name>
+      <pose>-7 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_3.0</name>
+      <pose>-7 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_6.0</name>
+      <pose>-7 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_9.0</name>
+      <pose>-7 9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_-9.0</name>
+      <pose>-3 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_-6.0</name>
+      <pose>-3 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_-3.0</name>
+      <pose>-3 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_0.0</name>
+      <pose>-3 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_3.0</name>
+      <pose>-3 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_6.0</name>
+      <pose>-3 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_9.0</name>
+      <pose>-3 9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_-9.0</name>
+      <pose>3 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_-6.0</name>
+      <pose>3 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_-3.0</name>
+      <pose>3 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_0.0</name>
+      <pose>3 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_3.0</name>
+      <pose>3 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_6.0</name>
+      <pose>3 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_9.0</name>
+      <pose>3 9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_-9.0</name>
+      <pose>7 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_-6.0</name>
+      <pose>7 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_-3.0</name>
+      <pose>7 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_0.0</name>
+      <pose>7 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_3.0</name>
+      <pose>7 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_6.0</name>
+      <pose>7 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_9.0</name>
+      <pose>7 9 1 0 0 0</pose>
+    </include>
   </world>
 </sdf>

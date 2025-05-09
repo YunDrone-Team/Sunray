@@ -17,7 +17,7 @@
 #ifndef BOOST_NUMERIC_ODEINT_CONFIG_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_CONFIG_HPP_INCLUDED
 
-//increase macro variable to allow rk78 scheme
+// increase macro variable to allow rk78 scheme
 #ifndef FUSION_MAX_VECTOR_SIZE
 #define FUSION_MAX_VECTOR_SIZE 15
 #endif
@@ -42,6 +42,5 @@
 #if __cplusplus >= 201103L
 #define BOOST_NUMERIC_ODEINT_CXX11 1
 #endif
-
 
 #endif // BOOST_NUMERIC_ODEINT_CONFIG_HPP_INCLUDED

@@ -26,6 +26,7 @@ public:
     void coderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //编码搜索在线无人机数据帧
     void coderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //编码无人机应答数据帧
     void coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //编码无人机demo数据帧
+    void coderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script); //编码无人机script数据帧
     void coderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypoint); //编码无人机航点数据帧
 
 
@@ -39,6 +40,8 @@ public:
     void decoderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search); //解码搜索在线无人机数据帧
     void decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //解码无人机应答数据帧
     void decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //解码无人机demo数据帧
+    void decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script); //解码无人机script数据帧
+
     void decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypointData);//解码无人机航点数据帧
 
 

@@ -15,10 +15,8 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-
 #ifndef BOOST_NUMERIC_ODEINT_UTIL_STATE_WRAPPER_HPP_INCLUDED
 #define BOOST_NUMERIC_ODEINT_UTIL_STATE_WRAPPER_HPP_INCLUDED
-
 
 #include <boost/type_traits/integral_constant.hpp>
 
@@ -26,25 +24,23 @@
 #include <boost/numeric/odeint/util/resize.hpp>
 #include <boost/numeric/odeint/util/same_size.hpp>
 
-
-namespace boost {
-namespace numeric {
-namespace odeint {
-
-
-template< class V , class Enabler = void >
-struct state_wrapper
+namespace boost
 {
-    typedef state_wrapper< V > state_wrapper_type;
+    namespace numeric
+    {
+        namespace odeint
+        {
 
-    V m_v;
-};
+            template <class V, class Enabler = void>
+            struct state_wrapper
+            {
+                typedef state_wrapper<V> state_wrapper_type;
 
+                V m_v;
+            };
 
+        }
+    }
 }
-}
-}
-
-
 
 #endif // BOOST_NUMERIC_ODEINT_UTIL_STATE_WRAPPER_HPP_INCLUDED
