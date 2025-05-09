@@ -19,12 +19,14 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 # 判断是否有livox_ros_driver2包，如果有则添加
-find_package(livox_ros_driver2)
-if(livox_ros_driver2_FOUND)
-  message(STATUS "Found livox_ros_driver2")
-else()
-  message(STATUS "livox_ros_driver2 not found")
-endif()
+foreach(pkg livox_ros_driver2)
+  if(NOT ${pkg}_FOUND)
+    message(STATUS "Required ROS package ${pkg} not found")
+  else() 
+    message(STATUS "Found livox_ros_driver2")
+    find_package(livox_ros_driver2)
+  endif()
+endforeach()
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
@@ -69,11 +71,13 @@ add_executable(goal2swarm src/goal2swarm.cpp)
 add_dependencies(goal2swarm ${catkin_EXPORTED_TARGETS})
 target_link_libraries(goal2swarm ${catkin_LIBRARIES} yaml-cpp)
 
-if(livox_ros_driver2_FOUND)
-  add_executable(livox2Point src/livox2Point.cpp)
-  add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
-  target_link_libraries(livox2Point ${catkin_LIBRARIES})
-endif()
+foreach(pkg livox_ros_driver2)
+  if(${pkg}_FOUND)
+    add_executable(livox2Point src/livox2Point.cpp)
+    add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
+    target_link_libraries(livox2Point ${catkin_LIBRARIES})
+  endif()
+endforeach()
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
