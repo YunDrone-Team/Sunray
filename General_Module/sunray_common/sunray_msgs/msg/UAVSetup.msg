@@ -20,3 +20,10 @@ string px4_mode
 
 ## 参见uav_control.h中无人机控制模式枚举：INIT,RC_CONTROL,CMD_CONTROL,LAND_CONTROL
 string control_mode
+
+## 无人机control_mode类型枚举
+uint8 INIT = 0                      ## 初始模式
+uint8 RC_CONTROL = 1                ## 遥控器控制模式
+uint8 CMD_CONTROL = 2               ## 外部指令控制模式
+uint8 LAND_CONTROL = 3              ## 降落模式
+uint8 WITHOUT_CONTROL = 4           ## 无控制模式

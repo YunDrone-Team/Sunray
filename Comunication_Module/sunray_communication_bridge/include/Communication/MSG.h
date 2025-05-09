@@ -638,8 +638,8 @@ enum CommunicationType
 //不同类型数据联合体，用于传递数据
 union unionData
 {
-    HeartbeatData heartbeat;
-    VehicleData vehicle;
+    HeartbeatData heartbeat;        // 无人机心跳包 - HeartbeatData（#1）
+    VehicleData vehicle;            // TODO comment
     ControlData control;
     StateData state;
     SearchData search;
