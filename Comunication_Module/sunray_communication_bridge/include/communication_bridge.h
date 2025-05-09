@@ -17,6 +17,8 @@
 #include <csignal>
 #include <cstdlib>
 #include <unordered_set>
+#include <pwd.h>
+#include <limits.h>
 
 #define UAVType 0
 #define UGVType 1
@@ -106,6 +108,10 @@ private:
     std::map<string, pid_t> nodeMap;
     std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
 
+    std::string getUserDirectoryPath();
+    std::string getCurrentProgramPath();
+    std::string getSunrayPath();
+
     uint8_t getPX4ModeEnum(std::string modeStr);
     void sendMsgCb(const ros::TimerEvent &e);
     void sendHeartbeatPacket(const ros::TimerEvent &e);
@@ -125,5 +131,6 @@ private:
     bool PublishUGVControlTopic(UGVControlData Data);
     void TCPLinkState(bool state,std::string IP);
     pid_t OrderCourse(std::string orderStr);
+    pid_t executeScript(std::string scriptStr,std::string filePath);
     pid_t CheckChildProcess(pid_t pid); // 检查子进程是否已经结束
 };
