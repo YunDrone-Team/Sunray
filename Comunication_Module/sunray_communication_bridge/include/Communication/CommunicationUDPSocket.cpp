@@ -30,7 +30,7 @@ std::string CommunicationUDPSocket::wstringToString(const std::wstring& wstr)
     WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), &strTo[0], size_needed, NULL, NULL);
     return strTo;
 #else
-   return " ";
+    return " ";
 #endif
 }
 

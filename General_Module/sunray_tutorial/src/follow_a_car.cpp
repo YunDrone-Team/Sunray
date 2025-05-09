@@ -79,22 +79,26 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     int uav_id;
+    bool auto_takeoff = false;
     string uav_name, target_tpoic_name;
     bool sim_mode, flag_printf;
     nh.param<bool>("sim_mode", sim_mode, true);
     nh.param<bool>("flag_printf", flag_printf, true);
+    nh.param<bool>("auto_takeoff", auto_takeoff, false);
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
     nh.param<string>("uav_name", uav_name, "uav");
     
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
+    double hight;
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
     nh.param<double>("k_p_yaw", k_p_yaw, 0.04);
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4);
+    nh.param<double>("hight", hight, 1.0);
 
     uav_name = uav_name + to_string(uav_id);
     string topic_prefix = "/" + uav_name;
@@ -140,6 +144,40 @@ int main(int argc, char **argv)
     cout << GREEN << "sim_mode                  : " << sim_mode << " " << TAIL << endl;
     cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
     cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
+
+    if(auto_takeoff)
+    {
+        ros::Duration(10).sleep();
+
+        ros::Duration(0.5).sleep();
+        // 解锁
+        cout << "arm" << endl;
+        setup.cmd = 1;
+        uav_setup_pub.publish(setup);
+        ros::Duration(1.5).sleep();
+
+        // 切换到指令控制模式
+        cout << "switch CMD_CONTROL" << endl;
+        setup.cmd = 4;
+        setup.control_mode = "CMD_CONTROL";
+        uav_setup_pub.publish(setup);
+        ros::Duration(1.0).sleep();
+
+        // 起飞
+        cout << "takeoff" << endl;
+        uav_cmd.cmd = 100;
+        control_cmd_pub.publish(uav_cmd);
+        ros::Duration(5).sleep();
+
+        cout << "rising" << endl;
+        uav_cmd.cmd = 1;
+        uav_cmd.desired_pos[0] = 0.0;
+        uav_cmd.desired_pos[1] = 0.0;
+        uav_cmd.desired_pos[2] = hight;
+        control_cmd_pub.publish(uav_cmd);
+        ros::Duration(2).sleep();
+    }
+
 
     ros::Duration(0.5).sleep();
     ros::spinOnce();

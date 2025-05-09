@@ -100,6 +100,8 @@ enum MessageID
     SearchMessageID       = 200,
     ACKMessageID          = 201,
     DemoMessageID         = 202,
+    ScriptMessageID       = 203,
+
 };
 
 
@@ -494,6 +496,31 @@ struct DemoData
     }
 };
 
+
+struct ScriptData
+{
+    uint8_t robotID;
+    uint8_t msgType;
+    uint64_t timestamp; /**< @param head message header */
+    uint8_t agentType;
+    uint8_t agentID;
+    uint8_t scripType;
+    bool scriptState;
+    uint16_t scriptSize;
+    char scriptStr[250];
+    void init()
+    {
+        robotID=0;
+        msgType=0;
+        agentType=0;
+        agentID=0;
+        scripType=0;
+        scriptState=false;
+        scriptSize=0;
+
+    }
+};
+
 struct WaypointSingleData
 {
     double X;//经度Lon
@@ -621,6 +648,7 @@ union unionData
     WaypointData waypointData;
     UGVStateData ugvState;
     UGVControlData ugvControl;
+    ScriptData agentScrip;
 };
 
 //接受到的数据参数结构体

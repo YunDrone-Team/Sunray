@@ -580,6 +580,29 @@ void Codec::coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo) /
 
 }
 
+
+void Codec::coderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script) //编码无人机script数据帧
+{
+    dataFrame.push_back(static_cast<uint8_t>(MessageID::ScriptMessageID));
+    script.timestamp=getTimestamp();
+    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((script.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+    dataFrame.push_back(static_cast<uint8_t>(script.agentType));
+    dataFrame.push_back(static_cast<uint8_t>(script.agentID));
+    dataFrame.push_back(static_cast<uint8_t>(script.scripType));
+    dataFrame.push_back(static_cast<uint8_t>(script.scriptState));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((script.scriptSize >> (i * 8)) & 0xFF));
+
+    if(dataFrame.capacity()<script.scriptSize)
+        dataFrame.reserve(script.scriptSize);
+
+    for(int j=0;j<script.scriptSize;++j)
+    dataFrame.push_back(static_cast<uint8_t>(script.scriptStr[j]));
+}
+
 void Codec::coderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control)
 {
     dataFrame.push_back(static_cast<uint8_t>(MessageID::UGVControlMessageID));
@@ -744,6 +767,30 @@ void Codec::decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack)
 
 }
 
+void Codec::decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script)  //解码无人机script数据帧
+{
+    //时间戳赋值
+    script.timestamp=0;
+    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    int i;
+    for (i = 0; i <(int)sizeof(uint64_t); ++i)
+        script.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+    script.agentType=static_cast<uint8_t>(dataFrame[i++]);
+    script.agentID=static_cast<uint8_t>(dataFrame[i++]);
+    script.scripType=static_cast<uint8_t>(dataFrame[i++]);
+    script.scriptState=static_cast<uint8_t>(dataFrame[i++]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+
+     script.scriptSize=0;
+    for (int j = 0; j < (int)sizeof(uint16_t); ++j)
+        script.scriptSize |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+
+    for (int j = 2; j < script.scriptSize+2; ++j)
+        script.scriptStr[j-2]=static_cast<uint8_t>(dataFrame[j]);
+
+    dataFrame.clear();
+}
+
 void Codec::decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo)
 {    
     //时间戳赋值
@@ -889,6 +936,12 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData&
         //去掉之前已经读出的两个元素
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
         decoderDemoDataFrame(undecodedData,decoderData.demo);
+        break;
+    case MessageID::ScriptMessageID:
+        decoderData.demo.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        //去掉之前已经读出的两个元素
+        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
+        decoderScriptDataFrame(undecodedData,decoderData.agentScrip);
         break;
     case MessageID::WaypointMessageID:
         decoderData.demo.robotID=static_cast<uint8_t>(undecodedData.at(0));
@@ -1142,6 +1195,28 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
 
         coderData.push_back(getTCPMessageNum());//获取TCP消息序号
         coderData.push_back(static_cast<uint8_t>(codelessData.demo.robotID));//获取机器人ID
+        //将整个数据帧从尾部加入数据里面
+        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
+
+        checksum=getChecksum(coderData);//获取校验值
+
+        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
+        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+
+        break;
+    case MessageID::ScriptMessageID:
+        //TCP帧头 0xac43
+        coderData.push_back(0xac);
+        coderData.push_back(0x43);
+
+        coderScriptDataFrame(tempData,codelessData.agentScrip);
+        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
+            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
+        coderData.push_back(static_cast<uint8_t>(codelessData.agentScrip.robotID));//获取机器人ID
         //将整个数据帧从尾部加入数据里面
         coderData.insert(coderData.end(), tempData.begin(), tempData.end());
 

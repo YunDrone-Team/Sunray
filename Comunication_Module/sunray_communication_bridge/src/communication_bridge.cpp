@@ -6,19 +6,19 @@
 void communication_bridge::init(ros::NodeHandle &nh)
 {
 
-    nh.param<int>("uav_num", uav_num, 0);                           // 【参数】无人机真机数量
-    nh.param<int>("uav_id", uav_id, 1);                             // 【参数】无人机编号
-    nh.param<string>("uav_name", uav_name, "uav");                  // 【参数】无人机名字前缀
-    nh.param<int>("simulation_num", simulation_num, 1);             // 【参数】仿真无人机数量
+    nh.param<int>("uav_num", uav_num, 0);               // 【参数】无人机真机数量
+    nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
+    nh.param<string>("uav_name", uav_name, "uav");      // 【参数】无人机名字前缀
+    nh.param<int>("simulation_num", simulation_num, 1); // 【参数】仿真无人机数量
 
-    nh.param<int>("ugv_num", ugv_num, 0);                           // 【参数】无人车真车数量
-    nh.param<int>("ugv_id", ugv_id, 1);                             // 【参数】无人车编号
-    nh.param<string>("ugv_name", ugv_name, "ugv");                  // 【参数】无人车名字前缀  
-    nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0);     // 【参数】仿真无人车数量
+    nh.param<int>("ugv_num", ugv_num, 0);                       // 【参数】无人车真车数量
+    nh.param<int>("ugv_id", ugv_id, 1);                         // 【参数】无人车编号
+    nh.param<string>("ugv_name", ugv_name, "ugv");              // 【参数】无人车名字前缀
+    nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0); // 【参数】仿真无人车数量
 
-    nh.param<string>("tcp_port", tcp_port, "8969");                 // 【参数】TCP绑定端口
-    nh.param<int>("udp_port", udp_port, 9696);                      // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
-    nh.param<int>("udp_ground_port", udp_ground_port, 9999);        // 【参数】组播目标端口，用于机间通信
+    nh.param<string>("tcp_port", tcp_port, "8969");          // 【参数】TCP绑定端口
+    nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
+    nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
     for (int i = uav_id; i < uav_id + simulation_num; i++)
     {
@@ -124,7 +124,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     udpSocket->setRunState(true);
 
     // 【心跳包】 默认心跳包关闭
-    HeartbeatState = false; 
+    HeartbeatState = false;
 
 }
 
@@ -135,11 +135,12 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
     if (state)
     {
         GSIPHash.insert(IP);
-        HeartbeatState = true; 
+        HeartbeatState = true;
+        std::cout << " TCPLinkState state: " << state << std::endl;
     }else{
         GSIPHash.erase(IP);
         if (GSIPHash.empty())
-            HeartbeatState = false; 
+            HeartbeatState = false;
     }
 }
 
@@ -183,7 +184,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
     switch (readData.messageID)
     {
     case MessageID::SearchMessageID:
-    { 
+    {
         // std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         unionData backData;
         for (int i = uav_id; i < uav_id + simulation_num; i++)
@@ -266,6 +267,42 @@ pid_t communication_bridge::CheckChildProcess(pid_t pid)
     return terminated_pid;
 }
 
+pid_t communication_bridge::executeScript(std::string scriptStr, std::string filePath)
+{
+    pid_t pid = fork();
+    if (pid == -1)
+        perror("fork failed");
+    else if (pid == 0)
+    {
+        std::string cdCommand = "cd " + getSunrayPath()+filePath;
+        std::string fullCommand = cdCommand + " && ./" + scriptStr;
+
+        // 构建打开新终端并执行命令的字符串
+        std::string terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
+        const char *command = terminalCommand.c_str();
+        execlp("bash", "bash", "-c", command, (char *)NULL);
+
+        // 如果execlp返回，说明执行失败
+        perror("OrderCourse Error!");
+        _exit(EXIT_FAILURE);
+
+         // 设置环境变量和参数
+        // char *const envp[] = {NULL};
+        // char *const argv[] = {(char*)"bash", (char*)"-c", (char*)fullCommand.c_str(), NULL};
+
+        // // 直接执行命令，不打开新终端
+        // execve("/bin/bash", argv, envp);
+
+        // // 如果execve返回，说明执行失败
+        // perror("OrderCourse Error!");
+        // _exit(EXIT_FAILURE);
+    }
+    else
+        printf("This is the parent process. Child PID: %d\n", pid);
+
+    return pid;
+}
+
 pid_t communication_bridge::OrderCourse(std::string orderStr)
 {
     pid_t pid = fork();
@@ -273,7 +310,9 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
     {
         perror("fork failed");
         // return EXIT_FAILURE;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
@@ -285,7 +324,9 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
 
         demoPID = pid;
         printf("This is the parent process. Child PID: %d\n", pid);
@@ -301,11 +342,11 @@ void communication_bridge::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
-        // 由于source是bash的内建命令，不能直接在execlp中调用它
-        // 但是，可以使用. (点命令) 来代替source
         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
         // 而是需要将它们放在一个bash -c参数中
 
@@ -319,7 +360,9 @@ void communication_bridge::executiveDemo(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         // 父进程
         int status;
 
@@ -331,7 +374,7 @@ void communication_bridge::executiveDemo(std::string orderStr)
 void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
 {
     // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
-   
+
     float roll;
     float pitch;
     uint32_t time_stamp;
@@ -384,13 +427,17 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 if (it != nodeMap.end())
                 {
                     std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }else{
+                }
+                else
+                {
                     pid_t back = OrderCourse(readData.data.demo.demoStr);
                     if (back > 0)
                         nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
                 }
             }
-        }else{
+        }
+        else
+        {
             if (readData.data.demo.demoSize > 0)
             {
                 std::cout << "TCPServer 关闭Demo： " << std::endl;
@@ -401,16 +448,27 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }else{
+                    }
+                    else
+                    {
                         printf("Sent SIGTERM to child process %d\n", temp);
                         nodeMap.erase(readData.data.demo.demoStr);
                     }
-                }else
+                }
+                else
                     std::cout << "该节点未启动： " << readData.data.demo.demoStr << std::endl;
-                
             }
         }
 
+        break;
+    case MessageID::ScriptMessageID:
+        if (readData.data.agentScrip.scriptState == true)
+        {
+            if (readData.data.agentScrip.scripType == 0)
+                executeScript(readData.data.agentScrip.scriptStr, "/scripts_sim/");
+            else if (readData.data.agentScrip.scripType == 1)
+                executeScript(+readData.data.agentScrip.scriptStr, "/scripts_exp/");
+        }
         break;
     case MessageID::WaypointMessageID:
     {
@@ -636,6 +694,7 @@ void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
 
 void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
 {
+
     if (HeartbeatState)
     {
         unionData Heartbeatdata;
@@ -652,7 +711,6 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
             Heartbeatdata.heartbeat.agentType = UGVType;
             tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
         }
-        
     }
 }
 
@@ -704,9 +762,8 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     if (mode.length() > 15)
         mode = mode.substr(0, 15);
     else if (mode.length() < 15)
-    
-    mode.append(15 - mode.length(), ' ');
-    
+
+        mode.append(15 - mode.length(), ' ');
 }
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
@@ -731,4 +788,46 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
     ugvStateData[index].ugvState.batteryState = msg->battery_state;
     ugvStateData[index].ugvState.batteryPercentage = msg->battery_percentage;
     ugvStateData[index].ugvState.controlMode = msg->control_mode;
+}
+
+std::string communication_bridge::getUserDirectoryPath()
+{
+    uid_t uid = getuid();
+    struct passwd *pw = getpwuid(uid);
+    if (pw != nullptr)
+    {
+        // std::cout << "用户目录: " << pw->pw_dir << std::endl;
+        return pw->pw_dir;
+    }
+
+    std::cerr << "无法获取用户目录" << std::endl;
+    return "";
+}
+
+std::string communication_bridge::getCurrentProgramPath()
+{
+    char buffer[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1)
+    {
+        buffer[len] = '\0';
+        return std::string(buffer);
+    }
+    return "";
+}
+
+std::string communication_bridge::getSunrayPath()
+{
+    std::string fullPath = getCurrentProgramPath();
+    //  size_t pos = fullPath.find("/Sunray");
+    // if (pos != std::string::npos) {
+    //     return fullPath.substr(0, pos + 7); // 7 是 "/Sunray" 的长度
+    // }
+    // return "";
+    size_t pos = fullPath.find("/devel/lib/sunray_communication_bridge/communication_bridge_node");
+    if (pos != std::string::npos)
+    {
+        return fullPath.substr(0, pos);
+    }
+    return fullPath;
 }

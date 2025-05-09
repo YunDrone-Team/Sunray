@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 
     // 悬停
     cout << "hover" << endl;
-    uav_cmd.cmd = 105;
+    uav_cmd.cmd = 102;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(5).sleep();
 

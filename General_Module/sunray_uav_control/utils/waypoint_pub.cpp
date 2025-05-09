@@ -1,5 +1,10 @@
 #include <ros/ros.h>
 #include <sunray_msgs/UAVWayPoint.h>
+#include <sunray_msgs/UAVControlCMD.h>
+#include <sunray_msgs/UAVSetup.h>
+
+sunray_msgs::UAVControlCMD uav_cmd;
+sunray_msgs::UAVSetup setup;
 
 int main(int argc, char **argv)
 {
@@ -110,6 +115,13 @@ int main(int argc, char **argv)
     ros::Publisher waypoint_pub = nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 10);
     std::cout << topic_prefix + "/sunray/uav_waypoint" << std::endl;
 
+    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
+    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
+
+
+
+    std::cout << "waypoint" << std::endl;
+    uav_cmd.cmd = 103;
     sunray_msgs::UAVWayPoint waypoint_msg;
     waypoint_msg.header.stamp = ros::Time::now();
     waypoint_msg.wp_num = wp_num;
@@ -132,6 +144,9 @@ int main(int argc, char **argv)
     waypoint_msg.wp_point_10 = {wp_point_10[0], wp_point_10[1], wp_point_10[2], wp_point_10[3]};
     waypoint_msg.wp_circle_point = {wp_circle_point[0], wp_circle_point[1]};
     ros::Duration(0.5).sleep();
+    std::cout << "waypoint" << std::endl;
+    uav_cmd.cmd = 103;
+    control_cmd_pub.publish(uav_cmd);
     waypoint_pub.publish(waypoint_msg);
     // ros::Rate loop_rate(1);
     // while (ros::ok())
