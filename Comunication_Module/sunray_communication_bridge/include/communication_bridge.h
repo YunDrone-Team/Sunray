@@ -52,8 +52,8 @@ public:
 
 private:
     uint32_t last_time_stamp;
-    int uav_num;
-    int ugv_num;
+    int uav_experiment_num;
+    int ugv_experiment_num;
     int uav_simulation_num;
     int uav_id;
     int ugv_id;
