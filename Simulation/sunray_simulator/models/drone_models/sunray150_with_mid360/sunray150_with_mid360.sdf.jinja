@@ -5,7 +5,7 @@
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0.18 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <mass>1.0</mass>
         <inertia>
           <ixx>0.0085</ixx>
@@ -17,10 +17,10 @@
         </inertia>
       </inertial>
       <collision name='base_link_inertia_collision'>
-        <pose>0 0 0.186 0 0 0</pose>
+        <pose>0 0 -0.012 0 0 0</pose>
         <geometry>
           <box>
-						<size>0.2 0.15 0.06</size>
+            <size>0.2 0.15 0.06</size>
           </box>
         </geometry>
         <surface>
@@ -36,7 +36,7 @@
         </surface>
       </collision>
       <visual name='base_link_inertia_visual'>
-        <pose>0 0 0.252 0 0 -1.57</pose>
+        <pose>0 0 0.0525 0 0 -1.57</pose>
         <geometry>
           <mesh>
             <scale>0.03 0.03 0.03</scale>
@@ -57,7 +57,7 @@
     <link name='imu_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0.2 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <mass>0.015</mass>
         <inertia>
           <ixx>1e-05</ixx>
@@ -88,7 +88,7 @@
       </axis>
     </joint>
     <link name='rotor_0'>
-			<pose>0.065 -0.065 0.175 0 0 0</pose>
+      <pose>0.065 -0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -154,7 +154,7 @@
       </axis>
     </joint>
     <link name='rotor_1'>
-			<pose>-0.065 0.065 0.175 0 0 0</pose>
+      <pose>-0.065 0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -220,7 +220,7 @@
       </axis>
     </joint>
     <link name='rotor_2'>
-			<pose>0.065 0.065 0.175 0 0 0</pose>
+      <pose>0.065 0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -286,7 +286,7 @@
       </axis>
     </joint>
     <link name='rotor_3'>
-			<pose>-0.065 -0.065 0.175 0 0 0</pose>
+      <pose>-0.065 -0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -353,7 +353,7 @@
     </joint>
     <include>
       <uri>model://gps</uri>
-      <pose>0.0 0 0.2 0 0 0</pose>
+      <pose>0.0 0 0 0 0 0</pose>
       <name>gps</name>
     </include>
     <joint name='gps_joint' type='fixed'>
@@ -519,7 +519,7 @@
       <accelerometerTurnOnBiasSigma>0.196</accelerometerTurnOnBiasSigma>
     </plugin>
 
-  <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+    <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>50.0</updateRate>
       <bodyName>base_link</bodyName>
@@ -530,28 +530,28 @@
       <rpyOffsets>0 0 0</rpyOffsets>
     </plugin>
 
-   <include>
-      <uri>model://camera_front</uri> 
-      <pose>0.12 0 0.225 0 0 0</pose>
+    <include>
+      <uri>model://camera_front</uri>
+      <pose>0.12 0 0.025 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://camera_down</uri>
-      <pose>-0.01 0 0.18 0 1.5707963 3.14</pose> <!--位置-->
+      <pose>-0.01 0 -0.02 0 1.5707963 3.14</pose>      <!--位置-->
     </include>
 
     <!-- 下视相机关节 -->
     <joint name="Monocular_down_joint" type="fixed">
-      <child>camera_down::Monocular_down_link</child> <!--子link-->
-      <parent>base_link</parent><!--父link-->
+      <child>camera_down::Monocular_down_link</child>      <!--子link-->
+      <parent>base_link</parent>      <!--父link-->
       <axis>
-        <xyz>0 0 1</xyz><!--xyz标签定义轴的方向，是单位向量，默认值为0 0 1，参考系一般为joint参考系-->
+        <xyz>0 0 1</xyz>        <!--xyz标签定义轴的方向，是单位向量，默认值为0 0 1，参考系一般为joint参考系-->
         <limit>
           <upper>0</upper>
           <lower>0</lower>
         </limit>
       </axis>
-    </joint>  
+    </joint>
 
     <!-- 前视相机关节 -->
     <joint name="Monocular_front_joint" type="fixed">
@@ -566,130 +566,19 @@
       </axis>
     </joint>
 
-    <link name='livox_link'>
-      <pose>0.036 -0.0155 0.275 0 0 0</pose>
-      <inertial>
-        <pose>0 0 0 0 0 0</pose>
-        <mass>0.01</mass>
-        <inertia>
-          <ixx>0.0001</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.0001</iyy>
-          <iyz>0</iyz>
-          <izz>0.0001</izz>
-        </inertia>
-      </inertial>
-      <collision name="collision">
-        <pose>0 0 0 1.57 0 3.14159</pose>
-        <geometry>
-          <mesh>
-            <scale>1.2 1.2 1.2</scale>
-            <uri>model://livox_mid360/meshes/test2.dae</uri>
-          </mesh>
-        </geometry>
-      </collision>
-      <visual name='link_fixed_joint_lump__oasis_300_visual'>
-        <pose frame=''>0 0 0 1.57 0 3.14159</pose>
-        <geometry>
-          <mesh>
-            <scale>1.2 1.2 1.2</scale>
-            <uri>model://livox_mid360/meshes/test2.dae</uri>
-          </mesh>
-        </geometry>
-      </visual>
-      <velocity_decay/>
-      <sensor type='ray' name='3Dlidar'>
-          <ray>
-            <scan>
-              <horizontal>
-                <samples>520</samples>
-                <resolution>1</resolution>
-                <min_angle>-3.1415926535897931</min_angle>
-                <max_angle>3.1415926535897931</max_angle>
-              </horizontal>
-              <vertical>
-                <samples>16</samples>
-                <min_angle>-0.1257</min_angle>
-                <max_angle>0.9634</max_angle>
-              </vertical>
-            </scan>
-            <range>
-              <min>0.1</min>
-              <max>20</max>
-              <resolution>0.001</resolution>
-            </range>
-          </ray>
-          <plugin name='3D_laser' filename='libgazebo_ros_velodyne_laser.so'>
-            <topicName>mid360_points</topicName>
-            <frameName>base_link</frameName>
-            <organize_cloud>0</organize_cloud>
-            <min_range>0.1</min_range>
-            <max_range>20</max_range>
-          </plugin>
-          <always_on>1</always_on>
-          <update_rate>20</update_rate>
-          <visualize>false</visualize>
-        </sensor>
-
-        <!-- <sensor name='laser_livox' type='ray'>
-        <visualize>1</visualize>
-        <update_rate>20</update_rate>
-        <plugin name='gazebo_ros_laser_controller' filename='liblivox_laser_simulation.so'>
-          <ray>
-            <scan>
-              <horizontal>
-                <samples>520</samples>
-                <resolution>1</resolution>
-                <min_angle>-3.14159</min_angle>
-                <max_angle>3.14159</max_angle> 
-              </horizontal>
-              <vertical>
-                <samples>32</samples>
-                <resolution>1</resolution>
-                <min_angle>-0.1257</min_angle> 
-                <max_angle>0.9634</max_angle> 
-              </vertical>
-            </scan>
-            <range>
-              <min>0.1</min>
-              <max>20.0</max>
-              <resolution>0.002</resolution>
-            </range>
-            <noise>
-              <type>gaussian</type>
-              <mean>0.0</mean>
-              <stddev>0.01</stddev>
-            </noise>
-          </ray>
-          <visualize>0</visualize>
-          <samples>24000</samples>
-          <downsample>5</downsample>
-          <csv_file_name>package://sunray_simulator/models/sensor_models/livox_mid360/scan_mode/mid360.csv</csv_file_name>
-          <robotNamespace></robotNamespace>
-          <topic_name>mid360_points</topic_name>
-          <frameName>base_link</frameName>
-          <publish_pointcloud_type>1</publish_pointcloud_type>
-        </plugin>
-        <pose>0 0 0.3 0 0 0</pose>
-      </sensor> -->
-      
-    </link>
-
-    <joint name='livox_joint' type='fixed'>
-      <child>livox_link</child>
+    <include>
+      <uri>model://livox_mid360</uri>
+      <pose>0.036 -0.0155 0.075 0 0 0</pose>
+    </include>
+    <joint name="mid360_joint" type="fixed">
+      <child>livox_mid360::base_link</child>
       <parent>base_link</parent>
       <axis>
         <xyz>0 0 1</xyz>
         <limit>
-          <lower>-1e+16</lower>
-          <upper>1e+16</upper>
+          <upper>0</upper>
+          <lower>0</lower>
         </limit>
-        <dynamics>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
   </model>

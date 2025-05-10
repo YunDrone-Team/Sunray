@@ -11,7 +11,7 @@
       <pose>0 0 0.25 0 0 0</pose>
     </include>
     <joint name="mid360_joint" type="fixed">
-      <child>livox_mid360::link</child>
+      <child>livox_mid360::base_link</child>
       <parent>wheeltec::base_link</parent>
       <axis>
         <xyz>0 0 1</xyz>

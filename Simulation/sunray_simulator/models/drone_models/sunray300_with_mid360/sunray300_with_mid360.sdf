@@ -9,7 +9,7 @@
       <pose>0 -0.0155 0.28 0 0 0</pose>
     </include>
     <joint name="mid360_joint" type="fixed">
-      <child>livox_mid360::link</child>
+      <child>livox_mid360::base_link</child>
       <parent>sunray::base_link</parent>
       <axis>
         <xyz>0 0 1</xyz>

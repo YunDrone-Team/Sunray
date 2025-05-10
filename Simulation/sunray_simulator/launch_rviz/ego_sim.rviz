@@ -341,7 +341,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.019999999552965164
       Style: Flat Squares
-      Topic: /uav1/mid360_points
+      Topic: /uav1/livox/lidar
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

@@ -5,7 +5,7 @@
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0.18 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <mass>1.0</mass>
         <inertia>
           <ixx>0.0085</ixx>
@@ -17,7 +17,7 @@
         </inertia>
       </inertial>
       <collision name='base_link_inertia_collision'>
-        <pose>0 0 0.186 0 0 0</pose>
+        <pose>0 0 -0.012 0 0 0</pose>
         <geometry>
           <box>
 						<size>0.2 0.15 0.06</size>
@@ -36,7 +36,7 @@
         </surface>
       </collision>
       <visual name='base_link_inertia_visual'>
-        <pose>0 0 0.252 0 0 -1.57</pose>
+        <pose>0 0 0.0525 0 0 -1.57</pose>
         <geometry>
           <mesh>
             <scale>0.03 0.03 0.03</scale>
@@ -57,7 +57,7 @@
     <link name='imu_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0.2 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <mass>0.015</mass>
         <inertia>
           <ixx>1e-05</ixx>
@@ -88,7 +88,7 @@
       </axis>
     </joint>
     <link name='rotor_0'>
-			<pose>0.065 -0.065 0.175 0 0 0</pose>
+			<pose>0.065 -0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -154,7 +154,7 @@
       </axis>
     </joint>
     <link name='rotor_1'>
-			<pose>-0.065 0.065 0.175 0 0 0</pose>
+			<pose>-0.065 0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -220,7 +220,7 @@
       </axis>
     </joint>
     <link name='rotor_2'>
-			<pose>0.065 0.065 0.175 0 0 0</pose>
+			<pose>0.065 0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -286,7 +286,7 @@
       </axis>
     </joint>
     <link name='rotor_3'>
-			<pose>-0.065 -0.065 0.175 0 0 0</pose>
+			<pose>-0.065 -0.065 -0.025 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.005</mass>
@@ -353,65 +353,14 @@
     </joint>
     <include>
       <uri>model://gps</uri>
-      <pose>0.0 0 0.2 0 0 0</pose>
+      <pose>0.0 0 0 0 0 0</pose>
       <name>gps</name>
     </include>
     <joint name='gps_joint' type='fixed'>
       <child>gps::link</child>
       <parent>base_link</parent>
     </joint>
-    <include>
-      <uri>model://camera_front</uri> 
-      <pose>0.12 0 0.225 0 0 0</pose>
-    </include>
-
-    <include>
-      <uri>model://camera_down</uri>
-      <pose>-0.01 0 0.18 0 1.5707963 3.14</pose> <!--位置-->
-    </include>
-
-    <include>
-      <uri>model://livox_mid360</uri>
-      <pose>0.036 -0.0155 0.275 0 0 0</pose>
-    </include>
-
-    <!-- 下视相机关节 -->
-    <joint name="Monocular_down_joint" type="fixed">
-      <child>camera_down::Monocular_down_link</child> <!--子link-->
-      <parent>base_link</parent><!--父link-->
-      <axis>
-        <xyz>0 0 1</xyz><!--xyz标签定义轴的方向，是单位向量，默认值为0 0 1，参考系一般为joint参考系-->
-        <limit>
-          <upper>0</upper>
-          <lower>0</lower>
-        </limit>
-      </axis>
-    </joint>  
-
-    <!-- 前视相机关节 -->
-    <joint name="Monocular_front_joint" type="fixed">
-      <child>camera_front::Monocular_front_link</child>
-      <parent>base_link</parent>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <upper>0</upper>
-          <lower>0</lower>
-        </limit>
-      </axis>
-    </joint>
-
-    <joint name="mid360_joint" type="fixed">
-      <child>livox_mid360::link</child>
-      <parent>base_link</parent>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <upper>0</upper>
-          <lower>0</lower>
-        </limit>
-      </axis>
-    </joint>
+    
     <plugin name='rosbag' filename='libgazebo_multirotor_base_plugin.so'>
       <robotNamespace></robotNamespace>
       <linkName>base_link</linkName>
@@ -579,6 +528,57 @@
       <xyzOffsets>0 0 0</xyzOffsets>
       <rpyOffsets>0 0 0</rpyOffsets>
     </plugin>
+
+
+    <include>
+      <uri>model://camera_front</uri> 
+      <pose>0.12 0 0.025 0 0 0</pose>
+    </include>
+    <!-- 前视相机关节 -->
+    <joint name="Monocular_front_joint" type="fixed">
+      <child>camera_front::Monocular_front_link</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+    <include>
+      <uri>model://camera_down</uri>
+      <pose>-0.01 0 -0.02 0 1.5707963 3.14</pose> <!--位置-->
+    </include>
+    <!-- 下视相机关节 -->
+    <joint name="Monocular_down_joint" type="fixed">
+      <child>camera_down::Monocular_down_link</child> <!--子link-->
+      <parent>base_link</parent><!--父link-->
+      <axis>
+        <xyz>0 0 1</xyz><!--xyz标签定义轴的方向，是单位向量，默认值为0 0 1，参考系一般为joint参考系-->
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>  
+
+    <include>
+      <uri>model://livox_mid360</uri>
+      <pose>0.036 -0.0155 0.075 0 0 0</pose>
+    </include>
+    <joint name="mid360_joint" type="fixed">
+      <child>livox_mid360::base_link</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
 
   </model>
 </sdf>

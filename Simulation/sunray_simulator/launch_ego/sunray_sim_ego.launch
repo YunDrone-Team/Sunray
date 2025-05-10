@@ -19,7 +19,7 @@
 	<arg name="planning_horizon" default="7.5"/>
 
 	<!-- 局部坐标系下的点云话题 -->
-    <arg name="local_pointcloud_topic" default="/uav1/mid360_points"/>
+    <arg name="local_pointcloud_topic" default="/uav1/livox/lidar"/>
 
     <!-- 转换出来的世界坐标系下的点云话题 -->
     <arg name="global_pointcloud_topic" default="/uav1/global_points"/>
@@ -202,7 +202,6 @@
         <param name="use_hight" value="true" />
         <param name="z_hight" value="1.0" />
     </node>
-
 
     <arg name="enable_rviz" default="true"/>
     <arg name="rivz_config" default="$(find sunray_simulator)/launch_rviz/ego_sim.rviz"/>

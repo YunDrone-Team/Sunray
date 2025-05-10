@@ -92,8 +92,8 @@ int FastExplorationManager::planExploreMotion(
   ed_->views_.clear();
   ed_->global_tour_.clear();
 
-  std::cout << "start pos: " << pos.transpose() << ", vel: " << vel.transpose()
-            << ", acc: " << acc.transpose() << std::endl;
+  // std::cout << "start pos: " << pos.transpose() << ", vel: " << vel.transpose()
+  //           << ", acc: " << acc.transpose() << std::endl;
 
   // Search frontiers and group them into clusters
   frontier_finder_->searchFrontiers();
@@ -444,7 +444,7 @@ void FastExplorationManager::refineLocalTour(
   ViewNode::Ptr final_node;
 
   // Add viewpoints
-  std::cout << "Local tour graph: ";
+  // std::cout << "Local tour graph: ";
   for (int i = 0; i < n_points.size(); ++i) {
     // Create nodes for viewpoints of one frontier
     for (int j = 0; j < n_points[i].size(); ++j) {
@@ -462,11 +462,11 @@ void FastExplorationManager::refineLocalTour(
       }
     }
     // Store nodes for this group for connecting edges
-    std::cout << cur_group.size() << ", ";
+    // std::cout << cur_group.size() << ", ";
     last_group = cur_group;
     cur_group.clear();
   }
-  std::cout << "" << std::endl;
+  // std::cout << "" << std::endl;
   create_time = (ros::Time::now() - t1).toSec();
   t1 = ros::Time::now();
 
