@@ -5,21 +5,35 @@
 
 void communication_bridge::init(ros::NodeHandle &nh)
 {
-    nh.param<int>("uav_num", uav_num, 0);               // 【参数】无人机真机数量（用于智能体之间的通信）
-    nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
-    nh.param<string>("uav_name", uav_name, "uav");      // 【参数】无人机名字前缀
-    nh.param<int>("uav_simulation_num", uav_simulation_num, 1); // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
+    nh.param<int>("uav_experiment_num", uav_experiment_num, 0);                 // 【参数】无人机真机数量（用于智能体之间的通信）
+    nh.param<int>("uav_simulation_num", uav_simulation_num, 0);                 // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
+    nh.param<int>("uav_id", uav_id, 1);                                         // 【参数】无人机编号(本机)
+    nh.param<string>("uav_name", uav_name, "uav");                              // 【参数】无人机名字前缀
 
-    nh.param<int>("ugv_num", ugv_num, 0);                       // 【参数】无人车真车数量
-    nh.param<int>("ugv_id", ugv_id, 1);                         // 【参数】无人车编号
-    nh.param<string>("ugv_name", ugv_name, "ugv");              // 【参数】无人车名字前缀
-    nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0); // 【参数】仿真无人车数量
+    nh.param<int>("ugv_experiment_num", ugv_experiment_num, 0);                 // 【参数】无人车真车数量
+    nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0);                 // 【参数】仿真无人车数量
+    nh.param<int>("ugv_id", ugv_id, 1);                                         // 【参数】无人车编号(本机)
+    nh.param<string>("ugv_name", ugv_name, "ugv");                              // 【参数】无人车名字前缀
 
     nh.param<string>("tcp_port", tcp_port, "8969");          // 【参数】TCP绑定端口
     nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
     nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
-    // Sunray与地面站之间的通信（无人机）
+    // 情况枚举：
+    // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
+    // CASE2（真机）:只有一台无人车的时候 ugv_id =本机ID   ugv_experiment_num=1 ugv_simulation_num=0，不提及的默认都为0
+    // CASE3（真机）:3台无人机、2台无人车 
+        // uav_id =本机ID   uav_experiment_num=3 uav_simulation_num=0
+        // ugv_id =本机ID   ugv_experiment_num=2 uav_simulation_num=0
+    // CASE1（仿真）:只有一台无人机的时候 uav_id =1   uav_experiment_num=0 uav_simulation_num=1，不提及的默认都为0
+    // CASE2（仿真）:3台无人机 uav_id =1   uav_experiment_num=0 uav_simulation_num=3，不提及的默认都为0
+    // CASE3（仿真）:只有一台无人车的时候 ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=1，不提及的默认都为0
+    // CASE4（仿真）:3台无人车 ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=3，不提及的默认都为0
+    // CASE5（仿真）:3台无人机、2台无人车
+        // uav_id =1   uav_experiment_num=0 uav_simulation_num=3
+        // ugv_id =1   ugv_experiment_num=0 uav_simulation_num=2
+
+    // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
     for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
     {
         //  无人机名字 = 无人机名字前缀 + 无人机ID
@@ -34,8 +48,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
         uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
     }
 
-    // 本无人机Sunray和其他无人机/车Sunray之间的通信
-    if (uav_num > 0)
+    // 无人机Sunray和地面站之间的通信（此部分仅针对真机）
+    if (uav_experiment_num > 0)
     {
         //  无人机名字 = 无人机名字前缀 + 无人机ID
         std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
@@ -49,7 +63,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
         uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
     }
 
-    for (int i = 1; i <= uav_num; i++)
+    // 无人机Sunray和其他Sunray（包括无人机和车）之间的通信（此部分仅针对真机）
+    for (int i = 1; i <= uav_experiment_num; i++)
     {
         if (uav_id == i)
             continue;
@@ -59,7 +74,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
         uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray/uav_state", 1))));
     }
 
-    // Sunray与地面站之间的通信（无人车）
+    // 无人车Sunray与地面站之间的通信（此部分仅针对仿真）
     for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
     {
         //  无人车名字 = 无人车名字前缀 + 无人车ID
@@ -70,7 +85,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
         ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
     }
 
-    if (ugv_num > 0)
+    // 无人车Sunray和地面站之间的通信（此部分仅针对真机）
+    if (ugv_experiment_num > 0)
     {
         //  无人车名字 = 无人车名字前缀 + 无人车ID
         std::string topic_prefix = "/" + ugv_name + std::to_string(ugv_id);
@@ -80,7 +96,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
         ugv_controlCMD_pub.insert(std::make_pair(ugv_id, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
     }
 
-    for (int i = 1; i <= ugv_num; i++)
+    // 无人机Sunray和其他Sunray（包括无人机和车）之间的通信（此部分仅针对真机）
+    for (int i = 1; i <= ugv_experiment_num; i++)
     {
         if (ugv_id == i)
             continue;
@@ -94,10 +111,10 @@ void communication_bridge::init(ros::NodeHandle &nh)
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
     // 【定时器】 定时检测启动的子进程是否存活
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
-    // 【定时器】 定时发布无人机状态信息（机间通信） - TODOBUG 不是无人机和无人机之间通信 ，是智能体之间通信
-    InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterAircraftStatusInformation, this);
     // 【定时器】 定时发送数据到地面站 Sunray -> 地面站
     SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
+    // 【定时器】 定时发布无人机状态信息（机间通信） - TODOBUG 不是无人机和无人机之间通信 ，是智能体之间通信
+    InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterAircraftStatusInformation, this);
     // 【定时器】 定时发布无人车状态信息（车间通信）
     InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterVehicleStatusInformation, this);
 
@@ -212,7 +229,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
 
-            // std::cout << "发送结果: " << back << " ugv_num " << ugv_num << std::endl;
+            // std::cout << "发送结果: " << back << " ugv_experiment_num " << ugv_experiment_num << std::endl;
         }
 
         break;
