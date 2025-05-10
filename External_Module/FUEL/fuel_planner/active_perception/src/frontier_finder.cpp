@@ -211,8 +211,8 @@ bool FrontierFinder::splitHorizontally(const Frontier& frontier, list<Frontier>&
     }
   }
   Eigen::Vector2d first_pc = vectors.col(max_idx);
-  std::cout << "max idx: " << max_idx << std::endl;
-  std::cout << "mean: " << mean.transpose() << ", first pc: " << first_pc.transpose() << std::endl;
+  // std::cout << "max idx: " << max_idx << std::endl;
+  // std::cout << "mean: " << mean.transpose() << ", first pc: " << first_pc.transpose() << std::endl;
 
   // Split the frontier into two groups along the first PC
   Frontier ftr1, ftr2;
@@ -415,11 +415,11 @@ void FrontierFinder::computeFrontiersToVisit() {
   int idx = 0;
   for (auto& ft : frontiers_) {
     ft.id_ = idx++;
-    std::cout << ft.id_ << ", ";
+    // std::cout << ft.iLocal tour graph:d_ << ", ";
   }
-  std::cout << "\nnew num: " << new_num << ", new dormant: " << new_dormant_num << std::endl;
-  std::cout << "to visit: " << frontiers_.size() << ", dormant: " << dormant_frontiers_.size()
-            << std::endl;
+  // std::cout << "\nnew num: " << new_num << ", new dormant: " << new_dormant_num << std::endl;
+  // std::cout << "to visit: " << frontiers_.size() << ", dormant: " << dormant_frontiers_.size()
+  //           << std::endl;
 }
 
 void FrontierFinder::getTopViewpointsInfo(

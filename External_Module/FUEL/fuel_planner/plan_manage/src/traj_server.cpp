@@ -490,16 +490,16 @@ int main(int argc, char** argv) {
 
   // test();
   // Initialization for exploration, move upward and downward
-  for (int i = 0; i < 100; ++i) {
-    cmd.position.z += 0.01;
-    pos_cmd_pub.publish(cmd);
-    ros::Duration(0.01).sleep();
-  }
-  for (int i = 0; i < 100; ++i) {
-    cmd.position.z -= 0.01;
-    pos_cmd_pub.publish(cmd);
-    ros::Duration(0.01).sleep();
-  }
+  // for (int i = 0; i < 100; ++i) {
+  //   cmd.position.z += 0.01;
+  //   pos_cmd_pub.publish(cmd);
+  //   ros::Duration(0.01).sleep();
+  // }
+  // for (int i = 0; i < 100; ++i) {
+  //   cmd.position.z -= 0.01;
+  //   pos_cmd_pub.publish(cmd);
+  //   ros::Duration(0.01).sleep();
+  // }
   // ros::Duration(1.0).sleep();
   // for (int i = 0; i < 100; ++i)
   // {
