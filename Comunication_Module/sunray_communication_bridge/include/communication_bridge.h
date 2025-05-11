@@ -51,6 +51,7 @@ public:
     void init(ros::NodeHandle &nh);
 
 private:
+    bool is_simulation;
     uint32_t last_time_stamp;
     int uav_experiment_num;
     int ugv_experiment_num;
