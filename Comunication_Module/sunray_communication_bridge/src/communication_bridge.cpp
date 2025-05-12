@@ -386,7 +386,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
     switch (readData.messageID)
     {
-    // 无人机控制指令 - ControlData（#102） TODO:下同 加注释
+    // 无人机控制指令 - ControlData（#102） 
     case MessageID::ControlMessageID:
         time_stamp = readData.data.control.timestamp;
 
@@ -406,8 +406,8 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         uav_cmd.desired_yaw_rate = readData.data.control.yawRate;
 
         control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
-
         break;
+    // 无人机模式切换 - VehicleData（#103
     case MessageID::VehicleMessageID:
         robot_id = readData.data.vehicle.robotID;
         setup.header.stamp = ros::Time::now();
@@ -419,6 +419,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
 
         uav_setup_pub.at(robot_id - uav_id).publish(setup);
         break;
+    // 无人机demo - DemoData（#202）    
     case MessageID::DemoMessageID:
         if (readData.data.demo.demoState == true)
         {
@@ -454,8 +455,8 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                     std::cout << "该节点未启动： " << readData.data.demo.demoStr << std::endl;
             }
         }
-
         break;
+    // 功能脚本 - ScriptData（#203）    
     case MessageID::ScriptMessageID:
         if (readData.data.agentScrip.scriptState == true)
         {
@@ -465,6 +466,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 executeScript(+readData.data.agentScrip.scriptStr, "/scripts_exp/");
         }
         break;
+    // 无人机航点 - WaypointData（#104）    
     case MessageID::WaypointMessageID:
     {
         robot_id = readData.data.waypointData.robotID;
@@ -506,12 +508,12 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         uav_waypoint_pub[robot_id - uav_id].publish(waypoint_msg);
         break;
     }
+    // 无人车控制指令 - UGVControlData（#120）
     case MessageID::UGVControlMessageID:
         std::cout << "TCPServerCallBack UGVControlMessageID:" << readData.messageID << std::endl;
         PublishUGVControlTopic(readData.data.ugvControl);
         break;
-    default:
-        break;
+    default:break;
     }
     // std::cout << "communication_bridge::TCPServerCallBack end" << std::endl;
 }
@@ -626,7 +628,7 @@ bool communication_bridge::SynchronizationUAVState(StateData Data)
 
 void communication_bridge::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
 {
-    // 无人机状态信息组播链路发送 适配多个仿真系统状态信息同步 TODOBUG 无人机之间通信怎么会有uav_simulation_num一说？广播本机的就行了啊
+    // 无人机状态信息组播链路发送 适配多个仿真系统状态信息同步 这里用于同步不同电脑上的仿真系统
     for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
     {
         std::lock_guard<std::mutex> lock(_mutexUDP);
