@@ -23,7 +23,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
     // CASE2（真机）:只有一台无人车的时候 ugv_id =本机ID   ugv_experiment_num=1 ugv_simulation_num=0，不提及的默认都为0
-    // CASE3（真机）:3台无人机、2台无人车 
+    // CASE3（真机）:3台无人机(uav_id=1\2\3,robot_id=1\2\3)、2台无人车(uav_id=1\2,robot_id=1\2)
         // uav_id =本机ID   uav_experiment_num=3 uav_simulation_num=0
         // ugv_id =本机ID   ugv_experiment_num=2 uav_simulation_num=0
     // CASE1（仿真）:只有一台无人机的时候 uav_id =1   uav_experiment_num=0 uav_simulation_num=1，不提及的默认都为0
@@ -32,7 +32,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // CASE4（仿真）:3台无人车 ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=3，不提及的默认都为0
     // CASE5（仿真）:3台无人机、2台无人车
         // uav_id =1   uav_experiment_num=0 uav_simulation_num=3
-        // ugv_id =1   ugv_experiment_num=0 uav_simulation_num=2
+        // ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=2
 
     if(is_simulation)
     {
@@ -118,9 +118,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
     // 【定时器】 定时发送数据到地面站 本节点 --UDP--> 地面站
     SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
-    // 【定时器】 定时发布无人机状态信息（智能体之间通信） 本节点 --UDP--> 其他无人机 
+    // 【定时器】 定时发布无人机状态信息（智能体之间通信） 本节点 --UDP--> 其他无人机/车 
     InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterAircraftStatusInformation, this);
-    // 【定时器】 定时发布无人车状态信息（智能体之间通信） 本节点 --UDP--> 其他无人车 TODOBUG：sendInterAircraftStatusInformation和sendInterVehicleStatusInformation可以合并吧？通过uav_id和ugv_id判定是否发送！
+    // 【定时器】 定时发布无人车状态信息（智能体之间通信） 本节点 --UDP--> 其他无人车 
     InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterVehicleStatusInformation, this);
 
     // 【TCP服务器】 绑定TCP服务器端口
@@ -238,14 +238,15 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
 
         break;
     }
+
     case MessageID::StateMessageID:
         // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
-        if (uav_id == readData.data.state.uavID)
+        if (uav_id == readData.data.state.uavID || is_simulation)
             return;
         SynchronizationUAVState(readData.data.state);
         break;
     case MessageID::UGVStateMessageID:
-        if (ugv_id == readData.data.ugvState.ugvID)
+        if (ugv_id == readData.data.ugvState.ugvID || is_simulation)
             return;
         SynchronizationUGVState(readData.data.ugvState);
         break;
@@ -383,7 +384,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     uint32_t time_stamp;
     uint8_t robot_id;
 
-    std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
+    // std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
     switch (readData.messageID)
     {
     // 无人机控制指令 - ControlData（#102） 
@@ -407,7 +408,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
 
         control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
         break;
-    // 无人机模式切换 - VehicleData（#103
+    // 无人机模式切换 - VehicleData（#103)
     case MessageID::VehicleMessageID:
         robot_id = readData.data.vehicle.robotID;
         setup.header.stamp = ros::Time::now();
@@ -416,7 +417,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             setup.control_mode = "CMD_CONTROL";
         }
         setup.cmd = readData.data.vehicle.sunray_mode;
-
+        //  todo
         uav_setup_pub.at(robot_id - uav_id).publish(setup);
         break;
     // 无人机demo - DemoData（#202）    
@@ -628,11 +629,11 @@ bool communication_bridge::SynchronizationUAVState(StateData Data)
 
 void communication_bridge::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
 {
-    // 无人机状态信息组播链路发送 适配多个仿真系统状态信息同步 这里用于同步不同电脑上的仿真系统
-    for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+    // 无人机状态信息组播链路发送
+    if(uav_id > 0 && !is_simulation)
     {
         std::lock_guard<std::mutex> lock(_mutexUDP);
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[i - 1]), udp_port);
+        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[uav_id - 1]), udp_port);
     }
 }
 
@@ -640,11 +641,13 @@ void communication_bridge::sendInterAircraftStatusInformation(const ros::TimerEv
 void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
 {
     std::vector<std::string> tempVec;
+    // 仿真情况下，所有无人机状态都通过本节点回传（仿真时只有一个通信节点，真机时有N个机载通信节点）
     for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
     {
         std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
         for (const auto &ip : GSIPHash)
         {
+            // 无人机状态 - StateData（#2）
             int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, uavStateData[i - 1]), ip, udp_ground_port);
             if (sendBack < 0)
                 tempVec.push_back(ip);
@@ -656,6 +659,7 @@ void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
         std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
         for (const auto &ip : GSIPHash)
         {
+            // 无人车状态 - UGVStateData（#20）
             int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), ip, udp_ground_port);
             if (sendBack < 0)
                 tempVec.push_back(ip);
