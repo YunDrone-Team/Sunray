@@ -3,6 +3,7 @@
     <arg name="uav_experiment_num" default="0" />   <!-- 无人机真机数量 -->
     <arg name="uav_id" default="1" />               <!-- 当前无人机id，默认值为1 -->
     <arg name="uav_simulation_num" default="3" />   <!-- 仿真无人机数量 -->
+    <arg name="is_simulation" default="true" />     <!-- 是否处于仿真状态 -->
 
     <arg name="ugv_name" default="ugv" />
     <arg name="ugv_id" default="1" />               <!-- 当前无人车id，默认值为1 -->
@@ -18,7 +19,7 @@
         <param name="uav_experiment_num" value="$(arg uav_experiment_num)" />
         <param name="uav_simulation_num" value="$(arg uav_simulation_num)" />
         <param name="uav_name" value="$(arg uav_name)" />
-        <param name="uav_id" value="$(arg uav_id)" />  <!-- 新增的参数传递给节点 -->  
+        <param name="uav_id" value="$(arg uav_id)" />  
         <param name="tcp_port" value="$(arg tcp_port)" />
         <param name="udp_port" value="$(arg udp_port)" />
         <param name="udp_ground_port" value="$(arg udp_ground_port)" />
@@ -26,5 +27,6 @@
         <param name="ugv_simulation_num" value="$(arg ugv_simulation_num)" />
         <param name="ugv_id" value="$(arg ugv_id)" />  
         <param name="ugv_name" value="$(arg ugv_name)" />
+        <param name="is_simulation" value="$(arg is_simulation)" />
     </node>
 </launch>
