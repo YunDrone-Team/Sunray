@@ -26,7 +26,7 @@
     <!-- uav_init_roll, uav_init_pitch, uav_init_yaw: 无人机的初始姿态 -->
     <arg name="uav_init_x" default="0"/>
     <arg name="uav_init_y" default="0"/>
-    <arg name="uav_init_z" default="0.0"/>
+    <arg name="uav_init_z" default="0.2"/>
     <arg name="uav_init_yaw" default="0"/>
 
     <!-- 

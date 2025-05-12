@@ -72,7 +72,7 @@
           <downsample>4</downsample>
           <csv_file_name>mid360-real-centr.csv</csv_file_name>
           <!-- POINT_CLOUD = 0, POINT_CLOUD2_POINTXYZ = 1, POINT_CLOUD2_LIVOXPOINTXYZRTLT = 2, CUSTOM_MSG = 3, -->
-          <publish_pointcloud_type>2</publish_pointcloud_type>
+          <publish_pointcloud_type>1</publish_pointcloud_type>
           <ros_topic>livox/lidar</ros_topic>
           <frameName>base_link</frameName>
         </plugin>
