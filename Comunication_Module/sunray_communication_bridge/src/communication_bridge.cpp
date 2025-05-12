@@ -5,36 +5,36 @@
 
 void communication_bridge::init(ros::NodeHandle &nh)
 {
-    nh.param<bool>("is_simulation", is_simulation, false);                      // 【参数】确认当前是仿真还是真机实验
-    nh.param<int>("uav_experiment_num", uav_experiment_num, 0);                 // 【参数】无人机真机数量（用于智能体之间的通信）
-    nh.param<int>("uav_simulation_num", uav_simulation_num, 0);                 // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
-    nh.param<int>("uav_id", uav_id, 1);                                         // 【参数】无人机编号(真机为本机，仿真为1)
-    nh.param<string>("uav_name", uav_name, "uav");                              // 【参数】无人机名字前缀
+    nh.param<bool>("is_simulation", is_simulation, false);      // 【参数】确认当前是仿真还是真机实验
+    nh.param<int>("uav_experiment_num", uav_experiment_num, 0); // 【参数】无人机真机数量（用于智能体之间的通信）
+    nh.param<int>("uav_simulation_num", uav_simulation_num, 0); // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
+    nh.param<int>("uav_id", uav_id, 1);                         // 【参数】无人机编号(真机为本机，仿真为1)
+    nh.param<string>("uav_name", uav_name, "uav");              // 【参数】无人机名字前缀
 
-    nh.param<int>("ugv_experiment_num", ugv_experiment_num, 0);                 // 【参数】无人车真车数量
-    nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0);                 // 【参数】仿真无人车数量
-    nh.param<int>("ugv_id", ugv_id, 1);                                         // 【参数】无人车编号(真机为本机，仿真为1)
-    nh.param<string>("ugv_name", ugv_name, "ugv");                              // 【参数】无人车名字前缀
+    nh.param<int>("ugv_experiment_num", ugv_experiment_num, 0); // 【参数】无人车真车数量
+    nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0); // 【参数】仿真无人车数量
+    nh.param<int>("ugv_id", ugv_id, 1);                         // 【参数】无人车编号(真机为本机，仿真为1)
+    nh.param<string>("ugv_name", ugv_name, "ugv");              // 【参数】无人车名字前缀
 
-    nh.param<string>("tcp_port", tcp_port, "8969");                             // 【参数】TCP绑定端口
-    nh.param<int>("udp_port", udp_port, 9696);                                  // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
-    nh.param<int>("udp_ground_port", udp_ground_port, 9999);                    // 【参数】组播目标端口，用于机间通信
+    nh.param<string>("tcp_port", tcp_port, "8969");          // 【参数】TCP绑定端口
+    nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
+    nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
     // CASE2（真机）:只有一台无人车的时候 ugv_id =本机ID   ugv_experiment_num=1 ugv_simulation_num=0，不提及的默认都为0
     // CASE3（真机）:3台无人机(uav_id=1\2\3,robot_id=1\2\3)、2台无人车(uav_id=1\2,robot_id=1\2)
-        // uav_id =本机ID   uav_experiment_num=3 uav_simulation_num=0
-        // ugv_id =本机ID   ugv_experiment_num=2 uav_simulation_num=0
+    // uav_id =本机ID   uav_experiment_num=3 uav_simulation_num=0
+    // ugv_id =本机ID   ugv_experiment_num=2 uav_simulation_num=0
     // CASE1（仿真）:只有一台无人机的时候 uav_id =1   uav_experiment_num=0 uav_simulation_num=1，不提及的默认都为0
     // CASE2（仿真）:3台无人机 uav_id =1   uav_experiment_num=0 uav_simulation_num=3，不提及的默认都为0
     // CASE3（仿真）:只有一台无人车的时候 ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=1，不提及的默认都为0
     // CASE4（仿真）:3台无人车 ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=3，不提及的默认都为0
     // CASE5（仿真）:3台无人机、2台无人车
-        // uav_id =1   uav_experiment_num=0 uav_simulation_num=3
-        // ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=2
+    // uav_id =1   uav_experiment_num=0 uav_simulation_num=3
+    // ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=2
 
-    if(is_simulation)
+    if (is_simulation)
     {
         // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
@@ -42,13 +42,16 @@ void communication_bridge::init(ros::NodeHandle &nh)
             //  无人机名字 = 无人机名字前缀 + 无人机ID
             std::string topic_prefix = "/" + uav_name + std::to_string(i);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站
-            uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
+            uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
             // 【发布】无人机控制指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
+            // control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
+            control_cmd_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1))));
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1));
+            // uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1));
+            uav_setup_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
+            // uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
+            uav_waypoint_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
         }
 
         // 无人车Sunray与地面站之间的通信（此部分仅针对仿真）
@@ -61,21 +64,25 @@ void communication_bridge::init(ros::NodeHandle &nh)
             // 【发布】无人车控制指令 地面站 --TCP--> 本节点 --ROS topic--> ugv_control_node
             ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
         }
-    }else
+    }
+    else
     {
         // 无人机Sunray和地面站之间的通信（此部分仅针对真机）
         if (uav_experiment_num > 0)
         {
             //  无人机名字 = 无人机名字前缀 + 无人机ID
             std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
-            // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体 
+            // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体
             uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
             // 【发布】无人机控制指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
+            // control_cmd_pub.push_back(nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1));
+            control_cmd_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1))));
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1));
+            // uav_setup_pub.push_back(nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1));
+            uav_setup_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
+            // uav_waypoint_pub.push_back(nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1));
+            uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
         }
 
         // 无人车Sunray和地面站之间的通信（此部分仅针对真机）
@@ -83,7 +90,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
         {
             //  无人车名字 = 无人车名字前缀 + 无人车ID
             std::string topic_prefix = "/" + ugv_name + std::to_string(ugv_id);
-            // 【订阅】无人车状态 ugv_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体 
+            // 【订阅】无人车状态 ugv_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体
             ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&communication_bridge::ugv_state_cb, this, _1, ugv_id)));
             // 【发布】无人车控制指令 地面站 --TCP--> 本节点 --ROS topic--> ugv_control_node
             ugv_controlCMD_pub.insert(std::make_pair(ugv_id, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
@@ -118,10 +125,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
     // 【定时器】 定时发送数据到地面站 本节点 --UDP--> 地面站
     SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
-    // 【定时器】 定时发布无人机状态信息（智能体之间通信） 本节点 --UDP--> 其他无人机/车 
-    InterAircraftTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterAircraftStatusInformation, this);
-    // 【定时器】 定时发布无人车状态信息（智能体之间通信） 本节点 --UDP--> 其他无人车 
-    InterVehicleTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendInterVehicleStatusInformation, this);
+    // 【定时器】 定时发智能体状态信息（智能体之间通信） 本节点 --UDP--> 其他无人机/车
+    agentStateTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendAgentStatusInformation, this);
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -149,7 +154,6 @@ void communication_bridge::init(ros::NodeHandle &nh)
 
     // 【心跳包】 默认心跳包关闭
     HeartbeatState = false;
-
 }
 
 void communication_bridge::TCPLinkState(bool state, std::string IP)
@@ -159,7 +163,9 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
     {
         GSIPHash.insert(IP);
         HeartbeatState = true;
-    }else{
+    }
+    else
+    {
         GSIPHash.erase(IP);
         if (GSIPHash.empty())
             HeartbeatState = false;
@@ -273,13 +279,19 @@ pid_t communication_bridge::CheckChildProcess(pid_t pid)
         if (WIFEXITED(status))
         {
             std::cout << "Child process (PID: " << pid << ") exited normally with status " << WEXITSTATUS(status) << std::endl;
-        }else if (WIFSIGNALED(status)){
+        }
+        else if (WIFSIGNALED(status))
+        {
             std::cout << "Child process (PID: " << pid << ") was terminated by signal " << WTERMSIG(status) << std::endl;
         }
-    }else if (terminated_pid == 0){
+    }
+    else if (terminated_pid == 0)
+    {
         // 子进程还在运行
         // std::cout << "Child process (PID: " << pid << ") is still running." << std::endl;
-    }else{
+    }
+    else
+    {
         perror("waitpid");
     }
     return terminated_pid;
@@ -292,7 +304,7 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
         perror("fork failed");
     else if (pid == 0)
     {
-        std::string cdCommand = "cd " + getSunrayPath()+filePath;
+        std::string cdCommand = "cd " + getSunrayPath() + filePath;
         std::string fullCommand = cdCommand + " && ./" + scriptStr;
 
         // 构建打开新终端并执行命令的字符串
@@ -304,7 +316,7 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
 
-         // 设置环境变量和参数
+        // 设置环境变量和参数
         // char *const envp[] = {NULL};
         // char *const argv[] = {(char*)"bash", (char*)"-c", (char*)fullCommand.c_str(), NULL};
 
@@ -314,7 +326,8 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
         // // 如果execve返回，说明执行失败
         // perror("OrderCourse Error!");
         // _exit(EXIT_FAILURE);
-    }else
+    }
+    else
         printf("This is the parent process. Child PID: %d\n", pid);
 
     return pid;
@@ -327,7 +340,9 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
     {
         perror("fork failed");
         // return EXIT_FAILURE;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
@@ -339,7 +354,9 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         demoPID = pid;
         printf("This is the parent process. Child PID: %d\n", pid);
     }
@@ -354,7 +371,9 @@ void communication_bridge::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
@@ -362,13 +381,15 @@ void communication_bridge::executiveDemo(std::string orderStr)
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
-        //std::cout << "executiveDemo： " << temp << std::endl;
+        // std::cout << "executiveDemo： " << temp << std::endl;
         const char *command = temp.c_str();
         execlp("bash", "bash", "-c", command, (char *)NULL);
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         // 父进程
         int status;
         demoPID = pid;
@@ -384,11 +405,12 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     uint32_t time_stamp;
     uint8_t robot_id;
 
-    // std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
+    std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
     switch (readData.messageID)
     {
-    // 无人机控制指令 - ControlData（#102） 
+    // 无人机控制指令 - ControlData（#102）
     case MessageID::ControlMessageID:
+    {
         time_stamp = readData.data.control.timestamp;
 
         roll = readData.data.control.roll;
@@ -406,10 +428,21 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         uav_cmd.desired_yaw = readData.data.control.yaw;
         uav_cmd.desired_yaw_rate = readData.data.control.yawRate;
 
-        control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
+        // control_cmd_pub[robot_id - uav_id].publish(uav_cmd);
+
+        auto it = control_cmd_pub.find(robot_id);
+        if (it == control_cmd_pub.end())
+        {
+            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+            ;
+        }
+        it->second.publish(uav_cmd);
         break;
+    }
     // 无人机模式切换 - VehicleData（#103)
     case MessageID::VehicleMessageID:
+    {
         robot_id = readData.data.vehicle.robotID;
         setup.header.stamp = ros::Time::now();
         if (readData.data.vehicle.sunray_mode == VehicleControlType::SetControlMode)
@@ -417,10 +450,18 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             setup.control_mode = "CMD_CONTROL";
         }
         setup.cmd = readData.data.vehicle.sunray_mode;
-        //  todo
-        uav_setup_pub.at(robot_id - uav_id).publish(setup);
+        // uav_setup_pub.at(robot_id - uav_id).publish(setup);
+        auto it = uav_setup_pub.find(robot_id);
+        if (it == uav_setup_pub.end())
+        {
+            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+            ;
+        }
+        it->second.publish(setup);
         break;
-    // 无人机demo - DemoData（#202）    
+    }
+    // 无人机demo - DemoData（#202）
     case MessageID::DemoMessageID:
         if (readData.data.demo.demoState == true)
         {
@@ -430,13 +471,17 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 if (it != nodeMap.end())
                 {
                     std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }else{
+                }
+                else
+                {
                     pid_t back = OrderCourse(readData.data.demo.demoStr);
                     if (back > 0)
                         nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
                 }
             }
-        }else{
+        }
+        else
+        {
             if (readData.data.demo.demoSize > 0)
             {
                 std::cout << "TCPServer 关闭Demo： " << std::endl;
@@ -447,7 +492,9 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }else{
+                    }
+                    else
+                    {
                         printf("Sent SIGTERM to child process %d\n", temp);
                         nodeMap.erase(readData.data.demo.demoStr);
                     }
@@ -457,7 +504,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             }
         }
         break;
-    // 功能脚本 - ScriptData（#203）    
+    // 功能脚本 - ScriptData（#203）
     case MessageID::ScriptMessageID:
         if (readData.data.agentScrip.scriptState == true)
         {
@@ -467,7 +514,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 executeScript(+readData.data.agentScrip.scriptStr, "/scripts_exp/");
         }
         break;
-    // 无人机航点 - WaypointData（#104）    
+    // 无人机航点 - WaypointData（#104）
     case MessageID::WaypointMessageID:
     {
         robot_id = readData.data.waypointData.robotID;
@@ -506,15 +553,43 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                                     readData.data.waypointData.Waypoint10.Z, readData.data.waypointData.Waypoint10.Yaw};
         waypoint_msg.wp_circle_point = {readData.data.waypointData.wpCirclePointX, readData.data.waypointData.wpCirclePointY};
 
-        uav_waypoint_pub[robot_id - uav_id].publish(waypoint_msg);
+        // uav_waypoint_pub[robot_id - uav_id].publish(waypoint_msg);
+        auto it = uav_waypoint_pub.find(robot_id);
+        if (it == uav_waypoint_pub.end())
+        {
+            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+            ;
+        }
+        it->second.publish(waypoint_msg);
         break;
     }
     // 无人车控制指令 - UGVControlData（#120）
     case MessageID::UGVControlMessageID:
-        std::cout << "TCPServerCallBack UGVControlMessageID:" << readData.messageID << std::endl;
-        PublishUGVControlTopic(readData.data.ugvControl);
+    {
+        // PublishUGVControlTopic(readData.data.ugvControl);
+        robot_id = readData.data.ugvControl.robotID;
+
+        auto it = ugv_controlCMD_pub.find(robot_id);
+        if (it == ugv_controlCMD_pub.end())
+        {
+            std::cout << "controlCMD UGV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+        }
+        sunray_msgs::UGVControlCMD msg;
+        msg.cmd = readData.data.ugvControl.controlMode;
+        msg.yaw_type = readData.data.ugvControl.yawType;
+        msg.desired_pos[0] = readData.data.ugvControl.desiredPos.x;
+        msg.desired_pos[1] = readData.data.ugvControl.desiredPos.y;
+        msg.desired_vel[0] = readData.data.ugvControl.desiredVel.x;
+        msg.desired_vel[1] = readData.data.ugvControl.desiredVel.y;
+        msg.desired_yaw = readData.data.ugvControl.desiredYaw;
+        msg.angular_vel = readData.data.ugvControl.angularVel;
+        it->second.publish(msg);
         break;
-    default:break;
+    }
+    default:
+        break;
     }
     // std::cout << "communication_bridge::TCPServerCallBack end" << std::endl;
 }
@@ -627,17 +702,23 @@ bool communication_bridge::SynchronizationUAVState(StateData Data)
     return true;
 }
 
-void communication_bridge::sendInterAircraftStatusInformation(const ros::TimerEvent &e)
+void communication_bridge::sendAgentStatusInformation(const ros::TimerEvent &e)
 {
     // 无人机状态信息组播链路发送
-    if(uav_id > 0 && !is_simulation)
+    if (uav_id > 0 && !is_simulation)
     {
         std::lock_guard<std::mutex> lock(_mutexUDP);
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[uav_id - 1]), udp_port);
     }
+
+    // 无人车状态信息组播链路发送
+    if (ugv_id > 0 && !is_simulation)
+    {
+        std::lock_guard<std::mutex> lock(_mutexUDP);
+        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[ugv_id - 1]), udp_port);
+    }
 }
 
- 
 void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
 {
     std::vector<std::string> tempVec;
@@ -669,16 +750,6 @@ void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
     for (const auto &ip : tempVec)
         GSIPHash.erase(ip);
     tempVec.clear();
-}
-
-void communication_bridge::sendInterVehicleStatusInformation(const ros::TimerEvent &e)
-{
-    // 无人车状态信息组播链路发送 适配多个仿真系统状态信息同步
-    for (int i = ugv_id; i <= ugv_id + ugv_simulation_num; i++)
-    {
-        std::lock_guard<std::mutex> lock(_mutexUDP);
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), udp_port);
-    }
 }
 
 void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
