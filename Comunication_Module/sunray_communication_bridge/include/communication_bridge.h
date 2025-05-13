@@ -131,7 +131,6 @@ private:
     void executiveDemo(std::string orderStr);
     bool SynchronizationUAVState(StateData Data);
     bool SynchronizationUGVState(UGVStateData Data);
-    bool PublishUGVControlTopic(UGVControlData Data);
     void TCPLinkState(bool state,std::string IP);
     pid_t OrderCourse(std::string orderStr);
     pid_t executeScript(std::string scriptStr,std::string filePath);
