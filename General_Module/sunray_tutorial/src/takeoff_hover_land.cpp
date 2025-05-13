@@ -1,7 +1,11 @@
 #include <ros/ros.h>
+#include <printf_format.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
 #include <csignal>
+
+
+using namespace sunray_logger;
 using namespace std;
 
 /*
@@ -19,12 +23,11 @@ bool stop_flag{false};
 
 void mySigintHandler(int sig)
 {
-    //ROS_INFO("[takeoff_hover_land] exit...");
-    std::cout<<"[takeoff_hover_land] exit..."<<std::endl;
+    // ROS_INFO("[takeoff_hover_land] exit...");
+    std::cout << "[takeoff_hover_land] exit..." << std::endl;
 
     ros::shutdown();
     exit(EXIT_SUCCESS); // 或者使用 exit(0)
-
 }
 
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
@@ -34,10 +37,17 @@ void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 
 int main(int argc, char **argv)
 {
+    // 设置日志
+    Logger::init_default();
+    Logger::setPrintLevel(false);
+    Logger::setPrintTime(false);
+    Logger::setPrintToFile(false);
+    Logger::setFilename("~/Documents/Sunray_log.txt");
+
     ros::init(argc, argv, "takeoff_node");
     ros::NodeHandle nh("~");
-
     ros::Rate rate(20.0);
+
     // 获取 ROS 参数，设置默认值。如果没有在参数服务器上找到这些参数，会使用默认值。
     int uav_id;
 
@@ -94,34 +104,50 @@ int main(int argc, char **argv)
     cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
 
     ros::Duration(0.5).sleep();
+    // 初始化检查：等待PX4连接
+    int times = 0;
+    while (ros::ok() && !uav_state.connected)
+    {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (times++ > 5)
+            Logger::print_color(int(LogColor::red), "Wait for uav connect");
+    }
+
+    Logger::print_color(int(LogColor::blue), ">>>>>>> uav connected!");
     // 解锁
-    cout << "arm" << endl;
-    setup.cmd = 1;
+    setup.cmd = sunray_msgs::UAVSetup::ARM;
     uav_setup_pub.publish(setup);
+    Logger::print_color(int(LogColor::blue), ">>>>>>> uav_setup_pub: arm uav!");
     ros::Duration(1.5).sleep();
 
+    Logger::print_color(int(LogColor::blue), ">>>>>>> uav armed successfully!");
+
     // 切换到指令控制模式
-    cout << "switch CMD_CONTROL" << endl;
-    setup.cmd = 4;
+    Logger::print_color(int(LogColor::blue), ">>>>>>> switch to CMD_CONTROL");
+    setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
     setup.control_mode = "CMD_CONTROL";
     uav_setup_pub.publish(setup);
     ros::Duration(1.0).sleep();
 
+    Logger::print_color(int(LogColor::blue), ">>>>>>> uav switch to CMD_CONTROL successfully!");
+
+
     // 起飞
-    cout << "takeoff" << endl;
-    uav_cmd.cmd = 100;
+    Logger::print_color(int(LogColor::blue), ">>>>>>> UAV Takeoff");
+    uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(10).sleep();
 
     // 悬停
-    cout << "hover" << endl;
-    uav_cmd.cmd = 102;
+    Logger::print_color(int(LogColor::blue), ">>>>>>> UAV Hover");
+    uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(5).sleep();
 
     // 降落
-    cout << "land" << endl;
-    uav_cmd.cmd = 101;
+    Logger::print_color(int(LogColor::blue), ">>>>>>> UAV Land");
+    uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
     control_cmd_pub.publish(uav_cmd);
     // 关键
     ros::Duration(0.5).sleep();
