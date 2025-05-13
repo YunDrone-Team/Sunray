@@ -22,7 +22,7 @@
     <arg name="cmd_timeout" default="5.0" />
     <arg name="use_offset" default="false" />
 
-    <!-- uav1 -->
+    <!-- 启动 uav_control_node -->
     <node name="uav_control_1" pkg="sunray_uav_control" type="uav_control_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="uav_name" value="$(arg uav_name)" />

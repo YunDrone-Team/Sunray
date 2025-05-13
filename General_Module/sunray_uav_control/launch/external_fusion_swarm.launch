@@ -3,12 +3,11 @@
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="2" />
     <arg name="uav_name" default="uav" />
-    <!-- <arg name="position_topic" default="/uav1/sunray/gazebo_pose" /> -->
     <arg name="enable_rviz" default="true" />
     <arg name="server" default="192.168.25.13"/>
-
     <arg name="uav_num" default="3" />
 
+    <!-- 启动 external_fusion_node-->
     <node name="external_fusion_$(arg uav_id)" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="external_source" value="$(arg external_source)" />
@@ -19,7 +18,6 @@
     <include file="$(find sunray_uav_control)/launch/external_fusion_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">
         <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
         <arg name="uav_num" value="$(arg uav_num)" />
-        <!-- <arg name="position_topic" value="/$(arg uav_name)$(arg uav_id)/sunray/gazebo_pose" /> -->
     </include>
 
     <group if="$(eval uav_id == 1)">

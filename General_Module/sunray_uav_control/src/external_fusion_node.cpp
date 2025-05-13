@@ -1,5 +1,4 @@
 #include "externalFusion.h"
-#include <signal.h>
 
 // 中断信号
 void mySigintHandler(int sig)
@@ -26,10 +25,22 @@ int main(int argc, char **argv)
 
     // 中断信号注册 
     signal(SIGINT, mySigintHandler);
+
+    // 初始化外部估计类
     ExternalFusion external_fusion;
     external_fusion.init(nh);
-    ros::Time last_time = ros::Time::now();
 
+    // 初始化检查：等待PX4连接
+    int trials = 0;
+    while (ros::ok() && !external_fusion.px4_state.connected)
+    {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (trials++ > 5)
+            Logger::print_color(int(LogColor::red), "Unable to connnect to PX4!!!");
+    }
+
+    ros::Time last_time = ros::Time::now();
     // 主循环
     while (ros::ok)
     {
