@@ -307,7 +307,6 @@ public:
     }
 
 private:
-    ros::NodeHandle nh_;
     ros::Subscriber odom_sub;
     ros::Subscriber pos_sub;
     ros::Subscriber vel_sub;

@@ -1,5 +1,13 @@
 #include "UAVControl.h"
 
+// 中断信号
+void mySigintHandler(int sig)
+{
+    ROS_INFO("[uav_control_node] exit...");
+    ros::shutdown();
+    exit(0);
+}
+
 int main(int argc, char **argv)
 {
     // 设置日志
@@ -15,9 +23,8 @@ int main(int argc, char **argv)
     bool flag_printf = false; // 是否打印状态
     nh.param<bool>("flag_printf", flag_printf, true);  
 
-    // 声明控制类
+    // 初始化无人机控制类
     UAVControl uav_ctrl;
-    // 控制类初始化
     uav_ctrl.init(nh);
 
     // 初始化检查：等待PX4连接

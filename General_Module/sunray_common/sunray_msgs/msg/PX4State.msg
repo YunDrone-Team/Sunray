@@ -7,14 +7,19 @@ std_msgs/Header header
 bool connected                  ## 是否与飞控建立连接
 bool armed                      ## 是否解锁，true为已解锁，false则不是
 string mode                     ## PX4飞行模式（PX4飞控端）
-bool uav_ready
 
 ## PX4状态信息 - 来自~/mavros/extendedstate
-uint8 landed_state          ## 降落状态，枚举参见mavros_msgs::msg::ExtendedState
+uint8 landed_state              ## 降落状态，枚举参见mavros_msgs::msg::ExtendedState
+## landed_state枚举
+uint8 LANDED_STATE_UNDEFINED = 0
+uint8 LANDED_STATE_ON_GROUND = 1
+uint8 LANDED_STATE_IN_AIR = 2
+uint8 LANDED_STATE_TAKEOFF = 3
+uint8 LANDED_STATE_LANDING = 4
 
 ## 无人机电池信息 - 来自~/mavros/battery
 float32 battery_state           ## 电池电压，单位：[V]
-float32 battery_percentage       ## 电池百分比，[0-1]
+float32 battery_percentage      ## 电池百分比，[0-1]
 
 ## 外部定位数据的原始值 - 与发送到~/mavros/vision_pose的内容一致
 sunray_msgs/ExternalOdom external_odom

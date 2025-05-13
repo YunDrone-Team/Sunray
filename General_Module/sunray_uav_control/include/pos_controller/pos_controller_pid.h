@@ -55,8 +55,6 @@ public:
     sunray_msgs::PX4State px4_state; 
     Eigen::Vector3d F_des;
 
-    Tracking_Error_Evaluation tracking_error;
-
     Eigen::Vector3d int_e_v;            // 积分
     Eigen::Quaterniond u_q_des;         // 期望姿态角（四元数）
     Eigen::Vector4d u_att;              // 期望姿态角（rad）+期望油门（0-1）
@@ -73,8 +71,6 @@ Eigen::Vector4d PosControlPID::ctrl_update(float controller_hz)
     Eigen::Vector3d pos_error = desired_state.pos - current_state.pos;
     Eigen::Vector3d vel_error = desired_state.vel - current_state.vel;
     
-    tracking_error.input_error(pos_error, vel_error);
-
     // 限制位置和速度的最大误差
     float max_pos_error = 3.0;
     float max_vel_error = 3.0;
@@ -285,23 +281,6 @@ void PosControlPID::printf_debug()
     Logger::print_color(int(LogColor::green), "controller_output [thrust]:",
                         u_att[3] * 100,
                         "[ % ]"); 
-
-    Logger::print_color(int(LogColor::green), "tracking_error.pos_error_mean:",
-                        tracking_error.pos_error_mean,
-                        "[ m ]"); 
-    Logger::print_color(int(LogColor::green), "tracking_error.vel_error_mean:",
-                        tracking_error.vel_error_mean,
-                        "[m/s]"); 
-
-    // cout << BLUE << "----> pos_now         : " << current_state.pos(0) << " [ m ] " << current_state.pos(1) << " [ m ] " << current_state.pos(2) << " [ m ] "<< TAIL << endl;
-    // cout << BLUE << "----> vel_now         : " << current_state.vel(0) << " [ m ] " << current_state.vel(1) << " [ m ] " << current_state.vel(2) << " [ m ] "<< TAIL << endl;
-    
-    // cout << BLUE << "----> int_e_v         : " << int_e_v(0) << " [N] "<< int_e_v(1) << " [N] "<< int_e_v(2) << " [N] "<< TAIL << endl;
-    
-    // cout << BLUE << "----> F_des           : " << F_des(0) << " [N] "<< F_des(1) << " [N] "<< F_des(2) << " [N] "<< TAIL << endl;
-    
-    // cout << BLUE << "----> pos_error_mean  : " << tracking_error.pos_error_mean <<" [m] "<< TAIL <<endl;
-    // cout << BLUE << "----> vel_error_mean  : " << tracking_error.vel_error_mean <<" [m/s] "<< TAIL <<endl;
 }
 
 // 【打印参数函数】

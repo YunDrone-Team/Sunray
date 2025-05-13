@@ -313,7 +313,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << oss.str() << std::endl;
+            std::cout << LOG_BOLD << oss.str() << LOG_RESET << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)

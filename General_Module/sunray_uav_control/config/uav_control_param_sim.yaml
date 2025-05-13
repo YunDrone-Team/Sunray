@@ -25,7 +25,7 @@ geo_fence:
 system_params:
   check_cmd_timeout: false  ## 是否检查无人机控制指令超时
   cmd_timeout: 2.0          ## 无人机控制指令超时阈值
-  use_rc_control: true      ## 是否使用遥控器控制
+  use_rc_control: false     ## 是否使用遥控器控制
   use_offset: false         ## 是否使用位置偏移
 
 # 位置环控制器参数

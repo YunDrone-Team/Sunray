@@ -8,7 +8,7 @@
     <arg name="enable_range_sensor" default="false" />
     <arg name="server" default="192.168.25.11"/>
 
-
+    <!-- 启动 external_fusion_node-->
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="external_source" value="$(arg external_source)" />
@@ -28,7 +28,4 @@
 	<group if="$(arg enable_rviz)">
         <node type="rviz" name="rviz_external_fusion" pkg="rviz" args="-d $(arg rivz_config)"/>
     </group>
-
-    <!-- 发布静态TF odom和world -->
-    <!-- <node pkg="tf" type="static_transform_publisher" name="world_odom" args="0.0 0.0 0.0 0.0 0.0 0.0 /world /odom 100" /> -->
 </launch>

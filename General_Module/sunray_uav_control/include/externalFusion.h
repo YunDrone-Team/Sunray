@@ -2,8 +2,10 @@
 #include "ExternalPosition.h"
 #include <math.h>
 #include <map>
+#include <signal.h>
 #include "printf_format.h"
 
+using namespace std;
 using namespace sunray_logger;
 
 #define PX4_TIMEOUT 2.0       // px4状态超时
@@ -29,11 +31,9 @@ private:
     std::set<int> err_msg;                                  // 错误信息集合
     ros::Time px4_state_time;                               // 无人机状态时间戳
     bool enable_range_sensor;                               // 是否使用距离传感器数据
-    sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
 
     ExternalPosition ext_pos;                     // 外部定位源的回调和处理
 
-    ros::NodeHandle nh_;                    // ros节点句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
     ros::Subscriber px4_extended_state_sub; // 【订阅】无人机状态订阅
     ros::Subscriber px4_battery_sub;        // 【订阅】无人机电池状态订阅
@@ -61,6 +61,7 @@ public:
     ExternalFusion(/* args */);
     ~ExternalFusion();
 
+    sunray_msgs::PX4State px4_state;                        // 无人机状态信息汇总（用于发布）
     std::map<int, std::string> source_map; // 外部定位数据来源映射
 
     void init(ros::NodeHandle &nh);                                                 // 初始化

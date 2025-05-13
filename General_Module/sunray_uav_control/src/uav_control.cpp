@@ -47,7 +47,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 10, &UAVControl::control_cmd_callback, this);
     // 【订阅】无人机设置指令 - 外部节点 -> 本节点
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 10, &UAVControl::uav_setup_callback, this);
-    // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_input -> 本节点
+    // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_control_node -> 本节点
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(uav_name + "/sunray/rc_state", 10, &UAVControl::rc_state_callback, this);
     // 【订阅】无人机航点数据 -- 外部节点 -> 本节点
     uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_name + "/sunray/uav_waypoint", 10, &UAVControl::waypoint_callback, this);
@@ -77,11 +77,11 @@ void UAVControl::init(ros::NodeHandle &nh)
     system_params.last_control_mode = Control_Mode::INIT;
     system_params.type_mask = 0;
     system_params.safety_state = -1;
-    rcState_cb = false;
-    allow_lock = false;
+    system_params.get_rc_signal = false;
     flight_params.home_pos[0] = default_home_x;
     flight_params.home_pos[1] = default_home_y;
     flight_params.home_pos[2] = default_home_z;
+    allow_lock = false;
 
     // 【控制器】PID控制器初始化
     pos_controller_pid.init(nh);
@@ -106,9 +106,11 @@ void UAVControl::mainLoop()
     // 初始模式：保持PX4在定点模式，此时PX4不接收来自机载电脑的任何指令
     case Control_Mode::INIT:
         // 无人机在未解锁状态且处于非定点模式时切换到定点模式
+        // 注意：无人机在POSCTL模式下，如果没有接入遥控器是不允许解锁的
         if (!px4_state.armed && uav_state.mode != "POSCTL")
         {
             set_px4_flight_mode("POSCTL");
+            ros::Duration(1.0).sleep();
         }
         break;
 
@@ -154,8 +156,9 @@ int UAVControl::safetyCheck()
     {
         return 1;
     }
+
     // 如果外部定位失效，则返回2
-    if (!system_params.odom_valid)
+    if (!uav_state.odom_valid)
     {
         return 2;
     }
@@ -165,10 +168,6 @@ int UAVControl::safetyCheck()
 // 无人机状态回调
 void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
 {
-    // todo 可删除
-    system_params.location_source = msg->external_odom.external_source;
-    system_params.odom_valid = msg->external_odom.odom_valid;
-
     // 每一次解锁时，将无人机的解锁位置设置为home点
     if (!px4_state.armed && msg->armed)
     {
@@ -180,14 +179,36 @@ void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
         Logger::info("Home position set to: ", flight_params.home_pos[0], flight_params.home_pos[1], flight_params.home_pos[2]);
     }
 
-    // 更新无人机状态
-    px4_state = *msg; 
-
     // 无人机上锁后，重置set_home状态位
-    if (flight_params.set_home && !px4_state.armed)
+    if (flight_params.set_home && !msg->armed)
     {
         flight_params.set_home = false;
+        Logger::info("PX4 disarmed, flight_params.set_home [false]!");
     }
+
+    // 更新px4_state
+    px4_state = *msg; 
+
+    // 同步关键的px4_state至uav_state
+    uav_state.connected = px4_state.connected;
+    uav_state.armed = px4_state.armed;
+    uav_state.mode = px4_state.mode;
+    uav_state.landed_state = px4_state.landed_state;
+    uav_state.battery_state = px4_state.battery_state;
+    uav_state.battery_percentage = px4_state.battery_percentage;
+    uav_state.location_source = px4_state.external_odom.external_source;
+    uav_state.odom_valid = px4_state.external_odom.odom_valid;
+    for (int i = 0; i < 3; i++)
+    {
+        uav_state.position[i] = px4_state.position[i];
+        uav_state.velocity[i] = px4_state.velocity[i];
+        uav_state.attitude[i] = px4_state.attitude[i];
+        uav_state.attitude_rate[i] = px4_state.attitude_rate[i];
+        uav_state.pos_setpoint[i] = px4_state.pos_setpoint[i];
+        uav_state.vel_setpoint[i] = px4_state.vel_setpoint[i];
+        uav_state.att_setpoint[i] = px4_state.att_setpoint[i];
+    }
+    uav_state.attitude_q = px4_state.attitude_q;
 
     // 如果使用相对坐标，则将当前位置转换为相对坐标 仅显示用
     if(system_params.use_offset && flight_params.set_home)
@@ -201,40 +222,43 @@ void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
 // 遥控器状态回调
 void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
 {
-    rcState_cb = true;
     rc_state = *msg;
+    system_params.get_rc_signal = true;
+
     // 解锁与上锁通道判断
-    if (rc_state.arm_state == 2)
+    if (rc_state.arm_state == sunray_msgs::RcState::ARM)
     {
         setArm(true);
     }
-    else if (rc_state.arm_state == 1)
+    else if (rc_state.arm_state == sunray_msgs::RcState::DISARM)
     {
         setArm(false);
     }
+
     // 状态机模式通道判断 1 - INIT 2 - RC_CONTROL 3 - CMD_CONTROL
-    if (rc_state.mode_state == 1)
+    if (rc_state.mode_state == sunray_msgs::RcState::INIT)
     {
         system_params.control_mode = Control_Mode::INIT;
         Logger::warning("Switch to INIT mode with rc");
     }
-    else if (rc_state.mode_state == 2)
+    else if (rc_state.mode_state == sunray_msgs::RcState::RC_CONTROL)
     {
         Logger::warning("Switch to RC_CONTROL mode with rc");
         set_offboard_control(Control_Mode::RC_CONTROL);
     }
-    else if (rc_state.mode_state == 3)
+    else if (rc_state.mode_state == sunray_msgs::RcState::CMD_CONTROL)
     {
         Logger::warning("Switch to CMD_CONTROL mode with rc");
         set_offboard_control(Control_Mode::CMD_CONTROL);
     }
+
     // 降落通道判断
     if (rc_state.land_state == 1)
     {
         Logger::warning("Switch to LAND_CONTROL mode with rc");
         set_land();
-        // set_offboard_control(Control_Mode::LAND_CONTROL);
     }
+
     // 紧急停止通道判断
     if (rc_state.kill_state == 1)
     {
@@ -592,7 +616,7 @@ void UAVControl::set_offboard_control(int mode)
         return;
     }
     // 如果没有收到遥控器的回调，不允许进入RC_CONTROL模式
-    if (mode == Control_Mode::RC_CONTROL && !rcState_cb)
+    if (mode == Control_Mode::RC_CONTROL && !system_params.get_rc_signal)
     {
         Logger::error("RC callback error, cannot enter RC_CONTROL mode!");
         return;
@@ -664,26 +688,22 @@ void UAVControl::check_state()
     // 发布uav_state
     uav_state.uav_id = uav_id;
     uav_state.header.stamp = ros::Time::now();
-    uav_state.connected = px4_state.connected;
-    uav_state.armed = px4_state.armed;
-    uav_state.mode = px4_state.mode;
-    uav_state.landed_state = px4_state.landed_state;
-    uav_state.location_source = system_params.location_source;
-    uav_state.odom_valid = system_params.odom_valid;
-    for (int i = 0; i < 3; i++)
-    {
-        uav_state.position[i] = px4_state.position[i];
-        uav_state.velocity[i] = px4_state.velocity[i];
-        uav_state.attitude[i] = px4_state.attitude[i];
-        uav_state.pos_setpoint[i] = px4_state.pos_setpoint[i];
-        uav_state.vel_setpoint[i] = px4_state.vel_setpoint[i];
-        uav_state.att_setpoint[i] = px4_state.att_setpoint[i];
-    }
-    uav_state.attitude_q = px4_state.attitude_q;
-    uav_state.battery_state = px4_state.battery_state;
-    uav_state.battery_percentage = px4_state.battery_percentage;
     uav_state.control_mode = system_params.control_mode;
     uav_state.move_mode = control_cmd.cmd;
+    uav_state.takeoff_height = flight_params.takeoff_height;
+    uav_state.home_pos[0] = flight_params.home_pos[0];
+    uav_state.home_pos[1] = flight_params.home_pos[1];
+    uav_state.home_pos[2] = flight_params.home_pos[2];
+    uav_state.home_yaw = flight_params.home_yaw;
+    uav_state.hover_pos[0] = flight_params.hover_pos[0];
+    uav_state.hover_pos[1] = flight_params.hover_pos[1];
+    uav_state.hover_pos[2] = flight_params.hover_pos[2];
+    uav_state.hover_yaw = flight_params.hover_yaw;
+    uav_state.land_pos[0] = flight_params.land_pos[0];
+    uav_state.land_pos[1] = flight_params.land_pos[1];
+    uav_state.land_pos[2] = flight_params.land_pos[2];
+    uav_state.land_yaw = flight_params.land_yaw;
+
     uav_state_pub.publish(uav_state);
 }
 
@@ -1358,7 +1378,7 @@ void UAVControl::publish_goal()
 // 打印状态
 void UAVControl::show_ctrl_state()
 {
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>>>>> uav_control_node - [", uav_name, "] <<<<<<<<<<<<<<");
+    Logger::print_color(int(LogColor::white_bg_blue), ">>>>>>>>>>>>>>>> uav_control_node - [", uav_name, "] <<<<<<<<<<<<<<<<<");
 
     if(!px4_state.connected)
     {
@@ -1368,36 +1388,53 @@ void UAVControl::show_ctrl_state()
     }
 
     // 基本信息 - 连接状态、飞控模式、电池状态
-    Logger::print_color(int(LogColor::blue), ">>> TOPIC: ~/sunray/px4_state (Sunray get from PX4 via Mavros) <<<");
-    Logger::print_color(int(LogColor::green), "PX4 FCU:", "[ CONNECTED ]");
-    if (px4_state.armed)
-        Logger::print_color(int(LogColor::green), "MODE: [", px4_state.mode, "]  ", LOG_GREEN, "[ ARMED ]");
-    else
-        Logger::print_color(int(LogColor::green), "MODE: [", px4_state.mode, "]  ", LOG_RED, "[ DISARMED ]");
-    Logger::print_color(int(LogColor::green), "BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
+    Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/sunray/uav_state");
+    Logger::print_color(int(LogColor::green), "PX4 FCU  : [ CONNECTED ]  BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
 
-    Logger::print_color(int(LogColor::blue), "local_position & attitude state:");
-    Logger::print_color(int(LogColor::green), "POS [X Y Z]:",
+    if (px4_state.armed)
+    {
+        if(px4_state.landed_state == 1)
+        {
+            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ ON_GROUND ]");   
+        }else
+        {
+            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ IN_AIR ]");   
+        }
+    }
+    else
+    {
+        if(px4_state.landed_state == 1)
+        {
+            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ ON_GROUND ]");   
+        }else
+        {
+            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ IN_AIR ]");   
+        }
+    }
+
+    // 无GPS模式的情况
+    Logger::print_color(int(LogColor::blue), "PX4 Local Position & Attitude:");
+    Logger::print_color(int(LogColor::green), "POS_UAV [X Y Z]:",
                         px4_state.position[0],
                         px4_state.position[1],
                         px4_state.position[2],
                         "[ m ]");
-    Logger::print_color(int(LogColor::green), "VEL [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "VEL_UAV [X Y Z]:",
                         px4_state.velocity[0],
                         px4_state.velocity[1],
                         px4_state.velocity[2],
                         "[m/s]");
-    Logger::print_color(int(LogColor::green), "ATT [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "ATT_UAV [X Y Z]:",
                         px4_state.attitude[0] / M_PI * 180,
                         px4_state.attitude[1] / M_PI * 180,
                         px4_state.attitude[2] / M_PI * 180,
                         "[deg]");
-    Logger::print_color(int(LogColor::blue), "local_position & attitude setpoint:");
+    Logger::print_color(int(LogColor::blue), "PX4 Local Position Setpoint & Attitude Setpoint:");
     Logger::print_color(int(LogColor::green), "POS_SP [X Y Z]:",
                         px4_state.pos_setpoint[0],
                         px4_state.pos_setpoint[1],
                         px4_state.pos_setpoint[2],
-                        "[m]");
+                        "[ m ]");
     Logger::print_color(int(LogColor::green), "VEL_SP [X Y Z]:",
                         px4_state.vel_setpoint[0],
                         px4_state.vel_setpoint[1],
@@ -1408,17 +1445,17 @@ void UAVControl::show_ctrl_state()
                         px4_state.att_setpoint[1] / M_PI * 180,
                         px4_state.att_setpoint[2] / M_PI * 180,
                         "[deg]");       
-    Logger::print_color(int(LogColor::green), "THRUST_SP:", px4_state.thrust_setpoint*100, "[%]");
+    Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint*100, "[ % ]");
 
     // control_cmd
-    Logger::print_color(int(LogColor::blue), ">>> TOPIC: ~/sunray/uav_control_cmd (from mission node) <<<");
+    Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/sunray/uav_control_cmd (from mission node) <<<");
 
-    Logger::color_no_del(int(LogColor::blue), "Control Mode [", LOG_BLUE, modeMap[system_params.control_mode], LOG_GREEN, "]");
+    Logger::print_color(int(LogColor::green), "Control Mode: [", modeMap[system_params.control_mode], "]");
     
     // control_cmd - CMD_CONTROL
     if (system_params.control_mode == Control_Mode::CMD_CONTROL)
     {
-        Logger::color_no_del(int(LogColor::blue), "Move Mode [", LOG_BLUE, moveModeMapStr[control_cmd.cmd], LOG_GREEN, "]");
+        Logger::print_color(int(LogColor::green), "Move Mode: [", moveModeMapStr[control_cmd.cmd], "]");
 
         // 高级指令
         if(control_cmd.cmd == sunray_msgs::UAVControlCMD::Takeoff)
@@ -1492,25 +1529,26 @@ void UAVControl::show_ctrl_state()
             pos_controller_pid.printf_debug();
         }else
         {
-            Logger::print_color(int(LogColor::green), "CMD [X Y Z]:",
+            Logger::print_color(int(LogColor::green), "POS CMD [X Y Z]:",
                                 control_cmd.desired_pos[0],
                                 control_cmd.desired_pos[1],
                                 control_cmd.desired_pos[2],
                                 "[ m ]");
-            Logger::print_color(int(LogColor::green), "CMD [X Y Z]:",
+            Logger::print_color(int(LogColor::green), "VEL CMD [X Y Z]:",
                                 control_cmd.desired_vel[0],
                                 control_cmd.desired_vel[1],
                                 control_cmd.desired_vel[2],
                                 "[m/s]");   
-            Logger::print_color(int(LogColor::green), "CMD [X Y Z]:",
+            Logger::print_color(int(LogColor::green), "ACC CMD [X Y Z]:",
                                 control_cmd.desired_acc[0],
                                 control_cmd.desired_acc[1],
                                 control_cmd.desired_acc[2],
                                 "[m/s^2]"); 
-            Logger::print_color(int(LogColor::green), "CMD [X Y Z]:",
+            Logger::print_color(int(LogColor::green), "YAW CMD [yaw, yaw_rate]:",
                                 control_cmd.desired_yaw / M_PI * 180,
+                                "[deg]",
                                 control_cmd.desired_yaw_rate / M_PI * 180,
-                                "[deg]");  
+                                "[deg/s]");  
         }        
     }
 

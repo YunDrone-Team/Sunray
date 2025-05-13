@@ -49,16 +49,13 @@ private:
     // 无人机系统参数
     struct SystemParams
     {
+        int control_mode;         // 无人机控制模式
+        int last_control_mode;    // 上一时刻无人机控制模式
         uint16_t type_mask;       // 控制指令类型
-        int control_mode;         // 控制状态机
-        int last_control_mode;    // 上一个控制状态机
-        bool odom_valid;          // 外部定位是否有效
         int safety_state;         // 安全标志，0代表正常，其他代表不正常
-        int location_source;      // 定位来源
-        float cmd_timeout;        // 指令超时时间
-        float odom_valid_timeout; // 外部定位超时时间
+        bool get_rc_signal;       // 是否收到遥控器的信号
         bool check_cmd_timeout;   // 是否检查指令超时
-        bool check_batt_volt;     // 是否检查电池电压
+        float cmd_timeout;        // 指令超时时间
         bool use_rc;              // 是否使用遥控器
         bool use_offset;          // 是否添加偏移
         ros::Time last_land_time; // 进入降落最后一阶段的时间戳
