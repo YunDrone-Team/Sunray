@@ -41,9 +41,8 @@
     <arg name="odom_topic_1" default="/uav1/sunray/gazebo_pose"/>
     <arg name="odom_topic_2" default="/uav2/sunray/gazebo_pose"/>
     <arg name="odom_topic_3" default="/uav3/sunray/gazebo_pose"/>
-\
-    
-        <!--  move_base_simple/goal转为三个平行的目标点 输出话题前缀  -->
+
+    <!--  move_base_simple/goal转为三个平行的目标点 输出话题前缀  -->
     <arg name="goal_topic" default="/goal"/>
     <!--  三个平行的目标点 供ego中的每个飞机指明目标点 -->
     <arg name="goal_tipic_1" default="/goal_1"/>

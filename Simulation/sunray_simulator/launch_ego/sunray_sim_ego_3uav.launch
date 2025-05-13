@@ -1,68 +1,175 @@
-<?xml version="1.0"?>
 <launch>
-	<!-- Gazebo 配置 -->
-    <arg name="gazebo_enable" default="true"/>
-    <arg name="gui" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
-    <!-- 启动 Gazebo -->
-    <group if="$(arg gazebo_enable)">
-        <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="world_name" value="$(arg world)"/>
-            <arg name="gui" value="$(arg gui)"/>
-            <!-- /use_sim_time true  # 使用仿真时间 -->
-            <!-- /use_sim_time false # 使用系统时间（默认） -->
-			<arg name="use_sim_time" value="false"/>
-        </include>
+    <arg name="uav_num" default="3" />
+    <!-- 无人机ID -->
+    <arg name="drone1_id" default="1"/>
+    <arg name="drone2_id" default="2"/>
+    <arg name="drone3_id" default="3"/>
+
+    <!-- size of map, change the size inflate x, y, z according to your application -->
+    <arg name="map_size_x" default="80.0"/>
+    <arg name="map_size_y" default="80.0"/>
+    <arg name="map_size_z" default=" 2.0"/>
+
+    <!-- 无人机目标点位置，用于规划器 -->
+    <arg name="target_x" default="20.0"/>
+    <arg name="target_y" default="9.0"/>
+    <arg name="target_z" default="1"/>
+
+    <!-- 无人机最大速度及最大加速度 -->
+    <arg name="max_vel" default="0.5" />
+    <arg name="max_acc" default="0.5" />
+
+    <arg name="planning_horizon" default="7.5"/>
+
+    <!-- 局部坐标系下的点云话题 -->
+    <arg name="local_pointcloud_topic1" default="/uav1/livox/lidar"/>
+    <arg name="local_pointcloud_topic2" default="/uav2/livox/lidar"/>
+    <arg name="local_pointcloud_topic3" default="/uav3/livox/lidar"/>
+
+    <!-- 转换出来的世界坐标系下的点云话题 -->
+    <arg name="global_pointcloud_topic1" default="/uav1/global_points"/>
+    <arg name="global_pointcloud_topic2" default="/uav2/global_points"/>
+    <arg name="global_pointcloud_topic3" default="/uav3/global_points"/>
+
+    <!-- topic of your odometry such as VIO or LIO -->
+    <arg name="odom_topic1" default="/uav1/sunray/gazebo_pose" />
+    <arg name="odom_topic2" default="/uav2/sunray/gazebo_pose" />
+    <arg name="odom_topic3" default="/uav3/sunray/gazebo_pose" />
+
+    <!--  ego的输出指令 -->
+    <arg name="cmd_sub_topic_1" default="/uav1/pos_cmd"/>
+    <arg name="cmd_sub_topic_2" default="/uav2/pos_cmd"/>
+    <arg name="cmd_sub_topic_3" default="/uav3/pos_cmd"/>
+
+    <!--  每个飞机指明目标点 -->
+    <arg name="goal_tipic_1" default="/goal_1"/>
+    <arg name="goal_tipic_2" default="/goal_2"/>
+    <arg name="goal_tipic_3" default="/goal_3"/>
+
+    <include file="$(find sunray_simulator)/launch_ego/sunray_ego.launch">
+        <arg name="drone_id" value="$(arg drone1_id)" />
+
+        <arg name="map_size_x" value="$(arg map_size_x)" />
+        <arg name="map_size_y" value="$(arg map_size_y)" />
+        <arg name="map_size_z" value="$(arg map_size_z)" />
+
+        <arg name="cloud_topic" value="$(arg global_pointcloud_topic1)" />
+        <arg name="odom_topic" value="$(arg odom_topic1)" />
+
+        <arg name="max_vel" value="$(arg max_vel)" />
+        <arg name="max_acc" value="$(arg max_acc)" />
+        <arg name="planning_horizon" value="$(arg planning_horizon)" />
+        <arg name="position_cmd" value="$(arg cmd_sub_topic_1)" />
+        <arg name="goal_topic" value="$(arg goal_tipic_1)" />
+    </include>
+
+    <include file="$(find sunray_simulator)/launch_ego/sunray_ego.launch">
+        <arg name="drone_id" value="$(arg drone2_id)" />
+
+        <arg name="map_size_x" value="$(arg map_size_x)" />
+        <arg name="map_size_y" value="$(arg map_size_y)" />
+        <arg name="map_size_z" value="$(arg map_size_z)" />
+
+        <arg name="cloud_topic" value="$(arg global_pointcloud_topic2)" />
+        <arg name="odom_topic" value="$(arg odom_topic2)" />
+
+        <arg name="max_vel" value="$(arg max_vel)" />
+        <arg name="max_acc" value="$(arg max_acc)" />
+        <arg name="planning_horizon" value="$(arg planning_horizon)" />
+        <arg name="position_cmd" value="$(arg cmd_sub_topic_2)" />
+        <arg name="goal_topic" value="$(arg goal_tipic_2)" />
+    </include>
+
+    <include file="$(find sunray_simulator)/launch_ego/sunray_ego.launch">
+        <arg name="drone_id" value="$(arg drone3_id)" />
+
+        <arg name="map_size_x" value="$(arg map_size_x)" />
+        <arg name="map_size_y" value="$(arg map_size_y)" />
+        <arg name="map_size_z" value="$(arg map_size_z)" />
+
+        <arg name="cloud_topic" value="$(arg global_pointcloud_topic3)" />
+        <arg name="odom_topic" value="$(arg odom_topic3)" />
+
+        <arg name="max_vel" value="$(arg max_vel)" />
+        <arg name="max_acc" value="$(arg max_acc)" />
+        <arg name="planning_horizon" value="$(arg planning_horizon)" />
+        <arg name="position_cmd" value="$(arg cmd_sub_topic_3)" />
+        <arg name="goal_topic" value="$(arg goal_tipic_3)" />
+    </include>
+
+    <!-- ego 输出转换为sunray控制指令 -->
+    <!-- 对应的sunray控制指令 -->
+    <arg name="control_pub_topic_1" default="/uav1/sunray/uav_control_cmd"/>
+    <arg name="control_pub_topic_2" default="/uav2/sunray/uav_control_cmd"/>
+    <arg name="control_pub_topic_3" default="/uav3/sunray/uav_control_cmd"/>
+
+    <arg name="control_type" default="2"/>
+    <arg name="enable_yaw" default="true"/>
+
+    <!-- ego 输出转换为sunray控制指令 -->
+    <node name="positionCmd2sunray_node_1" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
+        <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_1)"/>
+        <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
+        <param name="control_type" value="$(arg control_type)"/>
+        <param name="enable_yaw" value="$(arg enable_yaw)"/>
+    </node>
+
+    <node name="positionCmd2sunray_node_2" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
+        <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_2)"/>
+        <param name="control_pub_topic" value="$(arg control_pub_topic_2)"/>
+        <param name="control_type" value="$(arg control_type)"/>
+        <param name="enable_yaw" value="$(arg enable_yaw)"/>
+    </node>
+
+    <node name="positionCmd2sunray_node_3" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
+        <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_3)"/>
+        <param name="control_pub_topic" value="$(arg control_pub_topic_3)"/>
+        <param name="control_type" value="$(arg control_type)"/>
+        <param name="enable_yaw" value="$(arg enable_yaw)"/>
+    </node>
+
+    <!-- 点云转换为世界坐标系 -->
+    <arg name="world_frame" default="world"/>
+    <arg name="child_frame_1" default="uav1/base_link"/>
+    <arg name="child_frame_2" default="uav2/base_link"/>
+    <arg name="child_frame_3" default="uav3/base_link"/>
+
+    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+        <param name="input_point_topic" value="$(arg local_pointcloud_topic1)" />
+        <param name="output_point_topic" value="$(arg global_pointcloud_topic1)" />
+        <param name="odom_topic" value="$(arg odom_topic1)" />
+        <param name="frame_id" value="$(arg world_frame)" />
+        <param name="child_frame_id" value="$(arg child_frame_1)" />
+    </node>
+
+    <node name="point_cloud_transform_2" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+        <param name="input_point_topic" value="$(arg local_pointcloud_topic2)" />
+        <param name="output_point_topic" value="$(arg global_pointcloud_topic2)" />
+        <param name="odom_topic" value="$(arg odom_topic2)" />
+        <param name="frame_id" value="$(arg world_frame)" />
+        <param name="child_frame_id" value="$(arg child_frame_2)" />
+    </node>
+
+    <node name="point_cloud_transform_3" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+        <param name="input_point_topic" value="$(arg local_pointcloud_topic3)" />
+        <param name="output_point_topic" value="$(arg global_pointcloud_topic3)" />
+        <param name="odom_topic" value="$(arg odom_topic3)" />
+        <param name="frame_id" value="$(arg world_frame)" />
+        <param name="child_frame_id" value="$(arg child_frame_3)" />
+    </node>
+
+    <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 将其转为多个平行的目标点发送到ego中的每个规划器-->
+    <arg name="offset_dis" default="1.0"/>
+    <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
+        <param name="uav_num" value="$(arg uav_num)" />
+        <param name="offset" value="$(arg offset_dis)" />
+        <param name="goal_topic" value="goal" />
+    </node>
+
+    <arg name="enable_rviz" default="true"/>
+    <arg name="rivz_config" default="$(find sunray_simulator)/launch_rviz/ego_sim_3uav.rviz"/>
+    <group if="$(arg enable_rviz)">
+        <node type="rviz" name="rviz_sim" pkg="rviz" args="-d $(arg rivz_config)"/>
     </group>
 
-    <!-- 无人机配置 -->
-    <!-- 无人机模型名称 -->
-    <arg name="vehicle" default="sunray150_with_mid360"/>
-   <!--无人机编号-->
-    <arg name="uav1_id" default="1"/>
-    <!-- 无人机初始位置 -->
-    <arg name="uav1_init_x" default="-1.0"/>
-    <arg name="uav1_init_y" default="0.0"/>
-    <arg name="uav1_init_yaw" default="0.0"/>
-
-    <!--无人机编号-->
-    <arg name="uav2_id" default="2"/>
-    <!-- 无人机初始位置 -->
-    <arg name="uav2_init_x" default="0.0"/>
-    <arg name="uav2_init_y" default="1.0"/>
-    <arg name="uav2_init_yaw" default="0.0"/>
-
-    <!--无人机编号-->
-    <arg name="uav3_id" default="3"/>
-    <!-- 无人机初始位置 -->
-    <arg name="uav3_init_x" default="0.0"/>
-    <arg name="uav3_init_y" default="-1.0"/>
-    <arg name="uav3_init_yaw" default="0.0"/>
-
-    <!-- UAV1 -->
-    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
-        <arg name="uav_id" value="$(arg uav1_id)" />
-        <arg name="vehicle" value="$(arg vehicle)" />
-        <arg name="uav_init_x" value="$(arg uav1_init_x)"/>
-        <arg name="uav_init_y" value="$(arg uav1_init_y)"/>
-        <arg name="uav_init_yaw" value="$(arg uav1_init_yaw)"/>
-    </include>
-
-    <!-- UAV2 -->
-    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
-        <arg name="uav_id" value="$(arg uav2_id)" />
-        <arg name="vehicle" value="$(arg vehicle)" />
-        <arg name="uav_init_x" value="$(arg uav2_init_x)"/>
-        <arg name="uav_init_y" value="$(arg uav2_init_y)"/>
-        <arg name="uav_init_yaw" value="$(arg uav2_init_yaw)"/>
-    </include>
-
-    <!-- UAV3 -->
-    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
-        <arg name="uav_id" value="$(arg uav3_id)" />
-        <arg name="vehicle" value="$(arg vehicle)" />
-        <arg name="uav_init_x" value="$(arg uav3_init_x)"/>
-        <arg name="uav_init_y" value="$(arg uav3_init_y)"/>
-        <arg name="uav_init_yaw" value="$(arg uav3_init_yaw)"/>
-    </include>
 </launch>
