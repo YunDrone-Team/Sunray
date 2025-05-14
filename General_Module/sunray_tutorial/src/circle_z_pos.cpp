@@ -192,7 +192,7 @@ int main(int argc, char **argv)
     double k_p = 1;       // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
-    double hight = 0.8;
+    double height = 0.8;
 
     geometry_msgs::PoseStamped pose;
     Logger::print_color(int(LogColor::green), node_name, ": Start circle.");
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
         double theta = i * 2 * M_PI / num_points;
         pose.pose.position.x = center_x + radius * cos(theta);
         pose.pose.position.y = center_y + radius * sin(theta);
-        pose.pose.position.z = hight; // fixed altitude
+        pose.pose.position.z = height; // fixed altitude
         start_time = ros::Time::now();
         // Send setpoints until the drone reaches the target point
         while (ros::ok())
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
             uav_cmd.cmd = 3;
             uav_cmd.desired_vel[0] = vx;
             uav_cmd.desired_vel[1] = vy;
-            uav_cmd.desired_pos[2] = hight;
+            uav_cmd.desired_pos[2] = height;
             control_cmd_pub.publish(uav_cmd);
 
             // 闭环
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
     // 回到原点
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
-    pose.pose.position.z = hight;
+    pose.pose.position.z = height;
     while (ros::ok())
     {
         if (stop_flag)
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
         uav_cmd.desired_vel[2] = 0.0;
         uav_cmd.desired_pos[0] = 0.0;
         uav_cmd.desired_pos[1] = 0.0;
-        uav_cmd.desired_pos[2] = hight;
+        uav_cmd.desired_pos[2] = height;
         uav_cmd.desired_yaw = 0;
         control_cmd_pub.publish(uav_cmd);
 

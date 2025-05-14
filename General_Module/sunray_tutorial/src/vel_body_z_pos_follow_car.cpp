@@ -238,7 +238,7 @@ int main(int argc, char **argv)
     double max_vel = 1.0;  // maximum velocity (m/s)
     double max_yaw = 3;    // maximum velocity (m/s)
     double yaw = 0;
-    double hight = 0.8;
+    double height = 0.8;
 
     geometry_msgs::PoseStamped pose;
 
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
         // 计算相对位置
         double x_rel = x_2 - x_1;
         double y_rel = y_2 - y_1;
-        double z_rel = hight - (z_1 - z_2);
+        double z_rel = height - (z_1 - z_2);
         double yaw_rel = yaw_2 - yaw_1;
         // 将相对位姿转换为机体系
         double x_rel_ = x_rel * cos(yaw_1) + y_rel * sin(yaw_1);

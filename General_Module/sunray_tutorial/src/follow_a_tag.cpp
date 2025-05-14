@@ -140,14 +140,14 @@ int main(int argc, char **argv)
     nh.param<string>("uav_name", uav_name, "uav");
 
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
-    double hight;
+    double height;
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
     nh.param<double>("k_p_yaw", k_p_yaw, 0.04);
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4);
-    nh.param<double>("hight", hight, 8.0);
+    nh.param<double>("height", height, 8.0);
 
     uav_name = "/" + uav_name + to_string(uav_id);
     // 订阅无人机状态
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
         uav_cmd.desired_vel[0] = 0.0;
         uav_cmd.desired_vel[1] = 0.0;
-        uav_cmd.desired_pos[2] = hight;
+        uav_cmd.desired_pos[2] = height;
         ros::Duration(2).sleep();
     }
 

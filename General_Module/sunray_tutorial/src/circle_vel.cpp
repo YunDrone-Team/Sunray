@@ -210,7 +210,7 @@ int main(int argc, char **argv)
     double z_k_p = 0.5;   // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
-    double hight = 0.6;
+    double height = 0.6;
 
     geometry_msgs::PoseStamped pose;
     Logger::print_color(int(LogColor::green), node_name, ": Start circle.");
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
         double theta = i * 2 * M_PI / num_points;
         pose.pose.position.x = center_x + radius * cos(theta);
         pose.pose.position.y = center_y + radius * sin(theta);
-        pose.pose.position.z = hight; // fixed altitude
+        pose.pose.position.z = height; // fixed altitude
 
         // Send setpoints until the drone reaches the target point
         while (ros::ok())
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
     // 回到原点
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
-    pose.pose.position.z = hight;
+    pose.pose.position.z = height;
     while (ros::ok())
     {
         // Calculate the distance to the target position

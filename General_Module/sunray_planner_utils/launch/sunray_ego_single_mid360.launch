@@ -2,7 +2,7 @@
     <arg name="uav_num" default="1"/>
     <arg name="offset_dis" default="1.0"/>
     <arg name="use_hight" default="true" />
-    <arg name="z_hight" default="1.0" />
+    <arg name="z_height" default="1.0" />
 
     <!-- ego地图大小 -->
     <arg name="map_size_x" value="50.0"/>
@@ -60,7 +60,7 @@
         <param name="offset" value="$(arg offset_dis)" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="$(arg use_hight)" />
-        <param name="z_hight" value="$(arg z_hight)" />
+        <param name="z_height" value="$(arg z_height)" />
     </node>
 
     <!-- 如果使用mid360且数据格式不为pointcloud的话需要进行转换 -->

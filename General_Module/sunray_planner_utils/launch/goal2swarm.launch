@@ -7,7 +7,7 @@
     <arg name="offset" default="1.0" />
     <arg name="goal_topic" default="goal" />
     <arg name="use_hight" default="true" />
-    <arg name="z_hight" default="1.0" />
+    <arg name="z_height" default="1.0" />
     <arg name="waypoint_file" default="/home/yundrone/Sunray/General_Module/sunray_planner/Utils/config/waypoint.yml" />
 
     <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
@@ -18,7 +18,7 @@
         <param name="offset" value="$(arg offset)" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="$(arg use_hight)" />
-        <param name="z_hight" value="$(arg z_hight)" />
+        <param name="z_height" value="$(arg z_height)" />
         <param name="waypoint_file" value="$(arg waypoint_file)" />
     </node>
 

@@ -19,7 +19,7 @@ public:
         nh.param<int>("goal_type", goal_type, 1);
         nh.param<float>("offset", offset, 1.0);
         nh.param<bool>("use_hight", use_hight, true);
-        nh.param<float>("z_hight", z_hight, 1.0);
+        nh.param<float>("z_height", z_height, 1.0);
         nh.param<std::string>("goal_topic", goal_topic, "goal");
         nh.param<std::string>("waypoint_file", waypoint_file, "/home/yundrone/Sunray/General_Module/sunray_planner/Utils/config/waypoint.yml");
 
@@ -59,7 +59,7 @@ public:
         float z = msg->pose.position.z;
         if (use_hight)
         {
-            z = z_hight;
+            z = z_height;
         }
         for (int i = 0; i < uav_num; i++)
         {
@@ -206,7 +206,7 @@ private:
     int goal_type;
     float offset;
     bool use_hight;
-    float z_hight;
+    float z_height;
     std::string goal_topic;
     std::string waypoint_file;
     ros::NodeHandle nh_;
