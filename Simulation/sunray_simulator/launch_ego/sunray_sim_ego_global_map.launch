@@ -21,9 +21,8 @@
 	<!-- topic of your odometry such as VIO or LIO -->
     <arg name="odom_topic" default="/uav1/sunray/gazebo_pose" />
 	<!-- 点云信息，仿真中由map_generator产生 or 激光雷达 -->
-	<!-- 全局点云 -->
+	<!-- 全局点云 or 局部点云 2选1 -->
 	<arg name="cloud_topic" default="/map_generator/global_cloud"/>
-	<!-- 局部点云 -->
 	<!-- <arg name="cloud_topic" default="/uav1/map_generator/local_cloud"/> -->
 	
 	<!-- 相机及深度信息仿真中没有使用，此处可忽略(真机中使用) -->
@@ -187,7 +186,7 @@
         <param name="offset" value="1.1" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="true" />
-        <param name="z_hight" value="1.0" />
+        <param name="z_height" value="1.0" />
     </node>
 
 

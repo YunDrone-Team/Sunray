@@ -237,7 +237,7 @@ int main(int argc, char **argv)
     double max_vel = 1.0;  // maximum velocity (m/s)
     double max_yaw = 3;    // maximum velocity (m/s)
     double yaw = 0;
-    double hight = 0.8;
+    double height = 0.8;
 
     geometry_msgs::PoseStamped pose;
 

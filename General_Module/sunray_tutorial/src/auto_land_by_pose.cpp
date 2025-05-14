@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     double land_v;
     // land_time
     double land_time;
-    double hight;
+    double height;
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4); // 已弃用 预留参数 当数据输出波动较为剧烈时可以降低偏航抽搐 需要将程序中相应的计算注释打开
-    nh.param<double>("hight", hight, 1.5);
+    nh.param<double>("height", height, 1.5);
 
     // 降落相关参数
     // 当无人机当前位置与标签位置(x,y)误差小于error_xy且z小于error_z时 无人机直接降落 不再进行姿态调整了
@@ -268,7 +268,7 @@ int main(int argc, char **argv)
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
         uav_cmd.desired_vel[0] = 0.0;
         uav_cmd.desired_vel[1] = 0.0;
-        uav_cmd.desired_pos[2] = hight;
+        uav_cmd.desired_pos[2] = height;
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }

@@ -183,7 +183,7 @@
         <param name="offset" value="1.1" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="true" />
-        <param name="z_hight" value="1.0" />
+        <param name="z_height" value="1.0" />
     </node>
 
   	<node name="rviz_ego" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" />

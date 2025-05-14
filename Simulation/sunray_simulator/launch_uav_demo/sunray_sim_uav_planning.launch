@@ -3,7 +3,7 @@
 	<!-- Gazebo 配置 -->
     <arg name="gazebo_enable" default="true"/>
     <arg name="gui" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test2.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
     <!-- 启动 Gazebo -->
     <group if="$(arg gazebo_enable)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">

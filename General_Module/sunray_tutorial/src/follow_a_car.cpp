@@ -10,7 +10,6 @@ using namespace std;
 using namespace sunray_logger;
 
 string node_name;
-geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVControlCMD uav_cmd;
 geometry_msgs::PoseStamped target_pose;
 sunray_msgs::UAVSetup uav_setup;
@@ -38,21 +37,16 @@ ros::Time last_time{0};
 void uav_state_callback(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
+    sub_flag = true;
+    uav_x = msg->position[0];
+    uav_y = msg->position[1];
+    uav_z = msg->position[2];
+    uav_yaw = msg->attitude[2];
 }
 
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
-}
-
-void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
-{
-    sub_flag = true;
-    current_pose = *msg;
-    uav_x = msg->pose.position.x;
-    uav_y = msg->pose.position.y;
-    uav_z = msg->pose.position.z;
-    uav_yaw = tf::getYaw(msg->pose.orientation);
 }
 
 // 回调函数，用于获取目标二的位置和朝向
@@ -94,6 +88,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
 
     ros::Rate rate(20.0);
+    node_name = ros::this_node::getName();
 
     int uav_id;
     bool auto_takeoff = false;
@@ -108,30 +103,26 @@ int main(int argc, char **argv)
     nh.param<string>("uav_name", uav_name, "uav");
 
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
-    double hight;
+    double height;
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
     nh.param<double>("k_p_yaw", k_p_yaw, 0.04);
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4);
-    nh.param<double>("hight", hight, 1.0);
+    nh.param<double>("height", height, 1.0);
 
     uav_name = "/" + uav_name + to_string(uav_id);
-    // 订阅无人机状态
+    // 【订阅】无人机状态
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
     // 【订阅】目标点位置
     ros::Subscriber target_pos_sub = nh.subscribe<sunray_msgs::TargetsInFrameMsg>(uav_name + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
-    ;
     // 【订阅】任务结束
     ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(uav_name + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
-
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 1);
-
-    ros::Subscriber pose_sub = nh.subscribe(uav_name + "/mavros/local_position/pose", 10, pose_cb);
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
@@ -227,7 +218,7 @@ int main(int argc, char **argv)
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
         uav_cmd.desired_vel[0] = 0.0;
         uav_cmd.desired_vel[1] = 0.0;
-        uav_cmd.desired_pos[2] = hight;
+        uav_cmd.desired_pos[2] = height;
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }

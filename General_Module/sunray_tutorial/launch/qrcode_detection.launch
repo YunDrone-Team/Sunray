@@ -18,6 +18,5 @@
         <param name="algorithm_parameters" type="str" value="$(find sunray_tutorial)/config/qrcode_detector_params.json" />
         <param name="camera_parameters" type="str" value="$(find sunray_tutorial)/config/head_camera.yaml" />
         <param name="local_saving_path" type="str" value="$(find sunray_tutorial)/output" />
-        
     </node>
 </launch>

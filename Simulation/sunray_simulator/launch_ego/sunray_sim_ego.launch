@@ -163,15 +163,14 @@
 		<param name="bspline/limit_ratio" value="1.1" type="double"/>
 	</node>
 
-	<!-- trajectory server -->
+	<!-- trajectory server : 将ego输出的B样条转换为position_cmd类型发布 -->
 	<node pkg="ego_planner" name="drone_$(arg drone_id)_traj_server" type="traj_server" output="screen">
     	<remap from="position_cmd" to="/uav1/pos_cmd"/>
 		<remap from="~planning/bspline" to="drone_$(arg drone_id)_planning/bspline"/>
 		<param name="traj_server/time_forward" value="1.0" type="double"/>
 	</node>
 
-    <!-- ego 输出转换为sunray控制指令 -->
-   	<!-- 对应的sunray控制指令 -->
+    <!-- positionCmd2sunray : 将traj_server的输出转换为sunray控制指令 -->
     <arg name="cmd_sub_topic_1" default="/uav1/pos_cmd"/>
     <arg name="control_pub_topic_1" default="/uav1/sunray/uav_control_cmd"/>
     <arg name="control_type" default="2"/>
@@ -183,7 +182,7 @@
         <param name="enable_yaw" value="$(arg enable_yaw)"/>
     </node>
 
-	<!-- 点云转换为世界坐标系 -->
+	<!-- 点云转换为世界坐标系（EGO订阅的点云必须是全局坐标系的） -->
     <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
         <param name="input_point_topic" value="$(arg local_pointcloud_topic)" />
         <param name="output_point_topic" value="$(arg global_pointcloud_topic)" />
@@ -200,7 +199,7 @@
         <param name="offset" value="1.1" />
         <param name="goal_topic" value="$(arg goal_topic)" />
         <param name="use_hight" value="true" />
-        <param name="z_hight" value="1.0" />
+        <param name="z_height" value="1.0" />
     </node>
 
     <arg name="enable_rviz" default="true"/>

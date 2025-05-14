@@ -202,7 +202,7 @@ int main(int argc, char **argv)
     double z_k_p = 0.5;   // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
-    double hight = 0.6;
+    double height = 0.6;
 
     // Define the circle's center and radius
     double center_x = 0;
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
     {
         double theta = (ros::Time::now() - start_time).toSec() * dt;
         // double theta = 2 * M_PI * t / cilcle_time;
-        pose.pose.position.z = hight;
+        pose.pose.position.z = height;
         ros::Time start_time = ros::Time::now();
 
         if (stop_flag)
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
-    pose.pose.position.z = hight;
+    pose.pose.position.z = height;
     while (ros::ok())
     {
         // Calculate the distance to the target position
