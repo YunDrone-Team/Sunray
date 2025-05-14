@@ -5,14 +5,17 @@
 #include <sunray_msgs/TargetsInFrameMsg.h>
 #include <Eigen/Dense>
 #include "utils.hpp"
+#include <printf_format.h>
 
 using namespace std;
 using namespace Eigen;
-
+using namespace sunray_logger;
+string node_name;
+sunray_msgs::UAVState uav_state;
 geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVControlCMD uav_cmd;
 geometry_msgs::PoseStamped target_pose;
-sunray_msgs::UAVSetup setup;
+sunray_msgs::UAVSetup uav_setup;
 
 float target_yaw;
 bool stop_flag{false};
@@ -71,6 +74,12 @@ double get_roll_pitch(double yaw, double &roll, double &pitch)
     }
 }
 
+// 无人机状态回调
+void uav_state_callback(const sunray_msgs::UAVState::ConstPtr &msg)
+{
+    uav_state = *msg;
+}
+
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
 {
     stop_flag = true;
@@ -105,10 +114,18 @@ void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
 
 int main(int argc, char **argv)
 {
+    // 设置日志
+    Logger::init_default();
+    Logger::setPrintLevel(false);
+    Logger::setPrintTime(false);
+    Logger::setPrintToFile(false);
+    Logger::setFilename("~/Documents/Sunray_log.txt");
+
     ros::init(argc, argv, "auto_land_node");
     ros::NodeHandle nh("~");
 
     ros::Rate rate(10.0);
+    node_name = ros::this_node::getName();
 
     int uav_id;
     bool auto_takeoff = false;
@@ -131,20 +148,21 @@ int main(int argc, char **argv)
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4);
     nh.param<double>("hight", hight, 8.0);
-    
-    uav_name = uav_name + to_string(uav_id);
-    string topic_prefix = "/" + uav_name;
+
+    uav_name = "/" + uav_name + to_string(uav_id);
+    // 订阅无人机状态
+    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
     // 【订阅】目标点位置
-    ros::Subscriber target_pos_sub = nh.subscribe<sunray_msgs::TargetsInFrameMsg>(topic_prefix + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
+    ros::Subscriber target_pos_sub = nh.subscribe<sunray_msgs::TargetsInFrameMsg>(uav_name + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);
     // 【订阅】任务结束
-    ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(topic_prefix + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
+    ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(uav_name + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
 
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
-    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
+    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
-    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
+    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 1);
 
-    ros::Subscriber pose_sub = nh.subscribe(topic_prefix + "/mavros/local_position/pose", 10, pose_cb);
+    ros::Subscriber pose_sub = nh.subscribe(uav_name + "/mavros/local_position/pose", 10, pose_cb);
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
@@ -176,39 +194,72 @@ int main(int argc, char **argv)
     cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
     cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
 
-    if(auto_takeoff)
+    if (auto_takeoff)
     {
-        ros::Duration(10).sleep();
+        ros::Duration(3).sleep();
+        // 初始化检查：等待PX4连接
+        int times = 0;
+        while (ros::ok() && !uav_state.connected)
+        {
+            ros::spinOnce();
+            ros::Duration(1.0).sleep();
+            if (times++ > 5)
+                Logger::print_color(int(LogColor::red), node_name, ": Wait for UAV connect...");
+        }
+        Logger::print_color(int(LogColor::green), node_name, ": UAV connected!");
 
-        ros::Duration(0.5).sleep();
-        // 解锁
-        cout << "arm" << endl;
-        setup.cmd = 1;
-        uav_setup_pub.publish(setup);
-        ros::Duration(1.5).sleep();
+        // 切换到指令控制模式(同时，PX4模式将切换至OFFBOARD模式)
+        while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::CMD_CONTROL)
+        {
 
-        // 切换到指令控制模式
-        cout << "switch CMD_CONTROL" << endl;
-        setup.cmd = 4;
-        setup.control_mode = "CMD_CONTROL";
-        uav_setup_pub.publish(setup);
+            uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
+            uav_setup.control_mode = "CMD_CONTROL";
+            uav_setup_pub.publish(uav_setup);
+            Logger::print_color(int(LogColor::green), node_name, ": SET_CONTROL_MODE - [CMD_CONTROL]. ");
+            ros::Duration(1.0).sleep();
+            ros::spinOnce();
+        }
+        Logger::print_color(int(LogColor::green), node_name, ": UAV control_mode set to [CMD_CONTROL] successfully!");
+
+        // 解锁无人机
+        Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 5 sec...");
         ros::Duration(1.0).sleep();
+        Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 4 sec...");
+        ros::Duration(1.0).sleep();
+        Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 3 sec...");
+        ros::Duration(1.0).sleep();
+        Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 2 sec...");
+        ros::Duration(1.0).sleep();
+        Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 1 sec...");
+        ros::Duration(1.0).sleep();
+        while (ros::ok() && !uav_state.armed)
+        {
+            uav_setup.cmd = sunray_msgs::UAVSetup::ARM;
+            uav_setup_pub.publish(uav_setup);
+            Logger::print_color(int(LogColor::green), node_name, ": Arm UAV now.");
+            ros::Duration(1.0).sleep();
+            ros::spinOnce();
+        }
+        Logger::print_color(int(LogColor::green), node_name, ": Arm UAV successfully!");
 
-        // 起飞
-        cout << "takeoff" << endl;
-        uav_cmd.cmd = 100;
-        control_cmd_pub.publish(uav_cmd);
-        ros::Duration(5).sleep();
+        // 起飞无人机
+        while (ros::ok() && abs(uav_state.position[2] - uav_state.home_pos[2] - uav_state.takeoff_height) > 0.2)
+        {
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;
+            control_cmd_pub.publish(uav_cmd);
+            Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV now.");
+            ros::Duration(4.0).sleep();
+            ros::spinOnce();
+        }
+        Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV successfully!");
 
-        cout << "rising" << endl;
-        uav_cmd.cmd = 1;
-        uav_cmd.desired_pos[0] = 0.0;
-        uav_cmd.desired_pos[1] = 0.0;
+        Logger::print_color(int(LogColor::blue), ">>>>>>> move to trajectory start point");
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
+        uav_cmd.desired_vel[0] = 0.0;
+        uav_cmd.desired_vel[1] = 0.0;
         uav_cmd.desired_pos[2] = hight;
-        control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }
-
 
     ros::Duration(0.5).sleep();
     ros::spinOnce();
@@ -223,13 +274,13 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
     while (!sub_flag)
     {
-        cout << "waiting for pose" << endl;
+        Logger::print_color(int(LogColor::blue), "wait for pose!!!");
         ros::spinOnce();
         ros::Duration(1).sleep();
     }
     while (!tag_flag)
     {
-        cout << "waiting for tag" << endl;
+        Logger::print_color(int(LogColor::blue), "wait for tag!!!");
         ros::spinOnce();
         ros::Duration(1).sleep();
     }
@@ -242,7 +293,7 @@ int main(int argc, char **argv)
         ros::Duration(0.05).sleep();
         if (stop_flag)
         {
-            cout << "land" << endl;
+            Logger::print_color(int(LogColor::blue), "land");
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             control_cmd_pub.publish(uav_cmd);
             break;
@@ -293,7 +344,7 @@ int main(int argc, char **argv)
         }
         if ((ros::Time::now() - last_time).toSec() > 10)
         {
-            cout << "降落点丢失超时，直接降落" << endl;
+            Logger::print_color(int(LogColor::blue), "over time!!! Land directly");
             landing_point_num = 0;
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
@@ -302,7 +353,7 @@ int main(int argc, char **argv)
         }
         if ((ros::Time::now() - last_time).toSec() > 1)
         {
-            cout << "降落点丢失，进入悬停" << endl;
+            Logger::print_color(int(LogColor::blue), "lost the tag !!! hovering!!! ");
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             control_cmd_pub.publish(uav_cmd);
