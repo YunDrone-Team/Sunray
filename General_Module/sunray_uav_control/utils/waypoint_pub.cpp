@@ -6,6 +6,7 @@
 sunray_msgs::UAVControlCMD uav_cmd;
 sunray_msgs::UAVSetup setup;
 
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "uav_waypoint_publisher");
@@ -16,10 +17,12 @@ int main(int argc, char **argv)
     int wp_type = 1;
     int wp_yaw_type = 0;
     bool wp_takeoff = true;
+    bool dowaypoint = false;
     float move_vel = 1.0;
     float vel_p = 1.0;
     float z_height = 10.0;
     std::string uav_name;
+
 
     nh.param<int>("uav_id", uav_id, 1);
     nh.param<int>("wp_num", wp_num, 5);
@@ -27,6 +30,7 @@ int main(int argc, char **argv)
     nh.param<int>("wp_end_type", wp_end_type, 0);
     nh.param<int>("wp_yaw_type", wp_yaw_type, 0);
     nh.param<bool>("wp_takeoff", wp_takeoff, true);
+    nh.param<bool>("dowaypoint",  dowaypoint, false);
     nh.param<float>("wp_move_vel", move_vel, 1.0);
     nh.param<float>("wp_vel_p", vel_p, 1.0);
     nh.param<float>("wp_z_height", z_height, 1.0);
@@ -145,8 +149,10 @@ int main(int argc, char **argv)
     waypoint_msg.wp_circle_point = {wp_circle_point[0], wp_circle_point[1]};
     ros::Duration(0.5).sleep();
     std::cout << "waypoint" << std::endl;
-    uav_cmd.cmd = 103;
-    control_cmd_pub.publish(uav_cmd);
+    if(dowaypoint){
+        uav_cmd.cmd = 103;
+        control_cmd_pub.publish(uav_cmd);
+    }
     waypoint_pub.publish(waypoint_msg);
     // ros::Rate loop_rate(1);
     // while (ros::ok())
