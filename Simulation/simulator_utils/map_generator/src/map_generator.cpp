@@ -392,6 +392,9 @@ void Map_Generator::GeneratePlanningTestMap()
 
     for (int t = -8; t <= 8; t = t + 2)
     {
+        // 去掉中间的障碍物
+        if (t == 0)
+            continue;
         generate_small_cylinder((double)0, (double)t);
     }
 

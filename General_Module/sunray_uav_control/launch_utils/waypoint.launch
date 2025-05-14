@@ -10,7 +10,7 @@
         <param name="wp_takeoff" value="true" />
         <param name="wp_move_vel" value="0.5" />
         <param name="wp_vel_p" value="1.5" />
-        <param name="z_height" value="1.0" />
+        <param name="wp_z_height" value="1.0" />
         <param name="uav_name" value="uav" />
 
         <param name="wp_circle_point_x" value="0.0" />

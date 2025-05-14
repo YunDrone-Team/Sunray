@@ -67,7 +67,7 @@
               <stddev>0.0</stddev>
             </noise>
           </ray>
-          <visualize>True</visualize>
+          <visualize>0</visualize>
           <samples>20000</samples>
           <downsample>4</downsample>
           <csv_file_name>mid360-real-centr.csv</csv_file_name>
@@ -81,7 +81,7 @@
       <sensor name="imu_sensor" type="imu">
         <always_on>true</always_on>
         <update_rate>100</update_rate>
-        <visualize>true</visualize>
+        <visualize>0</visualize>
         <topic>livox/imu</topic>
         <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
           <topicName>livox/imu</topicName>
