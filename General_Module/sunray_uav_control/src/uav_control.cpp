@@ -1103,11 +1103,10 @@ float UAVControl::get_vel_from_waypoint(float point_x, float point_y)
     wp_params.wp_x_vel = (point_x - px4_state.position[0]) * wp_params.wp_vel_p;
     wp_params.wp_y_vel = (point_y - px4_state.position[1]) * wp_params.wp_vel_p;
     // 如果合速度大于最大速度，则重新计算为最大速度
-    if (sqrt(wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel) > wp_params.wp_move_vel * wp_params.wp_move_vel)
+    if ((wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel) > wp_params.wp_move_vel * wp_params.wp_move_vel)
     {
-        float ratio = sqrt(wp_params.wp_move_vel * wp_params.wp_move_vel / (wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel));
-        wp_params.wp_x_vel *= ratio;
-        wp_params.wp_y_vel *= ratio;
+        wp_params.wp_x_vel =  wp_params.wp_x_vel* wp_params.wp_move_vel/sqrt(wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel);
+        wp_params.wp_y_vel =  wp_params.wp_y_vel* wp_params.wp_move_vel/sqrt(wp_params.wp_x_vel * wp_params.wp_x_vel + wp_params.wp_y_vel * wp_params.wp_y_vel);
     }
 }
 

@@ -27,9 +27,9 @@ int main(int argc, char **argv)
     nh.param<int>("wp_end_type", wp_end_type, 0);
     nh.param<int>("wp_yaw_type", wp_yaw_type, 0);
     nh.param<bool>("wp_takeoff", wp_takeoff, true);
-    nh.param<float>("move_vel", move_vel, 1.0);
-    nh.param<float>("vel_p", vel_p, 1.0);
-    nh.param<float>("z_height", z_height, 1.0);
+    nh.param<float>("wp_move_vel", move_vel, 1.0);
+    nh.param<float>("wp_vel_p", vel_p, 1.0);
+    nh.param<float>("wp_z_height", z_height, 1.0);
     nh.param<std::string>("uav_name", uav_name, "uav");
 
     double wp_point_1[3] = {0.0, 0.0, 0.0};
