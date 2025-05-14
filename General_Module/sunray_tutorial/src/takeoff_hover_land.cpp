@@ -4,7 +4,6 @@
 #include "printf_utils.h"
 #include <csignal>
 
-
 using namespace sunray_logger;
 using namespace std;
 
@@ -52,7 +51,7 @@ int main(int argc, char **argv)
 
     signal(SIGINT, mySigintHandler);
 
-    string uav_name, target_tpoic_name;
+    string uav_name, target_topic_name;
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
@@ -112,11 +111,11 @@ int main(int argc, char **argv)
             Logger::print_color(int(LogColor::red), node_name, ": Wait for UAV connect...");
     }
     Logger::print_color(int(LogColor::green), node_name, ": UAV connected!");
-    
+
     // 切换到指令控制模式(同时，PX4模式将切换至OFFBOARD模式)
     while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::CMD_CONTROL)
     {
-        
+
         uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
         uav_setup.control_mode = "CMD_CONTROL";
         uav_setup_pub.publish(uav_setup);
@@ -125,7 +124,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
     Logger::print_color(int(LogColor::green), node_name, ": UAV control_mode set to [CMD_CONTROL] successfully!");
-   
+
     // 解锁无人机
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 5 sec...");
     ros::Duration(1.0).sleep();
@@ -143,7 +142,7 @@ int main(int argc, char **argv)
         uav_setup_pub.publish(uav_setup);
         Logger::print_color(int(LogColor::green), node_name, ": Arm UAV now.");
         ros::Duration(1.0).sleep();
-        ros::spinOnce();      
+        ros::spinOnce();
     }
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV successfully!");
 
@@ -154,7 +153,7 @@ int main(int argc, char **argv)
         control_cmd_pub.publish(uav_cmd);
         Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV now.");
         ros::Duration(4.0).sleep();
-        ros::spinOnce();      
+        ros::spinOnce();
     }
     Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV successfully!");
 
@@ -166,7 +165,7 @@ int main(int argc, char **argv)
     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(5).sleep();
-    ros::spinOnce(); 
+    ros::spinOnce();
 
     // 降落无人机
     while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
@@ -175,14 +174,14 @@ int main(int argc, char **argv)
         control_cmd_pub.publish(uav_cmd);
         Logger::print_color(int(LogColor::green), node_name, ": Land UAV now.");
         ros::Duration(4.0).sleep();
-        ros::spinOnce();      
+        ros::spinOnce();
     }
     // 等待降落
     while (ros::ok() && uav_state.landed_state != 1)
     {
         Logger::print_color(int(LogColor::green), node_name, ": Landing");
         ros::Duration(1.0).sleep();
-        ros::spinOnce();      
+        ros::spinOnce();
     }
     // 成功降落
     Logger::print_color(int(LogColor::green), node_name, ": Land UAV successfully!");
