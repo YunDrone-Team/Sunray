@@ -1,73 +1,46 @@
 <launch>
 	<arg name="uav_id" default="1"/>
-    <arg name="sim_mode" default="true"/>
-    <arg name="flag_printf" default="true"/>
     <arg name="uav_name" default="uav" />
-    <arg name="target_tpoic_name" default="/vrpn_client_node/target/pose" />
     <arg name="demo_id" default="1" />
     
 	<node if="$(eval demo_id == 1)" pkg="sunray_tutorial" type="takeoff_hover_land" name="takeoff_hover_land$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 
 	<node if="$(eval demo_id == 2)" pkg="sunray_tutorial" type="block_pos" name="block_pos$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 
 	<node if="$(eval demo_id == 3)" pkg="sunray_tutorial" type="circle_vel" name="circle_vel$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 
 	<node if="$(eval demo_id == 4)" pkg="sunray_tutorial" type="circle_z_pos" name="circle_z_pos$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 
 	<node if="$(eval demo_id == 5)" pkg="sunray_tutorial" type="pos_body_hexagon" name="pos_body_hexagon$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 
 	<node if="$(eval demo_id == 6)" pkg="sunray_tutorial" type="vel_body_follow_car" name="vel_body_follow_car$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 
 	<node if="$(eval demo_id == 7)" pkg="sunray_tutorial" type="vel_body_z_pos_follow_car" name="vel_body_z_pos_follow_car$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node>
 	
 	<!-- <node pkg="sunray_tutorial" type="follow_a_car" name="follow_a_car_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
-        <param name="sim_mode" value="$(arg sim_mode)" />
-		<param name="flag_printf" value="$(arg flag_printf)" />
-		<param name="target_tpoic_name" value="$(arg target_tpoic_name)" />
 	</node> -->
 </launch>
 

@@ -1,3 +1,7 @@
+/*
+程序功能：使用XyzPosYawBody接口绘制六边形轨迹
+*/
+
 #include <ros/ros.h>
 #include <printf_format.h>
 #include "ros_msg_utils.h"
@@ -7,16 +11,11 @@
 using namespace sunray_logger;
 using namespace std;
 
-geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
-std_msgs::Int32 uav_control_state;
-geometry_msgs::PoseStamped target_pose;
 sunray_msgs::UAVSetup uav_setup;
 
 string node_name;
-float target_yaw;
-bool stop_flag{false};
 
 void mySigintHandler(int sig)
 {
@@ -30,28 +29,7 @@ void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
 }
-void uav_control_state_cb(const std_msgs::Int32::ConstPtr &msg)
-{
-    uav_control_state = *msg;
-}
-void target_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
-{
-    target_pose = *msg;
-    tf2::Quaternion quaternion;
-    tf2::fromMsg(msg->pose.orientation, quaternion);
-    double roll, pitch, yaw;
-    tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-    target_yaw = yaw;
-}
-void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
-{
-    stop_flag = true;
-}
 
-void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
-{
-    current_pose = *msg;
-}
 
 int main(int argc, char **argv)
 {
@@ -87,26 +65,12 @@ int main(int argc, char **argv)
 
     // 【订阅】无人机状态 -- from vision_pose
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1, uav_state_cb);
-    // 【订阅】无人机控制信息
-    ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(uav_name + "/sunray/control_state", 1, uav_control_state_cb);
-    // 【订阅】目标点位置
-    if (sim_mode)
-    {
-        ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(uav_name + "/sunray/gazebo_pose", 1, target_pos_cb);
-    }
-    else
-    {
-        ros::Subscriber target_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/" + uav_name + "/pose", 1, target_pos_cb);
-    }
-    // 【订阅】任务结束
-    ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>(uav_name + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
 
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 1);
 
-    ros::Subscriber pose_sub = nh.subscribe(uav_name + "/mavros/local_position/pose", 10, pose_cb);
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
     // uav_cmd.cmd_id= 0;
@@ -125,24 +89,6 @@ int main(int argc, char **argv)
     uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-
-    // 固定的浮点显示
-    cout.setf(ios::fixed);
-    // setprecision(n) 设显示小数精度为2位
-    cout << setprecision(2);
-    // 左对齐
-    cout.setf(ios::left);
-    // 强制显示小数点
-    cout.setf(ios::showpoint);
-    // 强制显示符号
-    cout.setf(ios::showpos);
-
-    // 打印相关信息
-    cout << GREEN << ">>>>>>>>>>>>>>>> " << node_name << " <<<<<<<<<<<<<<<<" << TAIL << endl;
-    cout << GREEN << "uav_id                    : " << uav_id << " " << TAIL << endl;
-    cout << GREEN << "sim_mode                  : " << sim_mode << " " << TAIL << endl;
-    cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
-    cout << GREEN << "target_topic_name         : " << target_topic_name << " " << TAIL << endl;
 
     ros::Duration(0.5).sleep();
     // 初始化检查：等待PX4连接
@@ -201,7 +147,7 @@ int main(int argc, char **argv)
     }
     Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV successfully!");
 
-    // 以上: 无人机已成功起飞，进入自由任务模式
+    // 以上: 无人机已成功起飞，进入任务模式
 
     ros::Duration(5).sleep();
     // 悬停
@@ -215,19 +161,12 @@ int main(int argc, char **argv)
     int yaw;
     for (int i = 0; i < 8; ++i)
     {
-        if (stop_flag)
-        {
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-            control_cmd_pub.publish(uav_cmd);
-            Logger::print_color(int(LogColor::green), node_name, ": Land UAV now.");
-            break;
-        }
         ros::spinOnce();
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
         uav_cmd.desired_pos[0] = std::get<0>(vertex);
         uav_cmd.desired_pos[1] = std::get<1>(vertex);
-        uav_cmd.desired_pos[2] = 1 - current_pose.pose.position.z;
+        uav_cmd.desired_pos[2] = 1 - uav_state.position[2];
         uav_cmd.desired_yaw = 0;
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(5).sleep();
@@ -250,7 +189,6 @@ int main(int argc, char **argv)
         uav_cmd.desired_pos[1] = 0;
         uav_cmd.desired_pos[2] = 0;
         uav_cmd.desired_yaw = yaw / 180.0 * M_PI;
-        uav_cmd.PosVelAccYawrate;
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }

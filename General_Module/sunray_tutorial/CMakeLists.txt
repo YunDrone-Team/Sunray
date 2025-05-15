@@ -72,14 +72,6 @@ add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
 add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
 target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
 
-# add_executable(vel_body_follow_car src/vel_body_follow_car.cpp)
-# add_dependencies(vel_body_follow_car sunray_tutorial_gencpp)
-# target_link_libraries(vel_body_follow_car ${catkin_LIBRARIES})
-
-# add_executable(vel_body_z_pos_follow_car src/vel_body_z_pos_follow_car.cpp)
-# add_dependencies(vel_body_z_pos_follow_car sunray_tutorial_gencpp)
-# target_link_libraries(vel_body_z_pos_follow_car ${catkin_LIBRARIES})
-
 add_executable(auto_land src/auto_land.cpp)
 add_dependencies(auto_land sunray_tutorial_gencpp)
 target_link_libraries(auto_land ${catkin_LIBRARIES})

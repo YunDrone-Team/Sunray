@@ -1,3 +1,7 @@
+/*
+程序功能：使用解锁、起飞、悬停、降落、等指令
+*/
+
 #include <ros/ros.h>
 #include <printf_format.h>
 #include "ros_msg_utils.h"
@@ -6,12 +10,6 @@
 
 using namespace sunray_logger;
 using namespace std;
-
-/*
-这些变量存储无人机的状态、目标位置、控制命令等信息：
-uav_cmd：无人机的控制指令。
-setup：无人机的设置指令。
-*/
 
 string node_name;
 sunray_msgs::UAVState uav_state;
@@ -82,22 +80,6 @@ int main(int argc, char **argv)
     uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-
-    // 固定的浮点显示
-    cout.setf(ios::fixed);
-    // setprecision(n) 设显示小数精度为2位
-    cout << setprecision(2);
-    // 左对齐
-    cout.setf(ios::left);
-    // 强制显示小数点
-    cout.setf(ios::showpoint);
-    // 强制显示符号
-    cout.setf(ios::showpos);
-
-    // 打印相关信息
-    cout << GREEN << ">>>>>>>>>>>>>>>> " << node_name << " <<<<<<<<<<<<<<<<" << TAIL << endl;
-    cout << GREEN << "uav_id                    : " << uav_id << " " << TAIL << endl;
-    cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
 
     ros::Duration(0.5).sleep();
 

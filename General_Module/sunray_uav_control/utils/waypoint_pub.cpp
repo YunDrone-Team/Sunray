@@ -1,14 +1,30 @@
 #include <ros/ros.h>
+#include <printf_format.h>
 #include <sunray_msgs/UAVWayPoint.h>
 #include <sunray_msgs/UAVControlCMD.h>
-#include <sunray_msgs/UAVSetup.h>
+#include <sunray_msgs/UAVState.h>
+
+using namespace sunray_logger;
 
 sunray_msgs::UAVControlCMD uav_cmd;
-sunray_msgs::UAVSetup setup;
+sunray_msgs::UAVState uav_state;
+std::string node_name;
 
+// 无人机状态回调
+void uav_state_callback(const sunray_msgs::UAVState::ConstPtr &msg)
+{
+    uav_state = *msg;
+}
 
 int main(int argc, char **argv)
 {
+    // 设置日志
+    Logger::init_default();
+    Logger::setPrintLevel(false);
+    Logger::setPrintTime(false);
+    Logger::setPrintToFile(false);
+    Logger::setFilename("~/Documents/Sunray_log.txt");
+
     ros::init(argc, argv, "uav_waypoint_publisher");
     ros::NodeHandle nh("~");
     int uav_id = 1;
@@ -22,7 +38,7 @@ int main(int argc, char **argv)
     float vel_p = 1.0;
     float z_height = 10.0;
     std::string uav_name;
-
+    node_name = ros::this_node::getName();
 
     nh.param<int>("uav_id", uav_id, 1);
     nh.param<int>("wp_num", wp_num, 5);
@@ -116,16 +132,10 @@ int main(int argc, char **argv)
     std::cout << "wp_circle_point: " << wp_circle_point[0] << " " << wp_circle_point[1] << std::endl;
 
     std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
+    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10, uav_state_callback);
     ros::Publisher waypoint_pub = nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 10);
-    std::cout << topic_prefix + "/sunray/uav_waypoint" << std::endl;
-
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
-    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
 
-
-
-    std::cout << "waypoint" << std::endl;
-    uav_cmd.cmd = 103;
     sunray_msgs::UAVWayPoint waypoint_msg;
     waypoint_msg.header.stamp = ros::Time::now();
     waypoint_msg.wp_num = wp_num;
@@ -148,20 +158,30 @@ int main(int argc, char **argv)
     waypoint_msg.wp_point_10 = {wp_point_10[0], wp_point_10[1], wp_point_10[2], wp_point_10[3]};
     waypoint_msg.wp_circle_point = {wp_circle_point[0], wp_circle_point[1]};
     ros::Duration(0.5).sleep();
-    std::cout << "waypoint" << std::endl;
+    
+
+    // 初始化检查：等待PX4连接
+    int times = 0;
+    while (ros::ok() && !uav_state.connected)
+    {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (times++ > 5)
+            Logger::print_color(int(LogColor::red), node_name, ": Wait for UAV connect...");
+    }
+    Logger::print_color(int(LogColor::green), node_name, ": UAV connected!");
+    ros::Duration(0.5).sleep();
+    Logger::print_color(int(LogColor::green), node_name, ": Send waypoint to UAV");
+    // 发布waypoint
+    waypoint_pub.publish(waypoint_msg);
+    ros::Duration(2).sleep();
+    // 执行航点
     if(dowaypoint){
-        uav_cmd.cmd = 103;
+        Logger::print_color(int(LogColor::green), node_name, ": running dowaypoint");
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::Waypoint;
         control_cmd_pub.publish(uav_cmd);
     }
-    waypoint_pub.publish(waypoint_msg);
-    // ros::Rate loop_rate(1);
-    // while (ros::ok())
-    // {
-    //     waypoint_pub.publish(waypoint_msg);
-    //     ros::spinOnce();
-    //     loop_rate.sleep();
-    //     break;
-    // }
+    
     ros::Duration(0.5).sleep();
     return 0;
 }
