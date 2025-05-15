@@ -10,10 +10,10 @@ using namespace sunray_logger;
 class UAVControl
 {
 private:
-    std::string uav_ns;                                   // 节点名称
-    int uav_id;                                           // 无人机ID
-    std::string uav_name;                                 // 无人机名称
-    
+    std::string uav_ns;   // 节点名称
+    int uav_id;           // 无人机ID
+    std::string uav_name; // 无人机名称
+
     // 无人机飞行相关参数
     struct FlightParams
     {
@@ -72,8 +72,8 @@ private:
     mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
     float default_home_x, default_home_y, default_home_z; // 默认home点？
 
-    bool rcState_cb;                                      // 遥控器状态回调
-    bool allow_lock;                                      // 允许临时解锁 特殊模式下允许跳过解锁检查
+    bool rcState_cb; // 遥控器状态回调
+    bool allow_lock; // 允许临时解锁 特殊模式下允许跳过解锁检查保持在CMD_CONTROL模式
 
     // 无人机控制状态机
     enum Control_Mode
@@ -92,7 +92,6 @@ private:
         float max_vel_yaw = 1.5; // 最大偏航速度
     };
     RCControlParams rc_control_params;
-
 
     struct Waypoint_Params
     {
@@ -115,7 +114,6 @@ private:
         ros::Time start_wp_time;                      // 上一个动作时间戳
     };
     Waypoint_Params wp_params;
-
 
     // 添加每个基础移动模式对应的 typemask的映射
     std::map<int, uint16_t> moveModeMap =
@@ -198,14 +196,14 @@ private:
     ros::ServiceClient px4_reboot_client;    // 【服务】px4重启
     ros::ServiceClient px4_emergency_client; // 【服务】px4紧急停止
 
-    void printf_params();   
-    int safetyCheck();                                                                        // 安全检查
-    void setArm(bool arm);                                                                    // 设置解锁 0:上锁 1:解锁
-    void set_auto_land();                                                                     // 调用px4 auto.land
-    void reboot_px4();                                                                        // 重启
-    void emergencyStop();                                                                     // 紧急停止出来
-    void set_px4_flight_mode(std::string mode);   
-    void send_attitude_setpoint(Eigen::Vector4d &u_att);                                            // 设置模式
+    void printf_params();
+    int safetyCheck();     // 安全检查
+    void setArm(bool arm); // 设置解锁 0:上锁 1:解锁
+    void set_auto_land();  // 调用px4 auto.land
+    void reboot_px4();     // 重启
+    void emergencyStop();  // 紧急停止出来
+    void set_px4_flight_mode(std::string mode);
+    void send_attitude_setpoint(Eigen::Vector4d &u_att);                                      // 设置模式
     void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);        // 【发布】发送控制指令
     void setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint); // 【发布】发送控制指令
     void handle_cmd_control();                                                                // CMD_CONTROL模式下获取期望值
@@ -238,11 +236,11 @@ public:
     UAVControl() {};
     ~UAVControl() {};
 
-    sunray_msgs::PX4State px4_state;                      // 当前时刻无人机状态（来自external_fusion_node）
+    sunray_msgs::PX4State px4_state; // 当前时刻无人机状态（来自external_fusion_node）
 
     PosControlPID pos_controller_pid;
 
     void mainLoop();
-    void show_ctrl_state();                                           // 打印状态
+    void show_ctrl_state(); // 打印状态
     void init(ros::NodeHandle &nh);
 };

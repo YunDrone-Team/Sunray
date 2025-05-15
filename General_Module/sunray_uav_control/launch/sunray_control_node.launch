@@ -17,7 +17,7 @@
     <arg name="home_y" default="0.0" />
     <arg name="home_z" default="0.0" />
     <arg name="home_yaw" default="0.0" />
-    <arg name="use_rc_control" default="false" />
+    <arg name="use_rc_control" default="true" />
     <arg name="check_cmd_timeout" default="false" />
     <arg name="cmd_timeout" default="5.0" />
     <arg name="use_offset" default="false" />

@@ -1,3 +1,6 @@
+/*
+程序功能：使用XyzVel接口进行圆形轨迹飞行
+*/
 #include <ros/ros.h>
 #include <printf_format.h>
 #include "ros_msg_utils.h"
@@ -7,15 +10,6 @@
 using namespace sunray_logger;
 using namespace std;
 
-/*
-这些变量存储无人机的状态、目标位置、控制命令等信息：
-current_pose：当前无人机的位置。
-uav_cmd：无人机的控制指令。
-setup：无人机的设置指令。
-stop_flag：控制任务停止的标志
-*/
-
-geometry_msgs::PoseStamped current_pose;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
 sunray_msgs::UAVSetup uav_setup;
@@ -27,18 +21,6 @@ void mySigintHandler(int sig)
 
     ros::shutdown();
     exit(EXIT_SUCCESS); // 或者使用 exit(0)
-}
-
-bool stop_flag{false};
-// 处理停止指令的回调。
-void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
-{
-    stop_flag = true;
-}
-// 更新当前无人机位置的回调。
-void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
-{
-    current_pose = *msg;
 }
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
@@ -86,16 +68,12 @@ int main(int argc, char **argv)
     // 无人机名和话题前缀
     uav_name = "/" + uav_name + std::to_string(uav_id);
     // 【订阅】无人机状态 -- from vision_pose
-    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>( uav_name + "/sunray/uav_state", 1, uav_state_cb);
-    // 【订阅】任务结束
-    ros::Subscriber stop_tutorial_sub = nh.subscribe<std_msgs::Empty>( uav_name + "/sunray/stop_tutorial", 1, stop_tutorial_cb);
-    // 【订阅】无人机位置
-    ros::Subscriber pose_sub = nh.subscribe( uav_name+ "/mavros/local_position/pose", 10, pose_cb);
+    ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1, uav_state_cb);
     // 发布话题
-    //  【发布】无人机控制指令 （本节点 -> sunray_control_node）
-    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>( uav_name+ "/sunray/uav_control_cmd", 1);
+    // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
+    ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
-    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>( uav_name+ "/sunray/setup", 1);
+    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 1);
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
@@ -114,22 +92,6 @@ int main(int argc, char **argv)
     uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-
-    // 固定的浮点显示
-    cout.setf(ios::fixed);
-    // setprecision(n) 设显示小数精度为2位
-    cout << setprecision(2);
-    // 左对齐
-    cout.setf(ios::left);
-    // 强制显示小数点
-    cout.setf(ios::showpoint);
-    // 强制显示符号
-    cout.setf(ios::showpos);
-
-    // 打印相关信息
-    cout << GREEN << ">>>>>>>>>>>>>>>> " << node_name << " <<<<<<<<<<<<<<<<" << TAIL << endl;
-    cout << GREEN << "uav_id                    : " << uav_id << " " << TAIL << endl;
-    cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
 
     ros::Duration(0.5).sleep();
     // 初始化检查：等待PX4连接
@@ -210,7 +172,7 @@ int main(int argc, char **argv)
     double z_k_p = 0.5;   // proportional gain
     double max_vel = 1.0; // maximum velocity (m/s)
 
-    double height = 0.6;
+    double height = 0.8;
 
     geometry_msgs::PoseStamped pose;
     Logger::print_color(int(LogColor::green), node_name, ": Start circle.");
@@ -224,17 +186,10 @@ int main(int argc, char **argv)
         // Send setpoints until the drone reaches the target point
         while (ros::ok())
         {
-            if (stop_flag)
-            {
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-                control_cmd_pub.publish(uav_cmd);
-                Logger::print_color(int(LogColor::green), node_name, ": Land UAV now.");
-                break;
-            }
             // Calculate the distance to the target position
-            double dx = pose.pose.position.x - current_pose.pose.position.x;
-            double dy = pose.pose.position.y - current_pose.pose.position.y;
-            double dz = pose.pose.position.z - current_pose.pose.position.z;
+            double dx = pose.pose.position.x - uav_state.position[0];
+            double dy = pose.pose.position.y - uav_state.position[1];
+            double dz = pose.pose.position.z - uav_state.position[2];
 
             // Calculate the desired velocity using a proportional controller
             double vx = k_p * dx;
@@ -246,15 +201,15 @@ int main(int argc, char **argv)
             vz = min(max(vz, -max_vel), max_vel);
 
             uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = 2;
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVel;
             uav_cmd.desired_vel[0] = vx;
             uav_cmd.desired_vel[1] = vy;
             uav_cmd.desired_vel[2] = vz;
             control_cmd_pub.publish(uav_cmd);
 
             // Check if the drone has reached the target point
-            if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.15 &&
-                fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.15)
+            if (fabs(uav_state.position[0] - pose.pose.position.x) < 0.15 &&
+                fabs(uav_state.position[1] - pose.pose.position.y) < 0.15)
             {
                 break;
             }
@@ -271,9 +226,9 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         // Calculate the distance to the target position
-        double dx = pose.pose.position.x - current_pose.pose.position.x;
-        double dy = pose.pose.position.y - current_pose.pose.position.y;
-        double dz = pose.pose.position.z - current_pose.pose.position.z;
+        double dx = pose.pose.position.x - uav_state.position[0];
+        double dy = pose.pose.position.y - uav_state.position[1];
+        double dz = pose.pose.position.z - uav_state.position[2];
 
         // Calculate the desired velocity using a proportional controller
         double vx = k_p * dx;
@@ -286,15 +241,15 @@ int main(int argc, char **argv)
         vz = min(max(vz, -max_vel), max_vel);
 
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = 2;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVel;
         uav_cmd.desired_vel[0] = vx;
         uav_cmd.desired_vel[1] = vy;
         uav_cmd.desired_vel[2] = vz;
         control_cmd_pub.publish(uav_cmd);
 
         // Check if the drone has reached the target point
-        if (fabs(current_pose.pose.position.x - pose.pose.position.x) < 0.2 &&
-            fabs(current_pose.pose.position.y - pose.pose.position.y) < 0.2)
+        if (fabs(uav_state.position[0] - pose.pose.position.x) < 0.2 &&
+            fabs(uav_state.position[1] - pose.pose.position.y) < 0.2)
         {
             // 停下1秒等待无人机速度降下来
             ros::Duration(1.0).sleep();
@@ -305,26 +260,26 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-   // 降落无人机
-   while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
-   {
-       uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-       control_cmd_pub.publish(uav_cmd);
-       Logger::print_color(int(LogColor::green), node_name, ": Land UAV now.");
-       ros::Duration(4.0).sleep();
-       ros::spinOnce();
-   }
-   // 等待降落
-   while (ros::ok() && uav_state.landed_state != 1)
-   {
-       Logger::print_color(int(LogColor::green), node_name, ": Landing");
-       ros::Duration(1.0).sleep();
-       ros::spinOnce();
-   }
-   // 成功降落
-   Logger::print_color(int(LogColor::green), node_name, ": Land UAV successfully!");
+    // 降落无人机
+    while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
+    {
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
+        control_cmd_pub.publish(uav_cmd);
+        Logger::print_color(int(LogColor::green), node_name, ": Land UAV now.");
+        ros::Duration(4.0).sleep();
+        ros::spinOnce();
+    }
+    // 等待降落
+    while (ros::ok() && uav_state.landed_state != 1)
+    {
+        Logger::print_color(int(LogColor::green), node_name, ": Landing");
+        ros::Duration(1.0).sleep();
+        ros::spinOnce();
+    }
+    // 成功降落
+    Logger::print_color(int(LogColor::green), node_name, ": Land UAV successfully!");
 
-   // Demo 结束
-   Logger::print_color(int(LogColor::green), node_name, ": Demo finished, quit!");
-   return 0;
+    // Demo 结束
+    Logger::print_color(int(LogColor::green), node_name, ": Demo finished, quit!");
+    return 0;
 }

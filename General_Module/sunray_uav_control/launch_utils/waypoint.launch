@@ -8,12 +8,12 @@
         <!-- # 偏航角类型 1: 固定值 2: 朝向下一个航点 3: 指向环绕点 -->
         <param name="wp_yaw_type" value="3" />
         <param name="wp_takeoff" value="true" />
-        <param name="wp_move_vel" value="0.1" />
+        <param name="wp_move_vel" value="0.5" />
         <param name="wp_vel_p" value="1.5" />
         <param name="wp_z_height" value="1.0" />
         <param name="uav_name" value="uav" />
         <!-- # 航点功能控制 ture:上传并执行  false: 只上传不执行  -->
-        <param name="dowaypoint" value="false" />
+        <param name="dowaypoint" value="true" />
 
         <param name="wp_circle_point_x" value="0.0" />
         <param name="wp_circle_point_y" value="0.0" />

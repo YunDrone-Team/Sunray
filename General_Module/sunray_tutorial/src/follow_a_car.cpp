@@ -1,3 +1,7 @@
+/*
+程序功能：根据相对位置进行标签跟踪，跟踪方向：下方物体
+*/
+
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
@@ -11,16 +15,14 @@ using namespace sunray_logger;
 
 string node_name;
 sunray_msgs::UAVControlCMD uav_cmd;
-geometry_msgs::PoseStamped target_pose;
 sunray_msgs::UAVSetup uav_setup;
 sunray_msgs::UAVState uav_state;
 
-float target_yaw;
 bool stop_flag{false};
 
 // 全局变量存储无人机和车的坐标和朝向
-double uav_x, uav_y, uav_z, uav_yaw, x_rel, y_rel, z_rel, yaw_rel;
-bool sub_flag{false};
+double x_rel, y_rel, z_rel, yaw_rel;
+bool pos_flag{false};
 bool tag_flag{false};
 double x_vel = 0.0;
 double y_vel = 0.0;
@@ -37,11 +39,7 @@ ros::Time last_time{0};
 void uav_state_callback(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
-    sub_flag = true;
-    uav_x = msg->position[0];
-    uav_y = msg->position[1];
-    uav_z = msg->position[2];
-    uav_yaw = msg->attitude[2];
+    pos_flag = true;
 }
 
 void stop_tutorial_cb(const std_msgs::Empty::ConstPtr &msg)
@@ -57,21 +55,10 @@ void tagCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr &msg)
     {
         tag_flag = true;
         last_time = ros::Time::now();
-        // 相机正装
         x_rel = x_filter.filter(msg->targets[0].px);
         y_rel = y_filter.filter(-msg->targets[0].py);
         z_rel = z_filter.filter(msg->targets[0].pz);
         yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
-        // // 相机反装（180旋转）
-        // x_rel = x_filter.filter(-msg->targets[0].px);
-        // y_rel = y_filter.filter(msg->targets[0].py);
-        // z_rel = z_filter.filter(msg->targets[0].pz);
-        // // 机体系相对旋转都是一样的
-        // yaw_rel = yaw_filter.filter(-msg->targets[0].yaw);
-
-        cout << "--------" << endl;
-        cout << "x_rel: " << msg->targets[0].px << " y_rel: " << -msg->targets[0].py << " z_rel: " << msg->targets[0].pz << ", yaw_rel: " << -msg->targets[0].yaw << endl;
-        cout << "x_fil: " << x_rel << " y_fil: " << y_rel << " z_fil: " << z_rel << " yaw_fil: " << yaw_rel << endl;
     }
 }
 
@@ -92,11 +79,9 @@ int main(int argc, char **argv)
 
     int uav_id;
     bool auto_takeoff = false;
-    string uav_name, target_tpoic_name;
-    bool sim_mode, flag_printf;
-    nh.param<bool>("sim_mode", sim_mode, true);
-    nh.param<bool>("flag_printf", flag_printf, true);
-    nh.param<bool>("auto_takeoff", auto_takeoff, false);
+    string uav_name;
+
+    
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
@@ -104,14 +89,19 @@ int main(int argc, char **argv)
 
     double k_p_xy, k_p_z, k_p_yaw, max_vel, max_vel_z, max_yaw;
     double height;
+    // 是否启动自动起飞
+    nh.param<bool>("auto_takeoff", auto_takeoff, false);
+    // 自动起飞高度
+    nh.param<double>("height", height, 1.0);
+    // 【参数】P控制参数
     nh.param<double>("k_p_xy", k_p_xy, 1.2);
     nh.param<double>("k_p_z", k_p_z, 0.5);
     nh.param<double>("k_p_yaw", k_p_yaw, 0.04);
+    // 【参数】最大速度限制
     nh.param<double>("max_vel", max_vel, 0.5);
     nh.param<double>("max_vel_z", max_vel_z, 0.2);
     nh.param<double>("max_yaw", max_yaw, 0.4);
-    nh.param<double>("height", height, 1.0);
-
+    
     uav_name = "/" + uav_name + to_string(uav_id);
     // 【订阅】无人机状态
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
@@ -136,24 +126,7 @@ int main(int argc, char **argv)
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
 
-    // 固定的浮点显示
-    cout.setf(ios::fixed);
-    // setprecision(n) 设显示小数精度为2位
-    cout << setprecision(2);
-    // 左对齐
-    cout.setf(ios::left);
-    // 强制显示小数点
-    cout.setf(ios::showpoint);
-    // 强制显示符号
-    cout.setf(ios::showpos);
-
-    // 打印相关信息
-    cout << GREEN << ">>>>>>>>>>>>>>>> " << ros::this_node::getName() << " <<<<<<<<<<<<<<<<" << TAIL << endl;
-    cout << GREEN << "uav_id                    : " << uav_id << " " << TAIL << endl;
-    cout << GREEN << "sim_mode                  : " << sim_mode << " " << TAIL << endl;
-    cout << GREEN << "uav_name                  : " << uav_name << " " << TAIL << endl;
-    cout << GREEN << "target_tpoic_name         : " << target_tpoic_name << " " << TAIL << endl;
-
+    // 自动起飞
     if (auto_takeoff)
     {
         ros::Duration(3).sleep();
@@ -214,7 +187,7 @@ int main(int argc, char **argv)
         Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV successfully!");
         ros::Duration(5).sleep();
 
-        Logger::print_color(int(LogColor::blue), ">>>>>>> move to trajectory start point");
+        Logger::print_color(int(LogColor::blue), ">>>>>>> move to the specified height");
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
         uav_cmd.desired_vel[0] = 0.0;
         uav_cmd.desired_vel[1] = 0.0;
@@ -226,14 +199,14 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
     ros::spinOnce();
 
-    geometry_msgs::PoseStamped pose;
-
-    while (!sub_flag)
+    // 等待订阅无人机位置
+    while (!pos_flag)
     {
         Logger::print_color(int(LogColor::blue), "wait for pose!!!");
         ros::spinOnce();
         ros::Duration(1).sleep();
     }
+    // 等待订阅到目标位置
     while (!tag_flag)
     {
         Logger::print_color(int(LogColor::blue), "wait for tag!!!");
