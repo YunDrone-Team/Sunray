@@ -1,9 +1,10 @@
 <launch>
     <arg name="uav_id" default="1"/>
     <arg name="uav_name" default="uav"/>
+    <arg name="ip" default="0.0.0.0" />
     <group ns="$(arg uav_name)$(arg uav_id)">
         <arg name="fcu_url" default="/dev/ttyACM0:921600" />
-        <arg name="gcs_url" default="udp://:14556@192.168.25.80:14551" />
+        <arg name="gcs_url" default="udp://:14556@$(arg ip):14551" />
         <arg name="tgt_system" default="1" />
         <arg name="tgt_component" default="1" />
         <arg name="log_output" default="screen" />
