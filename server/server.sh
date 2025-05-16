@@ -66,7 +66,7 @@ fi
 
 # 启动地面站后台节点
 start_ground_station() {
-    gnome-terminal --title="sunray_communication_bridge" -- bash -c "source /opt/ros/noetic/setup.bash; \
+    gnome-terminal --title="sunray_communication_bridge" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
     source ~/Sunray/devel/setup.bash; roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${UAV_ID:=1}; exec bash"
 }
 
@@ -74,19 +74,19 @@ start_ground_station() {
 start_mavros_station() {
     echo "12345"
     echo "gcs ip: $IP"
-    gnome-terminal --title="sunray_mavros" -- bash -c "source /opt/ros/noetic/setup.bash; \
+    gnome-terminal --title="sunray_mavros" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
     source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${UAV_ID} ip:=${IP}; exec bash"
 }
 
 # 启动外部定位节点
 start_external_position() {
-    gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash;\
+    gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
      source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control external_fusion.launch uav_id:=${UAV_ID} external_source:=${EXTERNAL_SOURCE}; exec bash"
 }
 
 # 启动控制节点
 start_control() {
-    gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; \
+    gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
     source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${UAV_ID}; exec bash"
 }
 
