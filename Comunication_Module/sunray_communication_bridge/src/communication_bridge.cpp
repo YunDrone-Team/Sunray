@@ -120,7 +120,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // 【定时器】 定时发送数据到地面站 本节点 --UDP--> 地面站
     SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
     // 【定时器】 定时发智能体状态信息（智能体之间通信） 本节点 --UDP--> 其他无人机/车
-    agentStateTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendAgentStatusInformation, this);
+    // agentStateTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendAgentStatusInformation, this);
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -784,6 +784,12 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
         mode = mode.substr(0, 15);
     else if (mode.length() < 15)
         mode.append(15 - mode.length(), ' ');
+
+    if (uav_id > 0 && !is_simulation && uav_id==robot_id )
+    {
+        std::lock_guard<std::mutex> lock(_mutexUDP);
+        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[uav_id - 1]), udp_port);
+    }
 }
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
@@ -808,6 +814,13 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
     ugvStateData[index].ugvState.batteryState = msg->battery_state;
     ugvStateData[index].ugvState.batteryPercentage = msg->battery_percentage;
     ugvStateData[index].ugvState.controlMode = msg->control_mode;
+
+    // 无人车状态信息组播链路发送
+    if (ugv_id > 0 && !is_simulation && ugv_id==robot_id)
+    {
+        std::lock_guard<std::mutex> lock(_mutexUDP);
+        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[ugv_id - 1]), udp_port);
+    }
 }
 
 std::string communication_bridge::getUserDirectoryPath()
