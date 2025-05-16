@@ -508,7 +508,7 @@
         <kinematic>0</kinematic>
       </link>
       <static>1</static>
-      <pose>0.78505 -1.10665 0.001106 0 -0 0</pose>
+      <pose>2.85405 -1.10665 0.001106 0 -0 0</pose>
     </model>
     <model name='Carpet_01_002'>
       <frame name='aws_robomaker_residential_Carpet_01::__model__' attached_to='aws_robomaker_residential_Carpet_01::link'>
@@ -613,7 +613,7 @@
         <kinematic>0</kinematic>
       </link>
       <static>1</static>
-      <pose>1.5123 -1.73344 0.041983 0 -0 0.01</pose>
+      <pose>3.5123 -1.73344 0.041983 0 -0 0.01</pose>
     </model>
     <model name='Curtain_01_001'>
       <frame name='aws_robomaker_residential_Curtain_01::__model__' attached_to='aws_robomaker_residential_Curtain_01::link'>
@@ -928,61 +928,6 @@
       </link>
       <static>1</static>
       <pose>2.51285 2.71779 0.002183 0 -0 0</pose>
-    </model>
-    <model name='Tablet_01_001'>
-      <frame name='aws_robomaker_residential_Tablet_01::__model__' attached_to='aws_robomaker_residential_Tablet_01::link'>
-        <pose relative_to='__model__'>0 0 0 0 -0 0</pose>
-      </frame>
-      <link name='aws_robomaker_residential_Tablet_01::link'>
-        <inertial>
-          <mass>0.5</mass>
-          <inertia>
-            <ixx>0.035652</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.01</iyy>
-            <iyz>0</iyz>
-            <izz>0.041207</izz>
-          </inertia>
-        </inertial>
-        <collision name='collision'>
-          <geometry>
-            <mesh>
-              <uri>model://aws_robomaker_residential_Tablet_01/meshes/aws_Tablet_01_collision.DAE</uri>
-              <scale>1 1 1</scale>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <uri>model://aws_robomaker_residential_Tablet_01/meshes/aws_Tablet_01_visual.DAE</uri>
-            </mesh>
-          </geometry>
-          <meta>
-            <layer>2</layer>
-          </meta>
-        </visual>
-        <pose relative_to='aws_robomaker_residential_Tablet_01::__model__'>0 0 0 0 -0 0</pose>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-      <pose>1.57283 -1.77586 0.40179 -0.020625 -8e-05 -0.006317</pose>
     </model>
     <model name='FitnessEquipment_01_001'>
       <frame name='aws_robomaker_residential_FitnessEquipment_01::__model__' attached_to='aws_robomaker_residential_FitnessEquipment_01::link'>
@@ -1619,7 +1564,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>0.775898 -0.411153 0.065992 -0.000464 -7.1e-05 0.005614</pose>
+      <pose>2.775898 -0.411153 0.065992 -0.000464 -7.1e-05 0.005614</pose>
     </model>
     <model name='Trash_01_001'>
       <frame name='aws_robomaker_residential_Trash_01::__model__' attached_to='aws_robomaker_residential_Trash_01::link'>
@@ -1674,7 +1619,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>2.36015 -0.796238 0.011 0 -0 0</pose>
+      <pose>4.36015 -0.796238 0.011 0 -0 0</pose>
     </model>
     <model name='Trash_01_002'>
       <frame name='aws_robomaker_residential_Trash_01::__model__' attached_to='aws_robomaker_residential_Trash_01::link'>
@@ -2398,10 +2343,10 @@
         </link>
       </model>
       <model name='Carpet_01_001'>
-        <pose>0.78505 -1.10665 0.001106 0 -0 0</pose>
+        <pose>2.78505 -1.10665 0.001106 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='aws_robomaker_residential_Carpet_01::link'>
-          <pose>0.78505 -1.10665 0.001106 0 -0 0</pose>
+          <pose>2.78505 -1.10665 0.001106 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -2418,10 +2363,10 @@
         </link>
       </model>
       <model name='CoffeeTable_01_001'>
-        <pose>1.5123 -1.73344 0.041983 0 -0 0.01</pose>
+        <pose>3.5123 -1.73344 0.041983 0 -0 0.01</pose>
         <scale>1 1 1</scale>
         <link name='aws_robomaker_residential_CoffeeTable_01::link'>
-          <pose>1.5123 -1.73344 0.041983 0 -0 0.01</pose>
+          <pose>3.5123 -1.73344 0.041983 0 -0 0.01</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -2718,30 +2663,20 @@
         </link>
       </model>
       <model name='SofaC_01_001'>
-        <pose>0.775896 -0.411153 0.0002 -1e-06 -2e-06 0.005613</pose>
+        <pose>2.775896 -0.411153 0.0002 -1e-06 -2e-06 0.005613</pose>
         <scale>1 1 1</scale>
         <link name='aws_robomaker_residential_SofaC_01::link'>
-          <pose>0.775896 -0.411153 0.0002 -1e-06 -2e-06 0.005613</pose>
+          <pose>2.775896 -0.411153 0.0002 -1e-06 -2e-06 0.005613</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>-0.000633 0.002268 9.51111 -2.02956 -0.096233 3.14147</acceleration>
           <wrench>-0.025305 0.09072 380.444 0 -0 0</wrench>
         </link>
       </model>
-      <model name='Tablet_01_001'>
-        <pose>1.57283 -1.77586 0.40179 -0.020625 -8e-05 -0.006317</pose>
-        <scale>1 1 1</scale>
-        <link name='aws_robomaker_residential_Tablet_01::link'>
-          <pose>1.57283 -1.77586 0.40179 -0.020625 -8e-05 -0.006317</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
       <model name='Trash_01_001'>
-        <pose>2.36015 -0.796238 0.000904 0 -0 0</pose>
+        <pose>4.36015 -0.796238 0.000904 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='aws_robomaker_residential_Trash_01::link'>
-          <pose>2.36015 -0.796238 0.000904 0 -0 0</pose>
+          <pose>4.36015 -0.796238 0.000904 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>-0.000669 0.000529 18.9648 -0.585041 -0.741816 -2e-06</acceleration>
           <wrench>-6.7e-05 5.3e-05 1.89648 0 -0 0</wrench>
