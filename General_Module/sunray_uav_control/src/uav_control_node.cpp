@@ -23,6 +23,9 @@ int main(int argc, char **argv)
     bool flag_printf = false; // 是否打印状态
     nh.param<bool>("flag_printf", flag_printf, true);  
 
+    signal(SIGINT, mySigintHandler);
+    ros::Duration(1.0).sleep();
+
     // 初始化无人机控制类
     UAVControl uav_ctrl;
     uav_ctrl.init(nh);

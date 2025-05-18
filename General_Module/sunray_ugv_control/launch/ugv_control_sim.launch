@@ -4,7 +4,7 @@
         <param name="flag_printf" value="true" />
         <param name="enable_rviz" value="true" />
         <!-- zidingyi odom  -->
-        <param name="pose_source" value="2" />
+        <param name="location_source" value="2" />
         <param name="odom_topic" value="/car_odom" />
         <param name="vel_topic" value="/cmd_vel" />
         <!-- 控制参数 -->

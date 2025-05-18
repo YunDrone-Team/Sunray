@@ -5,7 +5,7 @@
         <param name="flag_printf" value="true" />
         <param name="enable_rviz" value="true" />
         <param name="enable_astar" value="false" />
-        <param name="pose_source" value="2" />
+        <param name="location_source" value="2" />
         <!-- 改成slam的odom -->
         <param name="odom_topic" value="/xxxx" />
         <param name="vel_topic" value="/ugv$(arg ugv_id)/cmd_vel" />
