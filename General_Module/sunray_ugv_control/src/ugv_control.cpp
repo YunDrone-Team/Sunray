@@ -1,17 +1,24 @@
+/*
+本程序功能：
+    1、管理无人车状态机:
+    2、订阅外部控制话题 sunray/ugv_control_cmd 用于接收和执行相应动作指令 
+    3、发布对应控制指令到无人车底层驱动
+    4、发布无人车状态ugv_state
+*/
 #include "ugv_control.h"
 
 void UGV_CONTROL::init(ros::NodeHandle &nh)
 {
     // 【参数】编号
     nh.param<int>("ugv_id", ugv_id, 1);
-    // 【参数】是否打印
-    nh.param<bool>("flag_printf", flag_printf, true);
     // 【参数】是否发布到rviz
     nh.param<bool>("enable_rviz", enable_rviz, false);     
     // 【参数】是否启动自带A*
     nh.param<bool>("enable_astar", enable_astar, false);
     // 【参数】设置获取数据源，1代表使用动捕、2代表使用自定义odom话题
-    nh.param<int>("pose_source", pose_source, 2);
+    nh.param<int>("location_source", location_source, 2);
+    // 【参数】0 for mac,1 for diff
+    nh.param<int>("ugv_type", ugv_type, 0);
     // 【参数】小车底层控制输出话题
     nh.param<string>("odom_topic", odom_topic, "/odom");
     // 【参数】小车底层控制输出话题
@@ -24,6 +31,10 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     nh.param<float>("ugv_control_param/max_vel_xy", ugv_control_param.max_vel_xy, 0.5);
     // 【参数】悬停控制参数 - max_vel_yaw
     nh.param<float>("ugv_control_param/max_vel_yaw", ugv_control_param.max_vel_yaw, 50.0 / 180.0 * M_PI);
+    // 【参数】位置环控制参数 - deadzone_vel_xy
+    nh.param<float>("ugv_control_param/deadzone_vel_xy", ugv_control_param.deadzone_vel_xy, 0.0);
+    // 【参数】位置环控制参数 - deadzone_vel_yaw
+    nh.param<float>("ugv_control_param/deadzone_vel_yaw", ugv_control_param.deadzone_vel_yaw, 0.0/180.0*M_PI);
     // 【参数】地理围栏参数（超出围栏自动停止）
     nh.param<float>("ugv_geo_fence/max_x", ugv_geo_fence.max_x, 10.0);
     nh.param<float>("ugv_geo_fence/min_x", ugv_geo_fence.min_x, -10.0);
@@ -50,20 +61,20 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     goal_set = false;
 
     topic_prefix = "/ugv" + std::to_string(ugv_id);
-    // 根据 pose_source 参数选择数据源
-    if (pose_source == 1)
+    // 根据 location_source 参数选择数据源
+    if (location_source == 1)
     {
         // 【订阅】订阅动捕的数据(位置+速度) vrpn -> 本节点
         mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node" + topic_prefix + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
         mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node" + topic_prefix + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
         cout << GREEN << "Pose source: Mocap" << TAIL << endl;
     }
-    else if (pose_source == 2)
+    else if (location_source == 2)
     {
         // 【订阅】订阅Odom数据
         gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::odom_cb, this);
     }
-    else if (pose_source == 3)
+    else if (location_source == 3)
     {
         // 【订阅】订阅viobot数据
         gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::viobot_cb, this);
@@ -102,8 +113,6 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     timer_state_pub = nh.createTimer(ros::Duration(0.1), &UGV_CONTROL::timercb_state, this);
     // 【定时器】 定时发布RVIZ显示相关话题(仿真) - 10Hz
     timer_rivz = nh.createTimer(ros::Duration(0.1), &UGV_CONTROL::timercb_rviz, this);
-    // 【定时器】 定时打印状态
-    timer_debug = nh.createTimer(ros::Duration(3.0), &UGV_CONTROL::timercb_debug, this);
     // 【定时器】 定时更新A*算法
     timer_update_astar = nh.createTimer(ros::Duration(1), &UGV_CONTROL::timercb_update_astar, this);
 
@@ -177,27 +186,23 @@ void UGV_CONTROL::mainloop()
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
 
-    // POS_CONTROL：惯性系位置控制模式，无人车移动到期望的位置+偏航（期望位置由外部指令赋值）
+    // POS_CONTROL_ENU：惯性系位置控制模式，无人车移动到期望的位置+偏航（期望位置由外部指令赋值）
     case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU:
-        // 位置控制算法
-        pos_control(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
-        break;
-    case sunray_msgs::UGVControlCMD::POS_CONTROL_BODY:
-        // 位置控制算法 ？？？？暂时没有用
-        pos_control_diff(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
+        desired_vel = pos_control_mac(current_ugv_cmd.desired_pos[0], current_ugv_cmd.desired_pos[1], current_ugv_cmd.desired_yaw);
+        ugv_cmd_vel_pub.publish(desired_vel);
         break;
     // VEL_CONTROL_BODY：车体系速度控制，无人车按照期望的速度在车体系移动（期望速度由外部指令赋值）
     case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY:
         // 控制指令限幅（防止外部指令给了一个很大的数）
-        desired_vel.linear.x = constrain_function(current_ugv_cmd.desired_vel[0], ugv_control_param.max_vel_xy, 0.0);
-        desired_vel.linear.y = 0.0;
-        desired_vel.angular.z = constrain_function(current_ugv_cmd.angular_vel, ugv_control_param.max_vel_yaw, 0.01);
+        desired_vel.linear.x = constrain_function(current_ugv_cmd.desired_vel[0], ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+        desired_vel.linear.y = constrain_function(current_ugv_cmd.desired_vel[1], ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+        desired_vel.angular.z = constrain_function(current_ugv_cmd.angular_vel, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
     // VEL_CONTROL_ENU：惯性系速度控制，无人车按照期望的速度在惯性系移动（期望速度由外部指令赋值）
     case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU:
         // 由于UGV底层控制指令为车体系，所以需要将收到的惯性系速度转换为车体系速度
-        desired_vel = enu_to_body(current_ugv_cmd.desired_vel[0], current_ugv_cmd.desired_vel[1]);
+        desired_vel = enu_to_body_mac(current_ugv_cmd.desired_vel[0], current_ugv_cmd.desired_vel[1]);
         ugv_cmd_vel_pub.publish(desired_vel);
         break;
     case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU:
@@ -252,11 +257,6 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
         // cout << BLUE << text_info.data << TAIL << endl;
         break;
-    //收到POS_CONTROL_BODY指令
-    case sunray_msgs::UGVControlCMD::POS_CONTROL_BODY://3
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_BODY!";
-        // cout << BLUE << text_info.data << TAIL << endl;
-        break;
     case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU://7
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_VEL_CONTROL_ENU!";
         // cout << BLUE << text_info.data << TAIL << endl;
@@ -286,7 +286,7 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
 }
 
 // 位置控制算法
-void UGV_CONTROL::pos_control(double x_ref, double y_ref, double yaw_ref)
+geometry_msgs::Twist UGV_CONTROL::pos_control_mac(double x_ref, double y_ref, double yaw_ref)
 {
     float cmd_body[2];
     float cmd_enu[2];
@@ -303,13 +303,13 @@ void UGV_CONTROL::pos_control(double x_ref, double y_ref, double yaw_ref)
     // 控制指令计算：使用简易P控制 - YAW
     desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
 
-    // 控制指令限幅
-    desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, 0.0);
-    desired_vel.linear.y = constrain_function(desired_vel.linear.y, ugv_control_param.max_vel_xy, 0.0);
-    desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, 0.01);
+    // 控制指令限幅，传入的参数依次是 原始数据、最大值、死区值
+    // 功能：将原始数据限制在最大值之内；如果小于死区值，则直接设置为0
+    desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+    desired_vel.linear.y = constrain_function(desired_vel.linear.y, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+    desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
 
-    // 发布控制指令
-    ugv_cmd_vel_pub.publish(desired_vel);
+    return desired_vel;
 }
 
 geometry_msgs::Twist UGV_CONTROL::pos_vel_control_enu()
@@ -333,15 +333,15 @@ geometry_msgs::Twist UGV_CONTROL::pos_vel_control_enu()
     body_cmd.angular.z = yaw_error * ugv_control_param.Kp_yaw;
 
     // 控制指令限幅
-    body_cmd.linear.x = constrain_function(body_cmd.linear.x, ugv_control_param.max_vel_xy, 0.0);
-    body_cmd.linear.y = constrain_function(body_cmd.linear.y, ugv_control_param.max_vel_xy, 0.0);
-    body_cmd.angular.z = constrain_function(body_cmd.angular.z, ugv_control_param.max_vel_yaw, 0.01);
+    body_cmd.linear.x = constrain_function(body_cmd.linear.x, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+    body_cmd.linear.y = constrain_function(body_cmd.linear.y, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+    body_cmd.angular.z = constrain_function(body_cmd.angular.z, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
 
     return body_cmd;
 }
 
 // 惯性系->机体系
-geometry_msgs::Twist UGV_CONTROL::enu_to_body(double vel_x, double vel_y)
+geometry_msgs::Twist UGV_CONTROL::enu_to_body_mac(double vel_x, double vel_y)
 {
     geometry_msgs::Twist body_cmd;
     // 惯性系 -> body frame
@@ -360,9 +360,9 @@ geometry_msgs::Twist UGV_CONTROL::enu_to_body(double vel_x, double vel_y)
     body_cmd.angular.z = yaw_error * ugv_control_param.Kp_yaw;
 
     // 控制指令限幅
-    body_cmd.linear.x = constrain_function(body_cmd.linear.x, ugv_control_param.max_vel_xy, 0.0);
-    body_cmd.linear.y = constrain_function(body_cmd.linear.y, ugv_control_param.max_vel_xy, 0.0);
-    body_cmd.angular.z = constrain_function(body_cmd.angular.z, ugv_control_param.max_vel_yaw, 0.01);
+    body_cmd.linear.x = constrain_function(body_cmd.linear.x, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+    body_cmd.linear.y = constrain_function(body_cmd.linear.y, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
+    body_cmd.angular.z = constrain_function(body_cmd.angular.z, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
 
     return body_cmd;
 }
@@ -383,44 +383,75 @@ double UGV_CONTROL::get_yaw_error(double yaw_ref, double yaw_now)
     return error;
 }
 
+double UGV_CONTROL::normalizeAngle(double angle) 
+{
+    if (angle > M_PI) angle -= 2.0 * M_PI;
+    if (angle < -M_PI) angle += 2.0 * M_PI;
+    return angle;
+}
 
 
 // 位置控制，差速驱动
-void UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, double yaw_ref)
+geometry_msgs::Twist UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, double yaw_ref)
 {
-    // 如果已经到达目标点，则停止
-    if (abs(x_ref - ugv_state.position[0]) < 0.1 && abs(y_ref - ugv_state.position[1]) < 0.1)
-    {
-        desired_vel.linear.x = 0.0;
-        desired_vel.linear.y = 0.0;
-        desired_vel.angular.z = 0.0;
-        ugv_cmd_vel_pub.publish(desired_vel);
-        return;
-    }
     // 计算目标点与当前点的差值
     double dx = x_ref - ugv_state.position[0];
     double dy = y_ref - ugv_state.position[1];
+    double distance = sqrt(dx * dx + dy * dy);
+    double yaw_error;
+
+    // 如果已经到达目标点，则停止
+    if (distance < DIS_TOLERANCE)
+    {
+        desired_vel.linear.x = 0.0;
+        desired_vel.linear.y = 0.0;
+        yaw_error = get_yaw_error(yaw_ref, ugv_state.yaw);
+        desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
+        desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
+        return desired_vel;
+    }
     // 计算目标点与当前点的角度
     double target_yaw = atan2(dy, dx);
-    // 计算角度差
-    double yaw_error = get_yaw_error(target_yaw, ugv_state.yaw);
-    // 控制指令计算：使用简易P控制 - 差速控制只有X方向和角速率上的控制
-    desired_vel.linear.x = ugv_control_param.Kp_xy * sqrt(dx * dx + dy * dy);
+    // 计算两种转向误差
+    double error_forward = normalizeAngle(target_yaw - ugv_state.yaw);
+    double error_backward = normalizeAngle(target_yaw + M_PI - ugv_state.yaw);
+
+    if(fabs(error_forward) <= fabs(error_backward)) 
+    {
+        // 前进模式
+        yaw_error = error_forward;
+
+    }else 
+    {
+        // 后退模式
+        yaw_error = error_backward;
+    }
+    desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
+    desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
+
+    if(fabs(error_forward) <= fabs(error_backward)) 
+    {
+        // 前进模式
+        // 控制指令计算：使用简易P控制 - 差速控制只有X方向和角速率上的控制
+        desired_vel.linear.x = ugv_control_param.Kp_xy * distance * cos(yaw_error);
+    }else 
+    {
+        // 后退模式
+        // 控制指令计算：使用简易P控制 - 差速控制只有X方向和角速率上的控制
+        desired_vel.linear.x = -ugv_control_param.Kp_xy * distance * cos(yaw_error);
+    }
     desired_vel.linear.y = 0.0;
     desired_vel.linear.z = 0.0;
     // 控制指令计算：使用简易P控制 - YAW
-    desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
     // 如果yaw_error过大，则优先调整角度
     if (fabs(yaw_error) > M_PI / 3)
     {
         desired_vel.linear.x = 0.0;
     }
     // 控制指令限幅
-    desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, 0.0);
-    desired_vel.linear.y = constrain_function(desired_vel.linear.y, ugv_control_param.max_vel_xy, 0.0);
-    desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, 0.01);
+    desired_vel.linear.x = constrain_function(desired_vel.linear.x, ugv_control_param.max_vel_xy, ugv_control_param.deadzone_vel_xy);
     // 发布控制指令
-    ugv_cmd_vel_pub.publish(desired_vel);
+    return desired_vel;
 }
 
 void UGV_CONTROL::path_control()
@@ -433,7 +464,8 @@ void UGV_CONTROL::path_control()
         // pos_control_diff(x_ref, y_ref, 0);
         // 当前位置到目标点需要的偏航角 效果不好 需要修改
         double yaw_ref = atan2(y_ref - ugv_state.position[1], x_ref - ugv_state.position[0]);
-        pos_control(x_ref, y_ref, 0);
+        desired_vel = pos_control_mac(x_ref, y_ref, current_ugv_cmd.desired_yaw);
+        ugv_cmd_vel_pub.publish(desired_vel);
     }
     else
     {
@@ -458,12 +490,8 @@ void UGV_CONTROL::rotation_yaw(double yaw_angle, float body_frame[2], float enu_
 }
 
 // 定时器回调函数：定时打印
-void UGV_CONTROL::timercb_debug(const ros::TimerEvent &e)
+void UGV_CONTROL::show_ctrl_state()
 {
-    if (!flag_printf)
-    {
-        return;
-    }
     cout << GREEN << ">>>>>>>>>>>>>> UGV [" << ugv_id << "] <<<<<<<<<<<<<<<" << TAIL << endl;
     // 固定的浮点显示
     cout.setf(ios::fixed);
@@ -679,7 +707,8 @@ void UGV_CONTROL::goal_point_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 // 定时器回调函数 - 定时发送RVIZ显示数据（仿真）
 void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
 {
-    if (!enable_rviz)
+    // 如果无人机的odom的状态无效，则停止发布
+    if (!enable_rviz || !ugv_state.odom_valid)
     {
         return;
     } 
@@ -691,34 +720,6 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     // 无人车目标点是world系
     // 雷达扫描是/ugv1/base_link系
 
-    string tf_name = "ugv" + std::to_string(ugv_id);
-
-    // 发布智能机位置marker
-    visualization_msgs::Marker ugv_marker;
-    ugv_marker.header.frame_id = "world";
-    ugv_marker.header.stamp = ros::Time::now();
-    ugv_marker.ns = "mesh";
-    ugv_marker.id = 0;
-    ugv_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-    ugv_marker.scale.x = 0.05;
-    ugv_marker.scale.y = 0.05;
-    ugv_marker.scale.z = 0.05;
-    ugv_marker.action = visualization_msgs::Marker::ADD;
-    ugv_marker.pose.position.x = ugv_state.position[0];
-    ugv_marker.pose.position.y = ugv_state.position[1];
-    ugv_marker.pose.position.z = ugv_state.position[2];
-    ugv_marker.pose.orientation.w = ugv_state.attitude_q.w;
-    ugv_marker.pose.orientation.x = ugv_state.attitude_q.x;
-    ugv_marker.pose.orientation.y = ugv_state.attitude_q.y;
-    ugv_marker.pose.orientation.z = ugv_state.attitude_q.z;
-    ugv_marker.color.a = 1.0;
-    ugv_marker.color.r = static_cast<float>((ugv_id * 123) % 256) / 255.0;
-    ugv_marker.color.g = static_cast<float>((ugv_id * 456) % 256) / 255.0;
-    ugv_marker.color.b = static_cast<float>((ugv_id * 789) % 256) / 255.0;
-    ugv_marker.mesh_use_embedded_materials = false;
-    ugv_marker.mesh_resource = std::string("package://sunray_ugv_control/meshes/wheeltec.dae");
-    ugv_mesh_pub.publish(ugv_marker);
-
     // 发布运动轨迹，用于rviz显示
     geometry_msgs::PoseStamped ugv_pos;
     ugv_pos.header.stamp = ros::Time::now();
@@ -728,7 +729,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     ugv_pos.pose.position.z = ugv_state.position[2];
     ugv_pos.pose.orientation = ugv_state.attitude_q;
     pos_vector.insert(pos_vector.begin(), ugv_pos);
-    if (pos_vector.size() > TRA_WINDOW)
+    if (pos_vector.size() > TRAJECTORY_WINDOW)
     {
         pos_vector.pop_back();
     }
@@ -738,10 +739,36 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     ugv_trajectory.poses = pos_vector;
     ugv_trajectory_pub.publish(ugv_trajectory);
 
+    // 发布无人车MESH，用于rviz显示
+    visualization_msgs::Marker ugv_marker;
+    ugv_marker.header.frame_id = "world";
+    ugv_marker.header.stamp = ros::Time::now();
+    ugv_marker.ns = "mesh";
+    ugv_marker.id = 0;
+    ugv_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+    ugv_marker.action = visualization_msgs::Marker::ADD;
+    ugv_marker.pose.position.x = ugv_state.position[0];
+    ugv_marker.pose.position.y = ugv_state.position[1];
+    ugv_marker.pose.position.z = ugv_state.position[2];
+    ugv_marker.pose.orientation.w = ugv_state.attitude_q.w;
+    ugv_marker.pose.orientation.x = ugv_state.attitude_q.x;
+    ugv_marker.pose.orientation.y = ugv_state.attitude_q.y;
+    ugv_marker.pose.orientation.z = ugv_state.attitude_q.z;
+    ugv_marker.scale.x = 0.05;
+    ugv_marker.scale.y = 0.05;
+    ugv_marker.scale.z = 0.05;
+    ugv_marker.color.a = 1.0;
+    ugv_marker.color.r = static_cast<float>((ugv_id * 123) % 256) / 255.0;
+    ugv_marker.color.g = static_cast<float>((ugv_id * 456) % 256) / 255.0;
+    ugv_marker.color.b = static_cast<float>((ugv_id * 789) % 256) / 255.0;
+    ugv_marker.mesh_use_embedded_materials = false;
+    ugv_marker.mesh_resource = std::string("package://sunray_ugv_control/meshes/wheeltec.dae");
+    ugv_mesh_pub.publish(ugv_marker);
+
     // 发布当前执行速度的方向箭头
     geometry_msgs::TwistStamped vel_rviz;
     vel_rviz.header.stamp = ros::Time::now();
-    vel_rviz.header.frame_id = tf_name + "/base_link";
+    vel_rviz.header.frame_id = "/ugv" + std::to_string(ugv_id) + "/base_link";
     vel_rviz.twist.linear.x = desired_vel.linear.x;
     vel_rviz.twist.linear.y = desired_vel.linear.y;
     vel_rviz.twist.linear.z = desired_vel.linear.z;
@@ -786,8 +813,8 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     tfs.header.frame_id = "world";       //相对于世界坐标系
     tfs.header.stamp = ros::Time::now(); //时间戳
     //  |----坐标系 ID
-    // tfs.child_frame_id = tf_name + "/base_link"; //子坐标系，无人机的坐标系
-    tfs.child_frame_id = "/lidar"; //子坐标系，无人机的坐标系
+    tfs.child_frame_id = "/ugv" + std::to_string(ugv_id) + "/base_link"; //子坐标系，无人机的坐标系
+    // tfs.child_frame_id = "/lidar"; //子坐标系，无人机的坐标系
     //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
     tfs.transform.translation.x = ugv_state.position[0];
     tfs.transform.translation.y = ugv_state.position[1];
@@ -846,26 +873,3 @@ Eigen::Vector3d UGV_CONTROL::quaternion_to_euler(const Eigen::Quaterniond &q)
     ans[2] = atan2(2.0 * (quat[3] * quat[0] + quat[1] * quat[2]), 1.0 - 2.0 * (quat[2] * quat[2] + quat[3] * quat[3]));
     return ans;
 }
-
-
-
-// 打印参数
-// void UGV_CONTROL::printf_param()
-// {
-//     cout << GREEN << ">>>>>>>>>>>>>>>>>>> UGV_CONTROL Parameters <<<<<<<<<<<<<<<<" << TAIL << endl;
-
-//     cout << GREEN << "ugv_id : " << ugv_id << "" << TAIL << endl;
-//     cout << GREEN << "flag_printf : " << flag_printf << "" << TAIL << endl;
-
-//     // 悬停控制参数
-//     cout << GREEN << "Kp_xy : " << ugv_control_param.Kp_xy << TAIL << endl;
-//     cout << GREEN << "Kp_yaw : " << ugv_control_param.Kp_yaw << TAIL << endl;
-//     cout << GREEN << "max_vel_xy : " << ugv_control_param.max_vel_xy << " [m/s]" << TAIL << endl;
-//     cout << GREEN << "max_vel_yaw : " << ugv_control_param.max_vel_yaw << " [rad/s]" << TAIL << endl;
-
-//     // 地理围栏参数
-//     cout << GREEN << "geo_fence max_x : " << ugv_geo_fence.max_x << " [m]" << TAIL << endl;
-//     cout << GREEN << "geo_fence min_x : " << ugv_geo_fence.min_x << " [m]" << TAIL << endl;
-//     cout << GREEN << "geo_fence max_y : " << ugv_geo_fence.max_y << " [m]" << TAIL << endl;
-//     cout << GREEN << "geo_fence min_y : " << ugv_geo_fence.min_y << " [m]" << TAIL << endl;
-// }

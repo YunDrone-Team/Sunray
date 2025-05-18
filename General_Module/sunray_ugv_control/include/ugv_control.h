@@ -8,15 +8,17 @@
 
 #include "printf_utils.h"
 #include "ros_msg_utils.h"
-
+#include "printf_format.h"
 
 #include "Astar.h"
 #include "map_generator.h"
 
 using namespace std;
+using namespace sunray_logger;
 
-#define TRA_WINDOW 50
+#define TRAJECTORY_WINDOW 50
 #define ODOM_TIMEOUT 0.35
+#define DIS_TOLERANCE 0.1
 
 class UGV_CONTROL
 {
@@ -27,12 +29,16 @@ class UGV_CONTROL
         void init(ros::NodeHandle &nh);
         // 主循环函数
         void mainloop();
+        void show_ctrl_state();
+
+        sunray_msgs::UGVState ugv_state;               // 当前状态
 
     private:
         // 节点名称
         string node_name;    
         int ugv_id;                                    // 编号 - 通过参数配置
-        int pose_source;                               // 位置来源（1：代表动捕、2代表gazebo odom） - 通过参数配置
+        int ugv_type;
+        int location_source;                               // 位置来源（1：代表动捕、2代表gazebo odom） - 通过参数配置
         string ugv_name;                               // 名称
         string topic_prefix;                           // 话题前缀
         string vel_topic;                               // 速度话题
@@ -44,7 +50,6 @@ class UGV_CONTROL
         float resolution;                              // 地图分辨率
         float inflate;                                 // 地图膨胀系数
         double desired_yaw{0.0};                       // 当前期望偏航角（来自外部控制指令赋值）
-        sunray_msgs::UGVState ugv_state;               // 当前状态
         sunray_msgs::UGVState ugv_state_last;          // 上一时刻状态
         sunray_msgs::UGVControlCMD current_ugv_cmd;    // 当前控制指令
         ros::Time get_odom_time{0};                    // 获得上一帧定位数据的时间（用于检查定位数据获取是否超时）
@@ -70,6 +75,8 @@ class UGV_CONTROL
             float Kp_yaw;
             float max_vel_xy;
             float max_vel_yaw;
+            float deadzone_vel_xy;
+            float deadzone_vel_yaw;
         };
         control_param ugv_control_param;
 
@@ -104,7 +111,6 @@ class UGV_CONTROL
         // 定时器
         ros::Timer timer_state_pub;
         ros::Timer timer_rivz;
-        ros::Timer timer_debug;
         ros::Timer timer_rivz2;
         ros::Timer timer_update_map;
         ros::Timer timer_update_astar;
@@ -118,18 +124,18 @@ class UGV_CONTROL
         void battery_cb(const std_msgs::Float32::ConstPtr &msg);
         void timercb_state(const ros::TimerEvent &e);
         void timercb_rviz(const ros::TimerEvent &e);
-        void timercb_debug(const ros::TimerEvent &e);
         void timercb_update_astar(const ros::TimerEvent &e);
         void printf_param();
         bool check_geo_fence();
-        geometry_msgs::Twist enu_to_body(double vel_x, double vel_y);
-        void pos_control(double x_ref, double y_ref, double yaw_ref);
-        void pos_control_diff(double x_ref, double y_ref, double yaw_ref);
+        geometry_msgs::Twist enu_to_body_mac(double vel_x, double vel_y);
+        geometry_msgs::Twist pos_control_mac(double x_ref, double y_ref, double yaw_ref);
+        geometry_msgs::Twist pos_control_diff(double x_ref, double y_ref, double yaw_ref);
         void path_control();
         geometry_msgs::Twist pos_vel_control_enu();
         float constrain_function(float data, float Max, float Min);
         Eigen::Vector3d quaternion_to_euler(const Eigen::Quaterniond &q);
         double get_yaw_error(double yaw_ref, double yaw_now);
+        double normalizeAngle(double angle);
 
         void rotation_yaw(double yaw_angle, float body_frame[2], float enu_frame[2]);
         void setup_rviz_color();

@@ -1,6 +1,8 @@
 //
 #include <iostream>
 #include <bitset>
+#include <signal.h>
+
 // Eigen
 #include <Eigen/Eigen>
 
