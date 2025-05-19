@@ -88,6 +88,17 @@ add_executable(follow_a_tag src/follow_a_tag.cpp)
 add_dependencies(follow_a_tag sunray_tutorial_gencpp)
 target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
 
+add_executable(ugv_block_pos src/ugv_block_pos.cpp)
+add_dependencies(ugv_block_pos sunray_tutorial_gencpp)
+target_link_libraries(ugv_block_pos ${catkin_LIBRARIES})
+
+add_executable(ugv_circle_vel src/ugv_circle_vel.cpp)
+add_dependencies(ugv_circle_vel sunray_tutorial_gencpp)
+target_link_libraries(ugv_circle_vel ${catkin_LIBRARIES})
+
+add_executable(ugv_circle_vel_body src/ugv_circle_vel_body.cpp)
+add_dependencies(ugv_circle_vel_body sunray_tutorial_gencpp)
+target_link_libraries(ugv_circle_vel_body ${catkin_LIBRARIES})
 
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
