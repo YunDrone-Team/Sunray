@@ -27,16 +27,6 @@ float32[2] pos_setpoint     ## [m]  位置控制目标点
 float32[2] vel_setpoint     ## [m/s]  速度控制目标
 float32 yaw_setpoint        ## [rad]  姿态控制目标
 
-## 无人车控制状态（control_mode）枚举 
-uint8 INIT=0
-uint8 HOLD=1
-uint8 POS_CONTROL_ENU=2
-## 以下需要有定位的情况下才支持
-uint8 POS_CONTROL_BODY=3
-uint8 VEL_CONTROL_ENU=4
-uint8 VEL_CONTROL_BODY=5
-uint8 Point_Control_with_Astar=6
-
 ## 无人车参数信息
 float32[2] home_pos             ## 原点
 float32 home_yaw                ## 原点
