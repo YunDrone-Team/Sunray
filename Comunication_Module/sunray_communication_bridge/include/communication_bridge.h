@@ -118,9 +118,6 @@ private:
     void sendMsgCb(const ros::TimerEvent &e);
     void sendHeartbeatPacket(const ros::TimerEvent &e);
     void CheckChildProcessCallBack(const ros::TimerEvent &e);
-    void sendGroundStationData (const ros::TimerEvent &e);
-
-    void sendAgentStatusInformation(const ros::TimerEvent &e);
 
 
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
