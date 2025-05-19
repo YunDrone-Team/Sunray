@@ -123,10 +123,10 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state.odom_valid = false;
     ugv_state.position[0] = 0.0;
     ugv_state.position[1] = 0.0;
-    ugv_state.position[2] = 0.2;
+    // ugv_state.position[2] = 0.2;
     ugv_state.velocity[0] = 0.0;
     ugv_state.velocity[1] = 0.0;
-    ugv_state.velocity[1] = 0.0;
+    // ugv_state.velocity[1] = 0.0;
     ugv_state.yaw = 0.0;
     ugv_state.pos_setpoint[0] = 0.0;
     ugv_state.pos_setpoint[1] = 0.0;
@@ -693,6 +693,7 @@ void UGV_CONTROL::battery_cb(const std_msgs::Float32::ConstPtr &msg)
     // 记录获取电池（从驱动）的时间，用于判断智能体驱动是否正常
     get_battery_time = ros::Time::now();
     ugv_state.connected = true;
+    ROS_INFO("battery_cb");
     ugv_state.battery_state = msg->data;
 }
 
