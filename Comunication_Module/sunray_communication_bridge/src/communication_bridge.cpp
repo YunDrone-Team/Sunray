@@ -117,10 +117,6 @@ void communication_bridge::init(ros::NodeHandle &nh)
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
     // 【定时器】 定时检测启动的子进程是否存活
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
-    // 【定时器】 定时发送数据到地面站 本节点 --UDP--> 地面站
-    SendGroundStationDataTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendGroundStationData, this);
-    // 【定时器】 定时发智能体状态信息（智能体之间通信） 本节点 --UDP--> 其他无人机/车
-    // agentStateTimer = nh.createTimer(ros::Duration(0.1), &communication_bridge::sendAgentStatusInformation, this);
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -205,11 +201,12 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
 
     switch (readData.messageID)
     {
-    //搜索在线智能体 - SearchData（#200）
+    // 搜索在线智能体 - SearchData（#200）
     case MessageID::SearchMessageID:
     {
         // std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         unionData backData;
+        // 仿真无人机应答
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
             backData.ack.init();
@@ -218,11 +215,11 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.ack.agentType = 0;
             backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             // std::cout << "应答数据: " << int(backData.ack.ID) << std::endl;
-            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
+            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             // std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
         }
-
+        // 仿真无人车应答
         for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
         {
             backData.ack.init();
@@ -230,22 +227,42 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.ack.ID = i;
             backData.ack.agentType = 1;
             backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            std::lock_guard<std::mutex> lock(_mutexUDP);
+            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
+        }
+        // 真机无人机应答
+        if (uav_experiment_num > 0)
+        {
+            backData.ack.init();
+            backData.ack.robotID = uav_id;
+            backData.ack.ID = uav_id;
+            backData.ack.agentType = 0;
+            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
-
-            // std::cout << "发送结果: " << back << " ugv_experiment_num " << ugv_experiment_num << std::endl;
+        }
+        // 真机无人车应答
+        if (ugv_experiment_num > 0)
+        {
+            backData.ack.init();
+            backData.ack.robotID = ugv_id;
+            backData.ack.ID = ugv_id;
+            backData.ack.agentType = 1;
+            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
+            std::lock_guard<std::mutex> lock(_mutexUDP);
         }
 
         break;
     }
-    //无人机状态 - StateData（#2
+    // 无人机状态 - StateData（#2
     case MessageID::StateMessageID:
         // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
         if (uav_id == readData.data.state.uavID || is_simulation)
             return;
         SynchronizationUAVState(readData.data.state);
         break;
-    //无人车状态 - UGVStateData（#20）    
+    // 无人车状态 - UGVStateData（#20）
     case MessageID::UGVStateMessageID:
         if (ugv_id == readData.data.ugvState.ugvID || is_simulation)
             return;
@@ -279,10 +296,14 @@ pid_t communication_bridge::CheckChildProcess(pid_t pid)
         {
             std::cout << "Child process (PID: " << pid << ") was terminated by signal " << WTERMSIG(status) << std::endl;
         }
-    }else if (terminated_pid == 0){
+    }
+    else if (terminated_pid == 0)
+    {
         // 子进程还在运行
         // std::cout << "Child process (PID: " << pid << ") is still running." << std::endl;
-    }else{
+    }
+    else
+    {
         perror("waitpid");
     }
     return terminated_pid;
@@ -331,7 +352,9 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
     {
         perror("fork failed");
         // return EXIT_FAILURE;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
 
         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
         temp += orderStr;
@@ -343,7 +366,9 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         demoPID = pid;
         printf("This is the parent process. Child PID: %d\n", pid);
     }
@@ -358,7 +383,9 @@ void communication_bridge::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }else if (pid == 0){
+    }
+    else if (pid == 0)
+    {
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
@@ -372,7 +399,9 @@ void communication_bridge::executiveDemo(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         // 父进程
         int status;
         demoPID = pid;
@@ -449,13 +478,17 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 if (it != nodeMap.end())
                 {
                     std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }else{
+                }
+                else
+                {
                     pid_t back = OrderCourse(readData.data.demo.demoStr);
                     if (back > 0)
                         nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
                 }
             }
-        }else{
+        }
+        else
+        {
             if (readData.data.demo.demoSize > 0)
             {
                 std::cout << "TCPServer 关闭Demo： " << std::endl;
@@ -466,11 +499,14 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }else{
+                    }
+                    else
+                    {
                         printf("Sent SIGTERM to child process %d\n", temp);
                         nodeMap.erase(readData.data.demo.demoStr);
                     }
-                }else
+                }
+                else
                     std::cout << "该节点未启动： " << readData.data.demo.demoStr << std::endl;
             }
         }
@@ -562,7 +598,6 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     // std::cout << "communication_bridge::TCPServerCallBack end" << std::endl;
 }
 
-
 bool communication_bridge::SynchronizationUGVState(UGVStateData Data)
 {
     auto it = ugv_state_pub.find(Data.ugvID);
@@ -650,56 +685,6 @@ bool communication_bridge::SynchronizationUAVState(StateData Data)
     return true;
 }
 
-void communication_bridge::sendAgentStatusInformation(const ros::TimerEvent &e)
-{
-    // 无人机状态信息组播链路发送
-    if (uav_id > 0 && !is_simulation)
-    {
-        std::lock_guard<std::mutex> lock(_mutexUDP);
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[uav_id - 1]), udp_port);
-    }
-
-    // 无人车状态信息组播链路发送
-    if (ugv_id > 0 && !is_simulation)
-    {
-        std::lock_guard<std::mutex> lock(_mutexUDP);
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[ugv_id - 1]), udp_port);
-    }
-}
-
-void communication_bridge::sendGroundStationData(const ros::TimerEvent &e)
-{
-    std::vector<std::string> tempVec;
-    // 仿真情况下，所有无人机状态都通过本节点回传（仿真时只有一个通信节点，真机时有N个机载通信节点）
-    for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
-    {
-        std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
-        for (const auto &ip : GSIPHash)
-        {
-            // 无人机状态 - StateData（#2）
-            int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, uavStateData[i - 1]), ip, udp_ground_port);
-            if (sendBack < 0)
-                tempVec.push_back(ip);
-        }
-    }
-
-    for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
-    {
-        std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
-        for (const auto &ip : GSIPHash)
-        {
-            // 无人车状态 - UGVStateData（#20）
-            int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[i - 1]), ip, udp_ground_port);
-            if (sendBack < 0)
-                tempVec.push_back(ip);
-        }
-    }
-
-    for (const auto &ip : tempVec)
-        GSIPHash.erase(ip);
-    tempVec.clear();
-}
-
 void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
 {
     std::vector<std::string> keysToRemove;
@@ -785,11 +770,27 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     else if (mode.length() < 15)
         mode.append(15 - mode.length(), ' ');
 
-    if (uav_id > 0 && !is_simulation && uav_id==robot_id )
-    {
-        std::lock_guard<std::mutex> lock(_mutexUDP);
+    // 本节点 --UDP--> 其他无人机 无人机状态信息组播链路发送
+    if (uav_id > 0 && !is_simulation && uav_id == robot_id)
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[uav_id - 1]), udp_port);
+
+    std::vector<std::string> tempVec;
+
+    // 发送数据到地面站 本节点 --UDP--> 地面站
+    // 仿真情况下，所有无人机状态都通过本节点回传（仿真时只有一个通信节点，真机时有N个机载通信节点）
+    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+
+    for (const auto &ip : GSIPHash)
+    {
+        // 无人机状态 - StateData（#2）
+        int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, uavStateData[robot_id - 1]), ip, udp_ground_port);
+        if (sendBack < 0)
+            tempVec.push_back(ip);
     }
+
+    for (const auto &ip : tempVec)
+        GSIPHash.erase(ip);
+    tempVec.clear();
 }
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
@@ -815,12 +816,26 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
     ugvStateData[index].ugvState.batteryPercentage = msg->battery_percentage;
     ugvStateData[index].ugvState.controlMode = msg->control_mode;
 
-    // 无人车状态信息组播链路发送
-    if (ugv_id > 0 && !is_simulation && ugv_id==robot_id)
-    {
-        std::lock_guard<std::mutex> lock(_mutexUDP);
+    // 本节点 --UDP--> 其他无人车 无人车状态信息组播链路发送
+    if (ugv_id > 0 && !is_simulation && ugv_id == robot_id)
         int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[ugv_id - 1]), udp_port);
+
+    std::vector<std::string> tempVec;
+    // 发送数据到地面站 本节点 --UDP--> 地面站
+    // 仿真情况下，所有无人机状态都通过本节点回传（仿真时只有一个通信节点，真机时有N个机载通信节点）
+    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+
+    for (const auto &ip : GSIPHash)
+    {
+        // 无人车状态 - UGVStateData（#20）
+        int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[robot_id - 1]), ip, udp_ground_port);
+        if (sendBack < 0)
+            tempVec.push_back(ip);
     }
+
+    for (const auto &ip : tempVec)
+        GSIPHash.erase(ip);
+    tempVec.clear();
 }
 
 std::string communication_bridge::getUserDirectoryPath()
