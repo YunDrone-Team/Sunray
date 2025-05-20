@@ -20,5 +20,7 @@
         <!-- 地图参数 -->
         <param name="map/resolution" value="0.4" />
         <param name="map/inflate" value="0.4" />
+        <!-- 仿真模式参数 -->
+        <param name="simulation_mode" value="false" />
     </node>
 </launch>
