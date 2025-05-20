@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     UGV_CONTROL ugv_ctrl;
     ugv_ctrl.init(nh);
 
-    // 初始化检查：等待PX4连接
+    //初始化检查：等待PX4连接
     int trials = 0;
     while (ros::ok() && !ugv_ctrl.ugv_state.connected)
     {
