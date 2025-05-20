@@ -14,7 +14,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【参数】是否发布到rviz
     nh.param<bool>("enable_rviz", enable_rviz, false);     
     // 【参数】是否启动自带A*
-    nh.param<bool>("enable_astar", enable_astar, false);
+    nh.param<bool>("enable_astar", enable_astar, true);
     // 【参数】设置获取数据源，1代表使用动捕、2代表使用自定义odom话题
     nh.param<int>("location_source", location_source, 2);
     // 【参数】0 for mac,1 for diff
@@ -126,7 +126,6 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // ugv_state.position[2] = 0.2;
     ugv_state.velocity[0] = 0.0;
     ugv_state.velocity[1] = 0.0;
-    // ugv_state.velocity[1] = 0.0;
     ugv_state.yaw = 0.0;
     ugv_state.pos_setpoint[0] = 0.0;
     ugv_state.pos_setpoint[1] = 0.0;
@@ -173,7 +172,9 @@ void UGV_CONTROL::mainloop()
     // INIT：不执行任何指令
     case sunray_msgs::UGVControlCMD::INIT:
         // 初始模式
-        // do nothing
+        ugv_state.home_pos[0] = ugv_state.position[0];
+        ugv_state.home_pos[1] = ugv_state.position[1];
+        ugv_state.home_yaw = ugv_state.yaw;
         break;
 
     // HOLD：悬停模式，切入该模式的瞬间，无人车在当前位置停止，即发送0速度
@@ -727,7 +728,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     ugv_pos.header.frame_id = "world";
     ugv_pos.pose.position.x = ugv_state.position[0];
     ugv_pos.pose.position.y = ugv_state.position[1];
-    ugv_pos.pose.position.z = ugv_state.position[2];
+    // ugv_pos.pose.position.z = ugv_state.position[2];
     ugv_pos.pose.orientation = ugv_state.attitude_q;
     pos_vector.insert(pos_vector.begin(), ugv_pos);
     if (pos_vector.size() > TRAJECTORY_WINDOW)
@@ -750,7 +751,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     ugv_marker.action = visualization_msgs::Marker::ADD;
     ugv_marker.pose.position.x = ugv_state.position[0];
     ugv_marker.pose.position.y = ugv_state.position[1];
-    ugv_marker.pose.position.z = ugv_state.position[2];
+    // ugv_marker.pose.position.z = ugv_state.position[2];
     ugv_marker.pose.orientation.w = ugv_state.attitude_q.w;
     ugv_marker.pose.orientation.x = ugv_state.attitude_q.x;
     ugv_marker.pose.orientation.y = ugv_state.attitude_q.y;
@@ -819,7 +820,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
     tfs.transform.translation.x = ugv_state.position[0];
     tfs.transform.translation.y = ugv_state.position[1];
-    tfs.transform.translation.z = ugv_state.position[2];
+    // tfs.transform.translation.z = ugv_state.position[2];
     //  |--------- 四元数设置
     tfs.transform.rotation = ugv_state.attitude_q;
     //  |--------- 广播器发布数据
