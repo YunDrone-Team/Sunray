@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         cin >> start_flag;
         if (start_flag == 0)
         {
-            ugv_control_cmd.cmd = 0;
+            ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::INIT;
             command_pub.publish(ugv_control_cmd);
         }
         else if (start_flag == 1)
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
             cout << "desired state: --- yawRate(body) [deg/s]"<<endl;
             cin >> state_desired[2];
 
-            ugv_control_cmd.cmd = 1;
+            ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::HOLD;
             ugv_control_cmd.desired_vel[0] = state_desired[0];
             ugv_control_cmd.desired_vel[1] = state_desired[1];
             ugv_control_cmd.angular_vel = state_desired[2]/180.0*M_PI;
@@ -69,11 +69,11 @@ int main(int argc, char **argv)
             cout << "desired state: --- linear_pos_x(enu) [m] "<<endl;
             cin >> state_desired[0];
             cout << "desired state: --- linear_pos_y(enu) [m] "<<endl;
-            cin >> state_desired[1];
+            cin >> state_desired[1]; 
             cout << "desired state: --- yaw [deg]"<<endl;
             cin >> state_desired[2];
 
-            ugv_control_cmd.cmd = 2;
+            ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
             ugv_control_cmd.desired_pos[0]= state_desired[0];
             ugv_control_cmd.desired_pos[1] = state_desired[1];
             ugv_control_cmd.desired_yaw = state_desired[2]/180.0*M_PI;
@@ -90,31 +90,31 @@ int main(int argc, char **argv)
             // cout << "desired state: --- yaw [deg]"<<endl;
             // cin >> state_desired[2];
 
-            ugv_control_cmd.cmd = 3;
+            ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU;
             ugv_control_cmd.desired_pos[0]= state_desired[0];
             ugv_control_cmd.desired_pos[1] = state_desired[1];
             // ugv_control_cmd.desired_yaw = state_desired[2]/180.0*M_PI;
             command_pub.publish(ugv_control_cmd);
             cout << "state_desired [linear angular] : " << state_desired[0] << " [m] "<< state_desired[1] << " [m] "<< endl;
         } 
-        else if (start_flag == 5)
-        {
-            cout << "Move in Point control, Pls input the desired velocity and angular "<<endl;
-            cout << "desired state: --- x [m/s] "<<endl;
-            cin >> state_desired[0];
-            // cout << "desired state: --- y [m/s]"<<endl;
-            // cin >> state_desired[1];
-            cout << "desired state: --- yaw [deg/s]"<<endl;
-            cin >> state_desired[2];
+        // else if (start_flag == 5)
+        // {
+        //     cout << "Move in Point control, Pls input the desired velocity and angular "<<endl;
+        //     cout << "desired state: --- x [m/s] "<<endl;
+        //     cin >> state_desired[0];
+        //     // cout << "desired state: --- y [m/s]"<<endl;
+        //     // cin >> state_desired[1];
+        //     cout << "desired state: --- yaw [deg/s]"<<endl;
+        //     cin >> state_desired[2];
 
-            ugv_control_cmd.cmd = 5;
-            ugv_control_cmd.desired_vel[0] = state_desired[0];
-            // ugv_control_cmd.desired_vel[1] = state_desired[1];
-            ugv_control_cmd.angular_vel  = state_desired[2]/180.0*M_PI;
-            command_pub.publish(ugv_control_cmd);
-            cout << "state_desired [X Y] : " << state_desired[0] << " [ m/s ] "<< state_desired[1] <<" [ m/s ] "<< endl;
-            cout << "state_desired [YAW] : " << state_desired[2] << " [ deg ] "<< endl;
-        }
+        //     ugv_control_cmd.cmd = 5;
+        //     ugv_control_cmd.desired_vel[0] = state_desired[0];
+        //     // ugv_control_cmd.desired_vel[1] = state_desired[1];
+        //     ugv_control_cmd.angular_vel  = state_desired[2]/180.0*M_PI;
+        //     command_pub.publish(ugv_control_cmd);
+        //     cout << "state_desired [X Y] : " << state_desired[0] << " [ m/s ] "<< state_desired[1] <<" [ m/s ] "<< endl;
+        //     cout << "state_desired [YAW] : " << state_desired[2] << " [ deg ] "<< endl;
+        // }
         else if (start_flag == 4)
         {
             cout << "Move in Point control, Pls input the desired velocity "<<endl;
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
             cout << "desired state: --- yaw [deg/s]"<<endl;
             cin >> state_desired[2];
 
-            ugv_control_cmd.cmd = 4;
+            ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU;
             ugv_control_cmd.desired_vel[0] = state_desired[0];
             ugv_control_cmd.desired_vel[1] = state_desired[1];
             ugv_control_cmd.angular_vel = state_desired[2]/180.0*M_PI;
@@ -133,14 +133,14 @@ int main(int argc, char **argv)
             cout << "state_desired [X Y] : " << state_desired[0] << " [ m/s ] "<< state_desired[1] <<" [ m/s ] "<< endl;
             cout << "state_desired [YAW] : " << state_desired[2] << " [ deg/s ] "<< endl;
         }
-        else if (start_flag == 6)
+        else if (start_flag == 5)
         {   
             cout << "Move in Astart control, Pls input the desired position "<<endl;
             cout << "desired state: --- linear_pos_x [m] "<<endl;
             cin >> state_desired[0];
             cout << "desired state: --- linear_pos_y [m] "<<endl;
             cin >> state_desired[1];
-            ugv_control_cmd.cmd = 6;
+            ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::Point_Control_with_Astar;
             ugv_control_cmd.desired_pos[0]= state_desired[0];
             ugv_control_cmd.desired_pos[1] = state_desired[1];
             command_pub.publish(ugv_control_cmd);
@@ -154,5 +154,5 @@ int main(int argc, char **argv)
         }
         ros::Duration(0.5).sleep();
     }
-    return 0;
+    ros::Duration(0.5).sleep();
 }

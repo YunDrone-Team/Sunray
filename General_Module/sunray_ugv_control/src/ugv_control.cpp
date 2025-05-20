@@ -1,18 +1,20 @@
 /*
 本程序功能：
     1、管理无人车状态机:
-    2、订阅外部控制话题 sunray/ugv_control_cmd 用于接收和执行相应动作指令 
+    2、订阅外部控制话题 sunray/ugv_control_cmd 用于接收和执行相应动作指令
     3、发布对应控制指令到无人车底层驱动
     4、发布无人车状态ugv_state
 */
 #include "ugv_control.h"
+#include <sstream>
+#include <iomanip>
 
 void UGV_CONTROL::init(ros::NodeHandle &nh)
 {
     // 【参数】编号
     nh.param<int>("ugv_id", ugv_id, 1);
     // 【参数】是否发布到rviz
-    nh.param<bool>("enable_rviz", enable_rviz, false);     
+    nh.param<bool>("enable_rviz", enable_rviz, false);
     // 【参数】是否启动自带A*
     nh.param<bool>("enable_astar", enable_astar, true);
     // 【参数】设置获取数据源，1代表使用动捕、2代表使用自定义odom话题
@@ -34,7 +36,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【参数】位置环控制参数 - deadzone_vel_xy
     nh.param<float>("ugv_control_param/deadzone_vel_xy", ugv_control_param.deadzone_vel_xy, 0.0);
     // 【参数】位置环控制参数 - deadzone_vel_yaw
-    nh.param<float>("ugv_control_param/deadzone_vel_yaw", ugv_control_param.deadzone_vel_yaw, 0.0/180.0*M_PI);
+    nh.param<float>("ugv_control_param/deadzone_vel_yaw", ugv_control_param.deadzone_vel_yaw, 0.0 / 180.0 * M_PI);
     // 【参数】地理围栏参数（超出围栏自动停止）
     nh.param<float>("ugv_geo_fence/max_x", ugv_geo_fence.max_x, 10.0);
     nh.param<float>("ugv_geo_fence/min_x", ugv_geo_fence.min_x, -10.0);
@@ -42,7 +44,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     nh.param<float>("ugv_geo_fence/min_y", ugv_geo_fence.min_y, -10.0);
 
     // 如果启动原生的Astar，则初始化astar类和地图类
-    if(enable_astar)
+    if (enable_astar)
     {
         // 【参数】地图分辨率
         nh.param<float>("map/resolution", resolution, 0.4);
@@ -95,7 +97,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【发布】控制指令（机体系，单位：米/秒，Rad/秒）本节点 -> ugv_driver
     ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>(vel_topic, 1);
 
-    if(enable_rviz)
+    if (enable_rviz)
     {
         // 【发布】无人车marker 本节点 -> RVIZ(仿真)
         ugv_mesh_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/sunray_ugv/mesh", 1);
@@ -234,53 +236,54 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
     switch (msg->cmd)
     {
     // 收到INIT指令
-    case sunray_msgs::UGVControlCMD::INIT://0
+    case sunray_msgs::UGVControlCMD::INIT: // 0
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: INIT!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        Logger::print_color(int(LogColor::blue), text_info.data);
         break;
     // 收到HOLD指令
-    case sunray_msgs::UGVControlCMD::HOLD://1
+    case sunray_msgs::UGVControlCMD::HOLD: // 1
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: HOLD!";
-        cout << BLUE << text_info.data << TAIL << endl;
+        Logger::print_color(int(LogColor::blue), text_info.data);
         break;
     // 收到POS_CONTROL指令
-    case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU://2
+    case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU: // 2
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_ENU!";
-        // cout << BLUE << text_info.data << TAIL << endl;
+        Logger::print_color(int(LogColor::blue), text_info.data);
         break;
     // 收到VEL_CONTROL_BODY指令：此处不做任何处理，在主循环中处理
-    case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY://5
+    case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY: // 4
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
-        // cout << BLUE << text_info.data << TAIL << endl;
+        Logger::print_color(int(LogColor::blue), text_info.data);
         break;
     // 收到VEL_CONTROL_ENU指令：此处不做任何处理，在主循环中处理
-    case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU://4
+    case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU: // 3
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
-        // cout << BLUE << text_info.data << TAIL << endl;
+        Logger::print_color(int(LogColor::blue), text_info.data);
         break;
-    case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU://7
+    case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU: // 6
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_VEL_CONTROL_ENU!";
-        // cout << BLUE << text_info.data << TAIL << endl;
+        Logger::print_color(int(LogColor::blue), text_info.data);
         break;
-    case sunray_msgs::UGVControlCMD::Point_Control_with_Astar://6
-        if(enable_astar)
+    case sunray_msgs::UGVControlCMD::Point_Control_with_Astar: // 5
+        if (enable_astar)
         {
             planner_goal.pose.position.x = msg->desired_pos[0];
             planner_goal.pose.position.y = msg->desired_pos[1];
             goal_set = true; // 触发路径规划
             text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Point_Control_with_Astar!";
-            cout << BLUE << text_info.data << TAIL << endl;
-        }else
+            Logger::print_color(int(LogColor::blue), text_info.data);
+        }
+        else
         {
             text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " astar disable!! switch to hold";
-            cout << BLUE << text_info.data << TAIL << endl;
+            Logger::print_color(int(LogColor::blue), text_info.data);
             current_ugv_cmd.cmd = sunray_msgs::UGVControlCMD::INIT;
         }
         break;
     default:
         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Wrong!";
-        cout << RED << text_info.data << TAIL << endl;
-        return; 
+        Logger::print_color(int(LogColor::red), text_info.data);
+        return;
         break;
     }
     // text_info_pub.publish(text_info);
@@ -384,13 +387,14 @@ double UGV_CONTROL::get_yaw_error(double yaw_ref, double yaw_now)
     return error;
 }
 
-double UGV_CONTROL::normalizeAngle(double angle) 
+double UGV_CONTROL::normalizeAngle(double angle)
 {
-    if (angle > M_PI) angle -= 2.0 * M_PI;
-    if (angle < -M_PI) angle += 2.0 * M_PI;
+    if (angle > M_PI)
+        angle -= 2.0 * M_PI;
+    if (angle < -M_PI)
+        angle += 2.0 * M_PI;
     return angle;
 }
-
 
 // 位置控制，差速驱动
 geometry_msgs::Twist UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, double yaw_ref)
@@ -417,12 +421,12 @@ geometry_msgs::Twist UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, d
     double error_forward = normalizeAngle(target_yaw - ugv_state.yaw);
     double error_backward = normalizeAngle(target_yaw + M_PI - ugv_state.yaw);
 
-    if(fabs(error_forward) <= fabs(error_backward)) 
+    if (fabs(error_forward) <= fabs(error_backward))
     {
         // 前进模式
         yaw_error = error_forward;
-
-    }else 
+    }
+    else
     {
         // 后退模式
         yaw_error = error_backward;
@@ -430,12 +434,13 @@ geometry_msgs::Twist UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, d
     desired_vel.angular.z = yaw_error * ugv_control_param.Kp_yaw;
     desired_vel.angular.z = constrain_function(desired_vel.angular.z, ugv_control_param.max_vel_yaw, ugv_control_param.deadzone_vel_yaw);
 
-    if(fabs(error_forward) <= fabs(error_backward)) 
+    if (fabs(error_forward) <= fabs(error_backward))
     {
         // 前进模式
         // 控制指令计算：使用简易P控制 - 差速控制只有X方向和角速率上的控制
         desired_vel.linear.x = ugv_control_param.Kp_xy * distance * cos(yaw_error);
-    }else 
+    }
+    else
     {
         // 后退模式
         // 控制指令计算：使用简易P控制 - 差速控制只有X方向和角速率上的控制
@@ -478,7 +483,8 @@ void UGV_CONTROL::path_control()
     }
     if (abs(x_ref - ugv_state.position[0]) < 0.2 && abs(y_ref - ugv_state.position[1]) < 0.2)
     {
-        std::cout << "astar_path size: " << astar_path.size() << std::endl;
+        // std::cout << "astar_path size: " << astar_path.size() << std::endl;
+        Logger::print_color(int(LogColor::blue), "astar_path size: " + astar_path.size());
         astar_path.erase(astar_path.begin());
     }
 }
@@ -490,52 +496,71 @@ void UGV_CONTROL::rotation_yaw(double yaw_angle, float body_frame[2], float enu_
     body_frame[1] = -enu_frame[0] * sin(yaw_angle) + enu_frame[1] * cos(yaw_angle);
 }
 
+std::string format_float_two_decimal(float value)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(2) << value;
+    return oss.str();
+}
 // 定时器回调函数：定时打印
 void UGV_CONTROL::show_ctrl_state()
 {
-    cout << GREEN << ">>>>>>>>>>>>>> UGV [" << ugv_id << "] <<<<<<<<<<<<<<<" << TAIL << endl;
+    // cout << GREEN << ">>>>>>>>>>>>>> UGV [" << ugv_id << "] <<<<<<<<<<<<<<<" << TAIL << endl;
+    Logger::print_color(int(LogColor::green), ">>>>>>>>>>>>>> UGV [" + std::to_string(ugv_id) + "] <<<<<<<<<<<<<<<");
     // 固定的浮点显示
-    cout.setf(ios::fixed);
+    // cout.setf(ios::fixed);
     // setprecision(n) 设显示小数精度为n位
-    cout << setprecision(2);
+    // cout << setprecision(2);
     // 左对齐
-    cout.setf(ios::left);
+    // cout.setf(ios::left);
     // 强制显示小数点
-    cout.setf(ios::showpoint);
+    // cout.setf(ios::showpoint);
     // 强制显示符号
-    cout.setf(ios::showpos);
+    // cout.setf(ios::showpos);
 
     if (11.3f < ugv_state.battery_state < 13.0f)
     {
-        cout << GREEN << "Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
+        // cout << GREEN << "Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
+        Logger::print_color(int(LogColor::green), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
     }
     else if (11.0f < ugv_state.battery_state < 11.3f)
     {
-        cout << YELLOW << "Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
+        // cout << YELLOW << "Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
+        Logger::print_color(int(LogColor::yellow), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
     }
     else
     {
-        cout << RED << "Low Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
+        // cout << RED << "Low Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
+        Logger::print_color(int(LogColor::red), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
     }
 
-    cout << GREEN << "connected : " << ugv_state.connected << TAIL << endl;
-    cout << GREEN << "location_source : " << ugv_state.location_source << TAIL << endl;
-    cout << GREEN << "odom_valid : " << ugv_state.odom_valid << TAIL << endl;
+    // cout << GREEN << "connected : " << ugv_state.connected << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "connected : " + format_float_two_decimal(ugv_state.connected));
+    // cout << GREEN << "location_source : " << ugv_state.location_source << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "location_source : " + format_float_two_decimal(ugv_state.connected));
+    // cout << GREEN << "odom_valid : " << ugv_state.odom_valid << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "odom_valid : " + format_float_two_decimal(ugv_state.connected));
 
-    cout << GREEN << "UAV_pos [X Y] : " << ugv_state.position[0] << " [ m ] " << ugv_state.position[1] << " [ m ] " << TAIL << endl;
-    cout << GREEN << "UAV_vel [X Y] : " << ugv_state.velocity[0] << " [m/s] " << ugv_state.velocity[1] << " [m/s] " << TAIL << endl;
-    cout << GREEN << "UAV_att [Yaw] : " << ugv_state.yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+    // cout << GREEN << "UAV_pos [X Y] : " << ugv_state.position[0] << " [ m ] " << ugv_state.position[1] << " [ m ] " << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "UAV_pos [X Y] : " + format_float_two_decimal(ugv_state.position[0]) + " [ m ] " + format_float_two_decimal(ugv_state.position[1]) + " [ m ]");
+    // cout << GREEN << "UAV_vel [X Y] : " << ugv_state.velocity[0] << " [m/s] " << ugv_state.velocity[1] << " [m/s] " << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "UAV_vel [X Y] : " + format_float_two_decimal(ugv_state.velocity[0]) + " [ m ] " + format_float_two_decimal(ugv_state.velocity[1]) + " [ m ]");
+    // cout << GREEN << "UAV_att [Yaw] : " << ugv_state.yaw * 180 / M_PI << " [deg] " << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "UAV_att [Yaw] : " + format_float_two_decimal(ugv_state.yaw * 180 / M_PI) + " [deg] ");
 
-    cout << GREEN << "control_mode : " << ugv_state.control_mode << TAIL << endl;
-    cout << GREEN << "pos_setpoint : " << ugv_state.pos_setpoint[0] << " [ m ] " << ugv_state.pos_setpoint[1] << " [ m ] " << TAIL << endl;
-    cout << GREEN << "vel_setpoint : " << ugv_state.vel_setpoint[0] << " [ m ] " << ugv_state.vel_setpoint[1] << " [ m ] " << TAIL << endl;
-    cout << GREEN << "yaw_setpoint [Yaw] : " << ugv_state.yaw_setpoint * 180 / M_PI << " [deg] " << TAIL << endl;
-
+    // cout << GREEN << "control_mode : " << ugv_state.control_mode << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "control_mode : " + format_float_two_decimal(ugv_state.control_mode));
+    // cout << GREEN << "pos_setpoint : " << ugv_state.pos_setpoint[0] << " [ m ] " << ugv_state.pos_setpoint[1] << " [ m ] " << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "pos_setpoint : " + format_float_two_decimal(ugv_state.pos_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.pos_setpoint[1]) + " [ m ]");
+    // cout << GREEN << "vel_setpoint : " << ugv_state.vel_setpoint[0] << " [ m ] " << ugv_state.vel_setpoint[1] << " [ m ] " << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "vel_setpoint : " + format_float_two_decimal(ugv_state.vel_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.vel_setpoint[1]) + " [ m ]");
+    // cout << GREEN << "yaw_setpoint [Yaw] : " << ugv_state.yaw_setpoint * 180 / M_PI << " [deg] " << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "yaw_setpoint : " + format_float_two_decimal(ugv_state.yaw_setpoint * 180 / M_PI) + " [deg] ");
 
     // 动捕丢失情况下，不执行控制指令，直到动捕恢复
     if (!ugv_state.odom_valid)
     {
-        cout << RED << "Odom_valid: [Invalid] <<<<<<<<<<<<<" << TAIL << endl;
+        Logger::print_color(int(LogColor::red), "Odom_valid : [Invalid] <<<<<<<<<<<<<");
         return;
     }
 }
@@ -547,7 +572,7 @@ void UGV_CONTROL::timercb_state(const ros::TimerEvent &e)
     ugv_state.header.stamp = ros::Time::now();
 
     // 如果电池数据获取超时1秒，则认为智能体driver挂了
-    if((ros::Time::now() - get_battery_time).toSec() > 1.0)
+    if ((ros::Time::now() - get_battery_time).toSec() > 1.0)
     {
         ugv_state.connected = false;
     }
@@ -611,9 +636,9 @@ void UGV_CONTROL::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     Eigen::Quaterniond q_mocap = Eigen::Quaterniond(msg->pose.orientation.w, msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z);
     Eigen::Vector3d ugv_att = quaternion_to_euler(q_mocap);
 
-	ugv_state.attitude[0] = ugv_att.x();
+    ugv_state.attitude[0] = ugv_att.x();
     ugv_state.attitude[1] = ugv_att.y();
-	ugv_state.attitude[2] = ugv_att.z();
+    ugv_state.attitude[2] = ugv_att.z();
 
     ugv_state.yaw = ugv_att.z();
 
@@ -630,9 +655,9 @@ void UGV_CONTROL::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
     Eigen::Quaterniond q_mocap = Eigen::Quaterniond(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z);
     Eigen::Vector3d ugv_att = quaternion_to_euler(q_mocap);
 
-	ugv_state.attitude[0] = ugv_att.x();
+    ugv_state.attitude[0] = ugv_att.x();
     ugv_state.attitude[1] = ugv_att.y();
-	ugv_state.attitude[2] = ugv_att.z();
+    ugv_state.attitude[2] = ugv_att.z();
 
     ugv_state.yaw = ugv_att.z();
     get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
@@ -643,8 +668,6 @@ void UGV_CONTROL::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
     ugv_state.position[0] = msg->pose.pose.position.x;
     ugv_state.position[1] = msg->pose.pose.position.y;
-
-   
 
     tf2::Quaternion q;
     q.setW(msg->pose.pose.orientation.w);
@@ -667,9 +690,9 @@ void UGV_CONTROL::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
 
-	ugv_state.attitude[0] = roll;
+    ugv_state.attitude[0] = roll;
     ugv_state.attitude[1] = pitch;
-	ugv_state.attitude[2] = yaw;
+    ugv_state.attitude[2] = yaw;
 
     // ugv_state.attitude_q.x = q.x();
     // ugv_state.attitude_q.y = q.y();
@@ -713,7 +736,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     if (!enable_rviz || !ugv_state.odom_valid)
     {
         return;
-    } 
+    }
     // 关于TF的说明：
     // ugv_maker是world系
     // 无人车轨迹是world系
@@ -770,7 +793,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     // 发布当前执行速度的方向箭头
     geometry_msgs::TwistStamped vel_rviz;
     vel_rviz.header.stamp = ros::Time::now();
-    vel_rviz.header.frame_id = "/ugv" + std::to_string(ugv_id) + "/base_link";
+    vel_rviz.header.frame_id = "/ugv" + format_float_two_decimal(ugv_id) + "/base_link";
     vel_rviz.twist.linear.x = desired_vel.linear.x;
     vel_rviz.twist.linear.y = desired_vel.linear.y;
     vel_rviz.twist.linear.z = desired_vel.linear.z;
@@ -780,7 +803,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     vel_rviz_pub.publish(vel_rviz);
 
     // 发布当前目标点marker，仅针对位置控制模式
-    if(current_ugv_cmd.cmd == sunray_msgs::UGVControlCMD::POS_CONTROL_ENU)
+    if (current_ugv_cmd.cmd == sunray_msgs::UGVControlCMD::POS_CONTROL_ENU)
     {
         // 发布目标点mesh
         visualization_msgs::Marker goal_marker;
@@ -812,10 +835,10 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     static tf2_ros::TransformBroadcaster broadcaster;
     geometry_msgs::TransformStamped tfs;
     //  |----头设置
-    tfs.header.frame_id = "world";       //相对于世界坐标系
-    tfs.header.stamp = ros::Time::now(); //时间戳
+    tfs.header.frame_id = "world";       // 相对于世界坐标系
+    tfs.header.stamp = ros::Time::now(); // 时间戳
     //  |----坐标系 ID
-    tfs.child_frame_id = "/ugv" + std::to_string(ugv_id) + "/base_link"; //子坐标系，无人机的坐标系
+    tfs.child_frame_id = "/ugv" + format_float_two_decimal(ugv_id) + "/base_link"; // 子坐标系，无人机的坐标系
     // tfs.child_frame_id = "/lidar"; //子坐标系，无人机的坐标系
     //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
     tfs.transform.translation.x = ugv_state.position[0];

@@ -5,8 +5,8 @@
         <param name="enable_rviz" value="true" />
         <!-- zidingyi odom  -->
         <param name="location_source" value="2" />
-        <param name="odom_topic" value="/car_odom" />
-        <param name="vel_topic" value="/cmd_vel" />
+        <param name="odom_topic" value="/ugv1/odom" />
+        <param name="vel_topic" value="/ugv1/cmd_vel" />
         <!-- 控制参数 -->
         <param name="ugv_control_param/Kp_xy" value="2.0" />
         <param name="ugv_control_param/Kp_yaw" value="3.14" />
