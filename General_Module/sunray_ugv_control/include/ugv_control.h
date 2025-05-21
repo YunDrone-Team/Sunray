@@ -47,6 +47,7 @@ class UGV_CONTROL
         bool goal_set;                                 // 是否有规划目标点
         bool enable_rviz;
         bool enable_astar;
+        bool simulation_mode;
         float resolution;                              // 地图分辨率
         float inflate;                                 // 地图膨胀系数
         double desired_yaw{0.0};                       // 当前期望偏航角（来自外部控制指令赋值）
