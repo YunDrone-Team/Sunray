@@ -19,10 +19,6 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "ugv_control_node");
     ros::NodeHandle nh("~");
     ros::Rate rate(50.0);
-    // 新增仿真模式参数
-    bool simulation_mode = false;
-    nh.param<bool>("simulation_mode", simulation_mode, false);
-
     bool flag_printf = false; // 是否打印状态
     nh.param<bool>("flag_printf", flag_printf, true);
 
@@ -34,26 +30,13 @@ int main(int argc, char **argv)
     ugv_ctrl.init(nh);
 
     // 初始化检查：等待PX4连接
-    if (!simulation_mode)
+    int trials = 0;
+    while (ros::ok() && !ugv_ctrl.ugv_state.connected)
     {
-        // 真机模式：等待PX4连接
-        int trials = 0;
-        while (ros::ok() && !ugv_ctrl.ugv_state.connected)
-        {
-            ros::spinOnce();
-            ros::Duration(1.0).sleep();
-            if (trials++ > 5)
-            {
-                Logger::print_color(int(LogColor::red), "Unable to connnect to UGV!!!");
-                break;
-            }
-        }
-    }
-    else
-    {
-        // 仿真模式：强制标记为已连接
-        ugv_ctrl.ugv_state.connected = true;
-        Logger::print_color(int(LogColor::yellow), "[Simulation Mode] Skip PX4 connection check");
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (trials++ > 5)
+            Logger::print_color(int(LogColor::red), "Unable to connnect to UGV!!!");
     }
 
     ros::Time last_time = ros::Time::now();

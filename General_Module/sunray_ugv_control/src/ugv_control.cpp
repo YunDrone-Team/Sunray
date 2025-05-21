@@ -17,6 +17,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     nh.param<bool>("enable_rviz", enable_rviz, false);
     // 【参数】是否启动自带A*
     nh.param<bool>("enable_astar", enable_astar, true);
+    //  参数】是否启动仿真
+    nh.param<bool>("simulation_mode", simulation_mode, true);
     // 【参数】设置获取数据源，1代表使用动捕、2代表使用自定义odom话题
     nh.param<int>("location_source", location_source, 2);
     // 【参数】0 for mac,1 for diff
@@ -122,6 +124,14 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state.header.frame_id = "world";
     ugv_state.ugv_id = ugv_id;
     ugv_state.connected = false;
+    if (simulation_mode)
+    {
+        ugv_state.connected = true;
+    }
+    else
+    {
+        ugv_state.connected = false;
+    }
     ugv_state.odom_valid = false;
     ugv_state.position[0] = 0.0;
     ugv_state.position[1] = 0.0;
@@ -717,7 +727,6 @@ void UGV_CONTROL::battery_cb(const std_msgs::Float32::ConstPtr &msg)
     // 记录获取电池（从驱动）的时间，用于判断智能体驱动是否正常
     get_battery_time = ros::Time::now();
     ugv_state.connected = true;
-    ROS_INFO("battery_cb");
     ugv_state.battery_state = msg->data;
 }
 
