@@ -128,10 +128,6 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     {
         ugv_state.connected = true;
     }
-    else
-    {
-        ugv_state.connected = false;
-    }
     ugv_state.odom_valid = false;
     ugv_state.position[0] = 0.0;
     ugv_state.position[1] = 0.0;
@@ -582,7 +578,7 @@ void UGV_CONTROL::timercb_state(const ros::TimerEvent &e)
     ugv_state.header.stamp = ros::Time::now();
 
     // 如果电池数据获取超时1秒，则认为智能体driver挂了
-    if ((ros::Time::now() - get_battery_time).toSec() > 1.0)
+    if ((ros::Time::now() - get_battery_time).toSec() > 1.0 && !simulation_mode)
     {
         ugv_state.connected = false;
     }
