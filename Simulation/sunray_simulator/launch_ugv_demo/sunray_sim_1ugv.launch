@@ -2,7 +2,7 @@
 	<!-- Gazebo 配置 -->
     <arg name="gazebo_enable" default="true"/>
     <arg name="gui" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/planning_test.world"/>
     <!-- 启动 Gazebo -->
     <group if="$(arg gazebo_enable)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -20,7 +20,7 @@
     <!-- 无人车的名称 -->
     <arg name="ugv_name" default="ugv"/>
     <!-- 无人车的模型 -->
-    <arg name="ugv_model" default="wheeltec" />
+    <arg name="ugv_model" default="wheeltec_with_2d_lidar" />
 
     <!-- 无人车的初始位置坐标 -->
     <arg name="init_x" default="0"/>
@@ -36,5 +36,12 @@
         <arg name="init_y" value="$(arg init_y)"/>
         <arg name="init_yaw" value="$(arg init_yaw)"/>
     </include>
+    <!-- 启动rviz -->
+    <node name="rviz_ugv" pkg="rviz" type="rviz" args="-d $(find sunray_simulator)/config/ugv.rviz" />
+    <!-- 电池模拟节点 -->
+    <!-- <node pkg="sunray_tutorial" type="battery_simulator" name="ugv1_battery_sim">
+        <param name="ugv_id" value="1"/>
+        <param name="discharge_rate" value="0.08"/> 
+    </node> -->
 </launch>
 
