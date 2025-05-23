@@ -12,6 +12,9 @@
 #include <tuple>
 #include <algorithm>
 #include <cstdlib>
+#include "printf_format.h"
+
+using namespace sunray_logger;
 
 // 简单图结构 (SimpleGraph)
 // 使用哈希表存储图的边关系
@@ -81,9 +84,11 @@ struct SquareGrid
     void print_walls() const
     {
         std::cout << "walls: " << std::endl;
+        Logger::print_color(int(LogColor::white), "walls: ");
         for (auto wall : walls)
         {
-            std::cout << wall.x << " " << wall.y << std::endl;
+            // std::cout << wall.x << " " << wall.y << std::endl;
+            Logger::print_color(int(LogColor::white), std::to_string(wall.x) + " " + std::to_string(wall.y));
         }
     }
 
@@ -133,8 +138,7 @@ std::array<GridLocation, 8> SquareGrid::DIRS = {
     GridLocation{0, -1}, GridLocation{0, 1},
     GridLocation{1, 0}, GridLocation{-1, 0},
     GridLocation{1, -1}, GridLocation{-1, -1},
-    GridLocation{1, 1}, GridLocation{-1, 1}
-};
+    GridLocation{1, 1}, GridLocation{-1, 1}};
 
 // Helpers for GridLocation
 
@@ -173,7 +177,6 @@ void add_rect(SquareGrid &grid, int x1, int y1, int x2, int y2)
 
 void add_wall(SquareGrid &grid, int x, int y)
 {
-    // std::cout<< "add wall: " << x << " " << y << std::endl;
     grid.walls.insert(GridLocation{x, y});
 }
 
@@ -227,7 +230,7 @@ struct PriorityQueue
 class Astar
 {
 public:
-    Astar(){};
+    Astar() {};
     Astar(int width, int height)
     {
         graph = new GridWithWeights(width, height);
@@ -242,14 +245,16 @@ public:
     }
     void setStart(int x, int y)
     {
-        std::cout << "set start: " << x << " " << y << std::endl;
-        goal_set = true;
+        // std::cout << "set start: " << x << " " << y << std::endl;
+        Logger::print_color(int(LogColor::white), "set start: " + std::to_string(x) + std::to_string(y));
+        start_set = true;
         start.x = x;
         start.y = y;
     }
     void setGoal(int x, int y)
     {
-        std::cout << "set goal: " << x << " " << y << std::endl;
+        // std::cout << "set goal: " << x << " " << y << std::endl;
+        Logger::print_color(int(LogColor::white), "set goal: " + std::to_string(x) + std::to_string(y));
         goal_set = true;
         goal.x = x;
         goal.y = y;
@@ -258,7 +263,6 @@ public:
     {
         // 浅拷贝
         *this->graph = *graph;
-        // this->graph->print_walls();
     }
 
     // 启发函数 使用曼哈顿距离
@@ -276,6 +280,7 @@ public:
 private:
     bool goal_set = false;
     bool start_set = false;
+    bool path_found = false;
     GridWithWeights *graph;   // 地图
     GridLocation start, goal; // 起点和终点
 
@@ -313,7 +318,9 @@ void Astar::a_star_search()
 
     came_from[start] = start;
     cost_so_far[start] = 0;
-    std::cout << "start search!" << std::endl;
+    // std::cout << "start search!" << std::endl;
+    Logger::print_color(int(LogColor::white), "start search!");
+
     while (!frontier.empty())
     {
         GridLocation current = frontier.get();
@@ -334,6 +341,14 @@ void Astar::a_star_search()
                 came_from[next] = current;
             }
         }
+    }
+    // 添加路径失败判断
+    if (came_from.find(goal) == came_from.end()) {
+        std::cout << "Path planning failed: No path exists from start to goal." << std::endl;
+        Logger::print_color(int(LogColor::white), "Path planning failed: No path exists from start to goal.");
+        path_found = false;
+    } else {
+        path_found = true;
     }
 }
 

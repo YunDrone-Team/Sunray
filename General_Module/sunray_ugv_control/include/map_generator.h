@@ -23,6 +23,9 @@
 #include <tf/transform_listener.h>
 
 #include <sunray_msgs/UGVState.h>
+#include "printf_format.h"
+
+using namespace sunray_logger;
 
 class MapGenerator
 {
@@ -66,7 +69,7 @@ public:
     // 定时器
     ros::Timer timer;
 };
-
+// 地图的初始化
 void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, float map_max_x, float map_max_y, float map_resolution, float inflate_size)
 {
     int odom_type, ugv_id;
@@ -109,9 +112,10 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     astar_grid = new GridWithWeights(static_cast<int>((map_max_x - map_min_x) / map_resolution),
                                static_cast<int>((map_max_y - map_min_y) / map_resolution));
 };
-
+// 发布地图信息
 void MapGenerator::PublishOctomap()
 {
+    // std::cout << "map" << std::endl;
     octomap_msg.header.frame_id = "odom";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
     octomap_pub.publish(octomap_msg);
@@ -119,7 +123,7 @@ void MapGenerator::PublishOctomap()
     octomap_grid_msg = projectOctomapSlice(*tree, 0);
     occupancy_pub.publish(octomap_grid_msg);
 }
-
+// 将雷达的数据转换后更新地图数据
 void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
     if (!is_odom_received)
@@ -140,7 +144,7 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
     // 转换到世界坐标系 根据odom数据进行转换
     pcl::fromPCLPointCloud2(pcl_cloud, *temp_cloud);
     pcl_ros::transformPointCloud(*temp_cloud, *cloud_transformed, transform);
-
+    // std::cout << "Map updated from point cloud." << std::endl;
     // astar_grid->clear_walls();
     octomap::Pointcloud octoCloud;
     for (const auto &point : *cloud_transformed)
@@ -158,7 +162,7 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
     PublishOctomap();
     // std::cout << "Map updated from point cloud." << std::endl;
 }
-
+// 处理odom数据
 void MapGenerator::odomCallback(const nav_msgs::Odometry::ConstPtr &odom_msg)
 {
     is_odom_received = true;
@@ -168,8 +172,9 @@ void MapGenerator::odomCallback(const nav_msgs::Odometry::ConstPtr &odom_msg)
     transform.child_frame_id_ = "base_link";
     transform.setOrigin(tf::Vector3(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z));
     transform.setRotation(tf::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y, odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
+    // std::cout << "odom" << std::endl;
 }
-
+// 处理ugv_state数据
 void MapGenerator::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
 {
     is_odom_received = true;
@@ -183,14 +188,16 @@ void MapGenerator::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
     transform.child_frame_id_ = "base_link";
     transform.setOrigin(tf::Vector3(odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z));
     transform.setRotation(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w));
+    // std::cout << "state" << std::endl;
 }
 
-
+// 构建地图
 nav_msgs::OccupancyGrid MapGenerator::projectOctomapSlice(const octomap::OcTree &octree, double height)
 {
+    // std::cout << "build" << std::endl;
     // 设置OccupancyGrid参数
     nav_msgs::OccupancyGrid grid;
-    grid.header.frame_id = "odom"; // 根据实际情况设置
+    grid.header.frame_id = "world"; // 根据实际情况设置
     grid.info.resolution = this->map_resolution;
     grid.info.width = static_cast<unsigned int>((this->map_max_x - this->map_min_x) / this->map_resolution);
     grid.info.height = static_cast<unsigned int>((this->map_max_y - this->map_min_y) / this->map_resolution);
@@ -248,8 +255,10 @@ nav_msgs::OccupancyGrid MapGenerator::projectOctomapSlice(const octomap::OcTree 
     return grid;
 }
 
+// 地图障碍物膨胀设置
 void MapGenerator::inflateOccupancyGrid(nav_msgs::OccupancyGrid &grid, double inflation_radius, double resolution)
-{
+{   
+    // std::cout << "inflate" << std::endl;
     // 计算膨胀半径对应的像素数
     int inflation_cells = std::ceil(inflation_radius / resolution);
 

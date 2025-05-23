@@ -124,10 +124,6 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state.header.frame_id = "world";
     ugv_state.ugv_id = ugv_id;
     ugv_state.connected = false;
-    if (simulation_mode)
-    {
-        ugv_state.connected = true;
-    }
     ugv_state.odom_valid = false;
     ugv_state.position[0] = 0.0;
     ugv_state.position[1] = 0.0;
@@ -142,6 +138,12 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     ugv_state.yaw_setpoint = 0.0;
     ugv_state.battery_state = -1.0;
     ugv_state.battery_percentage = -1.0;
+    if (simulation_mode)
+    {
+        ugv_state.connected = true;
+        ugv_state.battery_state = 12.0;
+        ugv_state.battery_percentage = 1.0;
+    }
     ugv_state.control_mode = sunray_msgs::UGVControlCMD::INIT;
 
     // 打印本节点参数，用于检查
@@ -577,7 +579,7 @@ void UGV_CONTROL::timercb_state(const ros::TimerEvent &e)
     // 发布 ugv_state
     ugv_state.header.stamp = ros::Time::now();
 
-    // 如果电池数据获取超时1秒，则认为智能体driver挂了
+    // 如果电池数据获取超时1秒，则driver挂了
     if ((ros::Time::now() - get_battery_time).toSec() > 1.0 && !simulation_mode)
     {
         ugv_state.connected = false;
@@ -614,7 +616,7 @@ void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
 
         planner_path.poses.clear();
         planner_path.header.stamp = ros::Time::now();
-        planner_path.header.frame_id = "odom";
+        planner_path.header.frame_id = "world";
         for (const auto &loc : astar_path)
         {
             geometry_msgs::PoseStamped pose_stamped;
@@ -720,7 +722,7 @@ void UGV_CONTROL::mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
 // 回调函数：电池电量
 void UGV_CONTROL::battery_cb(const std_msgs::Float32::ConstPtr &msg)
 {
-    // 记录获取电池（从驱动）的时间，用于判断智能体驱动是否正常
+    // 记录获取电池（从驱动）的时间，用于判断驱动是否正常
     get_battery_time = ros::Time::now();
     ugv_state.connected = true;
     ugv_state.battery_state = msg->data;
