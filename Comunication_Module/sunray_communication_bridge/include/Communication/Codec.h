@@ -28,6 +28,7 @@ public:
     void coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //编码无人机demo数据帧
     void coderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script); //编码无人机script数据帧
     void coderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypoint); //编码无人机航点数据帧
+    void coderNodeDataFrame(std::vector<uint8_t>& dataFrame,NodeData& node); //编码智能体ROS节点数据帧
 
 
     void decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat); //解码无人机心跳包数据帧
@@ -41,6 +42,7 @@ public:
     void decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack); //解码无人机应答数据帧
     void decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo); //解码无人机demo数据帧
     void decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script); //解码无人机script数据帧
+    void decodernNodeDataFrame(std::vector<uint8_t>& dataFrame,NodeData& node); //解码智能体在线ROS节点数据帧
 
     void decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypointData);//解码无人机航点数据帧
 

@@ -117,6 +117,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
     // 【定时器】 定时检测启动的子进程是否存活
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
+    // 【定时器】 定时发送ROS节点信息到地面站
+    UpdateROSNodeInformationTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateROSNodeInformation, this);
+
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -697,6 +700,120 @@ void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
     for (const auto &key : keysToRemove)
         nodeMap.erase(key);
 }
+
+void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
+{
+    // 用于存储节点名称的向量
+    std::vector<std::string> node_list;
+    // 获取节点列表
+    if (ros::master::getNodes(node_list))
+    {
+        if (is_simulation)
+        {
+            //
+            for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+            {
+                for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
+                {
+                    // std::cout << "Index " << NodeNumber << ": " << node_list[NodeNumber] << std::endl;
+                    uavStateData[i].nodeInformation.init();
+                    uavStateData[i].nodeInformation.robotID = i;
+                    uavStateData[i].nodeInformation.agentType = 0;
+                    uavStateData[i].nodeInformation.agentID = i;
+                    uavStateData[i].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    uavStateData[i].nodeInformation.nodeID = NodeNumber + 1;
+                    uavStateData[i].nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(uavStateData[i].nodeInformation.nodeStr, node_list[NodeNumber].size());
+
+                    // 机载电脑ROS节点 -NodeData（#30）
+                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, uavStateData[i]);
+                    
+                }
+            }
+
+            //
+            for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
+            {
+                for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
+                {
+                    ugvStateData[i].nodeInformation.init();
+                    ugvStateData[i].nodeInformation.robotID = i;
+                    ugvStateData[i].nodeInformation.agentType = 1;
+                    ugvStateData[i].nodeInformation.agentID = i;
+                    ugvStateData[i].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    ugvStateData[i].nodeInformation.nodeID = NodeNumber + 1;
+                    ugvStateData[i].nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(ugvStateData[i].nodeInformation.nodeStr, node_list[NodeNumber].size());
+
+                    // 机载电脑ROS节点 -NodeData（#30）
+                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, ugvStateData[i]);
+                    
+                }
+            }
+        }else{
+            if (uav_experiment_num > 0)
+            {
+                for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
+                {
+                    // std::cout << "Index " << NodeNumber << ": " << node_list[NodeNumber] << std::endl;
+                    uavStateData[uav_id].nodeInformation.init();
+                    uavStateData[uav_id].nodeInformation.robotID = uav_id;
+                    uavStateData[uav_id].nodeInformation.agentType = 0;
+                    uavStateData[uav_id].nodeInformation.agentID = uav_id;
+                    uavStateData[uav_id].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    uavStateData[uav_id].nodeInformation.nodeID = NodeNumber + 1;
+                    uavStateData[uav_id].nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(uavStateData[uav_id].nodeInformation.nodeStr, node_list[NodeNumber].size());
+
+                    // 机载电脑ROS节点 -NodeData（#30）
+                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, uavStateData[uav_id]);
+                    
+                }
+            }
+
+            if (ugv_experiment_num > 0)
+            {
+                for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
+                {
+                    ugvStateData[ugv_id].nodeInformation.init();
+                    ugvStateData[ugv_id].nodeInformation.robotID = ugv_id;
+                    ugvStateData[ugv_id].nodeInformation.agentType = 1;
+                    ugvStateData[ugv_id].nodeInformation.agentID = ugv_id;
+                    ugvStateData[ugv_id].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    ugvStateData[ugv_id].nodeInformation.nodeID = NodeNumber + 1;
+                    ugvStateData[ugv_id].nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(ugvStateData[ugv_id].nodeInformation.nodeStr, node_list[NodeNumber].size());
+
+                    // 机载电脑ROS节点 -NodeData（#30）
+                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, ugvStateData[ugv_id]);
+                }
+            }
+        }
+    }else{
+         std::cout <<"无法获取ROS节点列表。请确保ROS Master正在运行!"<< std::endl;
+    }
+}
+
+void communication_bridge::SendUdpDataToAllOnlineGroundStations(int msgID,unionData data)
+{
+    std::vector<std::string> tempVec;
+
+    // 发送数据到地面站 本节点 --UDP--> 地面站
+    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+
+    for (const auto &ip : GSIPHash)
+    {
+        // 机载电脑ROS节点 -NodeData（#30）
+        int sendBack = udpSocket->sendUDPData(codec.coder(msgID, data), ip, udp_ground_port);
+        if (sendBack < 0)
+            tempVec.push_back(ip);
+    }
+
+    for (const auto &ip : tempVec)
+        GSIPHash.erase(ip);
+    tempVec.clear();
+}
+
 
 void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
 {
