@@ -242,7 +242,7 @@ void Codec::decoderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateDat
 {
     //时间戳赋值
     state.timestamp=0;
-    // 由于数据是按大端顺序存储的，直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         state.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -294,7 +294,7 @@ void Codec::decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& sta
 {
     //时间戳赋值
     state.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         state.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -367,7 +367,7 @@ void Codec::decoderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVContro
 {
     //时间戳赋值
     control.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         control.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -389,7 +389,7 @@ void Codec::decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData&
 {
     //时间戳赋值
     control.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         control.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -492,7 +492,7 @@ void Codec::decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointDat
 {
     //时间戳赋值
     waypointData.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         waypointData.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -561,7 +561,7 @@ void Codec::decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointDat
 
 void Codec::coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo) //编码无人机demo数据帧
 {
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::DemoMessageID));
+    dataFrame.push_back(static_cast<uint8_t>(MessageID::ScriptMessageID));
     demo.timestamp=getTimestamp();
     for (int i = 0; i < (int)sizeof(uint64_t); ++i)
         dataFrame.push_back(static_cast<uint8_t>((demo.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
@@ -601,6 +601,30 @@ void Codec::coderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& scr
 
     for(int j=0;j<script.scriptSize;++j)
     dataFrame.push_back(static_cast<uint8_t>(script.scriptStr[j]));
+}
+
+void Codec::coderNodeDataFrame(std::vector<uint8_t>& dataFrame,NodeData& node)
+{
+    dataFrame.push_back(static_cast<uint8_t>(MessageID::NodeMessageID));
+    node.timestamp=getTimestamp();
+    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((node.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+    dataFrame.push_back(static_cast<uint8_t>(node.agentType));
+    dataFrame.push_back(static_cast<uint8_t>(node.agentID));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((node.nodeCount >> (i * 8)) & 0xFF));
+    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((node.nodeID >> (i * 8)) & 0xFF));
+    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
+        dataFrame.push_back(static_cast<uint8_t>((node.nodeSize >> (i * 8)) & 0xFF));
+
+    if(dataFrame.capacity()<node.nodeSize)
+        dataFrame.reserve(node.nodeSize);
+
+    for(int j=0;j<node.nodeSize;++j)
+    dataFrame.push_back(static_cast<uint8_t>(node.nodeStr[j]));
 }
 
 void Codec::coderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control)
@@ -678,7 +702,7 @@ void Codec::decoderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData&
 {
     //时间戳赋值
     vehicle.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         vehicle.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -729,7 +753,7 @@ void Codec::decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack)
 {
     //时间戳赋值
     ack.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         ack.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -771,7 +795,7 @@ void Codec::decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& s
 {
     //时间戳赋值
     script.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         script.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -781,7 +805,7 @@ void Codec::decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& s
     script.scriptState=static_cast<uint8_t>(dataFrame[i++]);
     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
 
-     script.scriptSize=0;
+    script.scriptSize=0;
     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
         script.scriptSize |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
 
@@ -791,11 +815,81 @@ void Codec::decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& s
     dataFrame.clear();
 }
 
+ void Codec::decodernNodeDataFrame(std::vector<uint8_t>& dataFrame,NodeData& node)
+ {
+//     //时间戳赋值
+//     node.timestamp=0;
+//     // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
+//     int i;
+//     for (i = 0; i <(int)sizeof(uint64_t); ++i)
+//         node.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+//     node.agentType=static_cast<uint8_t>(dataFrame[i++]);
+//     node.agentID=static_cast<uint8_t>(dataFrame[i++]);
+
+//     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+
+//     node.nodeCount=0;
+//     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
+//         node.nodeCount |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+
+//     node.nodeID=0;
+//     for (int j = 2; j < (int)sizeof(uint16_t)+2; ++j)
+//         node.nodeID |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+
+//     node.nodeSize=0;
+//     for (int j = 4; j < (int)sizeof(uint16_t); ++j)
+//         node.nodeSize |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+
+//     for (int j = 6; j < node.nodeSize+6; ++j)
+//         node.nodeStr[j-6]=static_cast<uint8_t>(dataFrame[j]);
+
+//     dataFrame.clear();
+
+
+
+     // 重置节点数据
+     node.init(); // 初始化所有字段为0
+
+     int offset;
+     // 读取时间戳（小端序）
+     for (offset = 0; offset < (int)sizeof(uint64_t); ++offset)
+         node.timestamp |= static_cast<uint64_t>(dataFrame[offset]) << (offset * 8);
+
+
+     // 读取agentType和agentID
+     node.agentType = dataFrame[offset++];
+     node.agentID = dataFrame[offset++];
+
+     // 读取nodeCount（小端序，2字节）
+     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
+         node.nodeCount |= static_cast<uint16_t>(dataFrame[offset++]) << (j * 8);
+
+     // 读取nodeID（小端序，2字节）
+     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
+         node.nodeID |= static_cast<uint16_t>(dataFrame[offset++]) << (j * 8);
+
+     // 读取nodeSize（小端序，2字节）
+     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
+         node.nodeSize |= static_cast<uint16_t>(dataFrame[offset++]) << (j * 8);
+
+
+     // 验证并读取nodeStr
+     const size_t strSize = std::min<size_t>(node.nodeSize, sizeof(node.nodeStr) - 1);
+     if (dataFrame.size() < offset + strSize)
+         throw std::runtime_error("Node string exceeds data frame size");
+
+
+     std::memcpy(node.nodeStr, dataFrame.data() + offset, strSize);
+     node.nodeStr[strSize] = '\0'; // 确保字符串以空字符结尾
+
+     dataFrame.clear(); // 清空数据帧
+ }
+
 void Codec::decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo)
 {    
     //时间戳赋值
     demo.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     int i;
     for (i = 0; i <(int)sizeof(uint64_t); ++i)
         demo.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
@@ -820,7 +914,7 @@ void Codec::decoderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& s
 {
     //时间戳赋值
     search.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     for (int i = 0; i <(int)sizeof(uint64_t); ++i)
         search.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
     search.port = 0;
@@ -836,7 +930,7 @@ void Codec::decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData&
 {
     //时间戳赋值
     heartbeat.timestamp=0;
-    // 由于数据是按大端顺序存储的，我们直接左移i*8位并添加对应的字节
+    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
     for (int i = 0; i <(int)sizeof(uint64_t); ++i)
         heartbeat.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
 
@@ -938,16 +1032,22 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData&
         decoderDemoDataFrame(undecodedData,decoderData.demo);
         break;
     case MessageID::ScriptMessageID:
-        decoderData.demo.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        decoderData.agentScrip.robotID=static_cast<uint8_t>(undecodedData.at(0));
         //去掉之前已经读出的两个元素
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
         decoderScriptDataFrame(undecodedData,decoderData.agentScrip);
         break;
     case MessageID::WaypointMessageID:
-        decoderData.demo.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        decoderData.waypointData.robotID=static_cast<uint8_t>(undecodedData.at(0));
         //去掉之前已经读出的两个元素
         undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
         decoderWaypointDataFrame(undecodedData,decoderData.waypointData);
+        break;
+    case MessageID::NodeMessageID:
+        decoderData.nodeInformation.robotID=static_cast<uint8_t>(undecodedData.at(0));
+        //去掉之前已经读出的两个元素
+        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
+        decodernNodeDataFrame(undecodedData,decoderData.nodeInformation);
         break;
     default:break;
     }
@@ -1245,6 +1345,28 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
 
         coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
         coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+    case MessageID::NodeMessageID:
+        //UDP不带回复帧头 0xab65
+        coderData.push_back(0xab);
+        coderData.push_back(0x65);
+
+        coderNodeDataFrame(tempData,codelessData.nodeInformation);
+        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
+            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+        coderData.push_back(getUDPMessageNum());//获取UDP消息序号
+        coderData.push_back(static_cast<uint8_t>(codelessData.agentScrip.robotID));//获取机器人ID
+        //将整个数据帧从尾部加入数据里面
+        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
+
+        checksum=getChecksum(coderData);//获取校验值
+
+        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
+        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+
+        break;
     default:break;
 
 
