@@ -71,7 +71,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
         // 【订阅】订阅动捕的数据(位置+速度) vrpn -> 本节点
         mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node" + topic_prefix + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
         mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node" + topic_prefix + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
-        cout << GREEN << "Pose source: Mocap" << TAIL << endl;
+        // cout << GREEN << "Pose source: Mocap" << TAIL << endl;
+        Logger::print_color(int(LogColor::green), "Pose source: Mocap");
     }
     else if (location_source == 2)
     {
@@ -85,7 +86,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     }
     else
     {
-        cout << RED << "Pose source: Unknown" << TAIL << endl;
+        // cout << RED << "Pose source: Unknown" << TAIL << endl;
+        Logger::print_color(int(LogColor::green), "Pose source: Unknown");
     }
 
     // 【订阅】控制指令 外部控制节点 -> 本节点
@@ -93,7 +95,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【订阅】ugv电池的数据 ugv_driver -> 本节点
     battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/sunray_ugv/battery", 1, &UGV_CONTROL::battery_cb, this);
     // 【订阅】目标点 move_base_simple（RVIZ） -> 本节点
-    // planner_goal_sub = nh.subscribe<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1, &UGV_CONTROL::goal_point_cb, this);
+    planner_goal_sub = nh.subscribe<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1, &UGV_CONTROL::goal_point_cb, this);
     // 【发布】状态 本节点 -> 地面站/其他节点
     ugv_state_pub = nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1);
     // 【发布】控制指令（机体系，单位：米/秒，Rad/秒）本节点 -> ugv_driver
@@ -152,7 +154,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     node_name = ros::this_node::getName();
     text_info.data = node_name + topic_prefix + " init!";
     // text_info_pub.publish(text_info);
-    cout << BLUE << text_info.data << TAIL << endl;
+    // cout << BLUE << text_info.data << TAIL << endl;
+    Logger::print_color(int(LogColor::blue), text_info.data);
 }
 
 // 主循环函数
@@ -162,6 +165,7 @@ void UGV_CONTROL::mainloop()
     if (!ugv_state.odom_valid)
     {
         cout << YELLOW << "odom_valid: false" << TAIL << endl;
+        Logger::print_color(int(LogColor::yellow), "odom_valid: false");
         desired_vel.linear.x = 0.0;
         desired_vel.linear.y = 0.0;
         desired_vel.linear.z = 0.0;
@@ -510,6 +514,20 @@ std::string format_float_two_decimal(float value)
     oss << std::fixed << std::setprecision(2) << value;
     return oss.str();
 }
+
+const char* controlModeToString(uint8_t mode) {
+    switch(mode) {
+        case 0: return "INIT";
+        case 1: return "HOLD";
+        case 2: return "POS_CONTROL_ENU";
+        case 3: return "VEL_CONTROL_ENU";
+        case 4: return "VEL_CONTROL_BODY";
+        case 5: return "Point_Control_with_Astar";
+        case 6: return "POS_VEL_CONTROL_ENU";
+        default: return "Unknown";
+    }
+}
+
 // 定时器回调函数：定时打印
 void UGV_CONTROL::show_ctrl_state()
 {
@@ -543,21 +561,21 @@ void UGV_CONTROL::show_ctrl_state()
     }
 
     // cout << GREEN << "connected : " << ugv_state.connected << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "connected : " + format_float_two_decimal(ugv_state.connected));
+    Logger::print_color(int(LogColor::green), "connected : " + std::string(ugv_state.connected ? "true" : "false"));
     // cout << GREEN << "location_source : " << ugv_state.location_source << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "location_source : " + format_float_two_decimal(ugv_state.connected));
+    Logger::print_color(int(LogColor::green), "location_source : " + format_float_two_decimal(ugv_state.location_source));
     // cout << GREEN << "odom_valid : " << ugv_state.odom_valid << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "odom_valid : " + format_float_two_decimal(ugv_state.connected));
+    Logger::print_color(int(LogColor::green), "odom_valid : " + std::string(ugv_state.odom_valid ? "true" : "false"));
 
     // cout << GREEN << "UAV_pos [X Y] : " << ugv_state.position[0] << " [ m ] " << ugv_state.position[1] << " [ m ] " << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "UAV_pos [X Y] : " + format_float_two_decimal(ugv_state.position[0]) + " [ m ] " + format_float_two_decimal(ugv_state.position[1]) + " [ m ]");
+    Logger::print_color(int(LogColor::green), "UGV_pos [X Y] : " + format_float_two_decimal(ugv_state.position[0]) + " [ m ] " + format_float_two_decimal(ugv_state.position[1]) + " [ m ]");
     // cout << GREEN << "UAV_vel [X Y] : " << ugv_state.velocity[0] << " [m/s] " << ugv_state.velocity[1] << " [m/s] " << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "UAV_vel [X Y] : " + format_float_two_decimal(ugv_state.velocity[0]) + " [ m ] " + format_float_two_decimal(ugv_state.velocity[1]) + " [ m ]");
+    Logger::print_color(int(LogColor::green), "UGV_vel [X Y] : " + format_float_two_decimal(ugv_state.velocity[0]) + " [ m ] " + format_float_two_decimal(ugv_state.velocity[1]) + " [ m ]");
     // cout << GREEN << "UAV_att [Yaw] : " << ugv_state.yaw * 180 / M_PI << " [deg] " << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "UAV_att [Yaw] : " + format_float_two_decimal(ugv_state.yaw * 180 / M_PI) + " [deg] ");
+    Logger::print_color(int(LogColor::green), "UGV_att [Yaw] : " + format_float_two_decimal(ugv_state.yaw * 180 / M_PI) + " [deg] ");
 
     // cout << GREEN << "control_mode : " << ugv_state.control_mode << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "control_mode : " + format_float_two_decimal(ugv_state.control_mode));
+    Logger::print_color(int(LogColor::green), "control_mode : " + std::string(controlModeToString(ugv_state.control_mode)));
     // cout << GREEN << "pos_setpoint : " << ugv_state.pos_setpoint[0] << " [ m ] " << ugv_state.pos_setpoint[1] << " [ m ] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "pos_setpoint : " + format_float_two_decimal(ugv_state.pos_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.pos_setpoint[1]) + " [ m ]");
     // cout << GREEN << "vel_setpoint : " << ugv_state.vel_setpoint[0] << " [ m ] " << ugv_state.vel_setpoint[1] << " [ m ] " << TAIL << endl;

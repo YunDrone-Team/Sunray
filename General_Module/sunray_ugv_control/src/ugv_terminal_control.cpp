@@ -19,6 +19,13 @@ ros::Publisher command_pub;
 float state_desired[3];
 string ugv_prefix = "ugv" + std::to_string(ugv_id);
 string topic_prefix = "/" + ugv_prefix;
+
+std::string format_float_two_decimal(float value)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(2) << value;
+    return oss.str();
+}
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>主 函 数<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 int main(int argc, char **argv)
 {  
@@ -68,7 +75,7 @@ int main(int argc, char **argv)
             ugv_control_cmd.desired_vel[1] = state_desired[1];
             ugv_control_cmd.angular_vel = state_desired[2] / 180.0 * M_PI;
             command_pub.publish(ugv_control_cmd);
-            Logger::print_color(int(LogColor::blue), "state_desired [linear angular] : " + std::to_string(state_desired[0]) + " [m/s] " + std::to_string(state_desired[1]) + " [m/s] " + std::to_string(state_desired[2]) + " [deg/s] ");
+            Logger::print_color(int(LogColor::blue), "state_desired [linear angular] : " + format_float_two_decimal(state_desired[0]) + " [m/s] " + format_float_two_decimal(state_desired[1]) + " [m/s] " + format_float_two_decimal(state_desired[2]) + " [deg/s] ");
         }
         else if (start_flag == 2)
         {
@@ -85,7 +92,7 @@ int main(int argc, char **argv)
             ugv_control_cmd.desired_pos[1] = state_desired[1];
             ugv_control_cmd.desired_yaw = state_desired[2] / 180.0 * M_PI;
             command_pub.publish(ugv_control_cmd);
-            Logger::print_color(int(LogColor::blue), "state_desired[position] : " + std::to_string(state_desired[0]) + " [m] " + std::to_string(state_desired[1]) + " [m] " + std::to_string(state_desired[2]) + " [deg] ");
+            Logger::print_color(int(LogColor::blue), "state_desired[position] : " + format_float_two_decimal(state_desired[0]) + " [m] " + format_float_two_decimal(state_desired[1]) + " [m] " + format_float_two_decimal(state_desired[2]) + " [deg] ");
         }
         else if (start_flag == 3)
         {
@@ -102,7 +109,7 @@ int main(int argc, char **argv)
             ugv_control_cmd.desired_pos[1] = state_desired[1];
             // ugv_control_cmd.desired_yaw = state_desired[2]/180.0*M_PI;
             command_pub.publish(ugv_control_cmd);
-            Logger::print_color(int(LogColor::blue), "state_desired[velolity] : " + std::to_string(state_desired[0]) + " [m/s] " + std::to_string(state_desired[1]) + " [m/s] ");
+            Logger::print_color(int(LogColor::blue), "state_desired[velolity] : " + format_float_two_decimal(state_desired[0]) + " [m/s] " + format_float_two_decimal(state_desired[1]) + " [m/s] ");
         }
         // else if (start_flag == 5)
         // {
@@ -138,9 +145,9 @@ int main(int argc, char **argv)
             ugv_control_cmd.angular_vel = state_desired[2] / 180.0 * M_PI;
             command_pub.publish(ugv_control_cmd);
             cout << "state_desired [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << endl;
-            Logger::print_color(int(LogColor::blue), "state_desired[X Y] : " + std::to_string(state_desired[0]) + " [m/s] " + std::to_string(state_desired[1]) + " [m/s] ");
+            Logger::print_color(int(LogColor::blue), "state_desired[X Y] : " + format_float_two_decimal(state_desired[0]) + " [m/s] " + format_float_two_decimal(state_desired[1]) + " [m/s] ");
             cout << "state_desired [YAW] : " << state_desired[2] << " [ deg/s ] " << endl;
-            Logger::print_color(int(LogColor::blue), "state_desired[YAW] : " + std::to_string(state_desired[2]) + " [deg/s] ");
+            Logger::print_color(int(LogColor::blue), "state_desired[YAW] : " + format_float_two_decimal(state_desired[2]) + " [deg/s] ");
         }
         else if (start_flag == 5)
         {
@@ -153,7 +160,7 @@ int main(int argc, char **argv)
             ugv_control_cmd.desired_pos[0] = state_desired[0];
             ugv_control_cmd.desired_pos[1] = state_desired[1];
             command_pub.publish(ugv_control_cmd);
-            Logger::print_color(int(LogColor::blue), "state_desired[X Y] : " + std::to_string(state_desired[0]) + " [m] " + std::to_string(state_desired[1]) + " [m] ");
+            Logger::print_color(int(LogColor::blue), "state_desired[X Y] : " + format_float_two_decimal(state_desired[0]) + " [m] " + format_float_two_decimal(state_desired[1]) + " [m] ");
         }
         else
         {
