@@ -3,6 +3,11 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 #include "ros_msg_utils.h"
+#include "printf_utils.h"
+#include <printf_format.h>
+
+using namespace sunray_logger;
+string node_name;
 
 struct CmdValue
 {
@@ -36,12 +41,12 @@ public:
         // 发布控制到sunray
         if (Vehicle_type == 0)
         {
-            std::cout<<"------------------------uav------------"<<std::endl;
+            std::cout << "------------------------uav------------" << std::endl;
             cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(control_pub_topic, 1);
         }
         else if (Vehicle_type == 1)
         {
-            std::cout<<"------------------------ugv------------"<<std::endl;
+            std::cout << "------------------------ugv------------" << std::endl;
             cmd_pub = nh.advertise<sunray_msgs::UGVControlCMD>(control_pub_topic, 1);
         }
     }
@@ -69,28 +74,32 @@ public:
 
             if (msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
             {
-                uav_cmd.cmd = 4;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
+                Logger::print_color(int(LogColor::green), node_name, ": Enter XyzPosYaw Mode Successfully");
             }
             else
             {
                 // XyzPosYaw
                 if (control_type == 0)
                 {
-                    uav_cmd.cmd = 4;
+                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
+                    Logger::print_color(int(LogColor::green), node_name, ": Enter XyzPosYaw Mode Successfully");
                 }
                 // XyzVelYaw
                 else if (control_type == 1)
                 {
-                    uav_cmd.cmd = 6;
+                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYaw;
+                    Logger::print_color(int(LogColor::green), node_name, ": Enter XyzVelYaw Mode Successfully");
                 }
                 // XyzPosVelYaw
                 else if (control_type == 2)
                 {
-                    uav_cmd.cmd = 10;
+                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
+                    Logger::print_color(int(LogColor::green), node_name, ": Enter XyzPosVelYaw Mode Successfully");
                 }
                 else
                 {
-                    std::cout << "control_type error!" << std::endl;
+                    Logger::print_color(int(LogColor::red), node_name, "control_type error!");
                     return;
                 }
                 uav_cmd.desired_pos[0] = cmd_value.x;
@@ -104,7 +113,7 @@ public:
                 uav_cmd.desired_acc[2] = cmd_value.az;
                 uav_cmd.desired_yaw = cmd_value.yaw;
             }
-            if (last_uav_cmd.cmd == 4 && uav_cmd.cmd == 4)
+            if (last_uav_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYaw && uav_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYaw)
             {
                 last_uav_cmd = uav_cmd;
                 return;
@@ -122,16 +131,18 @@ public:
             // XyPosYaw
             if (control_type == 0)
             {
-                ugv_cmd.cmd = 7;
+                ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
+                Logger::print_color(int(LogColor::green), node_name, ": Enter POS_CONTROL_ENU Mode Successfully");
             }
             // XyVelYaw
             else if (control_type == 1)
             {
-                ugv_cmd.cmd = 4;
+                ugv_cmd.cmd = sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY;
+                Logger::print_color(int(LogColor::green), node_name, ": Enter VEL_CONTROL_BODY Mode Successfully");
             }
             else
             {
-                std::cout << "control_type error!" << std::endl;
+                Logger::print_color(int(LogColor::red), node_name, "control_type error!");
                 return;
             }
             ugv_cmd.desired_pos[0] = cmd_value.x;
@@ -140,6 +151,17 @@ public:
             ugv_cmd.desired_vel[1] = cmd_value.vy;
             ugv_cmd.desired_yaw = cmd_value.yaw;
             cmd_pub.publish(ugv_cmd);
+            if (last_ugv_cmd.cmd == sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY && ugv_cmd.cmd == sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY)
+            {
+                last_ugv_cmd = ugv_cmd;
+                return;
+            }
+            else
+            {
+                cmd_pub.publish(ugv_cmd);
+            }
+            // cmd_value_last = cmd_value;
+            last_ugv_cmd = ugv_cmd;
         }
     }
 
@@ -159,7 +181,6 @@ private:
     std::string uav_name;
     std::string cmd_sub_topic;
     std::string control_pub_topic;
-    
 
     CmdValue cmd_value;
     CmdValue cmd_value_last;
@@ -171,6 +192,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
     positionCmd2sunray cmd2sunray(nh);
     ros::Rate loop_rate(20);
+    node_name = ros::this_node::getName();
+
     while (ros::ok())
     {
         ros::spinOnce();
