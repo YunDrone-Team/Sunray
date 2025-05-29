@@ -70,7 +70,7 @@ private:
     string tcp_ip;
     string udp_ip;
     pid_t demoPID = -1;
-    bool HeartbeatState; // 心跳包状态
+    bool station_connected; // 心跳包状态
     sunray_msgs::UAVSetup setup;
     sunray_msgs::UAVState uav_state;
     sunray_msgs::UAVControlCMD uav_cmd;

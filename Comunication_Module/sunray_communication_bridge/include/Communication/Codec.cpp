@@ -1072,7 +1072,8 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
     switch (messageID)
     {
     case MessageID::HeartbeatMessageID://心跳包编码感觉不应该用这个编码
-        //TCP帧头 0xac43
+
+        // 帧头(HEAD) 0xac43    
         coderData.push_back(0xac);
         coderData.push_back(0x43);
 
@@ -1081,6 +1082,8 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
         safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
 
         dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+
+        // 消息长度（LENGTH）
         for (int i = 0; i < (int)sizeof(uint32_t); ++i)
             coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
         //std::cout << "心跳包数据里的消息长度 "<<dataFrameSize<<std::endl;
@@ -1095,15 +1098,17 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
 //        }
 //        std::cout << std::endl; // 输出换行符以结束输出行
 
-
+        // 消息序号（SEQ）
         coderData.push_back(getTCPMessageNum());//获取TCP消息序号
+        // 机器人ID（ROBOT_ID）
         coderData.push_back(static_cast<uint8_t>(codelessData.heartbeat.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
+        // 数据帧（PAYLOAD）
         coderData.insert(coderData.end(), tempData.begin(), tempData.end());
 
         checksum=getChecksum(coderData);//获取校验值
 
         // 将uint16_t的高位字节直接转换为uint8_t并存储到vector中
+        // 校验和（CHECK）
         coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
         // 将uint16_t的低位字节直接转换为uint8_t并存储到vector中
         coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
@@ -1124,8 +1129,8 @@ std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
 
         /*编码状态数据帧*/
         coderStateDataFrame(tempData,codelessData.state);
-
         safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        
         dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
         for (int i = 0; i < (int)sizeof(uint32_t); ++i)
             coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
