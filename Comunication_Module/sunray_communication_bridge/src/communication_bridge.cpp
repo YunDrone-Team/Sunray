@@ -129,7 +129,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     tcpServer.Listen(30);
     // 【TCP服务器】 TCP通信：接收TCP消息的回调函数 - 包括：地面站传过来的各种指令
     tcpServer.sigTCPServerReadData.connect(boost::bind(&communication_bridge::TCPServerCallBack, this, _1));
-    // 【TCP服务器】 TCP服务器状态信号连接回调函数
+    // 【TCP服务器】 TCP服务器状态信号连接回调函数(地面站连接状态变化时触发) - 包括：地面站连接、断开连接
     tcpServer.sigLinkState.connect(boost::bind(&communication_bridge::TCPLinkState, this, _1, _2));
     // 【TCP服务器】 TCP服务器启动
     tcpServer.setRunState(true);
@@ -145,23 +145,25 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // 【UDP通信】 UDP通信启动
     udpSocket->setRunState(true);
 
-    // 【心跳包】 默认心跳包关闭
-    HeartbeatState = false;
+    // 变量 - 是否与地面站建立连接
+    station_connected = false;
 }
 
 void communication_bridge::TCPLinkState(bool state, std::string IP)
 {
     std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
+
+    // 地面站连接后，则开启心跳包；地面站断开后，则关闭心跳包
     if (state)
     {
         GSIPHash.insert(IP);
-        HeartbeatState = true;
+        station_connected = true;
     }
     else
     {
         GSIPHash.erase(IP);
         if (GSIPHash.empty())
-            HeartbeatState = false;
+            station_connected = false;
     }
 }
 
@@ -814,26 +816,32 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(int msgID,unionD
     tempVec.clear();
 }
 
-
+// 定时发送心跳包（TCP）
 void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
 {
-
-    if (HeartbeatState)
+    // 如果没有与地面站连接，则不发送心跳包
+    if(!station_connected)
     {
-        unionData Heartbeatdata;
-        for (int i = uav_id; i < uav_simulation_num + uav_id; i++)
-        {
-            Heartbeatdata.heartbeat.robotID = i;
-            Heartbeatdata.heartbeat.agentType = UAVType;
-            tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
-        }
+        return;
+    }
 
-        for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
-        {
-            Heartbeatdata.heartbeat.robotID = i;
-            Heartbeatdata.heartbeat.agentType = UGVType;
-            tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
-        }
+    // 心跳包数据结构
+    unionData Heartbeatdata;
+
+    // 无人机心跳包 - 仿真和真机均发送
+    for (int i = uav_id; i < uav_simulation_num + uav_id; i++)
+    {
+        Heartbeatdata.heartbeat.robotID = i;
+        Heartbeatdata.heartbeat.agentType = UAVType;
+        tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
+    }
+
+    // 无人机心跳包 - 仿真和真机均发送
+    for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
+    {
+        Heartbeatdata.heartbeat.robotID = i;
+        Heartbeatdata.heartbeat.agentType = UGVType;
+        tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
     }
 }
 

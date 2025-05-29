@@ -7,7 +7,7 @@
 #include <string>
 
 
-//
+// 控制命令宏定义 - 同 UAVControlCMD.msg 中的控制命令枚举
 enum ControlType
 {
     XyzPos                      =1,           //XYZ位置 不带偏航角
@@ -220,6 +220,7 @@ struct ControlData
     uint8_t robotID;    /**< @param robot_id robot ID */
     uint8_t msgType;
     uint64_t timestamp; /**< @param time_stamp timestamp */
+    
     uint8_t controlMode;        /**< @param type control type */
     SpaceCoordinates position;      // [m]
     SpaceCoordinates velocity;      // [m/s]
