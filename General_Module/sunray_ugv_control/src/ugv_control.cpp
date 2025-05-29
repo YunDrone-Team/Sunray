@@ -527,6 +527,14 @@ const char* controlModeToString(uint8_t mode) {
         default: return "Unknown";
     }
 }
+const char* Location_sourceToString(uint8_t source) {
+    switch(source) {
+        case 1: return "Mocap";
+        case 2: return "odom";
+        case 3: return "vibot";
+        default: return "Unknown";
+    }
+}
 
 // 定时器回调函数：定时打印
 void UGV_CONTROL::show_ctrl_state()
@@ -563,7 +571,7 @@ void UGV_CONTROL::show_ctrl_state()
     // cout << GREEN << "connected : " << ugv_state.connected << TAIL << endl;
     Logger::print_color(int(LogColor::green), "connected : " + std::string(ugv_state.connected ? "true" : "false"));
     // cout << GREEN << "location_source : " << ugv_state.location_source << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "location_source : " + format_float_two_decimal(ugv_state.location_source));
+    Logger::print_color(int(LogColor::green), "location_source : " + std::string(Location_sourceToString(location_source)));
     // cout << GREEN << "odom_valid : " << ugv_state.odom_valid << TAIL << endl;
     Logger::print_color(int(LogColor::green), "odom_valid : " + std::string(ugv_state.odom_valid ? "true" : "false"));
 

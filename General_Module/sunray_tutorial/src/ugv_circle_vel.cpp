@@ -11,6 +11,8 @@ private:
     int ugv_id;
     double linear_speed;
     double circle_radius;
+    double circle_center_x;  // 新增圆心x坐标
+    double circle_center_y;  // 新增圆心y坐标
     double angular_vel;
     ros::Time start_time;
     bool motion_completed;
@@ -18,10 +20,13 @@ private:
     double stop_tolerance;
 
 public:
-    CircularStopDemo() : linear_speed(0.5), circle_radius(2.0), motion_completed(false), stop_tolerance(0.2) {
+    CircularStopDemo() : linear_speed(0.5), circle_radius(2.0), circle_center_x(0.0), circle_center_y(0.0), motion_completed(false), stop_tolerance(0.2) {
         nh.param<int>("ugv_id", ugv_id, 1);
         nh.param<double>("linear_speed", linear_speed, 0.5);
         nh.param<double>("circle_radius", circle_radius, 2.0);
+        // 新增圆心坐标参数获取
+        nh.param<double>("circle_center_x", circle_center_x, 0.0);
+        nh.param<double>("circle_center_y", circle_center_y, 0.0);
         
         angular_vel = linear_speed / circle_radius;
         
@@ -44,26 +49,40 @@ public:
         double total_time = 4 * M_PI / angular_vel;
 
         if(t < total_time) {
-            // 圆周运动
+            // 圆周运动 - 修改为基于圆心计算速度
             ugv_cmd.cmd = sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU;
-            ugv_cmd.desired_vel[0] = -linear_speed * sin(angular_vel * t);
-            ugv_cmd.desired_vel[1] = linear_speed * cos(angular_vel * t);
+            
+            // 计算相对于圆心的位置
+            double dx = current_state.position[0] - circle_center_x;
+            double dy = current_state.position[1] - circle_center_y;
+            double dist = std::sqrt(dx*dx + dy*dy);
+            
+            // 避免除零错误
+            if(dist < 1e-3) {
+                // 如果正好在圆心，给定初始速度
+                ugv_cmd.desired_vel[0] = linear_speed;
+                ugv_cmd.desired_vel[1] = 0.0;
+            } else {
+                // 计算切向速度（垂直于半径方向）
+                ugv_cmd.desired_vel[0] = -linear_speed * (dy / dist);
+                ugv_cmd.desired_vel[1] = linear_speed * (dx / dist);
+            }
             ugv_cmd.desired_yaw = 0.0;
         } else {
-            // 切换到位置控制模式并发送原点作为目标点
+            // 切换到位置控制模式并发送圆心作为目标点
             ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
-            ugv_cmd.desired_pos[0] = 0.0;
-            ugv_cmd.desired_pos[1] = 0.0;
+            ugv_cmd.desired_pos[0] = circle_center_x;  // 目标位置设为圆心x
+            ugv_cmd.desired_pos[1] = circle_center_y;  // 目标位置设为圆心y
             ugv_cmd.desired_yaw = 0.0;
             
-            // 检查是否到达原点
-            double dx = current_state.position[0];
-            double dy = current_state.position[1];
-            if(sqrt(dx*dx + dy*dy) < stop_tolerance) {
+            // 检查是否到达圆心
+            double dx = current_state.position[0] - circle_center_x;
+            double dy = current_state.position[1] - circle_center_y;
+            if(std::sqrt(dx*dx + dy*dy) < stop_tolerance) {
                 ugv_cmd.desired_vel[0] = 0.0;
                 ugv_cmd.desired_vel[1] = 0.0;
                 motion_completed = true;
-                ROS_INFO("Reached origin. Stopping...");
+                ROS_INFO("Reached circle center. Stopping...");
             }
         }
 

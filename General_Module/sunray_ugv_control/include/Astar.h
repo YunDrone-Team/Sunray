@@ -344,7 +344,7 @@ void Astar::a_star_search()
     }
     // 添加路径失败判断
     if (came_from.find(goal) == came_from.end()) {
-        std::cout << "Path planning failed: No path exists from start to goal." << std::endl;
+        // std::cout << "Path planning failed: No path exists from start to goal." << std::endl;s
         Logger::print_color(int(LogColor::white), "Path planning failed: No path exists from start to goal.");
         path_found = false;
     } else {
