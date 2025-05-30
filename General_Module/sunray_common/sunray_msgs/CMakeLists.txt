@@ -31,6 +31,8 @@ add_message_files(
   ViobotState.msg
   PositionCommand.msg
   OrcaCmd.msg
+  OrcaSetup.msg
+  Formation.msg
   TargetMsg.msg
   TargetsInFrameMsg.msg
   UGVControlCMD.msg

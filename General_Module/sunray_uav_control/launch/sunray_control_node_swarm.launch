@@ -63,5 +63,6 @@
     <!-- Recursively generate UAV nodes -->
     <include file="$(find sunray_uav_control)/launch/sunray_control_node_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">
         <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
+        <arg name="uav_num" value="$(arg uav_num)" />
     </include>
 </launch>

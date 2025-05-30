@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "orca_node");
     ros::NodeHandle nh("~");
-    ros::Rate rate(30.0);
+    ros::Rate rate(20.0);
 
     signal(SIGINT, mySigintHandler);
     ros::Duration(1.0).sleep();
@@ -39,6 +39,7 @@ int main(int argc, char **argv)
         sleep(2.0);
     }
 
+    ros::Time start_time = ros::Time::now();
     // 主循环
     while (ros::ok())
     {
@@ -46,6 +47,14 @@ int main(int argc, char **argv)
         ros::spinOnce();
         // 主循环函数
         arrived_all_goals = orca.orca_run();
+        if(ros::Time::now() - start_time > ros::Duration(2.0))
+        {
+            if(orca.goal_reached_printed && ros::ok())
+            {
+                cout << YELLOW << "ORCA wait for goal! " << TAIL << endl;
+            }
+            start_time = ros::Time::now();
+        }
         // sleep
         rate.sleep();
     }

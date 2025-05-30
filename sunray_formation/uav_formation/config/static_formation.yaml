@@ -1,0 +1,151 @@
+uav_num: 6
+
+formations:
+# 三角阵型
+  - name: triangle
+    uav_pos:
+      uav_1_x: 1.0
+      uav_1_y: 0.0
+      uav_1_z: 1
+      uav_2_x: 0.0
+      uav_2_y: 1.0
+      uav_2_z: 1
+      uav_3_x: 0.0
+      uav_3_y: -1.0
+      uav_3_z: 1
+      uav_4_x: -1.0
+      uav_4_y: 2.0
+      uav_4_z: 1
+      uav_5_x: -1.0
+      uav_5_y: -2.0
+      uav_5_z: 1
+      uav_6_x: -1.0
+      uav_6_y: 0.0
+      uav_6_z: 1
+
+# 倒三角阵型
+  - name: triangle_reverse
+    uav_pos:
+      uav_1_x: -1.0
+      uav_1_y: 0.0
+      uav_1_z: 1
+      uav_2_x: 0.0
+      uav_2_y: 1.0
+      uav_2_z: 1
+      uav_3_x: 0.0
+      uav_3_y: -1.0
+      uav_3_z: 1
+      uav_4_x: 1.0
+      uav_4_y: 2.0
+      uav_4_z: 1
+      uav_5_x: 1.0
+      uav_5_y: -2.0
+      uav_5_z: 1
+      uav_6_x: 1.0
+      uav_6_y: 0.0
+      uav_6_z: 1
+
+# 一字阵型 横向
+  - name: line_horizontal
+    uav_pos:
+      uav_1_x: 0.0
+      uav_1_y: -2.0
+      uav_1_z: 1.0
+      uav_2_x: 0.0
+      uav_2_y: -1.2
+      uav_2_z: 1
+      uav_3_x: 0.0
+      uav_3_y: -0.4
+      uav_3_z: 1
+      uav_4_x: 0.0
+      uav_4_y: 0.4
+      uav_4_z: 1
+      uav_5_x: 0.0
+      uav_5_y: 1.2
+      uav_5_z: 1
+      uav_6_x: 0.0
+      uav_6_y: 2.0
+      uav_6_z: 1
+
+# 一字阵型 纵向
+  - name: line_vertical
+    uav_pos:
+      uav_1_x: 2.0
+      uav_1_y: 0.0
+      uav_1_z: 1.0
+      uav_2_x: 1.2
+      uav_2_y: 0.0
+      uav_2_z: 1
+      uav_3_x: 0.4
+      uav_3_y: 0.0
+      uav_3_z: 1
+      uav_4_x: -0.4
+      uav_4_y: 0.0
+      uav_4_z: 1
+      uav_5_x: -1.2
+      uav_5_y: 0.0
+      uav_5_z: 1
+      uav_6_x: -2.0
+      uav_6_y: 0.0
+      uav_6_z: 1
+
+# 一字阵型 横向 依次高低顺序
+#   - name: line_horizontal_high_low
+#     uav_pos:
+#       uav_1_x: 0.0
+#       uav_1_y: 0.0
+#       uav_1_z: 1.0
+#       uav_2_x: 0.0
+#       uav_2_y: 1.0
+#       uav_2_z: 0.6
+#       uav_3_x: 0.0
+#       uav_3_y: -1.0
+#       uav_3_z: 1.4
+
+# # 一字阵型 纵向 依次高低顺序
+#   - name: line_horizontal_low_high
+#     uav_pos:
+#       uav_1_x: 0.0
+#       uav_1_y: 0.0
+#       uav_1_z: 1.0
+#       uav_2_x: 0.0
+#       uav_2_y: 1.0
+#       uav_2_z: 1.4
+#       uav_3_x: 0.0
+#       uav_3_y: -1.0
+#       uav_3_z: 0.6
+
+# # 一字阵型 横向 依次高低顺序 交换位置
+#   - name: line_horizontal_high_low_reverse
+#     uav_pos:
+#       uav_1_x: 0.0
+#       uav_1_y: 0.0
+#       uav_1_z: 1.0
+#       uav_2_x: 0.0
+#       uav_2_y: -1.0
+#       uav_2_z: 0.6
+#       uav_3_x: 0.0
+#       uav_3_y: 1.0
+#       uav_3_z: 1.4
+
+# # 垂直倒三角
+#   - name: triangle_reverse_vertical
+#     uav_pos:
+#       uav_1_x: 0.0
+#       uav_1_y: 0.0
+#       uav_1_z: 0.5
+#       uav_2_x: 0.0
+#       uav_2_y: 1.0
+#       uav_2_z: 1.5
+#       uav_3_x: 0.0
+#       uav_3_y: -1.0
+#       uav_3_z: 1.5
+
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'triangle'" -1 
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'triangle_reverse'" -1
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'line_horizontal'" -1 
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'line_vertical'" -1
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'line_horizontal_high_low'" -1
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'line_horizontal_low_high'" -1
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'line_horizontal_high_low_reverse'" -1
+# rostopic pub /sunray/formation_cmd std_msgs/String "data: 'triangle_reverse_vertical'" -1

@@ -3,7 +3,7 @@
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="2" />
     <arg name="uav_name" default="uav" />
-    <arg name="enable_rviz" default="true" />
+    <arg name="enable_rviz" default="false" />
     <arg name="server" default="192.168.25.13"/>
     <arg name="uav_num" default="3" />
 

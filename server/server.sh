@@ -72,8 +72,6 @@ start_ground_station() {
 
 # 启动mavros节点
 start_mavros_station() {
-    echo "12345"
-    echo "gcs ip: $IP"
     gnome-terminal --title="sunray_mavros" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
     source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${UAV_ID} ip:=${IP}; exec bash"
 }
