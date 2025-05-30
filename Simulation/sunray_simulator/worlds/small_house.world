@@ -1512,6 +1512,7 @@
       <pose>4.29798 -5.17357 0 0 -0 0</pose>
     </model>
     <model name='SofaC_01_001'>
+      <static>1</static>
       <frame name='aws_robomaker_residential_SofaC_01::__model__' attached_to='aws_robomaker_residential_SofaC_01::link'>
         <pose relative_to='__model__'>0 0 0 0 -0 0</pose>
       </frame>

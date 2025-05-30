@@ -22,20 +22,17 @@ public:
     // 主循环函数
     bool orca_run();
     bool start_flag{false};
+    // 增加达到目标点打印
+    bool goal_reached_printed;
 
 private:
-    int uav_id;
-    string uav_name;
-    int agent_type;
+    int agent_id;
+    string agent_name;
     string node_name; // 节点名称
     string agent_prefix;
-    int uav_num;
-    int height_type; // 其他:固定高度，1:指定高度
-    float agent_height;
+    int agent_num;
+    int orca_state;
     RVO::RVOSimulator *sim = new RVO::RVOSimulator();
-
-    // 增加达到目标点打印
-    std::vector<bool> goal_reached_printed;
 
     // ORCA算法参数
     struct orca_param
@@ -50,25 +47,24 @@ private:
     };
     orca_param orca_params;
 
-    std::map<int, sunray_msgs::UAVState> uav_state;
-    std::map<int, geometry_msgs::PoseStamped> goals;
-    sunray_msgs::UAVControlCMD uav_control_cmd;
-    std::map<int, bool> arrived_goal; // 是否到达目标点
+    bool arrived_goal; // 是否到达目标点
+    float goal_pos[3];
+    float goal_yaw;
+    sunray_msgs::OrcaCmd OrcaCmd;
+    sunray_msgs::UAVControlCMD agent_control_cmd;
+    std::map<int, geometry_msgs::PoseStamped> agent_state;
+    std::map<int, ros::Subscriber> agent_state_sub;
+    std::map<int, ros::Subscriber> cmd_sub;
 
-    // 订阅话题
-    std::map<int, ros::Subscriber> uav_state_sub;
-    std::map<int, ros::Subscriber> goals_sub;
-
-    // 发布话题
-    ros::Publisher control_cmd_pub;
-
+    ros::Publisher cmd_pub;  // 发布话题
+    ros::Publisher goal_pub;  // 发布话题
     ros::Timer debug_timer;
+
     void debugCb(const ros::TimerEvent &e);
-    void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int i);
-    void goal_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int i);
+    void agent_state_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int i);
     void setup_obstacles();
     void setup_agents();
-    void setup_goals(int index);
+    void setup_cb(const sunray_msgs::OrcaSetup::ConstPtr &msg, int i);
     bool reachedGoal(int i);
     void printf_param();
 };

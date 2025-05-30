@@ -49,7 +49,7 @@ uint8 Return = 104              # 特殊指令：返航
 float32[3] desired_pos          ## 期望位置，单位：[m]
 float32[3] desired_vel          ## 期望速度，单位：[m/s]
 float32[3] desired_acc          ## 期望加速度，单位：[m/s^2]
-float32[3] desired_jerk         ## 期望加速度，单位：[m/s^2]
+float32[3] desired_jerk         ## 期望加加速度，单位：[m/s^2]
 float32[3] desired_att          ## 期望姿态，单位：[rad]
 float32 desired_thrust          ## 期望推力，[0-1]
 float32 desired_yaw             ## 期望偏航角，单位：[rad]

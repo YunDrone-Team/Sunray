@@ -1,6 +1,5 @@
 #include "uav_formation.h"
 
-// sudo apt-get install libyaml-cpp-dev
 int main(int argc, char** argv)
 {
 
@@ -14,7 +13,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "uav_formation_node");
     ros::NodeHandle nh("~");
 
-    UAVFormation uav_formation;
+    SunrayFormation uav_formation;
     uav_formation.init(nh);
     ros::spin();
 

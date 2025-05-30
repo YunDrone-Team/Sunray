@@ -114,6 +114,8 @@ namespace gazebo
 
             robot_namespace = "/" + scoped_name.substr(0, it) + "/";
             ROS_WARN_STREAM("missing <robotNamespace>, set to default: " << robot_namespace);
+            frameName = scoped_name.substr(0, it) + "/" + frameName;
+            ROS_INFO_STREAM("ros frame id: " << frameName);
         }
 
         raySensor = _parent;

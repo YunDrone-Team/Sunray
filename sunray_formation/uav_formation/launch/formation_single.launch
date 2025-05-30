@@ -1,6 +1,5 @@
 <launch>
-    <arg name="enable_rviz" default="true" />
-    <node name="uav_formation_node_1" pkg="sunray_formation" type="uav_formation_node" output="screen">
+    <!-- <node name="uav_formation_node_1" pkg="sunray_formation" type="uav_formation_node" output="screen">
         <param name="agent_id" type="int" value="1" />
         <param name="agent_name" type="string" value="uav" />
         <param name="agent_num" type="int" value="6" />
@@ -20,14 +19,15 @@
         <param name="agent_name" type="string" value="uav" />
         <param name="agent_num" type="int" value="6" />
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml" />
-    </node>
+    </node> -->
 
-    <node name="uav_formation_node_4" pkg="sunray_formation" type="uav_formation_node" output="screen">
+    <!-- <node name="uav_formation_node_4" pkg="sunray_formation" type="uav_formation_node" output="screen">
         <param name="agent_id" type="int" value="4" />
         <param name="agent_name" type="string" value="uav" />
         <param name="agent_num" type="int" value="6" />
+        <param name="agent_type" type="int" value="0" />
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml" />
-    </node>
+    </node> -->
 
     <node name="uav_formation_node_5" pkg="sunray_formation" type="uav_formation_node" output="screen">
         <param name="agent_id" type="int" value="5" />
@@ -36,15 +36,10 @@
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml" />
     </node>
 
-    <node name="uav_formation_node_6" pkg="sunray_formation" type="uav_formation_node" output="screen">
+    <!-- <node name="uav_formation_node_6" pkg="sunray_formation" type="uav_formation_node" output="screen">
         <param name="agent_id" type="int" value="6" />
         <param name="agent_name" type="string" value="uav" />
         <param name="agent_num" type="int" value="6" />
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml" />
-    </node>
-
-    <group if="$(arg enable_rviz)">
-        <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/formation.rviz"/>
-        <node type="rviz" name="rviz_external_fusion" pkg="rviz" args="-d $(arg rivz_config)"/>
-    </group>
+    </node> -->
 </launch>
