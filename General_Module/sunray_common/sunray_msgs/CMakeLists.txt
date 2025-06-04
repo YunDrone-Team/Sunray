@@ -37,6 +37,8 @@ add_message_files(
   TargetsInFrameMsg.msg
   UGVControlCMD.msg
   UGVState.msg
+  LinktrackNode2.msg
+  LinktrackNodeframe2.msg
 )
 
 generate_messages(

@@ -48,12 +48,13 @@ public:
         // 计算已运行时间
         double elapsed_time = (ros::Time::now() - start_time).toSec();
 
-        if (elapsed_time < target_duration)
+        if (elapsed_time < target_duration + 0.5)
         {
             // 持续发送车体系控制指令
             ugv_cmd.desired_vel[0] = linear_speed; // 车体X方向速度
             ugv_cmd.desired_vel[1] = 0.0;          // 车体Y方向速度
-            ugv_cmd.angular_vel = angular_vel;     // 车体Z轴角速度
+            ugv_cmd.angular_vel = angular_vel;
+            cmd_pub.publish(ugv_cmd);              // 车体Z轴角速度
         }
         else
         {
@@ -61,12 +62,16 @@ public:
             ugv_cmd.desired_vel[0] = 0.0;
             ugv_cmd.desired_vel[1] = 0.0;
             ugv_cmd.angular_vel = 0.0;
+            cmd_pub.publish(ugv_cmd);
             motion_completed = true;
+            ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
+            ugv_cmd.desired_pos[0] = 0.0;
+            ugv_cmd.desired_pos[1] = 0.0;
+            cmd_pub.publish(ugv_cmd);
             ROS_INFO("Motion completed. Shutting down...");
             ros::shutdown();
         }
 
-        cmd_pub.publish(ugv_cmd);
         ROS_INFO_THROTTLE(1.0, "Publishing body vel: [%.2f, %.2f] m/s | ang: %.2f rad/s",
                           ugv_cmd.desired_vel[0], ugv_cmd.desired_vel[1], ugv_cmd.angular_vel);
     }
