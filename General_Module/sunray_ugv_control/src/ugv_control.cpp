@@ -65,12 +65,17 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     goal_set = false;
 
     topic_prefix = "/ugv" + std::to_string(ugv_id);
-    // 根据 location_source 参数选择数据源
-    if (location_source == 1)
+
+    // 根据 location_source
+    if (location_source == 0)
+    {
+        nooploop_sub = nh.subscribe<sunray_msgs::LinktrackNodeframe2>("/nlink_linktrack_nodeframe2", 1, &UGV_CONTROL::nooploop_cb, this);
+    }
+    else if (location_source == 1)
     {
         // 【订阅】订阅动捕的数据(位置+速度) vrpn -> 本节点
-        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node" + topic_prefix + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
-        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node" + topic_prefix + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
+        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_1/ugv0/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
+        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_1/ugv0/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
         // cout << GREEN << "Pose source: Mocap" << TAIL << endl;
         Logger::print_color(int(LogColor::green), "Pose source: Mocap");
     }
@@ -164,7 +169,7 @@ void UGV_CONTROL::mainloop()
     // 定位数据丢失情况下，不执行控制指令并直接返回，直到动捕恢复
     if (!ugv_state.odom_valid)
     {
-        cout << YELLOW << "odom_valid: false" << TAIL << endl;
+        // cout << YELLOW << "odom_valid: false" << TAIL << endl;
         Logger::print_color(int(LogColor::yellow), "odom_valid: false");
         desired_vel.linear.x = 0.0;
         desired_vel.linear.y = 0.0;
@@ -515,24 +520,40 @@ std::string format_float_two_decimal(float value)
     return oss.str();
 }
 
-const char* controlModeToString(uint8_t mode) {
-    switch(mode) {
-        case 0: return "INIT";
-        case 1: return "HOLD";
-        case 2: return "POS_CONTROL_ENU";
-        case 3: return "VEL_CONTROL_ENU";
-        case 4: return "VEL_CONTROL_BODY";
-        case 5: return "Point_Control_with_Astar";
-        case 6: return "POS_VEL_CONTROL_ENU";
-        default: return "Unknown";
+const char *controlModeToString(uint8_t mode)
+{
+    switch (mode)
+    {
+    case 0:
+        return "INIT";
+    case 1:
+        return "HOLD";
+    case 2:
+        return "POS_CONTROL_ENU";
+    case 3:
+        return "VEL_CONTROL_ENU";
+    case 4:
+        return "VEL_CONTROL_BODY";
+    case 5:
+        return "Point_Control_with_Astar";
+    case 6:
+        return "POS_VEL_CONTROL_ENU";
+    default:
+        return "Unknown";
     }
 }
-const char* Location_sourceToString(uint8_t source) {
-    switch(source) {
-        case 1: return "Mocap";
-        case 2: return "odom";
-        case 3: return "vibot";
-        default: return "Unknown";
+const char *Location_sourceToString(uint8_t source)
+{
+    switch (source)
+    {
+    case 1:
+        return "Mocap";
+    case 2:
+        return "odom";
+    case 3:
+        return "vibot";
+    default:
+        return "Unknown";
     }
 }
 
@@ -658,6 +679,37 @@ void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
     }
 }
 
+// 回调函数：空循环
+void UGV_CONTROL::nooploop_cb(const sunray_msgs::LinktrackNodeframe2::ConstPtr &msg)
+{
+    get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
+    ugv_state.position[0] = msg->pos_3d[0];
+    ugv_state.position[1] = msg->pos_3d[1];
+
+    // 直接使用消息中的四元数数组
+    ugv_state.attitude_q.x = msg->quaternion[0];
+    ugv_state.attitude_q.y = msg->quaternion[1];
+    ugv_state.attitude_q.z = msg->quaternion[2];
+    ugv_state.attitude_q.w = msg->quaternion[3];
+
+    // 创建四元数对象（注意顺序：w,x,y,z）
+    Eigen::Quaterniond q_nooploop(
+        msg->quaternion[3], // w
+        msg->quaternion[0], // x
+        msg->quaternion[1], // y
+        msg->quaternion[2]  // z
+    );
+
+    Eigen::Vector3d ugv_att = quaternion_to_euler(q_nooploop);
+
+    ugv_state.attitude[0] = ugv_att.x();
+    ugv_state.attitude[1] = ugv_att.y();
+    ugv_state.attitude[2] = ugv_att.z();
+
+    ugv_state.yaw = 0;
+
+    ugv_state.odom_valid = true;
+}
 // 回调函数：动捕
 void UGV_CONTROL::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
