@@ -13,6 +13,8 @@
 #include "Astar.h"
 #include "map_generator.h"
 
+#include "sunray_msgs/LinktrackNodeframe2.h"
+
 using namespace std;
 using namespace sunray_logger;
 
@@ -91,6 +93,7 @@ private:
     geo_fence ugv_geo_fence;
 
     // 订阅话题
+    ros::Subscriber nooploop_sub;
     ros::Subscriber mocap_pos_sub;
     ros::Subscriber mocap_vel_sub;
     ros::Subscriber gazebo_odom_sub;
@@ -116,6 +119,7 @@ private:
     ros::Timer timer_update_map;
     ros::Timer timer_update_astar;
 
+    void nooploop_cb(const sunray_msgs::LinktrackNodeframe2::ConstPtr &msg);
     void mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);
     void mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg);
     void odom_cb(const nav_msgs::Odometry::ConstPtr &msg);

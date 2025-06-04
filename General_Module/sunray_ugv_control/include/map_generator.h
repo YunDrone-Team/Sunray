@@ -101,7 +101,7 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     std::string octomap_topic, occupancy_topic;
     nh.param<int>("ugv_id", ugv_id, 1);
     nh.param<int>("odom_type", odom_type, 2);
-    nh.param<int>("input_type", input_type, 0);
+    nh.param<int>("input_type", input_type, 1);
     nh.param<std::string>("odom_topic", odom_topic, "/car_odom");
     nh.param<std::string>("octomap_topic", octomap_topic, "/octomap_tree");
     nh.param<std::string>("occupancy_topic", occupancy_topic, "/occupancy_grid");
@@ -121,7 +121,7 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     // 三维雷达
     if (input_type == 1)
     {
-        nh.param<std::string>("laser_topic", laser_topic, "/ugv1/livox/lidar");
+        nh.param<std::string>("laser_topic", laser_topic, "/livox/lidar");
         mode_sub = nh.subscribe<sensor_msgs::PointCloud2>(laser_topic, 1, &MapGenerator::updateMapFromMid360Scan, this);
     }
     // 深度图（预留）
