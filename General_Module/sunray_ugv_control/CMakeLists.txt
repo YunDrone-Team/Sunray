@@ -22,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   pcl_ros
   sunray_msgs
+  nav_msgs
+  geometry_msgs
 )
 
 
@@ -31,6 +33,7 @@ catkin_package(
 #  LIBRARIES ugv_planning
 #  CATKIN_DEPENDS octomap roscpp rospy std_msgs
 #  DEPENDS system_lib
+CATKIN_DEPENDS rospy nav_msgs geometry_msgs
 )
 
 include_directories(
@@ -83,3 +86,9 @@ target_link_libraries(ugv_control_node
 #                         ${OCTOMAP_LIBRARIES}
 #                         ${PCL_LIBRARIES}
 #                         )                        
+
+## 安装Python脚本
+catkin_install_python(PROGRAMS
+  scripts/OccupancyGrid_pgm.py  # 脚本路径
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
