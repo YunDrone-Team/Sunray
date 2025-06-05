@@ -2,9 +2,8 @@
 
 Codec::Codec()
 {
-    UDPMessageNum=0;
-    TCPMessageNum=0;
-    UDPBroadcastMessageNum=0;
+
+
 }
 
 uint64_t Codec::getTimestamp()
@@ -95,42 +94,9 @@ void Codec::safeConvertToUint32(size_t originalSize, uint32_t& convertedSize)
         // 可以设置一个错误值，或者采取其他错误处理措施
         convertedSize = 0; // 示例：设置为0表示错误
     } else
-        convertedSize = static_cast<uint32_t>(originalSize);
+        convertedSize = static_cast<uint32_t>(originalSize+18);
 
 }
-
-uint8_t Codec::getUDPBroadcastMessageNum()
-{
-    if(UDPBroadcastMessageNum > 200)
-        UDPBroadcastMessageNum = 1;
-    else
-        UDPBroadcastMessageNum++;
-
-    return UDPBroadcastMessageNum;
-}
-
-
-uint8_t Codec::getUDPMessageNum()
-{
-    if(UDPMessageNum > 200)
-        UDPMessageNum = 1;
-    else
-        UDPMessageNum++;
-
-    return UDPMessageNum;
-}
-
-
-uint8_t Codec::getTCPMessageNum()
-{
-    if(TCPMessageNum > 200)
-        TCPMessageNum = 1;
-    else
-        TCPMessageNum++;
-
-    return TCPMessageNum;
-}
-
 
 uint16_t Codec::getChecksum(std::vector<uint8_t> data)
 {
@@ -146,1235 +112,877 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
     return lastTwoBytes;
 }
 
-void Codec::coderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateData& state)
+
+void Codec::decodernNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node)
 {
-    /*UGV状态数据帧封装*/
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::UGVStateMessageID));
-    state.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((state.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    //std::cout << "UGV状态数据发送的时间戳 "<<state.timestamp<<std::endl;
+    NodeData& data = node.data.nodeInformation;
+    data.init();
 
-    dataFrame.push_back(static_cast<uint8_t>(state.ugvID));
-    dataFrame.push_back(static_cast<uint8_t>(state.locationSource));
-    dataFrame.push_back(static_cast<uint8_t>(state.connected));
-    dataFrame.push_back(static_cast<uint8_t>(state.odom_valid));
+    // 读取nodeCount（2字节，小端序）
+    data.nodeCount = static_cast<uint16_t>(dataFrame[0]);
+    data.nodeCount |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
-    floatCopyToUint8tArray(dataFrame,state.position.x);
-    floatCopyToUint8tArray(dataFrame,state.position.y);
-    floatCopyToUint8tArray(dataFrame,state.velocity.x);
-    floatCopyToUint8tArray(dataFrame,state.velocity.y);
-    floatCopyToUint8tArray(dataFrame,state.yaw);
+    // 读取nodeID（2字节，小端序）
+    data.nodeID = static_cast<uint16_t>(dataFrame[0]);
+    data.nodeID |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
-    floatCopyToUint8tArray(dataFrame,state.posSetpoint.x);
-    floatCopyToUint8tArray(dataFrame,state.posSetpoint.y);
-    floatCopyToUint8tArray(dataFrame,state.velSetpoint.x);
-    floatCopyToUint8tArray(dataFrame,state.velSetpoint.y);
-    floatCopyToUint8tArray(dataFrame,state.yawSetpoint);
+    // 读取nodeSize（2字节，小端序）
+    data.nodeSize = static_cast<uint16_t>(dataFrame[0]);
+    data.nodeSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
-    floatCopyToUint8tArray(dataFrame,state.batteryState);
-    floatCopyToUint8tArray(dataFrame,state.batteryPercentage);
-
-    dataFrame.push_back(static_cast<uint8_t>(state.controlMode));
+    // 读取nodeStr
+    for (uint16_t j = 0; j < data.nodeSize; ++j)
+        data.nodeStr[j] = static_cast<char>(dataFrame[j]);
+    data.nodeStr[data.nodeSize] = '\0';  //添加终止符
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.nodeSize);
 }
 
-void Codec::coderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state)
+void Codec::decoderWaypointPayload(std::vector<uint8_t>& dataFrame,DataFrame& waypointData)
 {
-    /*状态数据帧封装*/
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::StateMessageID));
-    state.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((state.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    //std::cout << "状态数据发送的时间戳 "<<state.timestamp<<std::endl;
+    WaypointData& data = waypointData.data.waypointData;
+    data.init();
 
-    dataFrame.push_back(static_cast<uint8_t>(state.uavID));
-    dataFrame.push_back(static_cast<uint8_t>(state.connected));
-    dataFrame.push_back(static_cast<uint8_t>(state.armed));
-    dataFrame.push_back(static_cast<uint8_t>(state.mode));
-    dataFrame.push_back(static_cast<uint8_t>(state.locationSource));
-    dataFrame.push_back(static_cast<uint8_t>(state.odom_valid));
+    // 读取基础字段
+    data.wp_num = static_cast<uint8_t>(dataFrame[0]);
+    data.wp_type = static_cast<uint8_t>(dataFrame[1]);
+    data.wp_end_type = static_cast<uint8_t>(dataFrame[2]);
+    data.wp_takeoff = static_cast<bool>(dataFrame[3]);
+    data.wp_yaw_type = static_cast<uint8_t>(dataFrame[4]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 5);
 
-    floatCopyToUint8tArray(dataFrame,state.position.x);
-    floatCopyToUint8tArray(dataFrame,state.position.y);
-    floatCopyToUint8tArray(dataFrame,state.position.z);
+    // 读取浮点数参数
+    uint8tArrayToFloat(dataFrame, data.wp_move_vel);
+    uint8tArrayToFloat(dataFrame, data.wp_vel_p);
+    uint8tArrayToFloat(dataFrame, data.z_height);
 
-    floatCopyToUint8tArray(dataFrame,state.velocity.x);
-    floatCopyToUint8tArray(dataFrame,state.velocity.y);
-    floatCopyToUint8tArray(dataFrame,state.velocity.z);
+    // 读取10个航点数据，每个航点包含4个double
+    double* wpPoints[] = {
+        data.wp_point_1, data.wp_point_2, data.wp_point_3, data.wp_point_4,
+        data.wp_point_5, data.wp_point_6, data.wp_point_7, data.wp_point_8,
+        data.wp_point_9, data.wp_point_10
+    };
 
+    for (int wpIdx = 0; wpIdx < 10; ++wpIdx)
+    {
+        for (int i = 0; i < 4; ++i)
+            uint8tArrayToDouble(dataFrame, wpPoints[wpIdx][i]);
+    }
 
-    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.w);
-    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.x);
-    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.y);
-    floatCopyToUint8tArray(dataFrame,state.attitudeQuaternion.z);
-
-
-    floatCopyToUint8tArray(dataFrame,state.attitude.x);
-    floatCopyToUint8tArray(dataFrame,state.attitude.y);
-    floatCopyToUint8tArray(dataFrame,state.attitude.z);
-
-    floatCopyToUint8tArray(dataFrame,state.attitudeRate.x);
-    floatCopyToUint8tArray(dataFrame,state.attitudeRate.y);
-    floatCopyToUint8tArray(dataFrame,state.attitudeRate.z);
-
-    floatCopyToUint8tArray(dataFrame,state.posSetpoint.x);
-    floatCopyToUint8tArray(dataFrame,state.posSetpoint.y);
-    floatCopyToUint8tArray(dataFrame,state.posSetpoint.z);
-
-    floatCopyToUint8tArray(dataFrame,state.velSetpoint.x);
-    floatCopyToUint8tArray(dataFrame,state.velSetpoint.y);
-    floatCopyToUint8tArray(dataFrame,state.velSetpoint.z);
-
-    floatCopyToUint8tArray(dataFrame,state.attSetpoint.x);
-    floatCopyToUint8tArray(dataFrame,state.attSetpoint.y);
-    floatCopyToUint8tArray(dataFrame,state.attSetpoint.z);
-
-    floatCopyToUint8tArray(dataFrame,state.batteryState);
-    floatCopyToUint8tArray(dataFrame,state.batteryPercentage);
-
-    dataFrame.push_back(static_cast<uint8_t>(state.controlMode));
-    dataFrame.push_back(static_cast<uint8_t>(state.moveMode));
+    // 读取圆点坐标
+    uint8tArrayToDouble(dataFrame, data.wp_circle_point[0]);
+    uint8tArrayToDouble(dataFrame, data.wp_circle_point[1]);
 
 }
 
-
-void Codec::decoderUGVStateDataFrame(std::vector<uint8_t>& dataFrame,UGVStateData& state)
+void Codec::decoderScriptPayload(std::vector<uint8_t>& dataFrame,DataFrame& script)
 {
-    //时间戳赋值
-    state.timestamp=0;
-    // 由于数据是按小端顺序存储的，直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        state.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+    ScriptData& data = script.data.agentScrip;
+    data.init();
 
-    state.ugvID=static_cast<uint8_t>(dataFrame[i++]);
-    state.locationSource=static_cast<uint8_t>(dataFrame[i++]);
-    state.connected=static_cast<uint8_t>(dataFrame[i++]);
-    state.odom_valid=static_cast<uint8_t>(dataFrame[i++]);
+    // 读取scripType
+    data.scripType = static_cast<uint8_t>(dataFrame[0]);
 
-//    std::cout <<"decoderUGVStateDataFrame: ";
-//    for (uint8_t byte : dataFrame) {
-//            std::cout << static_cast<int>(byte) << " ";
-//        }
-//        std::cout << std::endl;
+    // 读取scriptState
+    data.scriptState = static_cast<uint8_t>(dataFrame[1]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
 
-//    for (const auto& elem : dataFrame) {
-//        // 创建一个临时的 ostringstream 来格式化数字
-//                std::ostringstream oss;
-//                // 设置输出为16进制，并设置每个数字的宽度为2，用0填充
-//                oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(elem);
-//                // 将格式化的字符串输出到标准输出流
-//                std::cout << oss.str() << " ";
-//       }
-//    std::cout <<std::endl;
-    uint8tArrayToFloat(dataFrame,state.position.x);
-//    std::cout << "位置x "<<(int)dataFrame.size()<<std::endl;
-    uint8tArrayToFloat(dataFrame,state.position.y);
+    // 读取scriptSize（2字节，小端序）
+    data.scriptSize = static_cast<uint16_t>(dataFrame[0]);
+    data.scriptSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
-    uint8tArrayToFloat(dataFrame,state.velocity.x);
-    uint8tArrayToFloat(dataFrame,state.velocity.y);
-    uint8tArrayToFloat(dataFrame,state.yaw);
-
-    uint8tArrayToFloat(dataFrame,state.posSetpoint.x);
-    uint8tArrayToFloat(dataFrame,state.posSetpoint.y);
-
-    uint8tArrayToFloat(dataFrame,state.velSetpoint.x);
-    uint8tArrayToFloat(dataFrame,state.velSetpoint.y);
-    uint8tArrayToFloat(dataFrame,state.yawSetpoint);
-
-    uint8tArrayToFloat(dataFrame,state.batteryState);
-    uint8tArrayToFloat(dataFrame,state.batteryPercentage);
-
-    state.controlMode=static_cast<uint8_t>(dataFrame[0]);
+    // 读取scriptStr
+    for (uint16_t j = 0; j < data.scriptSize; ++j)
+        data.scriptStr[j] = static_cast<char>(dataFrame[j]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.scriptSize);
 }
 
-void Codec::decoderStateDataFrame(std::vector<uint8_t>& dataFrame,StateData& state) //编码状态数据帧
+void Codec::decoderDemoPayload(std::vector<uint8_t>& dataFrame,DataFrame& demo)
 {
-    //时间戳赋值
-    state.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        state.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+    DemoData& data = demo.data.demo;
+    data.init();
+    // 读取demoState
+    data.demoState = static_cast<uint8_t>(dataFrame[0]);
+    dataFrame.erase(dataFrame.begin());
 
-    state.uavID=static_cast<uint8_t>(dataFrame[i++]);
-    state.connected=static_cast<uint8_t>(dataFrame[i++]);
-    state.armed=static_cast<uint8_t>(dataFrame[i++]);
-    state.mode=static_cast<uint8_t>(dataFrame[i++]);
+    // 读取demoSize（2字节，小端序）
+    data.demoSize = static_cast<uint16_t>(dataFrame[0]);
+    data.demoSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
-    state.locationSource=static_cast<uint8_t>(dataFrame[i++]);
-    state.odom_valid=static_cast<uint8_t>(dataFrame[i++]);
-
-    //去除开头的消息帧头2个字节，消息大小4个字节，消息序号1个字节，2+4+1=7
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
-
-//    for (const auto& elem : dataFrame) {
-//        // 创建一个临时的 ostringstream 来格式化数字
-//                std::ostringstream oss;
-//                // 设置输出为16进制，并设置每个数字的宽度为2，用0填充
-//                oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(elem);
-//                // 将格式化的字符串输出到标准输出流
-//                std::cout << oss.str() << " ";
-//       }
-//    std::cout <<std::endl;
-    uint8tArrayToFloat(dataFrame,state.position.x);
-//    std::cout << "位置x "<<(int)dataFrame.size()<<std::endl;
-
-
-    uint8tArrayToFloat(dataFrame,state.position.y);
-    uint8tArrayToFloat(dataFrame,state.position.z);
-
-    uint8tArrayToFloat(dataFrame,state.velocity.x);
-    uint8tArrayToFloat(dataFrame,state.velocity.y);
-    uint8tArrayToFloat(dataFrame,state.velocity.z);
-
-    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.w);
-    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.x);
-    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.y);
-    uint8tArrayToFloat(dataFrame,state.attitudeQuaternion.z);
-
-    uint8tArrayToFloat(dataFrame,state.attitude.x);
-    uint8tArrayToFloat(dataFrame,state.attitude.y);
-    uint8tArrayToFloat(dataFrame,state.attitude.z);
-
-    uint8tArrayToFloat(dataFrame,state.attitudeRate.x);
-    uint8tArrayToFloat(dataFrame,state.attitudeRate.y);
-    uint8tArrayToFloat(dataFrame,state.attitudeRate.z);
-
-    uint8tArrayToFloat(dataFrame,state.posSetpoint.x);
-    uint8tArrayToFloat(dataFrame,state.posSetpoint.y);
-    uint8tArrayToFloat(dataFrame,state.posSetpoint.z);
-
-    uint8tArrayToFloat(dataFrame,state.velSetpoint.x);
-    uint8tArrayToFloat(dataFrame,state.velSetpoint.y);
-    uint8tArrayToFloat(dataFrame,state.velSetpoint.z);
-
-    uint8tArrayToFloat(dataFrame,state.attSetpoint.x);
-    uint8tArrayToFloat(dataFrame,state.attSetpoint.y);
-    uint8tArrayToFloat(dataFrame,state.attSetpoint.z);
-
-    uint8tArrayToFloat(dataFrame,state.batteryState);
-    uint8tArrayToFloat(dataFrame,state.batteryPercentage);
-
-    state.controlMode=static_cast<uint8_t>(dataFrame[0]);
-    state.moveMode=static_cast<uint8_t>(dataFrame[1]);
-}
-
-
-void Codec::decoderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control)
-{
-    //时间戳赋值
-    control.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        control.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-
-    control.controlMode=static_cast<uint8_t>(dataFrame[i++]);
-    control.yawType=static_cast<uint8_t>(dataFrame[i++]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
-
-    uint8tArrayToFloat(dataFrame,control.desiredPos.x);
-    uint8tArrayToFloat(dataFrame,control.desiredPos.y);
-    uint8tArrayToFloat(dataFrame,control.desiredVel.x);
-    uint8tArrayToFloat(dataFrame,control.desiredVel.y);
-    uint8tArrayToFloat(dataFrame,control.desiredYaw);
-    uint8tArrayToFloat(dataFrame,control.angularVel);
+    // 读取demoStr
+    for (uint16_t j = 0; j < data.demoSize; ++j)
+        data.demoStr[j] = static_cast<char>(dataFrame[j]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.demoSize);
 
 }
 
-void Codec::decoderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control) //编码控制数据帧
+void Codec::decoderACKPayload(std::vector<uint8_t>& dataFrame,DataFrame& ack)
 {
-    //时间戳赋值
-    control.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        control.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
+    ACKData& data = ack.data.ack;
+    data.init();
+    // 读取agentType
+    data.agentType = static_cast<uint8_t>(dataFrame[0]);
+    // 读取ID
+    data.ID = static_cast<uint8_t>(dataFrame[1]);
+    // 读取port（2字节，小端序）
+    data.port = static_cast<uint16_t>(dataFrame[2]);
+    data.port |= (static_cast<uint16_t>(dataFrame[3]) << 8);
 
-    control.controlMode=static_cast<uint8_t>(dataFrame[i++]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
-
-    uint8tArrayToFloat(dataFrame,control.position.x);
-    uint8tArrayToFloat(dataFrame,control.position.y);
-    uint8tArrayToFloat(dataFrame,control.position.z);
-    uint8tArrayToFloat(dataFrame,control.velocity.x);
-    uint8tArrayToFloat(dataFrame,control.velocity.y);
-    uint8tArrayToFloat(dataFrame,control.velocity.z);
-    uint8tArrayToFloat(dataFrame,control.accelerometer.x);
-    uint8tArrayToFloat(dataFrame,control.accelerometer.y);
-    uint8tArrayToFloat(dataFrame,control.accelerometer.z);
-
-    uint8tArrayToFloat(dataFrame,control.yaw);
-    uint8tArrayToFloat(dataFrame,control.roll);
-    uint8tArrayToFloat(dataFrame,control.pitch);
-
-//    control.yawRate=static_cast<uint8_t>(dataFrame[0]);
-////    control.frame=static_cast<uint8_t>(dataFrame[1]);
-//    dataFrame.erase(dataFrame.begin(), dataFrame.begin() +1);
-
-    uint8tArrayToFloat(dataFrame,control.latitude);
-    uint8tArrayToFloat(dataFrame,control.longitude);
-    uint8tArrayToFloat(dataFrame,control.altitude);
-
-    uint8tArrayToFloat(dataFrame,control.yawRate);
-
-}
-
-void Codec::coderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypoint)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::WaypointMessageID));
-    waypoint.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((waypoint.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-    dataFrame.push_back(static_cast<uint8_t>(waypoint.uavID));
-    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpType));
-    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpNum));
-    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpEndType));
-    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpTakeoff));
-    dataFrame.push_back(static_cast<uint8_t>(waypoint.wpYawType));
-
-    floatCopyToUint8tArray(dataFrame,waypoint.wpMoveVel);
-    floatCopyToUint8tArray(dataFrame,waypoint.wpVelP);
-    floatCopyToUint8tArray(dataFrame,waypoint.wpHeight);
-
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint1.Yaw);
-
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint2.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint3.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint4.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint5.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint6.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint7.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint8.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint9.Yaw);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.X);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.Y);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.Z);
-    doubleCopyToUint8tArray(dataFrame,waypoint.Waypoint10.Yaw);
-
-    doubleCopyToUint8tArray(dataFrame,waypoint.wpCirclePointX);
-    doubleCopyToUint8tArray(dataFrame,waypoint.wpCirclePointY);
-
-}
-
-void Codec::decoderWaypointDataFrame(std::vector<uint8_t>& dataFrame,WaypointData& waypointData)
-{
-    //时间戳赋值
-    waypointData.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        waypointData.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-
-    waypointData.uavID=static_cast<uint8_t>(dataFrame[i++]);
-    waypointData.wpType=static_cast<uint8_t>(dataFrame[i++]);
-    waypointData.wpNum=static_cast<uint8_t>(dataFrame[i++]);
-    waypointData.wpEndType=static_cast<uint8_t>(dataFrame[i++]);
-    waypointData.wpTakeoff=static_cast<uint8_t>(dataFrame[i++]);
-    waypointData.wpYawType=static_cast<uint8_t>(dataFrame[i++]);
-
-    //去除开头的消息帧头2个字节，消息大小4个字节，消息序号1个字节，2+4+1=7
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
-
-    uint8tArrayToFloat(dataFrame,waypointData.wpMoveVel);
-    uint8tArrayToFloat(dataFrame,waypointData.wpVelP);
-    uint8tArrayToFloat(dataFrame,waypointData.wpHeight);
-
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint1.Yaw);
-
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint2.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint3.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint4.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint5.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint6.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint7.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint8.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint9.Yaw);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.X);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.Y);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.Z);
-    uint8tArrayToDouble(dataFrame,waypointData.Waypoint10.Yaw);
-
-    uint8tArrayToDouble(dataFrame,waypointData.wpCirclePointX);
-    uint8tArrayToDouble(dataFrame,waypointData.wpCirclePointY);
-
+    // 一次性移除已处理的4个字节
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 4);
 }
 
 
-void Codec::coderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo) //编码无人机demo数据帧
+void Codec::decoderUAVSetupPayload(std::vector<uint8_t>& dataFrame,DataFrame& setup)
 {
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::ScriptMessageID));
-    demo.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((demo.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+    UAVSetup& data = setup.data.uavSetup;
+    data.init();
 
-    dataFrame.push_back(static_cast<uint8_t>(demo.uavID));
-    dataFrame.push_back(static_cast<uint8_t>(demo.demoState));
+    // 读取命令类型
+    data.cmd = static_cast<uint8_t>(dataFrame[0]);
+    // 读取PX4模式
+    data.px4_mode = static_cast<uint8_t>(dataFrame[1]);
+    // 读取控制模式
+    data.control_mode = static_cast<uint8_t>(dataFrame[2]);
 
-    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((demo.demoSize >> (i * 8)) & 0xFF));
-
-    if(dataFrame.capacity()<demo.demoSize)
-        dataFrame.reserve(demo.demoSize);
-
-    for(int j=0;j<demo.demoSize;++j)
-    dataFrame.push_back(static_cast<uint8_t>(demo.demoStr[j]));
-
+    // 一次性移除已处理的3个字节
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);
 }
 
-
-void Codec::coderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script) //编码无人机script数据帧
+void Codec::decoderUGVControlPayload(std::vector<uint8_t>& dataFrame,DataFrame& control)
 {
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::ScriptMessageID));
-    script.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((script.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+    UGVControlCMD& data = control.data.ugvControlCMD;
+    data.init(); // 初始化结构体
 
-    dataFrame.push_back(static_cast<uint8_t>(script.agentType));
-    dataFrame.push_back(static_cast<uint8_t>(script.agentID));
-    dataFrame.push_back(static_cast<uint8_t>(script.scripType));
-    dataFrame.push_back(static_cast<uint8_t>(script.scriptState));
+    // --------------------- 读取控制命令类型和偏航类型 ---------------------
+    data.cmd = static_cast<uint8_t>(dataFrame[0]);
+    data.yaw_type = static_cast<uint8_t>(dataFrame[1]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2); // 移除前2字节
 
-    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((script.scriptSize >> (i * 8)) & 0xFF));
+    // --------------------- 读取期望位置 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.desired_pos[i]);
 
-    if(dataFrame.capacity()<script.scriptSize)
-        dataFrame.reserve(script.scriptSize);
+    // --------------------- 读取期望速度 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.desired_vel[i]);
 
-    for(int j=0;j<script.scriptSize;++j)
-    dataFrame.push_back(static_cast<uint8_t>(script.scriptStr[j]));
+    // --------------------- 读取期望偏航角和角速度 ---------------------
+    uint8tArrayToFloat(dataFrame, data.desired_yaw);
+    uint8tArrayToFloat(dataFrame, data.angular_vel);
 }
 
-void Codec::coderNodeDataFrame(std::vector<uint8_t>& dataFrame,NodeData& node)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::NodeMessageID));
-    node.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((node.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-    dataFrame.push_back(static_cast<uint8_t>(node.agentType));
-    dataFrame.push_back(static_cast<uint8_t>(node.agentID));
-
-    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((node.nodeCount >> (i * 8)) & 0xFF));
-    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((node.nodeID >> (i * 8)) & 0xFF));
-    for (int i = 0; i < (int)sizeof(uint16_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((node.nodeSize >> (i * 8)) & 0xFF));
-
-    if(dataFrame.capacity()<node.nodeSize)
-        dataFrame.reserve(node.nodeSize);
-
-    for(int j=0;j<node.nodeSize;++j)
-    dataFrame.push_back(static_cast<uint8_t>(node.nodeStr[j]));
-}
-
-void Codec::coderUGVControlDataFrame(std::vector<uint8_t>& dataFrame,UGVControlData& control)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::UGVControlMessageID));
-    control.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((control.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-    //std::cout << "参数控制数据发送的时间戳 "<<control.timestamp<<std::endl;
-
-    dataFrame.push_back(static_cast<uint8_t>(control.controlMode));
-    dataFrame.push_back(static_cast<uint8_t>(control.yawType));
-
-    floatCopyToUint8tArray(dataFrame,control.desiredPos.x);
-    floatCopyToUint8tArray(dataFrame,control.desiredPos.y);
-    floatCopyToUint8tArray(dataFrame,control.desiredVel.x);
-    floatCopyToUint8tArray(dataFrame,control.desiredVel.y);
-
-    floatCopyToUint8tArray(dataFrame,control.desiredYaw);
-    floatCopyToUint8tArray(dataFrame,control.angularVel);
-
-}
-
-void Codec::coderControlDataFrame(std::vector<uint8_t>& dataFrame,ControlData& control)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::ControlMessageID));
-    control.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((control.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-    //std::cout << "参数控制数据发送的时间戳 "<<control.timestamp<<std::endl;
-
-    dataFrame.push_back(static_cast<uint8_t>(control.controlMode));
-
-    floatCopyToUint8tArray(dataFrame,control.position.x);
-    floatCopyToUint8tArray(dataFrame,control.position.y);
-    floatCopyToUint8tArray(dataFrame,control.position.z);
-    floatCopyToUint8tArray(dataFrame,control.velocity.x);
-    floatCopyToUint8tArray(dataFrame,control.velocity.y);
-    floatCopyToUint8tArray(dataFrame,control.velocity.z);
-    floatCopyToUint8tArray(dataFrame,control.accelerometer.x);
-    floatCopyToUint8tArray(dataFrame,control.accelerometer.y);
-    floatCopyToUint8tArray(dataFrame,control.accelerometer.z);
-
-    floatCopyToUint8tArray(dataFrame,control.yaw);
-    floatCopyToUint8tArray(dataFrame,control.roll);
-    floatCopyToUint8tArray(dataFrame,control.pitch);
-
-
-    floatCopyToUint8tArray(dataFrame,control.latitude);
-    floatCopyToUint8tArray(dataFrame,control.longitude);
-    floatCopyToUint8tArray(dataFrame,control.altitude);
-
-    floatCopyToUint8tArray(dataFrame,control.yawRate);
-
-//    dataFrame.push_back(static_cast<uint8_t>(control.frame));
-
-}
-
-void Codec::coderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::VehicleMessageID));
-    vehicle.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((vehicle.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    dataFrame.push_back(static_cast<uint8_t>(vehicle.sunray_mode));
-    dataFrame.push_back(static_cast<uint8_t>(vehicle.px4_mode));
-
-    //std::cout << "模式切换数据发送的时间戳 "<<vehicle.timestamp<<std::endl;
-
-}
-
-void Codec::decoderVehicleDataFrame(std::vector<uint8_t>& dataFrame,VehicleData& vehicle) //编码模式切换数据帧
-{
-    //时间戳赋值
-    vehicle.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        vehicle.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-
-    vehicle.sunray_mode=static_cast<uint8_t>(dataFrame[i++]);
-    vehicle.px4_mode=static_cast<uint8_t>(dataFrame[i++]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
-}
-
-void Codec::coderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::ACKMessageID));
-    ack.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); i++)
-        dataFrame.push_back(static_cast<uint8_t>((ack.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    dataFrame.push_back(static_cast<uint8_t>(ack.agentType));
-    dataFrame.push_back(static_cast<uint8_t>(ack.ID));
-    for (int i = 0; i < (int)sizeof(uint16_t); i++)
-        dataFrame.push_back(static_cast<uint8_t>((ack.port >> (i * 8)) & 0xFF));
-}
-
-
-
-void Codec::coderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::SearchMessageID));
-    search.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((search.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((search.port >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-}
-
-void Codec::coderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat)
-{
-    dataFrame.push_back(static_cast<uint8_t>(MessageID::HeartbeatMessageID));
-    heartbeat.timestamp=getTimestamp();
-    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
-        dataFrame.push_back(static_cast<uint8_t>((heartbeat.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-    dataFrame.push_back(static_cast<uint8_t>(heartbeat.agentType));
-
-    //心跳包缺心跳包计数，int32_t count 4个字节
-    //std::cout << "心跳数据发送的时间戳 "<<heartbeat.timestamp<<std::endl;
-
-}
-
-void Codec::decoderACKDataFrame(std::vector<uint8_t>& dataFrame,ACKData& ack)
-{
-    //时间戳赋值
-    ack.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        ack.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-//    std::cout <<"decoderACKDataFrame: ";
-//    for (uint8_t byte : dataFrame) {
-//            std::cout << static_cast<int>(byte) << " ";
-//        }
-//        std::cout << std::endl;
-    ack.agentType=static_cast<uint8_t>(dataFrame[i++]);
-    ack.ID=static_cast<uint8_t>(dataFrame[i]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin()+i+1);
-    ack.port = 0;
-    for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-        ack.port |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
-
-//    // 时间戳赋值
-//    ack.timestamp = 0;
-//    for (int i = 0; i < static_cast<int>(sizeof(uint64_t)); ++i) {
-//        ack.timestamp |= static_cast<uint64_t>(dataFrame[i]) << (i * 8);
-//    }
-
-
-//    // 跳过时间戳字节，获取 agentType
-//    int index = sizeof(uint64_t);
-//    ack.agentType = dataFrame[index++];
-
-//    // 获取 ID
-//    ack.ID = dataFrame[index++];
-
-//    // 获取 port
-//    ack.port = 0;
-//    for (int j = 0; j < static_cast<int>(sizeof(uint16_t)); ++j) {
-//        ack.port |= static_cast<uint16_t>(dataFrame[index++]) << (j * 8);
-//    }
-
-}
-
-void Codec::decoderScriptDataFrame(std::vector<uint8_t>& dataFrame,ScriptData& script)  //解码无人机script数据帧
-{
-    //时间戳赋值
-    script.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        script.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-    script.agentType=static_cast<uint8_t>(dataFrame[i++]);
-    script.agentID=static_cast<uint8_t>(dataFrame[i++]);
-    script.scripType=static_cast<uint8_t>(dataFrame[i++]);
-    script.scriptState=static_cast<uint8_t>(dataFrame[i++]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
-
-    script.scriptSize=0;
-    for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-        script.scriptSize |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
-
-    for (int j = 2; j < script.scriptSize+2; ++j)
-        script.scriptStr[j-2]=static_cast<uint8_t>(dataFrame[j]);
-
-    dataFrame.clear();
-}
-
- void Codec::decodernNodeDataFrame(std::vector<uint8_t>& dataFrame,NodeData& node)
+ void Codec::decoderUAVControlPayload(std::vector<uint8_t>& dataFrame,DataFrame& control)
  {
-//     //时间戳赋值
-//     node.timestamp=0;
-//     // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-//     int i;
-//     for (i = 0; i <(int)sizeof(uint64_t); ++i)
-//         node.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-//     node.agentType=static_cast<uint8_t>(dataFrame[i++]);
-//     node.agentID=static_cast<uint8_t>(dataFrame[i++]);
+     UAVControlCMD& data = control.data.uavControlCMD;
+     data.init(); // 初始化结构体
 
-//     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+     // --------------------- 读取控制命令类型 ---------------------
+     data.cmd = static_cast<uint8_t>(dataFrame[0]);
+     dataFrame.erase(dataFrame.begin()); // 移除1字节
 
-//     node.nodeCount=0;
-//     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-//         node.nodeCount |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+     // --------------------- 读取期望位置 ---------------------
+     for (int i = 0; i < 3; ++i)
+         uint8tArrayToFloat(dataFrame, data.desired_pos[i]);
 
-//     node.nodeID=0;
-//     for (int j = 2; j < (int)sizeof(uint16_t)+2; ++j)
-//         node.nodeID |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+     // --------------------- 读取期望速度 ---------------------
+     for (int i = 0; i < 3; ++i)
+         uint8tArrayToFloat(dataFrame, data.desired_vel[i]);
 
-//     node.nodeSize=0;
-//     for (int j = 4; j < (int)sizeof(uint16_t); ++j)
-//         node.nodeSize |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+     // --------------------- 读取期望加速度 ---------------------
+     for (int i = 0; i < 3; ++i)
+         uint8tArrayToFloat(dataFrame, data.desired_acc[i]);
 
-//     for (int j = 6; j < node.nodeSize+6; ++j)
-//         node.nodeStr[j-6]=static_cast<uint8_t>(dataFrame[j]);
+     // --------------------- 读取期望 jerk ---------------------
+     for (int i = 0; i < 3; ++i)
+         uint8tArrayToFloat(dataFrame, data.desired_jerk[i]);
 
-//     dataFrame.clear();
+     // --------------------- 读取期望姿态 ---------------------
+     for (int i = 0; i < 3; ++i)
+         uint8tArrayToFloat(dataFrame, data.desired_att[i]);
 
+     // --------------------- 读取期望推力、偏航角、偏航角速率 ---------------------
+     uint8tArrayToFloat(dataFrame, data.desired_thrust);
+     uint8tArrayToFloat(dataFrame, data.desired_yaw);
+     uint8tArrayToFloat(dataFrame, data.desired_yaw_rate);
 
-
-     // 重置节点数据
-     node.init(); // 初始化所有字段为0
-
-     int offset;
-     // 读取时间戳（小端序）
-     for (offset = 0; offset < (int)sizeof(uint64_t); ++offset)
-         node.timestamp |= static_cast<uint64_t>(dataFrame[offset]) << (offset * 8);
-
-
-     // 读取agentType和agentID
-     node.agentType = dataFrame[offset++];
-     node.agentID = dataFrame[offset++];
-
-     // 读取nodeCount（小端序，2字节）
-     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-         node.nodeCount |= static_cast<uint16_t>(dataFrame[offset++]) << (j * 8);
-
-     // 读取nodeID（小端序，2字节）
-     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-         node.nodeID |= static_cast<uint16_t>(dataFrame[offset++]) << (j * 8);
-
-     // 读取nodeSize（小端序，2字节）
-     for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-         node.nodeSize |= static_cast<uint16_t>(dataFrame[offset++]) << (j * 8);
-
-
-     // 验证并读取nodeStr
-     const size_t strSize = std::min<size_t>(node.nodeSize, sizeof(node.nodeStr) - 1);
-     if (dataFrame.size() < offset + strSize)
-         throw std::runtime_error("Node string exceeds data frame size");
-
-
-     std::memcpy(node.nodeStr, dataFrame.data() + offset, strSize);
-     node.nodeStr[strSize] = '\0'; // 确保字符串以空字符结尾
-
-     dataFrame.clear(); // 清空数据帧
+     // --------------------- 读取经纬度和海拔 ---------------------
+     uint8tArrayToFloat(dataFrame, data.latitude);
+     uint8tArrayToFloat(dataFrame, data.longitude);
+     uint8tArrayToFloat(dataFrame, data.altitude);
  }
 
-void Codec::decoderDemoDataFrame(std::vector<uint8_t>& dataFrame,DemoData& demo)
-{    
-    //时间戳赋值
-    demo.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    int i;
-    for (i = 0; i <(int)sizeof(uint64_t); ++i)
-        demo.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-    demo.uavID=static_cast<uint8_t>(dataFrame[i++]);
-    demo.demoState=static_cast<uint8_t>(dataFrame[i++]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + i);
+void Codec::decoderUGVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state)
+{
+    UGVState& data = state.data.ugvState;
+    data.init();
 
-     demo.demoSize=0;
-    for (int j = 0; j < (int)sizeof(uint16_t); ++j)
-        demo.demoSize |= (static_cast<uint16_t>(dataFrame[j]) << (j * 8));
+    // --------------------- 读取基础字段 ---------------------
+    data.ugv_id = static_cast<uint8_t>(dataFrame[0]);
+    data.connected = static_cast<bool>(dataFrame[1]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
+    // --------------------- 读取电池状态 ---------------------
+    uint8tArrayToFloat(dataFrame, data.battery_state);
+    uint8tArrayToFloat(dataFrame, data.battery_percentage);
 
-    for (int j = 2; j < demo.demoSize+2; ++j)
-        demo.demoStr[j-2]=static_cast<uint8_t>(dataFrame[j]);
+    // --------------------- 读取定位状态 ---------------------
+    data.location_source = static_cast<uint8_t>(dataFrame[0]);
+    data.odom_valid = static_cast<bool>(dataFrame[1]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);  // 移除2字节
 
-    dataFrame.clear();
+    // --------------------- 读取位置数据 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.position[i]);
+
+    // --------------------- 读取速度数据 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.velocity[i]);
+
+    // --------------------- 读取偏航角 ---------------------
+    uint8tArrayToFloat(dataFrame, data.yaw);
+
+    // --------------------- 读取姿态角 ---------------------
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude[i]);
+
+    // --------------------- 读取四元数 ---------------------
+    for (int i = 0; i < 4; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude_q[i]);
+
+    // --------------------- 读取控制模式 ---------------------
+    data.control_mode = static_cast<uint8_t>(dataFrame[0]);
+    dataFrame.erase(dataFrame.begin());  // 移除1字节
+
+    // --------------------- 读取位置设定点 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.pos_setpoint[i]);
+
+    // --------------------- 读取速度设定点 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.vel_setpoint[i]);
+
+    // --------------------- 读取偏航设定点 ---------------------
+    uint8tArrayToFloat(dataFrame, data.yaw_setpoint);
+
+    // --------------------- 读取home位置 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.home_pos[i]);
+
+    // --------------------- 读取home偏航角 ---------------------
+    uint8tArrayToFloat(dataFrame, data.home_yaw);
+
+    // --------------------- 读取hover位置 ---------------------
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.hover_pos[i]);
+
+    // --------------------- 读取hover偏航角 ---------------------
+    uint8tArrayToFloat(dataFrame, data.hover_yaw);
+
+}
+
+void Codec::decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state)
+{
+    UAVState& data = state.data.uavState;
+    data.init();
+
+    // 读取基础状态
+    data.uav_id = static_cast<uint8_t>(dataFrame[0]);
+    data.connected = static_cast<bool>(dataFrame[1]);
+    data.armed = static_cast<bool>(dataFrame[2]);
+    data.mode = static_cast<uint8_t>(dataFrame[3]);
+    data.landed_state = static_cast<uint8_t>(dataFrame[4]);
+
+    // 一次性移除已处理的5个字节
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 5);
+
+    // 读取电池状态
+    uint8tArrayToFloat(dataFrame, data.battery_state);
+    uint8tArrayToFloat(dataFrame, data.battery_percentage);
+
+    // 读取位置源和里程计状态
+    data.location_source = static_cast<uint8_t>(dataFrame[0]);
+    data.odom_valid = static_cast<bool>(dataFrame[1]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+    // 读取位置数据
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.position[i]);
+
+    // 读取速度数据
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.velocity[i]);
+
+    // 读取姿态角数据
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude[i]);
+
+    // 读取四元数数据
+    for (int i = 0; i < 4; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude_q[i]);
+
+    // 读取姿态率数据
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude_rate[i]);
+
+    // 读取位置设定点
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.pos_setpoint[i]);
+
+    // 读取速度设定点
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.vel_setpoint[i]);
+
+    // 读取姿态设定点
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.att_setpoint[i]);
+
+    // 读取推力设定点
+    uint8tArrayToFloat(dataFrame, data.thrust_setpoint);
+
+    // 读取控制模式和移动模式
+    data.control_mode = static_cast<uint8_t>(dataFrame[0]);
+    data.move_mode = static_cast<uint8_t>(dataFrame[1]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+    // 读取起飞高度
+    uint8tArrayToFloat(dataFrame, data.takeoff_height);
+
+    // 读取home位置和偏航角
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.home_pos[i]);
+    uint8tArrayToFloat(dataFrame, data.home_yaw);
+
+    // 读取悬停位置和偏航角
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.hover_pos[i]);
+    uint8tArrayToFloat(dataFrame, data.hover_yaw);
+
+    // 读取降落位置和偏航角
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.land_pos[i]);
+    uint8tArrayToFloat(dataFrame, data.land_yaw);
 }
 
 
-
-void Codec::decoderSearchDataFrame(std::vector<uint8_t>& dataFrame,SearchData& search)
+bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
 {
-    //时间戳赋值
-    search.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    for (int i = 0; i <(int)sizeof(uint64_t); ++i)
-        search.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-    search.port = 0;
-    for (int i = 0; i <(int)sizeof(uint64_t); ++i)
-        search.port |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[(int)sizeof(uint64_t)+i])) << (i * 8);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + (int)sizeof(uint64_t)*2);
-
-
-}
-
-
-void Codec::decoderHeartDataFrame(std::vector<uint8_t>& dataFrame,HeartbeatData& heartbeat) //解码无人机心跳包数据帧
-{
-    //时间戳赋值
-    heartbeat.timestamp=0;
-    // 由于数据是按小端顺序存储的，我们直接左移i*8位并添加对应的字节
-    for (int i = 0; i <(int)sizeof(uint64_t); ++i)
-        heartbeat.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(dataFrame[i])) << (i * 8);
-
-     heartbeat.agentType=static_cast<uint8_t>(dataFrame[(int)sizeof(uint64_t)]);
-    //心跳包缺心跳包计数，int32_t count 4个字节
-}
-
-bool Codec::decoder(std::vector<uint8_t> undecodedData,int& messageID,unionData& decoderData)
-{
-    //std::cout << "数据帧解码准备数据大小 "<<undecodedData.size()<<std::endl;
-
-    uint8_t first= static_cast<uint8_t>(undecodedData.at(0));
-    if(first!=0xac && first!=0xad && first!=0xfd &&first!=0xab)
+    if(undecodedData.size()<18)
         return false;
 
-    uint8_t second= static_cast<uint8_t>(undecodedData.at(1));
-    if(second!=0x43 && second!=0x21 && second!=0x32 &&second!=0x65)
+//    decoderData.head = undecodedData.at(0);                  // 低位字节
+//    decoderData.head |= (undecodedData.at(1) << 8);          // 高位字节
+    decoderData.head=0;
+    // 解析帧头（2字节，大端序）
+    decoderData.head = undecodedData[1] | (static_cast<uint16_t>(undecodedData[0]) << 8);
+
+    if( decoderData.head!=0xac43 && decoderData.head!=0xad21 && decoderData.head!=0xfd32 && decoderData.head!=0xab65)
         return false;
 
-    //去除开头的消息帧头2个字节，消息大小4个字节，消息序号1个字节，2+4+1=7
-    undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 7);
+    decoderData.length=0;
+    for (int i = 0; i <(int)sizeof(uint32_t); ++i)
+        decoderData.length |= static_cast<uint32_t>(static_cast<uint8_t>(undecodedData[i+2])) << (i * 8);
+
+    if(undecodedData.size()<decoderData.length)
+        return false;
+
+    decoderData.seq=undecodedData.at(6);
+    decoderData.robot_ID=undecodedData.at(7);
+
+    decoderData.timestamp=0;
+    for (int i = 0; i <(int)sizeof(uint64_t); ++i)
+        decoderData.timestamp |= static_cast<uint64_t>(static_cast<uint8_t>(undecodedData[i+8])) << (i * 8);
+
+    decoderData.check=0;
+    decoderData.check = static_cast<uint16_t>(undecodedData[undecodedData.size()-2]) |
+                            (static_cast<uint16_t>(undecodedData[undecodedData.size()-1]) << 8);
+
+    //去除开头的消息帧头2个字节，消息大小4个字节，消息编号1个字节，机器人编号1个字节，时间戳8个字节
+    //2+4+1+1+8=16
+    undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 16);
 
     //去掉尾部的校验和2个字节
     undecodedData.resize(undecodedData.size()-2);
 
-
-
-    //第2个元素是数据帧类型
-    messageID=static_cast<int>(static_cast<uint8_t>(undecodedData[1]));
-    //std::cout << "消息类型ID "<<(int)undecodedData[1]<<std::endl;
-    switch (messageID)
+    switch (decoderData.seq)
     {
-    case MessageID::HeartbeatMessageID://心跳包解码
-        //第一个元素是机器人编号
-        decoderData.heartbeat.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderHeartDataFrame(undecodedData,decoderData.heartbeat);
+    case MessageID::HeartbeatMessageID:
+        /*Payload心跳数据反序列化*/
+        decoderData.data.heartbeat.agentType=static_cast<uint8_t>(undecodedData[0]);
+        for (int i = 0; i <(int)sizeof(uint32_t); ++i)
+            decoderData.data.heartbeat.count |= static_cast<uint32_t>(static_cast<uint8_t>(undecodedData[i+1])) << (i * 8);
         break;
-    case MessageID::StateMessageID:
-        //第一个元素是机器人编号
-        decoderData.state.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //std::cout << "机器人编号 "<<(int)undecodedData[0]<<std::endl;
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderStateDataFrame(undecodedData,decoderData.state);
+    case MessageID::UAVStateMessageID:
+        /*Payload无人机状态数据反序列化*/
+        decoderUAVStatePayload(undecodedData,decoderData);
         break;
     case MessageID::UGVStateMessageID:
-        //第一个元素是机器人编号
-        decoderData.ugvState.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //std::cout << "机器人编号 "<<(int)undecodedData[0]<<std::endl;
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderUGVStateDataFrame(undecodedData,decoderData.ugvState);
+        /*Payload无人车状态数据反序列化*/
+        decoderUGVStatePayload(undecodedData,decoderData);
         break;
-    case MessageID::ControlMessageID:
-        //第一个元素是机器人编号
-        decoderData.control.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-
-        decoderControlDataFrame(undecodedData,decoderData.control);
+    case MessageID::UAVControlCMDMessageID:
+        /*Payload无人机控制指令数据反序列化*/
+        decoderUAVControlPayload(undecodedData,decoderData);
         break;
-    case MessageID::UGVControlMessageID:
-        //第一个元素是机器人编号
-        decoderData.ugvControl.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-
-        decoderUGVControlDataFrame(undecodedData,decoderData.ugvControl);
+    case MessageID::UGVControlCMDMessageID:
+        /*Payload无人车控制指令数据反序列化*/
+        decoderUGVControlPayload(undecodedData,decoderData);
         break;
-    case MessageID::VehicleMessageID:
-        //第一个元素是机器人编号
-        decoderData.vehicle.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderVehicleDataFrame(undecodedData,decoderData.vehicle);
+    case MessageID::UAVSetupMessageID:
+        /*Payload无人机设置指令数据反序列化*/
+        decoderUAVSetupPayload(undecodedData,decoderData);
         break;
     case MessageID::SearchMessageID:
-        //第一个元素是机器人编号
-        decoderData.search.robotID =static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderSearchDataFrame(undecodedData,decoderData.search);
+        /*Payload搜索在线智能体数据反序列化*/
+        decoderData.data.search.port=0;
+        for (int i = 0; i <(int)sizeof(uint64_t); ++i)
+            decoderData.data.search.port |= static_cast<uint64_t>(static_cast<uint8_t>(undecodedData[i])) << (i * 8);
         break;
     case MessageID::ACKMessageID:
-        //第一个元素是机器人编号
-//        std::cout << "decoderACKDataFrame: "<<undecodedData.size()<< std::endl;
-
-        decoderData.ack.robotID =static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderACKDataFrame(undecodedData,decoderData.ack);
+        /*Payload智能体应答数据反序列化*/
+        decoderACKPayload(undecodedData,decoderData);
         break;
     case MessageID::DemoMessageID:
-        decoderData.demo.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderDemoDataFrame(undecodedData,decoderData.demo);
+        /*Payload智能体demo数据反序列化*/
+        decoderDemoPayload(undecodedData,decoderData);
         break;
     case MessageID::ScriptMessageID:
-        decoderData.agentScrip.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderScriptDataFrame(undecodedData,decoderData.agentScrip);
+        /*Payload功能脚本数据反序列化*/
+        decoderScriptPayload(undecodedData,decoderData);
         break;
     case MessageID::WaypointMessageID:
-        decoderData.waypointData.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decoderWaypointDataFrame(undecodedData,decoderData.waypointData);
+         /*Payload航点数据反序列化*/
+        decoderWaypointPayload(undecodedData,decoderData);
         break;
     case MessageID::NodeMessageID:
-        decoderData.nodeInformation.robotID=static_cast<uint8_t>(undecodedData.at(0));
-        //去掉之前已经读出的两个元素
-        undecodedData.erase(undecodedData.begin(), undecodedData.begin() + 2);
-        decodernNodeDataFrame(undecodedData,decoderData.nodeInformation);
+        /*Payload机载电脑ROS节点数据反序列化*/
+        decodernNodePayload(undecodedData,decoderData);
         break;
     default:break;
     }
-
-
     return true;
+
 }
 
 
-
-std::vector<uint8_t> Codec::coder(int messageID,unionData codelessData)
+uint16_t Codec::PackBytesLE( uint8_t high,uint8_t low)
 {
-    std::vector<uint8_t> coderData,tempData;
-    coderData.clear();
-    uint16_t checksum=0;
-    uint32_t dataFrameSize=0;
+     return (high << 8) | low;
+}
 
-    tempData.clear();
-    coderData.clear();
-
-
-    switch (messageID)
+void Codec::SetDataFrameHead(DataFrame& codelessData)
+{
+    switch (codelessData.seq)
     {
-    case MessageID::HeartbeatMessageID://心跳包编码感觉不应该用这个编码
-
-        // 帧头(HEAD) 0xac43    
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
-
-        /*编码心跳包数据帧*/
-        coderHeartDataFrame(tempData,codelessData.heartbeat);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-
-        // 消息长度（LENGTH）
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-        //std::cout << "心跳包数据里的消息长度 "<<dataFrameSize<<std::endl;
-
-        // 打印 sizeVector 中的全部数据
-//        std::cout << "心跳包数据字节: ";
-//        for (uint8_t byte : coderData)
-//        {
-//            // 使用 std::hex 设置输出为十六进制格式
-//            // 使用 std::setw(2) 和 std::setfill('0') 来确保每个字节都占用两个字符宽度，并用 0 填充
-//            std::cout <<std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
-//        }
-//        std::cout << std::endl; // 输出换行符以结束输出行
-
-        // 消息序号（SEQ）
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        // 机器人ID（ROBOT_ID）
-        coderData.push_back(static_cast<uint8_t>(codelessData.heartbeat.robotID));//获取机器人ID
-        // 数据帧（PAYLOAD）
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        // 将uint16_t的高位字节直接转换为uint8_t并存储到vector中
-        // 校验和（CHECK）
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        // 将uint16_t的低位字节直接转换为uint8_t并存储到vector中
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-        // 打印 sizeVector 中的全部数据
-//        std::cout << "心跳包全部数据字节: ";
-//        for (uint8_t byte : coderData)
-//        {
-//            // 使用 std::hex 设置输出为十六进制格式
-//            // 使用 std::setw(2) 和 std::setfill('0') 来确保每个字节都占用两个字符宽度，并用 0 填充
-//            std::cout <<std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
-//        }
-//        std::cout << std::endl; // 输出换行符以结束输出行
-        break;
-    case MessageID::StateMessageID:
-        //UDP不带回复帧头 0xab65
-        coderData.push_back(0xab);
-        coderData.push_back(0x65);
-
-        /*编码状态数据帧*/
-        coderStateDataFrame(tempData,codelessData.state);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getUDPMessageNum());//获取UDP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.state.robotID));//获取机器人ID
-
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        // 将uint16_t的高位字节直接转换为uint8_t并存储到vector中
-        // 这里使用static_cast<uint8_t>是安全的，因为我们知道结果是一个在uint8_t范围内的值（0-255）
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        // 将uint16_t的低位字节直接转换为uint8_t并存储到vector中
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-        break;
-    case MessageID::UGVStateMessageID:
-        //UDP不带回复帧头 0xab65
-        coderData.push_back(0xab);
-        coderData.push_back(0x65);
-
-        /*编码状态数据帧*/
-        coderUGVStateDataFrame(tempData,codelessData.ugvState);
-
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getUDPMessageNum());//获取UDP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.state.robotID));//获取机器人ID
-
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-        checksum=getChecksum(coderData);//获取校验值
-        // 将uint16_t的高位字节直接转换为uint8_t并存储到vector中
-        // 这里使用static_cast<uint8_t>是安全的，因为我们知道结果是一个在uint8_t范围内的值（0-255）
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        // 将uint16_t的低位字节直接转换为uint8_t并存储到vector中
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-        break;
-    case MessageID::ControlMessageID:
+    case MessageID::HeartbeatMessageID:case MessageID::UAVControlCMDMessageID:
+    case MessageID::UGVControlCMDMessageID:case MessageID::UAVSetupMessageID:
+    case MessageID::DemoMessageID:case MessageID::ScriptMessageID:
+    case MessageID::WaypointMessageID:
         //TCP帧头 0xac43
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
-
-        /*编码无人机参数控制数据*/
-        coderControlDataFrame(tempData,codelessData.control);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.control.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+        codelessData.head=PackBytesLE(0xac,0x43);
         break;
-    case MessageID::UGVControlMessageID:
-        //TCP帧头 0xac43
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
-
-        /*编码无人车控制数据*/
-        coderUGVControlDataFrame(tempData,codelessData.ugvControl);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.control.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-        break;
-    case MessageID::VehicleMessageID:
-        //TCP帧头 0xac43
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
+    case MessageID::UAVStateMessageID: case MessageID::UGVStateMessageID:
+    case MessageID::NodeMessageID:
         //UDP不带回复帧头 0xab65
-//        coderData.push_back(0xab);
-//        coderData.push_back(0x65);
-
-        /*编码控制模式数据帧*/
-        coderVehicleDataFrame(tempData,codelessData.vehicle);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.vehicle.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+        codelessData.head=PackBytesLE(0xab,0x65);
         break;
     case MessageID::SearchMessageID:
         //UDP请求帧头 0xad21
-        coderData.push_back(0xad);
-        coderData.push_back(0x21);
-
-        /*编码搜索在线无人机数据帧*/
-        coderSearchDataFrame(tempData,codelessData.search);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getUDPBroadcastMessageNum());//获取UDP广播消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.search.robotID));//获取机器人ID
-
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-        break;
+        codelessData.head=PackBytesLE(0xad,0x21);
     case MessageID::ACKMessageID:
         //UDP回复帧头 UDP回复：0xfd32
-        coderData.push_back(0xfd);
-        coderData.push_back(0x32);
-        coderACKDataFrame(tempData,codelessData.ack);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
+        codelessData.head=PackBytesLE(0xfd,0x32);
+    default:break;
+    }
+}
 
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
+void Codec::coderUAVStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    UAVState data=codelessData.data.uavState;
+
+    payload.push_back(static_cast<uint8_t>(data.uav_id));
+    payload.push_back(static_cast<uint8_t>(data.connected));
+    payload.push_back(static_cast<uint8_t>(data.armed));
+    payload.push_back(static_cast<uint8_t>(data.mode));
+    payload.push_back(static_cast<uint8_t>(data.landed_state));
+
+    floatCopyToUint8tArray(payload,data.battery_state);
+    floatCopyToUint8tArray(payload,data.battery_percentage);
+
+    payload.push_back(static_cast<uint8_t>(data.location_source));
+    payload.push_back(static_cast<uint8_t>(data.odom_valid));
+
+
+    floatCopyToUint8tArray(payload,data.position[0]);
+    floatCopyToUint8tArray(payload,data.position[1]);
+    floatCopyToUint8tArray(payload,data.position[2]);
+
+    floatCopyToUint8tArray(payload,data.velocity[0]);
+    floatCopyToUint8tArray(payload,data.velocity[1]);
+    floatCopyToUint8tArray(payload,data.velocity[2]);
+
+    floatCopyToUint8tArray(payload,data.attitude[0]);
+    floatCopyToUint8tArray(payload,data.attitude[1]);
+    floatCopyToUint8tArray(payload,data.attitude[2]);
+
+    floatCopyToUint8tArray(payload,data.attitude_q[0]);
+    floatCopyToUint8tArray(payload,data.attitude_q[1]);
+    floatCopyToUint8tArray(payload,data.attitude_q[2]);
+    floatCopyToUint8tArray(payload,data.attitude_q[3]);
+
+    floatCopyToUint8tArray(payload,data.attitude_rate[0]);
+    floatCopyToUint8tArray(payload,data.attitude_rate[1]);
+    floatCopyToUint8tArray(payload,data.attitude_rate[2]);
+
+    floatCopyToUint8tArray(payload,data.pos_setpoint[0]);
+    floatCopyToUint8tArray(payload,data.pos_setpoint[1]);
+    floatCopyToUint8tArray(payload,data.pos_setpoint[2]);
+
+    floatCopyToUint8tArray(payload,data.vel_setpoint[0]);
+    floatCopyToUint8tArray(payload,data.vel_setpoint[1]);
+    floatCopyToUint8tArray(payload,data.vel_setpoint[2]);
+
+    floatCopyToUint8tArray(payload,data.att_setpoint[0]);
+    floatCopyToUint8tArray(payload,data.att_setpoint[1]);
+    floatCopyToUint8tArray(payload,data.att_setpoint[2]);
+
+    floatCopyToUint8tArray(payload,data.thrust_setpoint);
+
+    payload.push_back(static_cast<uint8_t>(data.control_mode));
+    payload.push_back(static_cast<uint8_t>(data.move_mode));
+
+    floatCopyToUint8tArray(payload,data.takeoff_height);
+
+    floatCopyToUint8tArray(payload,data.home_pos[0]);
+    floatCopyToUint8tArray(payload,data.home_pos[1]);
+    floatCopyToUint8tArray(payload,data.home_pos[2]);
+    floatCopyToUint8tArray(payload,data.home_yaw);
+
+    floatCopyToUint8tArray(payload,data.hover_pos[0]);
+    floatCopyToUint8tArray(payload,data.hover_pos[1]);
+    floatCopyToUint8tArray(payload,data.hover_pos[2]);
+    floatCopyToUint8tArray(payload,data.hover_yaw);
+
+    floatCopyToUint8tArray(payload,data.land_pos[0]);
+    floatCopyToUint8tArray(payload,data.land_pos[1]);
+    floatCopyToUint8tArray(payload,data.land_pos[2]);
+    floatCopyToUint8tArray(payload,data.land_yaw);
+
+}
+
+void Codec::coderUGVStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    UGVState data=codelessData.data.ugvState;
+
+    payload.push_back(static_cast<uint8_t>(data.ugv_id));
+    payload.push_back(static_cast<uint8_t>(data.connected));
+
+    floatCopyToUint8tArray(payload,data.battery_state);
+    floatCopyToUint8tArray(payload,data.battery_percentage);
+
+    payload.push_back(static_cast<uint8_t>(data.location_source));
+    payload.push_back(static_cast<uint8_t>(data.odom_valid));
+
+    floatCopyToUint8tArray(payload,data.position[0]);
+    floatCopyToUint8tArray(payload,data.position[1]);
+
+    floatCopyToUint8tArray(payload,data.velocity[0]);
+    floatCopyToUint8tArray(payload,data.velocity[1]);
+
+    floatCopyToUint8tArray(payload,data.yaw);
+
+    floatCopyToUint8tArray(payload,data.attitude[0]);
+    floatCopyToUint8tArray(payload,data.attitude[1]);
+    floatCopyToUint8tArray(payload,data.attitude[2]);
+
+    floatCopyToUint8tArray(payload,data.attitude_q[0]);
+    floatCopyToUint8tArray(payload,data.attitude_q[1]);
+    floatCopyToUint8tArray(payload,data.attitude_q[2]);
+    floatCopyToUint8tArray(payload,data.attitude_q[3]);
+
+    payload.push_back(static_cast<uint8_t>(data.control_mode));
+
+    floatCopyToUint8tArray(payload,data.pos_setpoint[0]);
+    floatCopyToUint8tArray(payload,data.pos_setpoint[1]);
+
+    floatCopyToUint8tArray(payload,data.vel_setpoint[0]);
+    floatCopyToUint8tArray(payload,data.vel_setpoint[1]);
+
+    floatCopyToUint8tArray(payload,data.yaw_setpoint);
+
+    floatCopyToUint8tArray(payload,data.home_pos[0]);
+    floatCopyToUint8tArray(payload,data.home_pos[1]);
+
+    floatCopyToUint8tArray(payload,data.home_yaw);
+
+    floatCopyToUint8tArray(payload,data.hover_pos[0]);
+    floatCopyToUint8tArray(payload,data.hover_pos[1]);
+
+    floatCopyToUint8tArray(payload,data.hover_yaw);
+}
+
+void Codec::coderUAVControlCMDPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    UAVControlCMD data=codelessData.data.uavControlCMD;
+
+    payload.push_back(static_cast<uint8_t>(data.cmd));
+
+    floatCopyToUint8tArray(payload,data.desired_pos[0]);
+    floatCopyToUint8tArray(payload,data.desired_pos[1]);
+    floatCopyToUint8tArray(payload,data.desired_pos[2]);
+
+    floatCopyToUint8tArray(payload,data.desired_vel[0]);
+    floatCopyToUint8tArray(payload,data.desired_vel[1]);
+    floatCopyToUint8tArray(payload,data.desired_vel[2]);
+
+    floatCopyToUint8tArray(payload,data.desired_acc[0]);
+    floatCopyToUint8tArray(payload,data.desired_acc[1]);
+    floatCopyToUint8tArray(payload,data.desired_acc[2]);
+
+    floatCopyToUint8tArray(payload,data.desired_jerk[0]);
+    floatCopyToUint8tArray(payload,data.desired_jerk[1]);
+    floatCopyToUint8tArray(payload,data.desired_jerk[2]);
+
+    floatCopyToUint8tArray(payload,data.desired_att[0]);
+    floatCopyToUint8tArray(payload,data.desired_att[1]);
+    floatCopyToUint8tArray(payload,data.desired_att[2]);
+
+    floatCopyToUint8tArray(payload,data.desired_thrust);
+    floatCopyToUint8tArray(payload,data.desired_yaw);
+    floatCopyToUint8tArray(payload,data.desired_yaw_rate);
+
+
+    floatCopyToUint8tArray(payload,data.latitude);
+    floatCopyToUint8tArray(payload,data.longitude);
+    floatCopyToUint8tArray(payload,data.altitude);
+
+}
+
+void Codec::coderUGVControlCMDPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    UGVControlCMD data=codelessData.data.ugvControlCMD;
+
+    payload.push_back(static_cast<uint8_t>(data.cmd));
+    payload.push_back(static_cast<uint8_t>(data.yaw_type));
+
+    floatCopyToUint8tArray(payload,data.desired_pos[0]);
+    floatCopyToUint8tArray(payload,data.desired_pos[1]);
+
+    floatCopyToUint8tArray(payload,data.desired_vel[0]);
+    floatCopyToUint8tArray(payload,data.desired_vel[1]);
+
+    floatCopyToUint8tArray(payload,data.desired_yaw);
+    floatCopyToUint8tArray(payload,data.angular_vel);
+
+}
+
+void Codec::coderUAVSetupCMDPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    UAVSetup data=codelessData.data.uavSetup;
+    payload.push_back(static_cast<uint8_t>(data.cmd));
+    payload.push_back(static_cast<uint8_t>(data.px4_mode));
+    payload.push_back(static_cast<uint8_t>(data.control_mode));
+}
+
+ void Codec::coderACKPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     ACKData data=codelessData.data.ack;
+     payload.push_back(static_cast<uint8_t>(data.agentType));
+     payload.push_back(static_cast<uint8_t>(data.ID));
+     for (int i = 0; i < (int)sizeof(uint16_t); i++)
+         payload.push_back(static_cast<uint8_t>((data.port >> (i * 8)) & 0xFF));
+ }
+
+ void Codec::coderDemoPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     DemoData data=codelessData.data.demo;
+     payload.push_back(static_cast<uint8_t>(data.demoState));
+     for (int i = 0; i < (int)sizeof(uint16_t); i++)
+         payload.push_back(static_cast<uint8_t>((data.demoSize >> (i * 8)) & 0xFF));
+
+     if(payload.capacity()<data.demoSize+3)
+         payload.reserve(data.demoSize+3);
+
+     for(int j=0;j<data.demoSize;++j)
+         payload.push_back(static_cast<uint8_t>(data.demoStr[j]));
+ }
+
+ void Codec::coderScriptPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     ScriptData data=codelessData.data.agentScrip;
+     payload.push_back(static_cast<uint8_t>(data.scripType));
+     payload.push_back(static_cast<uint8_t>(data.scriptState));
+     for (int i = 0; i < (int)sizeof(uint16_t); i++)
+         payload.push_back(static_cast<uint8_t>((data.scriptSize >> (i * 8)) & 0xFF));
+
+     if(payload.capacity()<data.scriptSize+6)
+         payload.reserve(data.scriptSize+6);
+
+     for(int j=0;j<data.scriptSize;++j)
+         payload.push_back(static_cast<uint8_t>(data.scriptStr[j]));
+
+ }
+
+ void Codec::coderWaypointPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     WaypointData data=codelessData.data.waypointData;
+     payload.push_back(static_cast<uint8_t>(data.wp_num));
+     payload.push_back(static_cast<uint8_t>(data.wp_type));
+     payload.push_back(static_cast<uint8_t>(data.wp_end_type));
+     payload.push_back(static_cast<uint8_t>(data.wp_takeoff));
+     payload.push_back(static_cast<uint8_t>(data.wp_yaw_type));
+
+     floatCopyToUint8tArray(payload,data.wp_move_vel);
+     floatCopyToUint8tArray(payload,data.wp_vel_p);
+     floatCopyToUint8tArray(payload,data.z_height);
+
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_1[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_2[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_3[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_4[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_5[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_6[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_7[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_8[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_9[i]);
+     for(int i=0;i<4;i++)
+         doubleCopyToUint8tArray(payload,data.wp_point_10[i]);
+
+     doubleCopyToUint8tArray(payload,data.wp_circle_point[0]);
+     doubleCopyToUint8tArray(payload,data.wp_circle_point[1]);
+ }
+
+void Codec::coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    NodeData data=codelessData.data.nodeInformation;
+
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.nodeCount >> (i * 8)) & 0xFF));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.nodeID >> (i * 8)) & 0xFF));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.nodeSize >> (i * 8)) & 0xFF));
+
+    if(payload.capacity()<data.nodeSize+8)
+        payload.reserve(data.nodeSize+8);
+
+    for(int j=0;j<data.nodeSize;++j)
+        payload.push_back(static_cast<uint8_t>(data.nodeStr[j]));
+}
+
+std::vector<uint8_t> Codec::coder(DataFrame codelessData)
+{
+    std::vector<uint8_t> coderData,PayloadData;
+
+    if(validMessageID.count(codelessData.seq)==0)
+        return coderData;
+
+    /*对应的Payload数据序列化*/
+    switch (codelessData.seq)
+    {
+    case MessageID::HeartbeatMessageID:
+        /*Payload心跳数据序列化*/
+        PayloadData.push_back(static_cast<uint8_t>(codelessData.data.heartbeat.agentType));
+        //插入心跳包计数（未赋值,未使用）
         for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getUDPMessageNum());//获取UDP广播消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.ack.robotID));//获取机器人ID
-
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+            PayloadData.push_back(static_cast<uint8_t>((codelessData.data.heartbeat.count>> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+        break;
+    case MessageID::UAVStateMessageID:
+        /*Payload无人机状态数据序列化*/
+        coderUAVStatePayload(PayloadData,codelessData);
+        break;
+    case MessageID::UGVStateMessageID:
+        /*Payload无人车状态数据序列化*/
+        coderUGVStatePayload(PayloadData,codelessData);
+        break;
+    case MessageID::UAVControlCMDMessageID:
+        /*Payload无人机控制指令数据序列化*/
+        coderUAVControlCMDPayload(PayloadData,codelessData);
+        break;
+    case MessageID::UGVControlCMDMessageID:
+        /*Payload无人车控制指令数据序列化*/
+        coderUGVControlCMDPayload(PayloadData,codelessData);
+        break;
+    case MessageID::UAVSetupMessageID:
+        /*Payload无人机设置指令数据序列化*/
+        coderUAVSetupCMDPayload(PayloadData,codelessData);
+        break;
+    case MessageID::SearchMessageID:
+        /*Payload搜索在线智能体数据序列化*/
+        for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+            PayloadData.push_back(static_cast<uint8_t>((codelessData.data.search.port >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+        break;
+    case MessageID::ACKMessageID:
+        /*Payload智能体应答数据序列化*/
+        coderACKPayload(PayloadData,codelessData);
         break;
     case MessageID::DemoMessageID:
-        //TCP帧头 0xac43
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
-
-        coderDemoDataFrame(tempData,codelessData.demo);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.demo.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-
+        /*Payload智能体demo数据序列化*/
+        coderDemoPayload(PayloadData,codelessData);
         break;
     case MessageID::ScriptMessageID:
-        //TCP帧头 0xac43
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
-
-        coderScriptDataFrame(tempData,codelessData.agentScrip);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.agentScrip.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-
+        /*Payload功能脚本数据序列化*/
+        coderScriptPayload(PayloadData,codelessData);
         break;
     case MessageID::WaypointMessageID:
-        //TCP帧头 0xac43
-        coderData.push_back(0xac);
-        coderData.push_back(0x43);
-        coderWaypointDataFrame(tempData,codelessData.waypointData);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getTCPMessageNum());//获取TCP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.waypointData.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
+         /*Payload航点数据序列化*/
+        coderWaypointPayload(PayloadData,codelessData);
+        break;
     case MessageID::NodeMessageID:
-        //UDP不带回复帧头 0xab65
-        coderData.push_back(0xab);
-        coderData.push_back(0x65);
-
-        coderNodeDataFrame(tempData,codelessData.nodeInformation);
-        safeConvertToUint32(tempData.size(),dataFrameSize);//获得数据帧长度
-        dataFrameSize=dataFrameSize+10;//计算整帧数据的长度
-        for (int i = 0; i < (int)sizeof(uint32_t); ++i)
-            coderData.push_back(static_cast<uint8_t>((dataFrameSize >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
-
-        coderData.push_back(getUDPMessageNum());//获取UDP消息序号
-        coderData.push_back(static_cast<uint8_t>(codelessData.agentScrip.robotID));//获取机器人ID
-        //将整个数据帧从尾部加入数据里面
-        coderData.insert(coderData.end(), tempData.begin(), tempData.end());
-
-        checksum=getChecksum(coderData);//获取校验值
-
-        coderData.push_back(static_cast<uint8_t>((checksum >> 8) & 0xFF)); // 存储高位字节
-        coderData.push_back(static_cast<uint8_t>(checksum & 0xFF)); // 存储低位
-
+        /*Payload机载电脑ROS节点数据序列化*/
+        coderNodePayload(PayloadData,codelessData);
         break;
     default:break;
-
-
     }
+
+    SetDataFrameHead(codelessData);//设置消息帧头
+    safeConvertToUint32(PayloadData.size(),codelessData.length);//获得数据帧长度
+    codelessData.timestamp=getTimestamp();//获取时间戳
+
+    /*插入消息帧头（大端序）*/
+    coderData.push_back((codelessData.head >> 8) & 0xFF);  // 高位字节（高8位）先存储
+    coderData.push_back(codelessData.head & 0xFF);         // 低位字节（低8位）后存储
+
+    /*插入消息长度*/
+    for (int i = 0; i < (int)sizeof(uint32_t); ++i)
+        coderData.push_back(static_cast<uint8_t>((codelessData.length >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+    /*插入消息编号*/
+    coderData.push_back(codelessData.seq);
+
+    /*插入机器人编号*/
+    coderData.push_back(codelessData.robot_ID);
+
+    /*插入时间戳*/
+    for (int i = 0; i < (int)sizeof(uint64_t); ++i)
+        coderData.push_back(static_cast<uint8_t>((codelessData.timestamp >> (i * 8)) & 0xFF));// 使用位移和掩码提取每个字节
+
+    /*将整个Payload数据从尾部插入数据里面*/
+    coderData.insert(coderData.end(), PayloadData.begin(), PayloadData.end());
+
+    codelessData.check=getChecksum(coderData);//获取校验值
+
+    /*插入校验值*/
+    coderData.push_back(static_cast<uint8_t>((codelessData.check >> 8) & 0xFF)); // 存储高位字节
+    coderData.push_back(static_cast<uint8_t>(codelessData.check & 0xFF)); // 存储低位
+
     return coderData;
+
 }

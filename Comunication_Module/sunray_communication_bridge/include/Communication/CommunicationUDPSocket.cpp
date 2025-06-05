@@ -355,12 +355,12 @@ int CommunicationUDPSocket::findStdVectorComponent(uint8_t a,uint8_t b,std::vect
 
 void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,std::string IP,uint16_t port)
 {
-    //std::cout << "UDP准备解码数据 "<<std::endl;
+//    std::cout << "UDPUnicastManagingData "<<std::endl;
 
     std::vector<uint8_t> copyData=data;
     while(true)
     {
-//        std::cout << "UDP数据大小 "<<copyData.size()<<std::endl;
+//        std::cout << "UDP data size "<<copyData.size()<<std::endl;
         if(copyData.size()<19)
             break;
         int index=findStdVectorComponent(0Xab,0X65,copyData);
@@ -368,10 +368,9 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             index=findStdVectorComponent(0Xad,0X21,copyData);
         if(index<0)
             index=findStdVectorComponent(0Xfd,0X32,copyData);
-         //std::cout << "UDP查找帧头 "<<index<<std::endl;
+//        std::cout << "UDP find head "<<index<<std::endl;
         if( index>=0 )
         {
-//           std::cout << "udp读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
 
             // 定义要复制的范围（例如，从索引2到索引5，但不包括索引5）
             auto start = copyData.begin() + index+2;
@@ -385,7 +384,7 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             for (int i = 0; i < 4; ++i)
                 size |= static_cast<uint32_t>(sizeVector[i]) << (i * 8);
 
-            //std::cout << "UDP数据长度 "<<size<<" "<<"实际数据长度 "<<data.size()<<std::endl;
+//            std::cout << "size: "<<size<<" "<<"data.size(): "<<data.size()<<std::endl;
 
             if(data.size()<size)
                 break;
@@ -419,12 +418,12 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 
 //            codec.decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
             if(decoderInterfacePtr!=nullptr)
-                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.dataFrame);
 
             //清除已处理数据
             data.erase(data.begin()+index, data.begin() +index+size);
             copyData.erase(copyData.begin()+index, copyData.begin()+index+size);//待测试
-            if(readData.messageID==MessageID::SearchMessageID)
+            if(readData.dataFrame.seq==MessageID::SearchMessageID)
                 readData.communicationType=CommunicationType::UDPBroadcastCommunicationType;
             readData.port=port;
             readData.ip=IP;
