@@ -61,9 +61,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
             // 【发布】无人车控制指令 地面站 --TCP--> 本节点 --ROS topic--> ugv_control_node
             ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
         }
-    }
-    else
-    {
+    }else{
         // 无人机Sunray和地面站之间的通信（此部分仅针对真机）
         if (uav_experiment_num > 0)
         {
@@ -202,76 +200,76 @@ uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
 void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
     int back;
-    // std::cout << " GroundControl::UDPCallBack: " << (int)readData.messageID << std::endl;
+    //  std::cout << " GroundControl::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
 
-    switch (readData.messageID)
+    switch (readData.dataFrame.seq)
     {
     // 搜索在线智能体 - SearchData（#200）
     case MessageID::SearchMessageID:
     {
         // std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
-        unionData backData;
+        DataFrame backData;
+        backData.seq=MessageID::ACKMessageID;
+        backData.data.ack.init();
         // 仿真无人机应答
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
-            backData.ack.init();
-            backData.ack.robotID = i;
-            backData.ack.ID = i;
-            backData.ack.agentType = 0;
-            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            backData.data.ack.init();
+            backData.robot_ID = i;
+            backData.data.ack.ID = i;
+            backData.data.ack.agentType = 0;
+            backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             // std::cout << "应答数据: " << int(backData.ack.ID) << std::endl;
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
-            // std::cout << "发送结果: " << back << " readData.data.search.port " << readData.data.search.port << std::endl;
+            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
+            //  std::cout << "发送结果: " << back << std::endl;
         }
         // 仿真无人车应答
         for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
         {
-            backData.ack.init();
-            backData.ack.robotID = i;
-            backData.ack.ID = i;
-            backData.ack.agentType = 1;
-            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            backData.data.ack.init();
+            backData.robot_ID = i+100;
+            backData.data.ack.ID = i;
+            backData.data.ack.agentType = 1;
+            backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
+            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
         // 真机无人机应答
         if (uav_experiment_num > 0)
         {
-            backData.ack.init();
-            backData.ack.robotID = uav_id;
-            backData.ack.ID = uav_id;
-            backData.ack.agentType = 0;
-            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
-            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
+            backData.robot_ID = uav_id;
+            backData.data.ack.ID = uav_id;
+            backData.data.ack.agentType = 0;
+            backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
         }
         // 真机无人车应答
         if (ugv_experiment_num > 0)
         {
-            backData.ack.init();
-            backData.ack.robotID = ugv_id;
-            backData.ack.ID = ugv_id;
-            backData.ack.agentType = 1;
-            backData.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
-            back = udpSocket->sendUDPData(codec.coder(MessageID::ACKMessageID, backData), readData.ip, (uint16_t)readData.data.search.port);
+            backData.robot_ID = ugv_id+100;
+            backData.data.ack.ID = ugv_id;
+            backData.data.ack.agentType = 1;
+            backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
+            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
         }
 
         break;
     }
-    // 无人机状态 - StateData（#2
-    case MessageID::StateMessageID:
+    // 无人机状态 - UAVState#2
+    case MessageID::UAVStateMessageID:
         // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
-        if (uav_id == readData.data.state.uavID || is_simulation)
+        if (uav_id == readData.dataFrame.robot_ID || is_simulation)
             return;
-        SynchronizationUAVState(readData.data.state);
+        SynchronizationUAVState(readData.dataFrame.data.uavState);
         break;
-    // 无人车状态 - UGVStateData（#20）
+    // 无人车状态 - UGVState（#20）
     case MessageID::UGVStateMessageID:
-        if (ugv_id == readData.data.ugvState.ugvID || is_simulation)
+        if (ugv_id == readData.dataFrame.robot_ID-100 || is_simulation)
             return;
-        SynchronizationUGVState(readData.data.ugvState);
+        SynchronizationUGVState(readData.dataFrame.data.ugvState);
         break;
     default:
         break;
@@ -417,33 +415,49 @@ void communication_bridge::executiveDemo(std::string orderStr)
 void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
 {
     // 需要上锁，这里是TCP服务端的线程，这些数据基本只有这个函数调用，所以目前不上锁
-    float roll;
-    float pitch;
     uint32_t time_stamp;
     uint8_t robot_id;
 
-    // std::cout << "communication_bridge::TCPServerCallBack:" << readData.messageID << std::endl;
-    switch (readData.messageID)
+    time_stamp = readData.dataFrame.timestamp;
+    if( readData.dataFrame.robot_ID<=100)
+        robot_id = readData.dataFrame.robot_ID;
+    else
+        robot_id = readData.dataFrame.robot_ID-100;
+    std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
+    switch (readData.dataFrame.seq)
     {
-    // 无人机控制指令 - ControlData（#102）
-    case MessageID::ControlMessageID:
+    // 无人机控制指令 - UAVControlCMD（#102）
+    case MessageID::UAVControlCMDMessageID:
     {
-        time_stamp = readData.data.control.timestamp;
-
-        roll = readData.data.control.roll;
-        pitch = readData.data.control.pitch;
-        robot_id = readData.data.control.robotID;
-
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = readData.data.control.controlMode;
-        uav_cmd.desired_pos[0] = readData.data.control.position.x;
-        uav_cmd.desired_pos[1] = readData.data.control.position.y;
-        uav_cmd.desired_pos[2] = readData.data.control.position.z;
-        uav_cmd.desired_vel[0] = readData.data.control.velocity.x;
-        uav_cmd.desired_vel[1] = readData.data.control.velocity.y;
-        uav_cmd.desired_vel[2] = readData.data.control.velocity.z;
-        uav_cmd.desired_yaw = readData.data.control.yaw;
-        uav_cmd.desired_yaw_rate = readData.data.control.yawRate;
+        uav_cmd.cmd = readData.dataFrame.data.uavControlCMD.cmd;
+        uav_cmd.desired_pos[0] = readData.dataFrame.data.uavControlCMD.desired_pos[0];
+        uav_cmd.desired_pos[1] = readData.dataFrame.data.uavControlCMD.desired_pos[1];
+        uav_cmd.desired_pos[2] = readData.dataFrame.data.uavControlCMD.desired_pos[2];
+
+        uav_cmd.desired_vel[0] = readData.dataFrame.data.uavControlCMD.desired_vel[0];
+        uav_cmd.desired_vel[1] = readData.dataFrame.data.uavControlCMD.desired_vel[1];
+        uav_cmd.desired_vel[2] = readData.dataFrame.data.uavControlCMD.desired_vel[2];
+
+        uav_cmd.desired_acc[0] = readData.dataFrame.data.uavControlCMD.desired_acc[0];
+        uav_cmd.desired_acc[1] = readData.dataFrame.data.uavControlCMD.desired_acc[1];
+        uav_cmd.desired_acc[2] = readData.dataFrame.data.uavControlCMD.desired_acc[2];  
+
+        uav_cmd.desired_jerk[0] = readData.dataFrame.data.uavControlCMD.desired_jerk[0];
+        uav_cmd.desired_jerk[1] = readData.dataFrame.data.uavControlCMD.desired_jerk[1];
+        uav_cmd.desired_jerk[2] = readData.dataFrame.data.uavControlCMD.desired_jerk[2]; 
+
+        uav_cmd.desired_att[0] = readData.dataFrame.data.uavControlCMD.desired_att[0];
+        uav_cmd.desired_att[1] = readData.dataFrame.data.uavControlCMD.desired_att[1];
+        uav_cmd.desired_att[2] = readData.dataFrame.data.uavControlCMD.desired_att[2];
+  
+        uav_cmd.desired_thrust = readData.dataFrame.data.uavControlCMD.desired_thrust;
+        uav_cmd.desired_yaw = readData.dataFrame.data.uavControlCMD.desired_yaw;
+        uav_cmd.desired_yaw_rate = readData.dataFrame.data.uavControlCMD.desired_yaw_rate;
+        uav_cmd.latitude = readData.dataFrame.data.uavControlCMD.latitude;
+        uav_cmd.longitude = readData.dataFrame.data.uavControlCMD.longitude;
+        uav_cmd.altitude = readData.dataFrame.data.uavControlCMD.altitude;
+
 
         auto it = control_cmd_pub.find(robot_id);
         if (it == control_cmd_pub.end())
@@ -454,16 +468,15 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(uav_cmd);
         break;
     }
-    // 无人机模式切换 - VehicleData（#103)
-    case MessageID::VehicleMessageID:
+    // 无人机设置指令 - UAVSetup（#103）
+    case MessageID::UAVSetupMessageID:
     {
-        robot_id = readData.data.vehicle.robotID;
         setup.header.stamp = ros::Time::now();
-        if (readData.data.vehicle.sunray_mode == VehicleControlType::SetControlMode)
+        if (readData.dataFrame.data.uavSetup.control_mode == UAVSetupType::SetControlMode)
         {
             setup.control_mode = "CMD_CONTROL";
         }
-        setup.cmd = readData.data.vehicle.sunray_mode;
+        setup.cmd = readData.dataFrame.data.uavSetup.cmd;
         auto it = uav_setup_pub.find(robot_id);
         if (it == uav_setup_pub.end())
         {
@@ -475,95 +488,110 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     }
     // 无人机demo - DemoData（#202）
     case MessageID::DemoMessageID:
-        if (readData.data.demo.demoState == true)
+        if(!is_simulation)
         {
-            if (readData.data.demo.demoSize > 0)
+            if(readData.dataFrame.robot_ID<=100)
             {
-                auto it = nodeMap.find(readData.data.demo.demoStr);
-                if (it != nodeMap.end())
-                {
-                    std::cout << "该节点已启动： " << readData.data.demo.demoSize << std::endl;
-                }
-                else
-                {
-                    pid_t back = OrderCourse(readData.data.demo.demoStr);
-                    if (back > 0)
-                        nodeMap.insert(std::make_pair(readData.data.demo.demoStr, back));
-                }
+                if(uav_id!=robot_id)
+                    break;
+            }else{
+                if(ugv_id!=robot_id)
+                    break;
             }
         }
-        else
+        if (readData.dataFrame.data.demo.demoState == true)
         {
-            if (readData.data.demo.demoSize > 0)
+            if (readData.dataFrame.data.demo.demoSize > 0)
+            {
+                auto it = nodeMap.find(readData.dataFrame.data.demo.demoStr);
+                if (it != nodeMap.end())
+                {
+                    std::cout << "该节点已启动： " << readData.dataFrame.data.demo.demoSize << std::endl;
+                }else{
+                    pid_t back = OrderCourse(readData.dataFrame.data.demo.demoStr);
+                    if (back > 0)
+                        nodeMap.insert(std::make_pair(readData.dataFrame.data.demo.demoStr, back));
+                }
+            }
+        }else{
+            if (readData.dataFrame.data.demo.demoSize > 0)
             {
                 std::cout << "TCPServer 关闭Demo： " << std::endl;
-                auto it = nodeMap.find(readData.data.demo.demoStr);
+                auto it = nodeMap.find(readData.dataFrame.data.demo.demoStr);
                 if (it != nodeMap.end())
                 {
                     pid_t temp = it->second;
                     if (kill(temp, SIGTERM) != 0)
                     {
                         perror("kill failed!");
-                    }
-                    else
-                    {
+                    }else{
                         printf("Sent SIGTERM to child process %d\n", temp);
-                        nodeMap.erase(readData.data.demo.demoStr);
+                        nodeMap.erase(readData.dataFrame.data.demo.demoStr);
                     }
                 }
                 else
-                    std::cout << "该节点未启动： " << readData.data.demo.demoStr << std::endl;
+                    std::cout << "该节点未启动： " << readData.dataFrame.data.demo.demoStr << std::endl;
             }
         }
         break;
     // 功能脚本 - ScriptData（#203）
     case MessageID::ScriptMessageID:
-        if (readData.data.agentScrip.scriptState == true)
+        if(!is_simulation)
         {
-            if (readData.data.agentScrip.scripType == 0)
-                executeScript(readData.data.agentScrip.scriptStr, "/scripts_sim/");
-            else if (readData.data.agentScrip.scripType == 1)
-                executeScript(+readData.data.agentScrip.scriptStr, "/scripts_exp/");
+            if(readData.dataFrame.robot_ID<=100)
+            {
+                if(uav_id!=robot_id)
+                    break;
+            }else{
+                if(ugv_id!=robot_id)
+                    break;
+            }
+        }
+        if (readData.dataFrame.data.agentScrip.scriptState == true)
+        {
+            if (readData.dataFrame.data.agentScrip.scripType == 0)
+                executeScript(readData.dataFrame.data.agentScrip.scriptStr, "/scripts_sim/");
+            else if (readData.dataFrame.data.agentScrip.scripType == 1)
+                executeScript(+readData.dataFrame.data.agentScrip.scriptStr, "/scripts_exp/");
         }
         break;
     // 无人机航点 - WaypointData（#104）
     case MessageID::WaypointMessageID:
     {
-        robot_id = readData.data.waypointData.robotID;
         sunray_msgs::UAVWayPoint waypoint_msg;
         waypoint_msg.header.stamp = ros::Time::now();
-        waypoint_msg.wp_num = readData.data.waypointData.wpNum;
-        waypoint_msg.wp_type = readData.data.waypointData.wpType;
-        waypoint_msg.wp_end_type = readData.data.waypointData.wpEndType;
-        waypoint_msg.wp_yaw_type = readData.data.waypointData.wpYawType;
-        waypoint_msg.wp_takeoff = readData.data.waypointData.wpTakeoff;
-        waypoint_msg.wp_move_vel = readData.data.waypointData.wpMoveVel;
-        waypoint_msg.wp_vel_p = readData.data.waypointData.wpVelP;
-        waypoint_msg.z_height = readData.data.waypointData.wpHeight;
+        waypoint_msg.wp_num = readData.dataFrame.data.waypointData.wp_num;
+        waypoint_msg.wp_type = readData.dataFrame.data.waypointData.wp_type;
+        waypoint_msg.wp_end_type = readData.dataFrame.data.waypointData.wp_end_type;
+        waypoint_msg.wp_takeoff = readData.dataFrame.data.waypointData.wp_takeoff;
+        waypoint_msg.wp_yaw_type = readData.dataFrame.data.waypointData.wp_yaw_type;
+        waypoint_msg.wp_move_vel = readData.dataFrame.data.waypointData.wp_move_vel;
+        waypoint_msg.wp_vel_p = readData.dataFrame.data.waypointData.wp_vel_p;
+        waypoint_msg.z_height = readData.dataFrame.data.waypointData.z_height;
 
-        // std::cout << "MessageID::WaypointMessageID 2 "<<readData.data.waypointData.Waypoint1.X<< std::endl;
+        // std::cout << "MessageID::WaypointMessageID 2 "<<readData.data.waypointData.Waypoint1.X<< std::endl; wp_point_1[0]
 
-        waypoint_msg.wp_point_1 = {readData.data.waypointData.Waypoint1.X, readData.data.waypointData.Waypoint1.Y,
-                                   readData.data.waypointData.Waypoint1.Z, readData.data.waypointData.Waypoint1.Yaw};
-        waypoint_msg.wp_point_2 = {readData.data.waypointData.Waypoint2.X, readData.data.waypointData.Waypoint2.Y,
-                                   readData.data.waypointData.Waypoint2.Z, readData.data.waypointData.Waypoint2.Yaw};
-        waypoint_msg.wp_point_3 = {readData.data.waypointData.Waypoint3.X, readData.data.waypointData.Waypoint3.Y,
-                                   readData.data.waypointData.Waypoint3.Z, readData.data.waypointData.Waypoint3.Yaw};
-        waypoint_msg.wp_point_4 = {readData.data.waypointData.Waypoint4.X, readData.data.waypointData.Waypoint4.Y,
-                                   readData.data.waypointData.Waypoint4.Z, readData.data.waypointData.Waypoint4.Yaw};
-        waypoint_msg.wp_point_5 = {readData.data.waypointData.Waypoint5.X, readData.data.waypointData.Waypoint5.Y,
-                                   readData.data.waypointData.Waypoint5.Z, readData.data.waypointData.Waypoint5.Yaw};
-        waypoint_msg.wp_point_6 = {readData.data.waypointData.Waypoint6.X, readData.data.waypointData.Waypoint6.Y,
-                                   readData.data.waypointData.Waypoint6.Z, readData.data.waypointData.Waypoint6.Yaw};
-        waypoint_msg.wp_point_7 = {readData.data.waypointData.Waypoint7.X, readData.data.waypointData.Waypoint7.Y,
-                                   readData.data.waypointData.Waypoint7.Z, readData.data.waypointData.Waypoint7.Yaw};
-        waypoint_msg.wp_point_8 = {readData.data.waypointData.Waypoint8.X, readData.data.waypointData.Waypoint8.Y,
-                                   readData.data.waypointData.Waypoint8.Z, readData.data.waypointData.Waypoint8.Yaw};
-        waypoint_msg.wp_point_9 = {readData.data.waypointData.Waypoint9.X, readData.data.waypointData.Waypoint9.Y,
-                                   readData.data.waypointData.Waypoint9.Z, readData.data.waypointData.Waypoint9.Yaw};
-        waypoint_msg.wp_point_10 = {readData.data.waypointData.Waypoint10.X, readData.data.waypointData.Waypoint10.Y,
-                                    readData.data.waypointData.Waypoint10.Z, readData.data.waypointData.Waypoint10.Yaw};
-        waypoint_msg.wp_circle_point = {readData.data.waypointData.wpCirclePointX, readData.data.waypointData.wpCirclePointY};
+        waypoint_msg.wp_point_1 = {readData.dataFrame.data.waypointData.wp_point_1[0], readData.dataFrame.data.waypointData.wp_point_1[1],
+                                   readData.dataFrame.data.waypointData.wp_point_1[2], readData.dataFrame.data.waypointData.wp_point_1[3]};
+        waypoint_msg.wp_point_2 = {readData.dataFrame.data.waypointData.wp_point_2[0], readData.dataFrame.data.waypointData.wp_point_2[1],
+                                   readData.dataFrame.data.waypointData.wp_point_2[2], readData.dataFrame.data.waypointData.wp_point_2[3]};
+        waypoint_msg.wp_point_3 = {readData.dataFrame.data.waypointData.wp_point_3[0], readData.dataFrame.data.waypointData.wp_point_3[1],
+                                   readData.dataFrame.data.waypointData.wp_point_3[2], readData.dataFrame.data.waypointData.wp_point_3[3]};
+        waypoint_msg.wp_point_4 = {readData.dataFrame.data.waypointData.wp_point_4[0], readData.dataFrame.data.waypointData.wp_point_4[1],
+                                   readData.dataFrame.data.waypointData.wp_point_4[2], readData.dataFrame.data.waypointData.wp_point_4[3]};
+        waypoint_msg.wp_point_5 = {readData.dataFrame.data.waypointData.wp_point_5[0], readData.dataFrame.data.waypointData.wp_point_5[1],
+                                   readData.dataFrame.data.waypointData.wp_point_5[2], readData.dataFrame.data.waypointData.wp_point_5[3]};
+        waypoint_msg.wp_point_6 = {readData.dataFrame.data.waypointData.wp_point_6[0], readData.dataFrame.data.waypointData.wp_point_6[1],
+                                   readData.dataFrame.data.waypointData.wp_point_6[2], readData.dataFrame.data.waypointData.wp_point_6[3]};
+        waypoint_msg.wp_point_7 = {readData.dataFrame.data.waypointData.wp_point_7[0], readData.dataFrame.data.waypointData.wp_point_7[1],
+                                   readData.dataFrame.data.waypointData.wp_point_7[2], readData.dataFrame.data.waypointData.wp_point_7[3]};
+        waypoint_msg.wp_point_8 = {readData.dataFrame.data.waypointData.wp_point_8[0], readData.dataFrame.data.waypointData.wp_point_8[1],
+                                   readData.dataFrame.data.waypointData.wp_point_8[2], readData.dataFrame.data.waypointData.wp_point_8[3]};
+        waypoint_msg.wp_point_9 = {readData.dataFrame.data.waypointData.wp_point_9[0], readData.dataFrame.data.waypointData.wp_point_9[1],
+                                   readData.dataFrame.data.waypointData.wp_point_9[2], readData.dataFrame.data.waypointData.wp_point_9[3]};
+        waypoint_msg.wp_point_10 = {readData.dataFrame.data.waypointData.wp_point_10[0], readData.dataFrame.data.waypointData.wp_point_10[1],
+                                    readData.dataFrame.data.waypointData.wp_point_10[2], readData.dataFrame.data.waypointData.wp_point_10[3]};
+        waypoint_msg.wp_circle_point = {readData.dataFrame.data.waypointData.wp_circle_point[0], readData.dataFrame.data.waypointData.wp_circle_point[1]};
 
         auto it = uav_waypoint_pub.find(robot_id);
         if (it == uav_waypoint_pub.end())
@@ -574,10 +602,9 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(waypoint_msg);
         break;
     }
-    // 无人车控制指令 - UGVControlData（#120）
-    case MessageID::UGVControlMessageID:
+    // 无人车控制指令 - UGVControlCMD （#120）
+    case MessageID::UGVControlCMDMessageID:
     {
-        robot_id = readData.data.ugvControl.robotID;
 
         auto it = ugv_controlCMD_pub.find(robot_id);
         if (it == ugv_controlCMD_pub.end())
@@ -586,14 +613,14 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             break;
         }
         sunray_msgs::UGVControlCMD msg;
-        msg.cmd = readData.data.ugvControl.controlMode;
-        msg.yaw_type = readData.data.ugvControl.yawType;
-        msg.desired_pos[0] = readData.data.ugvControl.desiredPos.x;
-        msg.desired_pos[1] = readData.data.ugvControl.desiredPos.y;
-        msg.desired_vel[0] = readData.data.ugvControl.desiredVel.x;
-        msg.desired_vel[1] = readData.data.ugvControl.desiredVel.y;
-        msg.desired_yaw = readData.data.ugvControl.desiredYaw;
-        msg.angular_vel = readData.data.ugvControl.angularVel;
+        msg.cmd = readData.dataFrame.data.ugvControlCMD.cmd;
+        msg.yaw_type = readData.dataFrame.data.ugvControlCMD.yaw_type;
+        msg.desired_pos[0] = readData.dataFrame.data.ugvControlCMD.desired_pos[0];
+        msg.desired_pos[1] = readData.dataFrame.data.ugvControlCMD.desired_pos[1];
+        msg.desired_vel[0] = readData.dataFrame.data.ugvControlCMD.desired_vel[0];
+        msg.desired_vel[1] = readData.dataFrame.data.ugvControlCMD.desired_vel[1];
+        msg.desired_yaw = readData.dataFrame.data.ugvControlCMD.desired_yaw;
+        msg.angular_vel = readData.dataFrame.data.ugvControlCMD.angular_vel;
         it->second.publish(msg);
         break;
     }
@@ -603,88 +630,124 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     // std::cout << "communication_bridge::TCPServerCallBack end" << std::endl;
 }
 
-bool communication_bridge::SynchronizationUGVState(UGVStateData Data)
+bool communication_bridge::SynchronizationUGVState(UGVState Data)
 {
-    auto it = ugv_state_pub.find(Data.ugvID);
+    auto it = ugv_state_pub.find(Data.ugv_id);
 
     if (it == ugv_state_pub.end())
     {
-        std::cout << "UGV" + std::to_string(Data.ugvID) + " topic Publisher not found!" << std::endl;
+        std::cout << "UGV" + std::to_string(Data.ugv_id) + " topic Publisher not found!" << std::endl;
         return false;
     }
 
     sunray_msgs::UGVState msg;
-    msg.ugv_id = Data.ugvID;
-    msg.location_source = Data.locationSource;
+    msg.ugv_id = Data.ugv_id;
     msg.connected = Data.connected;
-    msg.odom_valid = Data.locationSource;
+    msg.battery_state = Data.battery_state;
+    msg.battery_percentage = Data.battery_percentage;
+    msg.location_source = Data.location_source;
     msg.odom_valid = Data.odom_valid;
-    msg.position[0] = Data.position.x;
-    msg.position[1] = Data.position.y;
-    msg.velocity[0] = Data.velocity.x;
-    msg.velocity[1] = Data.velocity.y;
+    msg.position[0] = Data.position[0];
+    msg.position[1] = Data.position[1];
+    msg.velocity[0] = Data.velocity[0];
+    msg.velocity[1] = Data.velocity[1];
     msg.yaw = Data.yaw;
 
-    msg.pos_setpoint[0] = Data.posSetpoint.x;
-    msg.pos_setpoint[1] = Data.posSetpoint.y;
-    msg.vel_setpoint[0] = Data.velSetpoint.x;
-    msg.vel_setpoint[1] = Data.velSetpoint.y;
-    msg.yaw_setpoint = Data.yawSetpoint;
-    msg.battery_state = Data.batteryState;
-    msg.battery_percentage = Data.batteryPercentage;
-    msg.control_mode = Data.controlMode;
+    msg.attitude[0] = Data.attitude[0];
+    msg.attitude[1] = Data.attitude[1];
+    msg.attitude[2] = Data.attitude[2];
+
+    msg.attitude_q.x = Data.attitude_q[0];
+    msg.attitude_q.y = Data.attitude_q[1];
+    msg.attitude_q.z = Data.attitude_q[2];
+    msg.attitude_q.w = Data.attitude_q[3];
+
+    msg.control_mode = Data.control_mode;
+
+    msg.pos_setpoint[0] = Data.pos_setpoint[0];
+    msg.pos_setpoint[1] = Data.pos_setpoint[1];
+    msg.vel_setpoint[0] = Data.vel_setpoint[0];
+    msg.vel_setpoint[1] = Data.vel_setpoint[1];
+    msg.yaw_setpoint = Data.yaw_setpoint;
+
+    msg.home_pos[0] = Data.home_pos[0];
+    msg.home_pos[1] = Data.home_pos[1];
+    msg.home_yaw = Data.home_yaw;
+
+    msg.hover_pos[0] = Data.hover_pos[0];
+    msg.hover_pos[1] = Data.hover_pos[1];
+    msg.hover_yaw = Data.hover_yaw;
 
     it->second.publish(msg);
     return true;
 }
 
-bool communication_bridge::SynchronizationUAVState(StateData Data)
+bool communication_bridge::SynchronizationUAVState(UAVState Data)
 {
 
-    auto it = uav_state_pub.find(Data.uavID);
+    auto it = uav_state_pub.find(Data.uav_id);
 
     if (it == uav_state_pub.end())
     {
-        std::cout << "UAV" + std::to_string(Data.uavID) + " topic Publisher not found!" << std::endl;
+        std::cout << "UAV" + std::to_string(Data.uav_id) + " topic Publisher not found!" << std::endl;
         return false;
     }
 
     sunray_msgs::UAVState msg;
-    msg.uav_id = Data.uavID;
+    msg.uav_id = Data.uav_id;
     msg.connected = Data.connected;
     msg.armed = Data.armed;
     msg.mode = Data.mode;
-    msg.location_source = Data.locationSource;
+    msg.landed_state = Data.landed_state;
+    msg.battery_state = Data.battery_state;
+    msg.battery_percentage = Data.battery_percentage;
+    msg.location_source = Data.location_source;
     msg.odom_valid = Data.odom_valid;
-    msg.position[0] = Data.position.x;
-    msg.position[1] = Data.position.y;
-    msg.position[2] = Data.position.z;
-    msg.velocity[0] = Data.velocity.x;
-    msg.velocity[1] = Data.velocity.y;
-    msg.velocity[2] = Data.velocity.z;
-    msg.attitude[0] = Data.attitude.x;
-    msg.attitude[1] = Data.attitude.y;
-    msg.attitude[2] = Data.attitude.z;
-    msg.attitude_q.w = Data.attitudeQuaternion.w;
-    msg.attitude_q.x = Data.attitudeQuaternion.x;
-    msg.attitude_q.y = Data.attitudeQuaternion.y;
-    msg.attitude_q.z = Data.attitudeQuaternion.z;
-    msg.attitude_rate[0] = Data.attitudeRate.x;
-    msg.attitude_rate[1] = Data.attitudeRate.y;
-    msg.attitude_rate[2] = Data.attitudeRate.z;
-    msg.pos_setpoint[0] = Data.posSetpoint.x;
-    msg.pos_setpoint[1] = Data.posSetpoint.y;
-    msg.pos_setpoint[2] = Data.posSetpoint.z;
-    msg.vel_setpoint[0] = Data.velSetpoint.x;
-    msg.vel_setpoint[1] = Data.velSetpoint.y;
-    msg.vel_setpoint[2] = Data.velSetpoint.z;
-    msg.att_setpoint[0] = Data.attSetpoint.x;
-    msg.att_setpoint[1] = Data.attSetpoint.y;
-    msg.att_setpoint[2] = Data.attSetpoint.z;
-    msg.battery_state = Data.batteryState;
-    msg.battery_percentage = Data.batteryPercentage;
-    msg.control_mode = Data.controlMode;
-    msg.move_mode = Data.moveMode;
+    msg.position[0] = Data.position[0];
+    msg.position[1] = Data.position[1];
+    msg.position[2] = Data.position[2];
+    msg.velocity[0] = Data.velocity[0];
+    msg.velocity[1] = Data.velocity[1];
+    msg.velocity[2] = Data.velocity[2];
+    msg.attitude[0] = Data.attitude[0];
+    msg.attitude[1] = Data.attitude[1];
+    msg.attitude[2] = Data.attitude[2];
+    msg.attitude_q.w = Data.attitude_q[0];
+    msg.attitude_q.x = Data.attitude_q[1];
+    msg.attitude_q.y = Data.attitude_q[2];
+    msg.attitude_q.z = Data.attitude_q[3];
+    msg.attitude_rate[0] = Data.attitude_rate[0];
+    msg.attitude_rate[1] = Data.attitude_rate[1];
+    msg.attitude_rate[2] = Data.attitude_rate[2];
+    msg.pos_setpoint[0] = Data.pos_setpoint[0];
+    msg.pos_setpoint[1] = Data.pos_setpoint[1];
+    msg.pos_setpoint[2] = Data.pos_setpoint[2];
+    msg.vel_setpoint[0] = Data.vel_setpoint[0];
+    msg.vel_setpoint[1] = Data.vel_setpoint[1];
+    msg.vel_setpoint[2] = Data.vel_setpoint[2];
+    msg.att_setpoint[0] = Data.att_setpoint[0];
+    msg.att_setpoint[1] = Data.att_setpoint[1];
+    msg.att_setpoint[2] = Data.att_setpoint[2];
+
+    msg.thrust_setpoint = Data.thrust_setpoint;
+    msg.control_mode = Data.control_mode;
+    msg.move_mode = Data.move_mode;
+    msg.takeoff_height = Data.takeoff_height;
+
+    msg.home_pos[0] = Data.home_pos[0];
+    msg.home_pos[1] = Data.home_pos[1];
+    msg.home_pos[2] = Data.home_pos[2];
+    msg.home_yaw = Data.home_yaw;
+
+    msg.hover_pos[0] = Data.hover_pos[0];
+    msg.hover_pos[1] = Data.hover_pos[1];
+    msg.hover_pos[2] = Data.hover_pos[2];
+    msg.hover_yaw = Data.hover_yaw;
+
+    msg.land_pos[0] = Data.land_pos[0];
+    msg.land_pos[1] = Data.land_pos[1];
+    msg.land_pos[2] = Data.land_pos[2];
+    msg.land_yaw = Data.land_yaw;
 
     it->second.publish(msg);
     return true;
@@ -718,17 +781,17 @@ void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
                 for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
                 {
                     // std::cout << "Index " << NodeNumber << ": " << node_list[NodeNumber] << std::endl;
-                    uavStateData[i].nodeInformation.init();
-                    uavStateData[i].nodeInformation.robotID = i;
-                    uavStateData[i].nodeInformation.agentType = 0;
-                    uavStateData[i].nodeInformation.agentID = i;
-                    uavStateData[i].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
-                    uavStateData[i].nodeInformation.nodeID = NodeNumber + 1;
-                    uavStateData[i].nodeInformation.nodeSize = node_list[NodeNumber].size();
-                    node_list[NodeNumber].copy(uavStateData[i].nodeInformation.nodeStr, node_list[NodeNumber].size());
+                    uavOnlineNodeData[i].seq=MessageID::NodeMessageID;
+                    uavOnlineNodeData[i].robot_ID=i;
+                    uavOnlineNodeData[i].data.nodeInformation.init();
+
+                    uavOnlineNodeData[i].data.nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    uavOnlineNodeData[i].data.nodeInformation.nodeID = NodeNumber + 1;
+                    uavOnlineNodeData[i].data.nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(uavOnlineNodeData[i].data.nodeInformation.nodeStr, node_list[NodeNumber].size());
 
                     // 机载电脑ROS节点 -NodeData（#30）
-                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, uavStateData[i]);
+                    SendUdpDataToAllOnlineGroundStations(uavOnlineNodeData[i]);
                     
                 }
             }
@@ -738,17 +801,17 @@ void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
             {
                 for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
                 {
-                    ugvStateData[i].nodeInformation.init();
-                    ugvStateData[i].nodeInformation.robotID = i;
-                    ugvStateData[i].nodeInformation.agentType = 1;
-                    ugvStateData[i].nodeInformation.agentID = i;
-                    ugvStateData[i].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
-                    ugvStateData[i].nodeInformation.nodeID = NodeNumber + 1;
-                    ugvStateData[i].nodeInformation.nodeSize = node_list[NodeNumber].size();
-                    node_list[NodeNumber].copy(ugvStateData[i].nodeInformation.nodeStr, node_list[NodeNumber].size());
+                    ugvOnlineNodeData[i].seq=MessageID::NodeMessageID;
+                    ugvOnlineNodeData[i].robot_ID=i+100;
+                    ugvOnlineNodeData[i].data.nodeInformation.init();
+
+                    ugvOnlineNodeData[i].data.nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    ugvOnlineNodeData[i].data.nodeInformation.nodeID = NodeNumber + 1;
+                    ugvOnlineNodeData[i].data.nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(ugvOnlineNodeData[i].data.nodeInformation.nodeStr, node_list[NodeNumber].size());
 
                     // 机载电脑ROS节点 -NodeData（#30）
-                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, ugvStateData[i]);
+                    SendUdpDataToAllOnlineGroundStations(ugvOnlineNodeData[i]);
                     
                 }
             }
@@ -758,17 +821,17 @@ void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
                 for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
                 {
                     // std::cout << "Index " << NodeNumber << ": " << node_list[NodeNumber] << std::endl;
-                    uavStateData[uav_id].nodeInformation.init();
-                    uavStateData[uav_id].nodeInformation.robotID = uav_id;
-                    uavStateData[uav_id].nodeInformation.agentType = 0;
-                    uavStateData[uav_id].nodeInformation.agentID = uav_id;
-                    uavStateData[uav_id].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
-                    uavStateData[uav_id].nodeInformation.nodeID = NodeNumber + 1;
-                    uavStateData[uav_id].nodeInformation.nodeSize = node_list[NodeNumber].size();
-                    node_list[NodeNumber].copy(uavStateData[uav_id].nodeInformation.nodeStr, node_list[NodeNumber].size());
+                    uavOnlineNodeData[uav_id].seq=MessageID::NodeMessageID;
+                    uavOnlineNodeData[uav_id].robot_ID=uav_id;
+                    uavOnlineNodeData[uav_id].data.nodeInformation.init();
+
+                    uavOnlineNodeData[uav_id].data.nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    uavOnlineNodeData[uav_id].data.nodeInformation.nodeID = NodeNumber + 1;
+                    uavOnlineNodeData[uav_id].data.nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(uavOnlineNodeData[uav_id].data.nodeInformation.nodeStr, node_list[NodeNumber].size());
 
                     // 机载电脑ROS节点 -NodeData（#30）
-                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, uavStateData[uav_id]);
+                    SendUdpDataToAllOnlineGroundStations(uavOnlineNodeData[uav_id]);
                     
                 }
             }
@@ -777,17 +840,17 @@ void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
             {
                 for (size_t NodeNumber = 0; NodeNumber < node_list.size(); ++NodeNumber)
                 {
-                    ugvStateData[ugv_id].nodeInformation.init();
-                    ugvStateData[ugv_id].nodeInformation.robotID = ugv_id;
-                    ugvStateData[ugv_id].nodeInformation.agentType = 1;
-                    ugvStateData[ugv_id].nodeInformation.agentID = ugv_id;
-                    ugvStateData[ugv_id].nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
-                    ugvStateData[ugv_id].nodeInformation.nodeID = NodeNumber + 1;
-                    ugvStateData[ugv_id].nodeInformation.nodeSize = node_list[NodeNumber].size();
-                    node_list[NodeNumber].copy(ugvStateData[ugv_id].nodeInformation.nodeStr, node_list[NodeNumber].size());
+                    ugvOnlineNodeData[ugv_id].seq=MessageID::NodeMessageID;
+                    ugvOnlineNodeData[ugv_id].robot_ID=ugv_id+100;
+                    ugvOnlineNodeData[ugv_id].data.nodeInformation.init();
+
+                    ugvOnlineNodeData[ugv_id].data.nodeInformation.nodeCount = static_cast<uint16_t>(node_list.size());
+                    ugvOnlineNodeData[ugv_id].data.nodeInformation.nodeID = NodeNumber + 1;
+                    ugvOnlineNodeData[ugv_id].data.nodeInformation.nodeSize = node_list[NodeNumber].size();
+                    node_list[NodeNumber].copy(ugvOnlineNodeData[ugv_id].data.nodeInformation.nodeStr, node_list[NodeNumber].size());
 
                     // 机载电脑ROS节点 -NodeData（#30）
-                    SendUdpDataToAllOnlineGroundStations(MessageID::NodeMessageID, ugvStateData[ugv_id]);
+                    SendUdpDataToAllOnlineGroundStations(ugvOnlineNodeData[ugv_id]);
                 }
             }
         }
@@ -796,7 +859,7 @@ void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
     }
 }
 
-void communication_bridge::SendUdpDataToAllOnlineGroundStations(int msgID,unionData data)
+void communication_bridge::SendUdpDataToAllOnlineGroundStations(DataFrame data)
 {
     std::vector<std::string> tempVec;
 
@@ -806,7 +869,7 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(int msgID,unionD
     for (const auto &ip : GSIPHash)
     {
         // 机载电脑ROS节点 -NodeData（#30）
-        int sendBack = udpSocket->sendUDPData(codec.coder(msgID, data), ip, udp_ground_port);
+        int sendBack = udpSocket->sendUDPData(codec.coder(data), ip, udp_ground_port);
         if (sendBack < 0)
             tempVec.push_back(ip);
     }
@@ -821,73 +884,121 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
 {
     // 如果没有与地面站连接，则不发送心跳包
     if(!station_connected)
-    {
         return;
-    }
+    
 
     // 心跳包数据结构
-    unionData Heartbeatdata;
-
-    // 无人机心跳包 - 仿真和真机均发送
-    for (int i = uav_id; i < uav_simulation_num + uav_id; i++)
+    DataFrame Heartbeatdata;
+    Heartbeatdata.seq=MessageID::HeartbeatMessageID;
+    Heartbeatdata.data.heartbeat.init();
+    
+    if (is_simulation)
     {
-        Heartbeatdata.heartbeat.robotID = i;
-        Heartbeatdata.heartbeat.agentType = UAVType;
-        tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
-    }
+        // 无人机心跳包 - 仿真发送
+        for (int i = uav_id; i < uav_simulation_num + uav_id; i++)
+        {
+            Heartbeatdata.robot_ID = i;
+            Heartbeatdata.data.heartbeat.agentType = UAVType;
+            tcpServer.allSendData(codec.coder( Heartbeatdata));
+        }
 
-    // 无人机心跳包 - 仿真和真机均发送
-    for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
-    {
-        Heartbeatdata.heartbeat.robotID = i;
-        Heartbeatdata.heartbeat.agentType = UGVType;
-        tcpServer.allSendData(codec.coder(MessageID::HeartbeatMessageID, Heartbeatdata));
+        // 无人车心跳包 - 仿真发送
+        for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
+        {
+            Heartbeatdata.robot_ID = i+100;
+            Heartbeatdata.data.heartbeat.agentType = UGVType;
+            tcpServer.allSendData(codec.coder(Heartbeatdata));
+        }
+    }else{
+        // 无人机心跳包 - 真机发送
+        if (uav_experiment_num > 0)
+        {
+            Heartbeatdata.robot_ID = uav_id;
+            Heartbeatdata.data.heartbeat.agentType = UAVType;
+            tcpServer.allSendData(codec.coder( Heartbeatdata));
+        }
+        // 无人车心跳包 - 真机发送
+        if (ugv_experiment_num > 0)
+        {
+            Heartbeatdata.robot_ID = ugv_id+100;
+            Heartbeatdata.data.heartbeat.agentType = UGVType;
+            tcpServer.allSendData(codec.coder(Heartbeatdata));
+        }
     }
 }
+
+    
+    
 
 // UAVState回调函数 - 将读取到的数据按照id顺序存储在uavStateData数组中
 void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
 {
     int index = robot_id - 1;
-    uavStateData[index].state.init();
-    uavStateData[index].state.robotID = robot_id;
-    uavStateData[index].state.uavID = robot_id;
-    uavStateData[index].state.connected = msg->connected;
-    uavStateData[index].state.armed = msg->armed;
-    uavStateData[index].state.mode = getPX4ModeEnum(msg->mode);
-    uavStateData[index].state.locationSource = msg->location_source;
-    uavStateData[index].state.odom_valid = msg->odom_valid;
-    uavStateData[index].state.position.x = msg->position[0];
-    uavStateData[index].state.position.y = msg->position[1];
-    uavStateData[index].state.position.z = msg->position[2];
-    uavStateData[index].state.velocity.x = msg->velocity[0];
-    uavStateData[index].state.velocity.y = msg->velocity[1];
-    uavStateData[index].state.velocity.z = msg->velocity[2];
-    uavStateData[index].state.attitude.x = msg->attitude[0];
-    uavStateData[index].state.attitude.y = msg->attitude[1];
-    uavStateData[index].state.attitude.z = msg->attitude[2];
+    uavStateData[index].data.uavState.init();
+    uavStateData[index].robot_ID = robot_id;
+    uavStateData[index].data.uavState.uav_id =msg->uav_id;
+    uavStateData[index].data.uavState.connected = msg->connected;
+    uavStateData[index].data.uavState.armed = msg->armed;
+    uavStateData[index].data.uavState.mode = getPX4ModeEnum(msg->mode);
+    uavStateData[index].data.uavState.landed_state= msg->landed_state;
+    uavStateData[index].data.uavState.battery_state = msg->battery_state;
+    uavStateData[index].data.uavState.battery_percentage = msg->battery_percentage;
 
-    uavStateData[index].state.posSetpoint.x = msg->pos_setpoint[0];
-    uavStateData[index].state.posSetpoint.y = msg->pos_setpoint[1];
-    uavStateData[index].state.posSetpoint.z = msg->pos_setpoint[2];
+    uavStateData[index].data.uavState.location_source = msg->location_source;
+    uavStateData[index].data.uavState.odom_valid = msg->odom_valid;
 
-    uavStateData[index].state.velSetpoint.x = msg->vel_setpoint[0];
-    uavStateData[index].state.velSetpoint.y = msg->vel_setpoint[1];
-    uavStateData[index].state.velSetpoint.z = msg->vel_setpoint[2];
+    uavStateData[index].data.uavState.position[0] = msg->position[0];
+    uavStateData[index].data.uavState.position[1] = msg->position[1];
+    uavStateData[index].data.uavState.position[2] = msg->position[2];
+    uavStateData[index].data.uavState.velocity[0] = msg->velocity[0];
+    uavStateData[index].data.uavState.velocity[1] = msg->velocity[1];
+    uavStateData[index].data.uavState.velocity[2] = msg->velocity[2];
+    uavStateData[index].data.uavState.attitude[0] = msg->attitude[0];
+    uavStateData[index].data.uavState.attitude[1] = msg->attitude[1];
+    uavStateData[index].data.uavState.attitude[2] = msg->attitude[2];
 
-    uavStateData[index].state.attSetpoint.x = msg->att_setpoint[0];
-    uavStateData[index].state.attSetpoint.y = msg->att_setpoint[1];
-    uavStateData[index].state.attSetpoint.z = msg->att_setpoint[2];
+    uavStateData[index].data.uavState.attitude_q[0] = msg->attitude_q.w;
+    uavStateData[index].data.uavState.attitude_q[1] = msg->attitude_q.x;
+    uavStateData[index].data.uavState.attitude_q[2] = msg->attitude_q.y;
+    uavStateData[index].data.uavState.attitude_q[3] = msg->attitude_q.z;
 
-    uavStateData[index].state.attitudeQuaternion.w = msg->attitude_q.w;
-    uavStateData[index].state.attitudeQuaternion.x = msg->attitude_q.x;
-    uavStateData[index].state.attitudeQuaternion.y = msg->attitude_q.y;
-    uavStateData[index].state.attitudeQuaternion.z = msg->attitude_q.z;
+    uavStateData[index].data.uavState.attitude_rate[0] = msg->attitude_rate[0];
+    uavStateData[index].data.uavState.attitude_rate[1] = msg->attitude_rate[1];
+    uavStateData[index].data.uavState.attitude_rate[2] = msg->attitude_rate[2];
 
-    uavStateData[index].state.batteryState = msg->battery_state;
-    uavStateData[index].state.batteryPercentage = msg->battery_percentage;
-    uavStateData[index].state.controlMode = msg->control_mode;
-    uavStateData[index].state.moveMode = msg->move_mode;
+    uavStateData[index].data.uavState.pos_setpoint[0] = msg->pos_setpoint[0];
+    uavStateData[index].data.uavState.pos_setpoint[1] = msg->pos_setpoint[1];
+    uavStateData[index].data.uavState.pos_setpoint[2] = msg->pos_setpoint[2];
+
+    uavStateData[index].data.uavState.vel_setpoint[0] = msg->vel_setpoint[0];
+    uavStateData[index].data.uavState.vel_setpoint[1] = msg->vel_setpoint[1];
+    uavStateData[index].data.uavState.vel_setpoint[2] = msg->vel_setpoint[2];
+
+    uavStateData[index].data.uavState.att_setpoint[0] = msg->att_setpoint[0];
+    uavStateData[index].data.uavState.att_setpoint[1] = msg->att_setpoint[1];
+    uavStateData[index].data.uavState.att_setpoint[2] = msg->att_setpoint[2];
+
+    uavStateData[index].data.uavState.thrust_setpoint = msg->thrust_setpoint;
+
+    uavStateData[index].data.uavState.control_mode = msg->control_mode;
+    uavStateData[index].data.uavState.move_mode = msg->move_mode;
+
+    uavStateData[index].data.uavState.takeoff_height= msg->takeoff_height;
+
+    uavStateData[index].data.uavState.home_pos[0] = msg->home_pos[0];
+    uavStateData[index].data.uavState.home_pos[1] = msg->home_pos[1];
+    uavStateData[index].data.uavState.home_pos[2] = msg->home_pos[2];
+    uavStateData[index].data.uavState.home_yaw= msg->home_yaw;
+
+    uavStateData[index].data.uavState.hover_pos[0] = msg->hover_pos[0];
+    uavStateData[index].data.uavState.hover_pos[1] = msg->hover_pos[1];
+    uavStateData[index].data.uavState.hover_pos[2] = msg->hover_pos[2];
+    uavStateData[index].data.uavState.hover_yaw= msg->hover_yaw;
+
+    uavStateData[index].data.uavState.land_pos[0] = msg->land_pos[0];
+    uavStateData[index].data.uavState.land_pos[1] = msg->land_pos[1];
+    uavStateData[index].data.uavState.land_pos[2] = msg->land_pos[2];
+    uavStateData[index].data.uavState.land_yaw= msg->land_yaw;
 
     std::string mode = msg->mode;
     if (mode.length() > 15)
@@ -897,8 +1008,10 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
 
     // 本节点 --UDP--> 其他无人机 无人机状态信息组播链路发送
     if (uav_id > 0 && !is_simulation && uav_id == robot_id)
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::StateMessageID, uavStateData[uav_id - 1]), udp_port);
-
+    {
+        uavStateData[index].seq=MessageID::UAVStateMessageID;
+        int back = udpSocket->sendUDPMulticastData(codec.coder(uavStateData[index]), udp_port);
+    }
     std::vector<std::string> tempVec;
 
     // 发送数据到地面站 本节点 --UDP--> 地面站
@@ -907,8 +1020,9 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
 
     for (const auto &ip : GSIPHash)
     {
-        // 无人机状态 - StateData（#2）
-        int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::StateMessageID, uavStateData[robot_id - 1]), ip, udp_ground_port);
+        uavStateData[index].seq=MessageID::UAVStateMessageID;
+        // 无人机状态 - UAVState（#2）
+        int sendBack = udpSocket->sendUDPData(codec.coder(uavStateData[index]), ip, udp_ground_port);
         if (sendBack < 0)
             tempVec.push_back(ip);
     }
@@ -920,30 +1034,54 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
 {
+    std::cout << "ugv_state_cb:" << robot_id<< std::endl;
+
     int index = robot_id - 1;
-    ugvStateData[index].ugvState.init();
-    ugvStateData[index].ugvState.robotID = robot_id;
-    ugvStateData[index].ugvState.ugvID = robot_id;
-    ugvStateData[index].ugvState.locationSource = msg->location_source;
-    ugvStateData[index].ugvState.connected = msg->connected;
-    ugvStateData[index].ugvState.odom_valid = msg->odom_valid;
-    ugvStateData[index].ugvState.position.x = msg->position[0];
-    ugvStateData[index].ugvState.position.y = msg->position[1];
-    ugvStateData[index].ugvState.velocity.x = msg->velocity[0];
-    ugvStateData[index].ugvState.velocity.y = msg->velocity[1];
-    ugvStateData[index].ugvState.yaw = msg->yaw;
-    ugvStateData[index].ugvState.posSetpoint.x = msg->pos_setpoint[0];
-    ugvStateData[index].ugvState.posSetpoint.y = msg->pos_setpoint[1];
-    ugvStateData[index].ugvState.velSetpoint.x = msg->vel_setpoint[0];
-    ugvStateData[index].ugvState.velSetpoint.y = msg->vel_setpoint[1];
-    ugvStateData[index].ugvState.yawSetpoint = msg->yaw_setpoint;
-    ugvStateData[index].ugvState.batteryState = msg->battery_state;
-    ugvStateData[index].ugvState.batteryPercentage = msg->battery_percentage;
-    ugvStateData[index].ugvState.controlMode = msg->control_mode;
+    ugvStateData[index].data.ugvState.init();
+    ugvStateData[index].robot_ID = robot_id+100;
+    ugvStateData[index].data.ugvState.ugv_id = robot_id;
+    ugvStateData[index].data.ugvState.connected = msg->connected;
+    ugvStateData[index].data.ugvState.battery_state = msg->battery_state;
+    ugvStateData[index].data.ugvState.battery_percentage = msg->battery_percentage;
+    ugvStateData[index].data.ugvState.location_source = msg->location_source;
+    ugvStateData[index].data.ugvState.odom_valid = msg->odom_valid;
+    ugvStateData[index].data.ugvState.position[0] = msg->position[0];
+    ugvStateData[index].data.ugvState.position[1] = msg->position[1];
+    ugvStateData[index].data.ugvState.velocity[0] = msg->velocity[0];
+    ugvStateData[index].data.ugvState.velocity[1] = msg->velocity[1];
+    ugvStateData[index].data.ugvState.yaw = msg->yaw;
+
+    ugvStateData[index].data.ugvState.attitude[0] = msg->attitude[0];
+    ugvStateData[index].data.ugvState.attitude[1] = msg->attitude[1];
+    ugvStateData[index].data.ugvState.attitude[2] = msg->attitude[2];
+
+    ugvStateData[index].data.ugvState.attitude_q[0] = msg->attitude_q.x;
+    ugvStateData[index].data.ugvState.attitude_q[1] = msg->attitude_q.y;
+    ugvStateData[index].data.ugvState.attitude_q[2] = msg->attitude_q.z;
+    ugvStateData[index].data.ugvState.attitude_q[3] = msg->attitude_q.w;
+
+    ugvStateData[index].data.ugvState.control_mode = msg->control_mode;
+
+    ugvStateData[index].data.ugvState.pos_setpoint[0] = msg->pos_setpoint[0];
+    ugvStateData[index].data.ugvState.pos_setpoint[1] = msg->pos_setpoint[1];
+    ugvStateData[index].data.ugvState.vel_setpoint[0] = msg->vel_setpoint[0];
+    ugvStateData[index].data.ugvState.vel_setpoint[1] = msg->vel_setpoint[1];
+    ugvStateData[index].data.ugvState.yaw_setpoint = msg->yaw_setpoint;
+
+    ugvStateData[index].data.ugvState.home_pos[0] = msg->home_pos[0];
+    ugvStateData[index].data.ugvState.home_pos[1] = msg->home_pos[1];
+    ugvStateData[index].data.ugvState.home_yaw = msg->home_yaw;
+
+    ugvStateData[index].data.ugvState.hover_pos[0] = msg->hover_pos[0];
+    ugvStateData[index].data.ugvState.hover_pos[1] = msg->hover_pos[1];
+    ugvStateData[index].data.ugvState.hover_yaw = msg->hover_yaw;
 
     // 本节点 --UDP--> 其他无人车 无人车状态信息组播链路发送
     if (ugv_id > 0 && !is_simulation && ugv_id == robot_id)
-        int back = udpSocket->sendUDPMulticastData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[ugv_id - 1]), udp_port);
+    {
+        ugvStateData[index].seq=MessageID::UGVStateMessageID;
+        int back = udpSocket->sendUDPMulticastData(codec.coder(ugvStateData[index]), udp_port);
+    }
 
     std::vector<std::string> tempVec;
     // 发送数据到地面站 本节点 --UDP--> 地面站
@@ -952,8 +1090,11 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
 
     for (const auto &ip : GSIPHash)
     {
-        // 无人车状态 - UGVStateData（#20）
-        int sendBack = udpSocket->sendUDPData(codec.coder(MessageID::UGVStateMessageID, ugvStateData[robot_id - 1]), ip, udp_ground_port);
+        // 无人车状态 - UGVState（#20）
+        ugvStateData[index].seq=MessageID::UGVStateMessageID;
+        int sendBack = udpSocket->sendUDPData(codec.coder(ugvStateData[robot_id - 1]), ip, udp_ground_port);
+        std::cout << "sendBack: " << sendBack<< std::endl;
+
         if (sendBack < 0)
             tempVec.push_back(ip);
     }

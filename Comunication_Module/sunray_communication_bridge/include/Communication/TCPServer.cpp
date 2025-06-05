@@ -101,7 +101,7 @@ void TCPServer::TCPServerManagingData(std::vector<uint8_t> &data, std::string IP
             readData.communicationType = CommunicationType::TCPServerCommunicationType;
 
             if(decoderInterfacePtr!=nullptr)
-                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.dataFrame);
 
             // 清除已处理数据
             data.erase(data.begin() + index, data.begin() + index + size);

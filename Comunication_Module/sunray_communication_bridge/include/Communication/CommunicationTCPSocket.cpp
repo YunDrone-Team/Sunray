@@ -350,7 +350,7 @@ void CommunicationTCPSocket::TCPClientManagingData(std::vector<uint8_t>& data,st
             readData.communicationType=CommunicationType::TCPClientCommunicationType;
 
             if(decoderInterfacePtr!=nullptr)
-                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.messageID,readData.data);
+                decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.dataFrame);
 
             //清除已处理数据
             data.erase(data.begin()+index, data.begin() +index+size);

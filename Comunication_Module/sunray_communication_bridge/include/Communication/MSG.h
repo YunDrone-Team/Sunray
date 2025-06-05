@@ -29,7 +29,7 @@ enum ControlType
     GlobalPos                   =17,          //全局坐标(绝对坐标系下的经纬度)
 
     Point                       =30,          //规划点
-
+    CTRLXyzPos                  =50,          //姿态控制,惯性系定点控制 带偏航角
     TakeoffControlType                     =100,         //起飞
     LandControlType                        =101,         //降落
     HoverControlType                       =102,         //悬停
@@ -75,7 +75,7 @@ enum ModelType
 
 
 //Arm解锁 Vehicle control type
-enum VehicleControlType
+enum UAVSetupType
 {
     DisarmControlType       = 0,
     ArmControlType          = 1,
@@ -89,19 +89,19 @@ enum VehicleControlType
 //MESSAGE ID
 enum MessageID
 {
-    HeartbeatMessageID    = 1,
-    StateMessageID        = 2,
-    UGVStateMessageID     = 20,
-    NodeMessageID         = 30,
+    HeartbeatMessageID          = 1,
+    UAVStateMessageID           = 2,
+    UGVStateMessageID           = 20,
+    NodeMessageID               = 30,
 //    TakeoffMessageID    = 101,
-    ControlMessageID      = 102,
-    VehicleMessageID      = 103,
-    WaypointMessageID     = 104,
-    UGVControlMessageID   = 120,
-    SearchMessageID       = 200,
-    ACKMessageID          = 201,
-    DemoMessageID         = 202,
-    ScriptMessageID       = 203,
+    UAVControlCMDMessageID      = 102,
+    UAVSetupMessageID           = 103,
+    WaypointMessageID           = 104,
+    UGVControlCMDMessageID      = 120,
+    SearchMessageID             = 200,
+    ACKMessageID                = 201,
+    DemoMessageID               = 202,
+    ScriptMessageID             = 203,
 
 };
 
@@ -165,277 +165,15 @@ enum WaypointYawType
 
 
 
-//
-//struct TakeoffData     //停用
-//{
-//    uint8_t robotID;    /**< @param robot_id robot ID */
-//    uint8_t msgType;
-//    uint64_t timestamp; /**< @param time_stamp timestamp */
-//    uint8_t takeoff;     /**< @param takeoff takeoff flag */
-//};
-
-
-
-struct VehicleData
-{
-
-    uint8_t robotID;    /**< @param robot_id robot ID */
-    uint8_t msgType;
-    uint64_t timestamp; /**< @param time_stamp timestamp */
-    uint8_t sunray_mode;        /**< @param type vehicle control type */
-    uint8_t px4_mode;
-
-    void init()
-    {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
-        sunray_mode=0;
-        px4_mode=0;
-    }
-};
-
-struct SpaceCoordinates
-{
-    float x;//r
-    float y;//p
-    float z;//y
-};
-
-struct FloatPair {
-    float x;
-    float y;
-};
-
-struct QuaternionData
-{
-    float w;
-    float x;
-    float y;
-    float z;
-};
-
-struct ControlData
-{
-    uint8_t robotID;    /**< @param robot_id robot ID */
-    uint8_t msgType;
-    uint64_t timestamp; /**< @param time_stamp timestamp */
-    
-    uint8_t controlMode;        /**< @param type control type */
-    SpaceCoordinates position;      // [m]
-    SpaceCoordinates velocity;      // [m/s]
-    SpaceCoordinates accelerometer;
-    float yaw;           /**< @param yaw yaw angle */
-    float roll;          /**< @param roll roll angle */
-    float pitch;         /**< @param pitch pitch angle */
-    float latitude;      //经度
-    float longitude;     //纬度
-    float altitude;      //海拔
-    float yawRate;       /**< @param yaw_rate yaw rate flag */
-    //    uint8_t frame;       /**< @param frame reference frame */
-
-    void init()
-    {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
-        controlMode=0;
-        position.x=0;
-        position.y=0;
-        position.z=0;
-        velocity.x=0;
-        velocity.y=0;
-        velocity.z=0;
-        accelerometer.x=0;
-        accelerometer.y=0;
-        accelerometer.z=0;
-        yaw=0;
-        roll=0;
-        pitch=0;
-        latitude=0;
-        longitude=0;
-        altitude=0;
-        yawRate=0;
-    }
-};
-
-struct UGVControlData
-{
-    uint8_t robotID;    /**< @param robot_id robot ID */
-    uint8_t msgType;
-    uint64_t timestamp; /**< @param time_stamp timestamp */
-    uint8_t controlMode;        /**< @param type control type */
-    uint8_t yawType;        // 偏航角类型 0 角速度 1 角度（需要有定位支持）,地面站默认是1
-
-    FloatPair desiredPos;      // [m]
-    FloatPair desiredVel;      // [m/s]
-
-    float desiredYaw;
-    float angularVel;          //[rad/s] 地面站不接入，默认给0
-
-
-    void init()
-    {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
-        controlMode=0;
-        yawType=1;
-        desiredPos.x=0;
-        desiredPos.y=0;
-        desiredVel.x=0;
-        desiredVel.y=0;
-        desiredYaw=0;
-        angularVel=0;
-
-    }
-};
-
-struct StateData
-{
-    uint8_t robotID;  /**< @param robot_id robot ID */
-    uint8_t msgType;
-    uint64_t timestamp; /**< @param time_stamp timestamp */
-    uint8_t uavID;   /**< @param uav_id UAV ID */
-    bool connected;   /**< @param connected connection status */
-    bool armed;       /**< @param armed arm status */
-    uint8_t mode; /**< @param mode flight mode lenght 1
-                    1.INIT；2.RC_CONTROL；3.CMD_CONTROL；4.LAND_CONTROL*/
-
-    uint8_t locationSource;          // 0: Mocap, 1: RTK, 2: Gazebo, 3:
-    bool odom_valid;                  // 0: invalid, 1: valid
-    SpaceCoordinates position;      // [m]
-    SpaceCoordinates velocity;      // [m/s]
-    QuaternionData attitudeQuaternion; //四元数
-    SpaceCoordinates attitude;      // [rad]
-    SpaceCoordinates attitudeRate; // [rad/s]
-    SpaceCoordinates posSetpoint;      // [m]
-    SpaceCoordinates velSetpoint;      // [m/s]
-    SpaceCoordinates attSetpoint;      // [rad]
-
-    float batteryState;      // [V]
-    float batteryPercentage; // [0-1]
-
-    uint8_t controlMode;
-    uint8_t moveMode;
-
-    void init()
-    {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
-
-        uavID=0;
-        connected=false;
-        armed=false;
-        mode=0;
-
-        locationSource=0;
-        odom_valid=false;
-        position.x=0;
-        position.y=0;
-        position.z=0;
-        velocity.x=0;
-        velocity.y=0;
-        velocity.z=0;
-        attitude.x=0;
-        attitude.y=0;
-        attitude.z=0;
-        attitudeRate.x=0;
-        attitudeRate.y=0;
-        attitudeRate.z=0;
-        posSetpoint.x=0;
-        posSetpoint.y=0;
-        posSetpoint.z=0;
-        velSetpoint.x=0;
-        velSetpoint.y=0;
-        velSetpoint.z=0;
-        attSetpoint.x=0;
-        attSetpoint.y=0;
-        attSetpoint.z=0;
-        attitudeQuaternion.w=0;
-        attitudeQuaternion.x=0;
-        attitudeQuaternion.y=0;
-        attitudeQuaternion.z=0;
-
-        batteryState=0;
-        batteryPercentage=0;
-
-        controlMode=0;
-        moveMode=0;
-    }
-
-};
-
-
-struct UGVStateData
-{
-    uint8_t  robotID;  /**< @param robot_id robot ID */
-    uint8_t  msgType;
-    uint64_t timestamp; /**< @param time_stamp timestamp */
-    uint8_t  ugvID;   /**< @param uav_id UGV ID */
-    uint8_t locationSource;          // 0: Mocap, 1: RTK, 2: Gazebo, 3:
-    bool connected;   /**< @param connected connection status */
-    bool odom_valid;                  // 0: invalid, 1: valid
-    FloatPair position;      // [m]
-    FloatPair velocity;      // [m/s]
-    float yaw;
-
-    FloatPair posSetpoint;      // [m]
-    FloatPair velSetpoint;      // [m/s]
-    float yawSetpoint;
-
-    float batteryState;      // [V]
-    float batteryPercentage; // [0-1]
-
-    uint8_t controlMode;
-
-
-    void init()
-    {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
-
-        ugvID=0;
-        connected=false;
-        locationSource=0;
-        odom_valid=false;
-
-        position.x=0;
-        position.y=0;
-        velocity.x=0;
-        velocity.y=0;
-        yaw=0;
-
-        posSetpoint.x=0;
-        posSetpoint.y=0;
-        velSetpoint.x=0;
-        velSetpoint.y=0;
-        yawSetpoint=0;
-
-        batteryState=0;
-        batteryPercentage=0;
-
-        controlMode=0;
-    }
-
-};
-
-// Message structures 心跳包
+//  心跳包
 struct HeartbeatData
 {
-    uint8_t robotID;  /**< @param robot_id robot ID */
-    uint8_t msgType;
-    uint64_t timestamp;
+
     uint8_t agentType;
     int32_t count;       /**< @param head message header 心跳包计数，未启用 */
 
     void init()
     {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
         count=0;
         agentType=0;
     }
@@ -443,34 +181,23 @@ struct HeartbeatData
 
 struct SearchData
 {
-    uint8_t robotID;
-    uint8_t msgType;
-    uint64_t timestamp;
     uint64_t port;
 
     void init()
     {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
+
         port=0;
     }
 };
 
 struct ACKData
 {
-    uint8_t robotID;
-    uint8_t msgType;
-    uint64_t timestamp;
     uint8_t agentType;
     uint8_t ID;
     uint16_t port;
 
     void init()
     {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
         agentType=0;
         ID=0;
         port=0;
@@ -479,19 +206,12 @@ struct ACKData
 
 struct DemoData
 {
-    uint8_t robotID;
-    uint8_t msgType;
-    uint64_t timestamp; /**< @param head message header */
-    uint8_t uavID;
     bool demoState;
     uint16_t demoSize;
 //    std::string demoStr;//std::string类型为非平凡类型，无法作为联合体成员
     char demoStr[250];
     void init()
     {
-        robotID=0;
-        msgType=0;
-        uavID=0;
         demoState=false;
         demoSize=0;
 
@@ -501,21 +221,12 @@ struct DemoData
 
 struct ScriptData
 {
-    uint8_t robotID;
-    uint8_t msgType;
-    uint64_t timestamp;
-    uint8_t agentType;
-    uint8_t agentID;
     uint8_t scripType;
     bool scriptState;
     uint16_t scriptSize;
     char scriptStr[250];
     void init()
     {
-        robotID=0;
-        msgType=0;
-        agentType=0;
-        agentID=0;
         scripType=0;
         scriptState=false;
         scriptSize=0;
@@ -525,118 +236,69 @@ struct ScriptData
 
 struct NodeData
 {
-    uint8_t robotID;
-    uint8_t msgType;
-    uint64_t timestamp;
-    uint8_t agentType;
-    uint8_t agentID;
     uint16_t nodeCount;
     uint16_t nodeID;
     uint16_t nodeSize;
     char nodeStr[300];
     void init()
     {
-        robotID=0;
-        msgType=0;
-        agentType=0;
-        agentID=0;
+
         nodeCount=0;
         nodeID=0;
         nodeSize=0;
     }
 };
 
-struct WaypointSingleData
-{
-    double X;//经度Lon
-    double Y;//纬度Lat
-    double Z;//高
-    double Yaw;
-};
+
 
 struct WaypointData
 {
-    uint8_t robotID;
-    uint8_t msgType;
-    uint64_t timestamp; /**< @param time_stamp timestamp */
-    uint8_t uavID;    /**< @param robot_id robot ID */
-    uint8_t wpType;
-    uint8_t wpNum;
-    uint8_t wpEndType;
-    bool wpTakeoff;
-    uint8_t wpYawType;
-    float wpMoveVel;
-    float wpVelP;
-    float wpHeight;
-    WaypointSingleData Waypoint1;
-    WaypointSingleData Waypoint2;
-    WaypointSingleData Waypoint3;
-    WaypointSingleData Waypoint4;
-    WaypointSingleData Waypoint5;
-    WaypointSingleData Waypoint6;
-    WaypointSingleData Waypoint7;
-    WaypointSingleData Waypoint8;
-    WaypointSingleData Waypoint9;
-    WaypointSingleData Waypoint10;
-    double wpCirclePointX;//环绕点X或经度
-    double wpCirclePointY;//环绕点Y或纬度
+    uint8_t wp_num;
+    uint8_t wp_type;
+    uint8_t wp_end_type;
+    bool wp_takeoff;
+    uint8_t wp_yaw_type;
+    float wp_move_vel;
+    float wp_vel_p;
+    float z_height;
+    double wp_point_1[4];
+    double wp_point_2[4];
+    double wp_point_3[4];
+    double wp_point_4[4];
+    double wp_point_5[4];
+    double wp_point_6[4];
+    double wp_point_7[4];
+    double wp_point_8[4];
+    double wp_point_9[4];
+    double wp_point_10[4];
+    double wp_circle_point[2];//环绕点 xy 或 经纬
 
     void init()
     {
-        robotID=0;
-        msgType=0;
-        timestamp=0;
-        uavID=0;
-        wpType=0;
-        wpNum=0;
-        wpEndType=0;
-        wpTakeoff=true;
-        wpYawType=1;
-        wpMoveVel=1;
-        wpVelP=1;
-        wpHeight=1;
-        Waypoint1.X=0;
-        Waypoint2.X=0;
-        Waypoint3.X=0;
-        Waypoint4.X=0;
-        Waypoint5.X=0;
-        Waypoint6.X=0;
-        Waypoint7.X=0;
-        Waypoint8.X=0;
-        Waypoint9.X=0;
-        Waypoint10.X=0;
-        Waypoint1.Y=0;
-        Waypoint2.Y=0;
-        Waypoint3.Y=0;
-        Waypoint4.Y=0;
-        Waypoint5.Y=0;
-        Waypoint6.Y=0;
-        Waypoint7.Y=0;
-        Waypoint8.Y=0;
-        Waypoint9.Y=0;
-        Waypoint10.Y=0;
-        Waypoint1.Z=0;
-        Waypoint2.Z=0;
-        Waypoint3.Z=0;
-        Waypoint4.Z=0;
-        Waypoint5.Z=0;
-        Waypoint6.Z=0;
-        Waypoint7.Z=0;
-        Waypoint8.Z=0;
-        Waypoint9.Z=0;
-        Waypoint10.Z=0;
-        Waypoint1.Yaw=0;
-        Waypoint2.Yaw=0;
-        Waypoint3.Yaw=0;
-        Waypoint4.Yaw=0;
-        Waypoint5.Yaw=0;
-        Waypoint6.Yaw=0;
-        Waypoint7.Yaw=0;
-        Waypoint8.Yaw=0;
-        Waypoint9.Yaw=0;
-        Waypoint10.Yaw=0;
-        wpCirclePointX=0;
-        wpCirclePointY=0;
+        wp_num=0;
+        wp_type=0;
+        wp_end_type=0;
+        wp_takeoff=true;
+        wp_yaw_type=1;
+        wp_move_vel=1;
+        wp_vel_p=1;
+        z_height=1;
+        for(int i=0;i<4;i++)
+        {
+            wp_point_1[i]=0;
+            wp_point_2[i]=0;
+            wp_point_3[i]=0;
+            wp_point_4[i]=0;
+            wp_point_5[i]=0;
+            wp_point_6[i]=0;
+            wp_point_7[i]=0;
+            wp_point_8[i]=0;
+            wp_point_9[i]=0;
+            wp_point_10[2]=0;
+        }
+       wp_circle_point[0]=0;
+       wp_circle_point[1]=0;
+
     }
 };
 
@@ -660,56 +322,245 @@ enum CommunicationType
     UDPBroadcastCommunicationType   = 4,//UDP广播
 };
 
-////不同类型数据联合体，用于传递数据
-//union unionData
-//{
-//    HeartbeatData heartbeat;
-//    VehicleData vehicle;
-//    ControlData control;
-//    StateData state;
-//    SearchData search;
-//    ACKData ack;
-//    DemoData demo;
-//    WaypointData waypointData;
-//    UGVStateData ugvState;
-//    UGVControlData ugvControl;
-//    ScriptData agentScrip;
-//};
-
-////接受到的数据参数结构体
-//struct ReceivedParameter
-//{
-//    int messageID;
-//    unionData data;
-//    std::string ip;
-//    uint8_t communicationType;//通信类型
-//    unsigned short port;
-//};
 
 
-// 不同类型数据联合体，用于传递数据
-union unionData
+//无人机控制指令 - UAVControlCMD（#102）
+struct UAVControlCMD
 {
-    HeartbeatData heartbeat;   // 无人机心跳包 - HeartbeatData（#1）
-    StateData state;           // 无人机状态 - StateData（#2）
-    ControlData control;       // 无人机控制指令 - ControlData（#102）
-    VehicleData vehicle;       // 无人机模式切换 - VehicleData（#103）
-    WaypointData waypointData; // 无人机航点 - WaypointData（#104）
-    SearchData search;         // 搜索在线智能体 - SearchData（#200）
-    ACKData ack;               // 智能体应答 - ACKData（#201）
-    DemoData demo;             // 无人机demo - DemoData（#202）
-    ScriptData agentScrip;     // 功能脚本 - ScriptData（#203）
-    UGVStateData ugvState;     // 无人车状态 - UGVStateData（#20）
-    UGVControlData ugvControl; // 无人车控制指令 - UGVControlData（#120）
-    NodeData nodeInformation;  // 机载电脑ROS节点 - NodeData（#30）
+    uint8_t cmd;
+    float desired_pos[3];
+    float desired_vel[3];
+    float desired_acc[3];
+    float desired_jerk[3];
+    float desired_att[3];
+    float desired_thrust;
+    float desired_yaw;
+    float desired_yaw_rate;
+    float latitude;
+    float longitude;
+    float altitude;
+
+    void init()
+    {
+        cmd=0;
+        for(int i=0;i<3;++i)
+        {
+            desired_pos[i]=0;
+            desired_vel[i]=0;
+            desired_acc[i]=0;
+            desired_jerk[i]=0;
+            desired_att[i]=0;
+        }
+        desired_thrust=0;
+        desired_yaw=0;
+        desired_yaw_rate=0;
+        latitude=0;
+        longitude=0;
+        altitude=0;
+    }
+
+};
+
+//无人机设置指令 - UAVSetup（#103）
+struct UAVSetup
+{
+    uint8_t cmd;
+    uint8_t px4_mode;
+    uint8_t control_mode;
+
+    void init()
+    {
+        cmd=0;
+        px4_mode=0;
+        control_mode=0;
+    }
+};
+
+//无人车控制指令 - UGVControlCMD（#120）
+struct UGVControlCMD
+{
+
+    uint8_t cmd;
+    uint8_t yaw_type;
+    float desired_pos[2];
+    float desired_vel[2];
+    float desired_yaw;
+    float angular_vel;
+
+    void init()
+    {
+        cmd=0;
+        yaw_type=0;
+        for(int i=0;i<2;++i)
+        {
+            desired_pos[i]=0;
+            desired_vel[i]=0;
+        }
+        desired_yaw=0;
+        angular_vel=0;
+    }
+
+};
+
+//无人机状态 - UAVState（#2）
+struct UAVState
+{
+    uint8_t uav_id;
+    bool    connected;
+    bool    armed;
+    uint8_t mode;
+    uint8_t landed_state;
+    float   battery_state;
+    float   battery_percentage;
+    uint8_t location_source;
+    bool    odom_valid;
+    float   position[3];
+    float   velocity[3];
+    float   attitude[3];
+    float   attitude_q[4];
+    float   attitude_rate[3];
+    float   pos_setpoint[3];
+    float   vel_setpoint[3];
+    float   att_setpoint [3];
+    float   thrust_setpoint;
+    uint8_t control_mode;
+    uint8_t move_mode;
+    float   takeoff_height;
+    float   home_pos[3];
+    float   home_yaw;
+    float   hover_pos[3];
+    float   hover_yaw;
+    float   land_pos[3];
+    float   land_yaw;
+
+    void init()
+    {
+        uav_id=0;
+        connected=0;
+        armed=0;
+        mode=0;
+        landed_state=0;
+        battery_state=0;
+        battery_percentage=0;
+        location_source=0;
+        odom_valid=0;
+        for(int i=0;i<3;++i)
+        {
+            position[i]=0;
+            velocity [i]=0;
+            attitude [i]=0;
+            attitude_q[i]=0;
+            attitude_rate [i]=0;
+            pos_setpoint [i]=0;
+            vel_setpoint[i]=0;
+            att_setpoint [i]=0;
+            home_pos[i]=0;
+            hover_pos[i]=0;
+            land_pos[i]=0;
+        }
+        attitude_q[3]=0;
+        thrust_setpoint=0;
+        control_mode=0;
+        move_mode=0;
+
+        takeoff_height=0;
+        home_yaw=0;
+        hover_yaw=0;
+        land_yaw=0;
+    }
+
+};
+
+//无人车状态 - UGVState（#20）
+struct UGVState
+{
+
+   uint8_t  ugv_id;
+   bool     connected;
+   float    battery_state;
+   float    battery_percentage;
+   uint8_t  location_source;
+   bool     odom_valid;
+   float    position[2];
+   float    velocity[2];
+   float    yaw;
+   float    attitude[3];
+   float    attitude_q[4];
+   uint8_t  control_mode;
+   float    pos_setpoint[2];
+   float    vel_setpoint[2];
+   float    yaw_setpoint;
+   float    home_pos[2];
+   float    home_yaw;
+   float    hover_pos[2];
+   float    hover_yaw;
+
+   void init()
+   {
+       ugv_id=0;
+       connected=0;
+       battery_state=0;
+       battery_percentage=0;
+       location_source=0;
+       odom_valid=0;
+       yaw=0;
+       control_mode=0;
+       yaw_setpoint=0;
+       home_yaw=0;
+       hover_yaw=0;
+
+       for(int i=0;i<2;++i)
+       {
+           position[i]=0;
+           velocity [i]=0;
+           attitude[i]=0;
+           attitude_q[i]=0;
+           pos_setpoint[i]=0;
+           vel_setpoint[i]=0;
+           home_pos[i]=0;
+           hover_pos[i]=0;
+       }
+       attitude[2]=0;
+       attitude_q[2]=0;
+       attitude_q[3]=0;
+   }
+
+};
+
+// 有效数据部分联合体，用于传递有效数据
+union Payload
+{
+    HeartbeatData heartbeat;        // 无人机心跳包 - HeartbeatData（#1）
+    UAVState uavState;              // 无人机状态 - UAVState（#2）
+    UAVControlCMD uavControlCMD;    // 无人机控制指令 - UAVControlCMD（#102）
+    UAVSetup uavSetup;              // 无人机设置指令 - UAVSetup（#103）
+    WaypointData waypointData;      // 无人机航点 - WaypointData（#104）
+    SearchData search;              // 搜索在线智能体 - SearchData（#200）
+    ACKData ack;                    // 智能体应答 - ACKData（#201）
+    DemoData demo;                  // 无人机demo - DemoData（#202）
+    ScriptData agentScrip;          // 功能脚本 - ScriptData（#203）
+    UGVState ugvState;              // 无人车状态 - UGVState（#20）
+    UGVControlCMD ugvControlCMD;    // 无人车控制指令 - UGVControlCMD（#120）
+    NodeData nodeInformation;       // 机载电脑ROS节点 - NodeData（#30）
+};
+
+//整个数据帧
+struct DataFrame
+{
+    uint16_t head;
+    uint32_t length;
+    uint8_t  seq;
+    uint8_t  robot_ID;
+    uint64_t timestamp;
+    Payload  data;
+    uint16_t check;
 };
 
 
-//接受到的数据参数结构体
+//接收到的数据参数结构体
 struct ReceivedParameter
 {
-    int messageID;
-    unionData data;
+    DataFrame dataFrame;
     std::string ip;
     uint8_t communicationType;//通信类型
     unsigned short port;
