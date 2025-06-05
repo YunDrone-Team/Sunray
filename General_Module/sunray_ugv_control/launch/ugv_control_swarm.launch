@@ -1,35 +1,32 @@
 <launch>
-    <arg name="ugv_num" default="1" />
+    <arg name="ugv_num" default="3" />
     <arg name="ugv_id" default="1" />
     <arg name="ugv_name" default="ugv" />
     <arg name="flag_printf" default="true" />
     <arg name="enable_rviz" default="true" />
-    <!-- 是否是仿真模式 -->
     <arg name="simulation_mode" default="true" />
-    <!-- 定位源：0 gazebo 1 动捕 2 odom 配合odom_topic 3 viobot 4 UWb -->
-    <arg name="location_source" default="2" />
-    <arg name="odom_topic" default="/odom" />
+    <arg name="location_source" default="0" />
+    <arg name="odom_topic" default="" />
     <arg name="vel_topic" default="" />
-    <!-- 是否启用规划模块 -->
-    <arg name="enable_astar" default="true" />
+
+    <arg name="enable_astar" default="false" />
     <arg name="laser_topic" default="/scan" />
     <arg name="octomap_topic" default="/octomap_full" />
     <arg name="occupancy_topic" default="/map" />
     <arg name="map/resolution" default="0.4" />
     <arg name="map/inflate" default="0.3" />
-    <!-- 控制参数 -->
+
     <arg name="ugv_control_param/Kp_xy" default="2.0" />
     <arg name="ugv_control_param/Kp_yaw" default="3.14" />
     <arg name="ugv_control_param/max_vel_xy" default="1.5" />
     <arg name="ugv_control_param/max_vel_yaw" default="6" />
-    <!-- 地理围栏参数 -->
-    <arg name="ugv_geo_fence/max_x" default="100.0" />
+
     <arg name="ugv_geo_fence/max_x" default="100.0" />
     <arg name="ugv_geo_fence/min_x" default="-100.0" />
     <arg name="ugv_geo_fence/max_y" default="100.0" />
     <arg name="ugv_geo_fence/min_y" default="-100.0" />
 
-    <node name="ugv_control_node" pkg="sunray_ugv_control" type="ugv_control_node" output="screen">
+    <node name="ugv_control_node_$(arg ugv_id)" pkg="sunray_ugv_control" type="ugv_control_node" output="screen">
         <param name="ugv_id" value="$(arg ugv_id)" />
         <param name="ugv_name" value="$(arg ugv_name)" />
         <param name="flag_printf" value="$(arg flag_printf)" />
@@ -60,4 +57,9 @@
         <param name="octomap_topic" value="$(arg octomap_topic)" />
         <param name="occupancy_topic" value="$(arg occupancy_topic)" />
     </node>
+
+    <include file="$(find sunray_ugv_control)/launch/ugv_control_swarm.launch" if="$(eval (arg('ugv_num') > arg('ugv_id')))">
+        <arg name="ugv_id" value="$(eval arg('ugv_id') + 1)" />
+        <arg name="ugv_num" value="$(arg ugv_num)" />
+    </include>
 </launch>
