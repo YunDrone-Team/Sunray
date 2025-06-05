@@ -13,6 +13,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
 {
     // 【参数】编号
     nh.param<int>("ugv_id", ugv_id, 1);
+    // 【参数】名称
+    nh.param<string>("ugv_name", ugv_name, "name");
     // 【参数】是否发布到rviz
     nh.param<bool>("enable_rviz", enable_rviz, false);
     // 【参数】是否启动自带A*
@@ -65,33 +67,33 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     goal_set = false;
 
     topic_prefix = "/ugv" + std::to_string(ugv_id);
-
     // 根据 location_source
     if (location_source == 0)
     {
-        nooploop_sub = nh.subscribe<sunray_msgs::LinktrackNodeframe2>("/nlink_linktrack_nodeframe2", 1, &UGV_CONTROL::nooploop_cb, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/odom", 1, &UGV_CONTROL::odom_cb, this);
     }
     else if (location_source == 1)
     {
         // 【订阅】订阅动捕的数据(位置+速度) vrpn -> 本节点
-        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_1/ugv0/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
-        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_1/ugv0/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
-        // cout << GREEN << "Pose source: Mocap" << TAIL << endl;
-        Logger::print_color(int(LogColor::green), "Pose source: Mocap");
+        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + ugv_name + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
+        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + ugv_name + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
     }
     else if (location_source == 2)
     {
         // 【订阅】订阅Odom数据
-        gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::odom_cb, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::odom_cb, this);
     }
     else if (location_source == 3)
     {
         // 【订阅】订阅viobot数据
-        gazebo_odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::viobot_cb, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::viobot_cb, this);
+    }
+    else if (location_source == 4)
+    {
+        nooploop_sub = nh.subscribe<sunray_msgs::LinktrackNodeframe2>("/nlink_linktrack_nodeframe2", 1, &UGV_CONTROL::nooploop_cb, this);
     }
     else
     {
-        // cout << RED << "Pose source: Unknown" << TAIL << endl;
         Logger::print_color(int(LogColor::green), "Pose source: Unknown");
     }
 
@@ -104,7 +106,14 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【发布】状态 本节点 -> 地面站/其他节点
     ugv_state_pub = nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1);
     // 【发布】控制指令（机体系，单位：米/秒，Rad/秒）本节点 -> ugv_driver
-    ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>(vel_topic, 1);
+    if (vel_topic.empty())
+    {
+        ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>(topic_prefix + "/cmd_vel", 1);
+    }
+    else
+    {
+        ugv_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>(vel_topic, 1);
+    }
 
     if (enable_rviz)
     {
@@ -158,8 +167,6 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
 
     node_name = ros::this_node::getName();
     text_info.data = node_name + topic_prefix + " init!";
-    // text_info_pub.publish(text_info);
-    // cout << BLUE << text_info.data << TAIL << endl;
     Logger::print_color(int(LogColor::blue), text_info.data);
 }
 
@@ -169,7 +176,6 @@ void UGV_CONTROL::mainloop()
     // 定位数据丢失情况下，不执行控制指令并直接返回，直到动捕恢复
     if (!ugv_state.odom_valid)
     {
-        // cout << YELLOW << "odom_valid: false" << TAIL << endl;
         Logger::print_color(int(LogColor::yellow), "odom_valid: false");
         desired_vel.linear.x = 0.0;
         desired_vel.linear.y = 0.0;
@@ -500,7 +506,6 @@ void UGV_CONTROL::path_control()
     }
     if (abs(x_ref - ugv_state.position[0]) < 0.2 && abs(y_ref - ugv_state.position[1]) < 0.2)
     {
-        // std::cout << "astar_path size: " << astar_path.size() << std::endl;
         Logger::print_color(int(LogColor::blue), "astar_path size: " + astar_path.size());
         astar_path.erase(astar_path.begin());
     }
@@ -546,12 +551,16 @@ const char *Location_sourceToString(uint8_t source)
 {
     switch (source)
     {
+    case 0:
+        return "Gazebo";
     case 1:
         return "Mocap";
     case 2:
         return "odom";
     case 3:
         return "vibot";
+    case 4:
+        return "UWB";
     default:
         return "Unknown";
     }
@@ -560,56 +569,32 @@ const char *Location_sourceToString(uint8_t source)
 // 定时器回调函数：定时打印
 void UGV_CONTROL::show_ctrl_state()
 {
-    // cout << GREEN << ">>>>>>>>>>>>>> UGV [" << ugv_id << "] <<<<<<<<<<<<<<<" << TAIL << endl;
     Logger::print_color(int(LogColor::green), ">>>>>>>>>>>>>> UGV [" + std::to_string(ugv_id) + "] <<<<<<<<<<<<<<<");
-    // 固定的浮点显示
-    // cout.setf(ios::fixed);
-    // setprecision(n) 设显示小数精度为n位
-    // cout << setprecision(2);
-    // 左对齐
-    // cout.setf(ios::left);
-    // 强制显示小数点
-    // cout.setf(ios::showpoint);
-    // 强制显示符号
-    // cout.setf(ios::showpos);
 
     if (11.3f < ugv_state.battery_state < 13.0f)
     {
-        // cout << GREEN << "Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
         Logger::print_color(int(LogColor::green), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
     }
     else if (11.0f < ugv_state.battery_state < 11.3f)
     {
-        // cout << YELLOW << "Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
         Logger::print_color(int(LogColor::yellow), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
     }
     else
     {
-        // cout << RED << "Low Battery: " << ugv_state.battery_state << " [V] <<<<<<<<<<<<<" << TAIL << endl;
         Logger::print_color(int(LogColor::red), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
     }
 
-    // cout << GREEN << "connected : " << ugv_state.connected << TAIL << endl;
     Logger::print_color(int(LogColor::green), "connected : " + std::string(ugv_state.connected ? "true" : "false"));
-    // cout << GREEN << "location_source : " << ugv_state.location_source << TAIL << endl;
-    Logger::print_color(int(LogColor::green), "location_source : " + std::string(Location_sourceToString(location_source)));
-    // cout << GREEN << "odom_valid : " << ugv_state.odom_valid << TAIL << endl;
+    Logger::print_color(int(LogColor::green), "location_source: " + std::string(Location_sourceToString(location_source)));
     Logger::print_color(int(LogColor::green), "odom_valid : " + std::string(ugv_state.odom_valid ? "true" : "false"));
 
-    // cout << GREEN << "UAV_pos [X Y] : " << ugv_state.position[0] << " [ m ] " << ugv_state.position[1] << " [ m ] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "UGV_pos [X Y] : " + format_float_two_decimal(ugv_state.position[0]) + " [ m ] " + format_float_two_decimal(ugv_state.position[1]) + " [ m ]");
-    // cout << GREEN << "UAV_vel [X Y] : " << ugv_state.velocity[0] << " [m/s] " << ugv_state.velocity[1] << " [m/s] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "UGV_vel [X Y] : " + format_float_two_decimal(ugv_state.velocity[0]) + " [ m ] " + format_float_two_decimal(ugv_state.velocity[1]) + " [ m ]");
-    // cout << GREEN << "UAV_att [Yaw] : " << ugv_state.yaw * 180 / M_PI << " [deg] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "UGV_att [Yaw] : " + format_float_two_decimal(ugv_state.yaw * 180 / M_PI) + " [deg] ");
 
-    // cout << GREEN << "control_mode : " << ugv_state.control_mode << TAIL << endl;
     Logger::print_color(int(LogColor::green), "control_mode : " + std::string(controlModeToString(ugv_state.control_mode)));
-    // cout << GREEN << "pos_setpoint : " << ugv_state.pos_setpoint[0] << " [ m ] " << ugv_state.pos_setpoint[1] << " [ m ] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "pos_setpoint : " + format_float_two_decimal(ugv_state.pos_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.pos_setpoint[1]) + " [ m ]");
-    // cout << GREEN << "vel_setpoint : " << ugv_state.vel_setpoint[0] << " [ m ] " << ugv_state.vel_setpoint[1] << " [ m ] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "vel_setpoint : " + format_float_two_decimal(ugv_state.vel_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.vel_setpoint[1]) + " [ m ]");
-    // cout << GREEN << "yaw_setpoint [Yaw] : " << ugv_state.yaw_setpoint * 180 / M_PI << " [deg] " << TAIL << endl;
     Logger::print_color(int(LogColor::green), "yaw_setpoint : " + format_float_two_decimal(ugv_state.yaw_setpoint * 180 / M_PI) + " [deg] ");
 
     // 动捕丢失情况下，不执行控制指令，直到动捕恢复
