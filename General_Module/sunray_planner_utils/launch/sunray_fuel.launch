@@ -13,7 +13,7 @@
     <arg name="enable_yaw" default="true"/>
 
     <!-- 局部坐标系下的点云话题 -->
-    <arg name="local_pointcloud_topic_1" default="/uav1/livox"/>
+    <arg name="local_pointcloud_topic_1" default="/uav1/livox/lidar"/>
 
     <!-- 转换出来的世界坐标系下的点云话题 -->
     <arg name="world_pointcloud_topic_1" default="/uav1/livox_world"/>

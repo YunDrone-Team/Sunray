@@ -6,6 +6,7 @@ std_msgs/Header header
 ## 状态类型
 uint8 state
 ## 状态枚举
+uint8 INIT=0
 uint8 RUN=1
 uint8 STOP=2
 uint8 ARRIVED=3

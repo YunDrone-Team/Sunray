@@ -40,18 +40,20 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
         cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>formation Terminal Control<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
-        // cout << GREEN << "setup: "
-        //      << YELLOW << "101 " << GREEN << "takeoff"
-        //      << YELLOW << " 102 " << GREEN << "hover,"
-        //      << YELLOW << " 103 " << GREEN << "land,"
-        //      << YELLOW << " 104 " << GREEN << "none" << TAIL << endl;
+        cout << GREEN << "setup: "
+             << YELLOW << "101 " << GREEN << "takeoff"
+             << YELLOW << " 102 " << GREEN << "land,"
+             << YELLOW << " 103 " << GREEN << "hover,"
+             << YELLOW << " 104 " << GREEN << "set home,"
+             << YELLOW << " 105 " << GREEN << "return home" << TAIL << endl;
         cout << GREEN << "CMD: "
              << YELLOW << "1 " << GREEN << "正三角形,"
              << YELLOW << " 2 " << GREEN << "倒三角形,"
              << YELLOW << " 3 " << GREEN << "横向一字阵型,"
              << YELLOW << " 4 " << GREEN << "纵向一字阵型,"
              << YELLOW << " 5 " << GREEN << "动态圆形阵型,"
-             << YELLOW << " 6 " << GREEN << "动态八字阵型" << TAIL << endl;
+             << YELLOW << " 6 " << GREEN << "动态八字阵型,"
+             << YELLOW << " 7 " << GREEN << "领队模式" << TAIL << endl;
         cin >> CMD;
 
         switch (CMD)
@@ -92,19 +94,40 @@ int main(int argc, char **argv)
             formation_cmd.name = "figure_eight";
             formation_pub.publish(formation_cmd);
             break;
+        case 7:
+            formation_cmd.cmd = sunray_msgs::Formation::FORMATION;
+            formation_cmd.formation_type = sunray_msgs::Formation::LEADER;
+            formation_pub.publish(formation_cmd);
+            break;
 
         case 101:
         {
-            
+            formation_cmd.cmd = sunray_msgs::Formation::TAKEOFF;
+            formation_cmd.name = "";
+            formation_pub.publish(formation_cmd);
             break;
         }
         case 102:
         {
-            
+            formation_cmd.cmd = sunray_msgs::Formation::LAND;
+            formation_cmd.name = "";
+            formation_pub.publish(formation_cmd);
             break;
         }
         case 103:
-            
+            formation_cmd.cmd = sunray_msgs::Formation::HOVER;
+            formation_cmd.name = "";
+            formation_pub.publish(formation_cmd);
+            break;
+        case 104:
+            formation_cmd.cmd = sunray_msgs::Formation::SET_HOME;
+            formation_cmd.name = "";
+            formation_pub.publish(formation_cmd);
+            break;
+        case 105:
+            formation_cmd.cmd = sunray_msgs::Formation::RETURN_HOME;
+            formation_cmd.name = "";
+            formation_pub.publish(formation_cmd);
             break;
         }
 

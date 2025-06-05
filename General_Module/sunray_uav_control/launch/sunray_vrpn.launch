@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="server" default="192.168.25.13"/>
+  <arg name="server" default="192.168.25.27"/>
   <arg name="uav_id" default="1"/>
 
 

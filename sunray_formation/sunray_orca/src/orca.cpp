@@ -6,6 +6,8 @@ void ORCA::init(ros::NodeHandle &nh)
 	nh.param<std::string>("agent_name", agent_name, "uav");
 	// 【参数】智能体数量
 	nh.param<int>("agent_num", agent_num, 1);
+	// 【参数】最大偏航角速率
+	nh.param<float>("max_yaw_rate", max_yaw_rate, M_PI / 3);
 	// 【参数】无人机之间的假想感知距离
 	nh.param<float>("orca_params/neighborDist", orca_params.neighborDist, 1.5);
 	orca_params.maxNeighbors = agent_num;
@@ -21,25 +23,27 @@ void ORCA::init(ros::NodeHandle &nh)
 	nh.param<float>("orca_params/time_step", orca_params.time_step, 0.1);
 
 	// 初始化订阅器和发布器
-	goal_reached_printed = false;
-
 	string topic_prefix = "/" + agent_name + std::to_string(agent_id);
 
 	cmd_pub = nh.advertise<sunray_msgs::OrcaCmd>(topic_prefix + "/orca_cmd", 10);
-	goal_pub = nh.advertise<geometry_msgs::PoseStamped>(topic_prefix + "/orca/goal", 10);
+	goal_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/orca/goal", 10);
 	for (int i = 0; i < agent_num; i++)
 	{
 		topic_prefix = "/" + agent_name + std::to_string(i + 1);
 		// 【订阅】无人机状态数据
-		agent_state_sub[i] = nh.subscribe<geometry_msgs::PoseStamped>(topic_prefix + "/orca/agent_state", 1,
-																	  boost::bind(&ORCA::agent_state_cb, this, _1, i));
+		agent_state_sub[i] = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/orca/agent_state", 1,
+															  boost::bind(&ORCA::agent_state_cb, this, _1, i));
 		// 【订阅】订阅控制指令
 		cmd_sub[i] = nh.subscribe<sunray_msgs::OrcaSetup>(topic_prefix + "/orca/setup", 1,
-															  boost::bind(&ORCA::setup_cb, this, _1, i));
+														  boost::bind(&ORCA::setup_cb, this, _1, i));
 	}
 
 	// 打印定时器
-	debug_timer = nh.createTimer(ros::Duration(10.0), &ORCA::debugCb, this);
+	check_timer = nh.createTimer(ros::Duration(1.0), &ORCA::checkAgentState, this);
+	orca_state = sunray_msgs::OrcaCmd::INIT;
+	agent_state_ready = false;
+	goal_reached_printed = false;
+	odom_valid.resize(agent_num, false);
 
 	// 【函数】打印参数
 	printf_param();
@@ -64,7 +68,7 @@ bool ORCA::orca_run()
 	OrcaCmd.angular[0] = 0.0;
 	OrcaCmd.angular[1] = 0.0;
 	int idx = agent_id - 1;
-	if (!start_flag)
+	if (!start_flag || orca_state == sunray_msgs::OrcaCmd::INIT || !agent_state_ready)
 	{
 		return false;
 	}
@@ -78,8 +82,10 @@ bool ORCA::orca_run()
 	// 更新RVO中的位置和速度
 	for (int i = 0; i < agent_num; ++i)
 	{
-		RVO::Vector2 pos = RVO::Vector2(agent_state[i].pose.position.x, agent_state[i].pose.position.y);
+		RVO::Vector2 pos = RVO::Vector2(agent_state[i].pose.pose.position.x, agent_state[i].pose.pose.position.y);
 		sim->setAgentPosition(i, pos); // 更新RVO仿真中的位置
+		RVO::Vector2 vel = RVO::Vector2(agent_state[i].twist.twist.linear.x, agent_state[i].twist.twist.linear.y);
+		sim->setAgentVelocity(i, vel); // 更新RVO仿真中的速度
 	}
 	if (orca_state == sunray_msgs::OrcaCmd::ARRIVED || orca_state == sunray_msgs::OrcaCmd::STOP)
 	{
@@ -116,7 +122,20 @@ bool ORCA::orca_run()
 		OrcaCmd.state = orca_state;
 		OrcaCmd.linear[0] = vel.x();
 		OrcaCmd.linear[1] = vel.y();
-		OrcaCmd.angular[2] = 0.0;
+		// double current_yaw = tf::getYaw(agent_state[idx].pose.pose.orientation);
+		double current_yaw = 0;
+		// double target_yaw = atan2(vel.y(), vel.x());
+		double target_yaw = atan2(goal_pos[1] - agent_state[idx].pose.pose.position.y, goal_pos[0] - agent_state[idx].pose.pose.position.x);
+		float angle = this->calculateOptimalTurn(current_yaw, target_yaw);
+		OrcaCmd.angular[2] = angle;
+		if (angle > 0 && angle > max_yaw_rate)
+		{
+			OrcaCmd.angular[2] = max_yaw_rate;
+		}
+		else if (angle < 0 && angle < -max_yaw_rate)
+		{
+			OrcaCmd.angular[2] = -max_yaw_rate;
+		}
 		cmd_pub.publish(OrcaCmd);
 		return false;
 	}
@@ -134,9 +153,9 @@ void ORCA::setup_agents()
 	// 添加智能体
 	for (int i = 0; i < agent_num; i++)
 	{
-		RVO::Vector2 pos = RVO::Vector2(agent_state[i].pose.position.x, agent_state[i].pose.position.y);
+		RVO::Vector2 pos = RVO::Vector2(agent_state[i].pose.pose.position.x, agent_state[i].pose.pose.position.y);
 		sim->addAgent(pos);
-		cout << BLUE << node_name << ": ORCA add agents_" << i + 1 << " at [" << agent_state[i].pose.position.x << "," << agent_state[i].pose.position.y << "]" << TAIL << endl;
+		cout << BLUE << node_name << ": ORCA add agents_" << i + 1 << " at [" << agent_state[i].pose.pose.position.x << "," << agent_state[i].pose.pose.position.y << "]" << TAIL << endl;
 	}
 
 	cout << BLUE << node_name << ": Set agents success!" << TAIL << endl;
@@ -180,26 +199,13 @@ void ORCA::setup_obstacles()
 	cout << BLUE << node_name << ":  Set obstacles success!" << TAIL << endl;
 }
 
-void ORCA::debugCb(const ros::TimerEvent &e)
-{
-	// 固定的浮点显示
-	cout.setf(ios::fixed);
-	// setprecision(n) 设显示小数精度为n位
-	cout << setprecision(2);
-	// 左对齐
-	cout.setf(ios::left);
-	// 强制显示小数点
-	cout.setf(ios::showpoint);
-	// 强制显示符号
-	cout.setf(ios::showpos);
-}
 
 bool ORCA::reachedGoal(int i)
 {
 	bool xy_arrived{false}, yaw_arrived{false};
 	RVO::Vector2 rvo_goal = sim->getAgentGoal(i);
-	float xy_distance = (agent_state[i].pose.position.x - rvo_goal.x()) * (agent_state[i].pose.position.x - rvo_goal.x()) +
-						(agent_state[i].pose.position.y - rvo_goal.y()) * (agent_state[i].pose.position.y - rvo_goal.y());
+	float xy_distance = (agent_state[i].pose.pose.position.x - rvo_goal.x()) * (agent_state[i].pose.pose.position.x - rvo_goal.x()) +
+						(agent_state[i].pose.pose.position.y - rvo_goal.y()) * (agent_state[i].pose.pose.position.y - rvo_goal.y());
 	if (xy_distance < 0.15f * 0.15f)
 	{
 		xy_arrived = true;
@@ -218,7 +224,7 @@ bool ORCA::reachedGoal(int i)
 	return false;
 }
 
-void ORCA::agent_state_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int i)
+void ORCA::agent_state_cb(const nav_msgs::Odometry::ConstPtr &msg, int i)
 {
 	agent_state[i] = *msg;
 }
@@ -238,17 +244,30 @@ void ORCA::setup_cb(const sunray_msgs::OrcaSetup::ConstPtr &msg, int i)
 			goal_reached_printed = false;
 			arrived_goal = false;
 			start_flag = true;
-			geometry_msgs::PoseStamped goal_data;
-			goal_data.header.stamp = ros::Time::now();
-			goal_data.header.frame_id = "world";
-			goal_data.pose.position.x = goal_pos[0];
-			goal_data.pose.position.y = goal_pos[1];
-			goal_data.pose.position.z = goal_pos[2];
-			goal_data.pose.orientation = tf::createQuaternionMsgFromYaw(goal_yaw);
-			goal_pub.publish(goal_data);
+			visualization_msgs::Marker goal_marker;
+			goal_marker.header.frame_id = "world";
+			goal_marker.header.stamp = ros::Time::now();
+			goal_marker.ns = "goal";
+			goal_marker.id = agent_id;
+			goal_marker.type = visualization_msgs::Marker::SPHERE;
+			goal_marker.action = visualization_msgs::Marker::ADD;
+			goal_marker.pose.position.x = goal_pos[0];
+			goal_marker.pose.position.y = goal_pos[1];
+			goal_marker.pose.position.z = goal_pos[2];
+			goal_marker.pose.orientation = tf::createQuaternionMsgFromYaw(goal_yaw);
+			goal_marker.scale.x = 0.2;
+			goal_marker.scale.y = 0.2;
+			goal_marker.scale.z = 0.2;
+			goal_marker.color.a = 1.0;
+			// 根据uav_id生成对应的颜色
+			goal_marker.color.r = static_cast<float>(((agent_id) * 123) % 256) / 255.0;
+			goal_marker.color.g = static_cast<float>(((agent_id) * 456) % 256) / 255.0;
+			goal_marker.color.b = static_cast<float>(((agent_id) * 789) % 256) / 255.0;
+			goal_marker.mesh_use_embedded_materials = false;
+			goal_pub.publish(goal_marker);
 		}
 	}
-	if (msg->cmd == sunray_msgs::OrcaSetup::GOAL_RUN)
+	else if (msg->cmd == sunray_msgs::OrcaSetup::GOAL_RUN)
 	{
 		sim->setAgentGoal(i, RVO::Vector2(msg->desired_pos[0], msg->desired_pos[1]));
 
@@ -262,14 +281,27 @@ void ORCA::setup_cb(const sunray_msgs::OrcaSetup::ConstPtr &msg, int i)
 			goal_reached_printed = false;
 			arrived_goal = false;
 			start_flag = true;
-			geometry_msgs::PoseStamped goal_data;
-			goal_data.header.stamp = ros::Time::now();
-			goal_data.header.frame_id = "world";
-			goal_data.pose.position.x = goal_pos[0];
-			goal_data.pose.position.y = goal_pos[1];
-			goal_data.pose.position.z = goal_pos[2];
-			goal_data.pose.orientation = tf::createQuaternionMsgFromYaw(goal_yaw);
-			goal_pub.publish(goal_data);
+			visualization_msgs::Marker goal_marker;
+			goal_marker.header.frame_id = "world";
+			goal_marker.header.stamp = ros::Time::now();
+			goal_marker.ns = "goal";
+			goal_marker.id = agent_id;
+			goal_marker.type = visualization_msgs::Marker::SPHERE;
+			goal_marker.action = visualization_msgs::Marker::ADD;
+			goal_marker.pose.position.x = goal_pos[0];
+			goal_marker.pose.position.y = goal_pos[1];
+			goal_marker.pose.position.z = goal_pos[2];
+			goal_marker.pose.orientation = tf::createQuaternionMsgFromYaw(goal_yaw);
+			goal_marker.scale.x = 0.2;
+			goal_marker.scale.y = 0.2;
+			goal_marker.scale.z = 0.2;
+			goal_marker.color.a = 1.0;
+			// 根据uav_id生成对应的颜色
+			goal_marker.color.r = static_cast<float>(((agent_id) * 123) % 256) / 255.0;
+			goal_marker.color.g = static_cast<float>(((agent_id) * 456) % 256) / 255.0;
+			goal_marker.color.b = static_cast<float>(((agent_id) * 789) % 256) / 255.0;
+			goal_marker.mesh_use_embedded_materials = false;
+			goal_pub.publish(goal_marker);
 		}
 	}
 	else if (msg->cmd == sunray_msgs::OrcaSetup::STOP)
@@ -283,7 +315,7 @@ void ORCA::setup_cb(const sunray_msgs::OrcaSetup::ConstPtr &msg, int i)
 	}
 	else
 	{
-		cout << RED << node_name << ": Unknown cmd!" << TAIL << endl;
+		cout << RED << node_name << ": Unknown cmd!" << msg->cmd << TAIL << endl;
 	}
 }
 
@@ -300,4 +332,52 @@ void ORCA::printf_param()
 	cout << GREEN << "radius : " << orca_params.radius << " [m]" << TAIL << endl;
 	cout << GREEN << "maxSpeed : " << orca_params.maxSpeed << " [m/s]" << TAIL << endl;
 	cout << GREEN << "time_step : " << orca_params.time_step << " [s]" << TAIL << endl;
+}
+
+// 计算最优转向角度差（角速度）
+double ORCA::calculateOptimalTurn(double current, double target)
+{
+	// 计算角度差 (delta_yaw)
+	double delta_yaw = target - current;
+
+	// 调整角度差到 [-180, 180] 范围内
+	while (delta_yaw > M_PI)
+	{
+		delta_yaw -= M_PI * 2;
+	}
+	while (delta_yaw < -M_PI)
+	{
+		delta_yaw += M_PI * 2;
+	}
+
+	// 确定最优旋转方向
+	if (delta_yaw > 0.0)
+	{
+		return delta_yaw;
+	}
+	else if (delta_yaw < 0.0)
+	{
+		return -delta_yaw; // 取绝对值
+	}
+	else
+	{
+		return 0.0;
+	}
+}
+
+// 定时检查是否所有无人机/无人车状态都正常
+void ORCA::checkAgentState(const ros::TimerEvent &e)
+{
+	agent_state_ready = true;
+	for (int i = 0; i < agent_num; i++)
+	{
+		odom_valid[i] = true;
+		// 检查所有无人机/无人车的里程计回调时间
+		if ((ros::Time::now() - agent_state[i].header.stamp).toSec() > 1)
+		{
+			odom_valid[i] = false;
+			agent_state_ready = false;
+			cout << RED << node_name << ": Agent " << i + 1 << " has not received odometry data for more than 1 second!" << TAIL << endl;
+		}
+	}
 }

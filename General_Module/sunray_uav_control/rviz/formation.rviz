@@ -5,6 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Status1
+        - /UAV1
+        - /UGV1
+        - /UGV1/UGV11/Odometry1/Shape1
+        - /UGV1/UGV61
       Splitter Ratio: 0.5
     Tree Height: 397
   - Class: rviz/Selection
@@ -61,412 +65,551 @@ Visualization Manager:
       Value: true
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 25; 0
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/Pose
+              Color: 255; 25; 0
+              Enabled: true
+              Head Length: 0.30000001192092896
+              Head Radius: 0.10000000149011612
+              Name: Pose
+              Queue Size: 10
+              Shaft Length: 0.5
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow
+              Topic: /goal_1
+              Unreliable: false
+              Value: true
+            - Alpha: 1
+              Buffer Length: 150
+              Class: rviz/Path
+              Color: 25; 255; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: uav_path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /uav1/sunray/uav_trajectory
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav1/sunray/uav_mesh
+              Name: uav_mesh
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav1/orca/goal
+              Name: goal
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: Pose
-          Queue Size: 10
-          Shaft Length: 0.5
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /goal_1
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Buffer Length: 150
-          Class: rviz/Path
-          Color: 25; 255; 0
+          Name: UAV1
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/Pose
+              Color: 0; 255; 0
+              Enabled: true
+              Head Length: 0.30000001192092896
+              Head Radius: 0.10000000149011612
+              Name: Pose
+              Queue Size: 10
+              Shaft Length: 0.5
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow
+              Topic: /goal_2
+              Unreliable: false
+              Value: true
+            - Alpha: 1
+              Buffer Length: 150
+              Class: rviz/Path
+              Color: 255; 170; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: uav_path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /uav2/sunray/uav_trajectory
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav2/sunray/uav_mesh
+              Name: uav_mesh
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav2/orca/goal
+              Name: goal
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Billboards
-          Line Width: 0.05000000074505806
-          Name: uav_path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /uav1/sunray/uav_trajectory
-          Unreliable: false
-          Value: true
-        - Class: rviz/Marker
+          Name: UAV2
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/Pose
+              Color: 0; 100; 255
+              Enabled: true
+              Head Length: 0.30000001192092896
+              Head Radius: 0.10000000149011612
+              Name: Pose
+              Queue Size: 10
+              Shaft Length: 0.5
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow
+              Topic: /goal_3
+              Unreliable: false
+              Value: true
+            - Alpha: 1
+              Buffer Length: 150
+              Class: rviz/Path
+              Color: 85; 0; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: uav_path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /uav3/sunray/uav_trajectory
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav3/sunray/uav_mesh
+              Name: uav_mesh
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav3/orca/goal
+              Name: goal
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Marker Topic: /uav1/sunray/uav_mesh
-          Name: uav_mesh
-          Namespaces:
-            mesh: true
-          Queue Size: 100
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 0; 255; 0
+          Name: UAV3
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav4/sunray/uav_mesh
+              Name: Marker
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Alpha: 1
+              Buffer Length: 150
+              Class: rviz/Path
+              Color: 255; 0; 127
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: Path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /uav4/sunray/uav_trajectory
+              Unreliable: false
+              Value: true
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/Pose
+              Color: 255; 25; 0
+              Enabled: true
+              Head Length: 0.30000001192092896
+              Head Radius: 0.10000000149011612
+              Name: Pose
+              Queue Size: 10
+              Shaft Length: 1
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow
+              Topic: /goal_4
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav4/orca/goal
+              Name: goal
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: goal
-          Queue Size: 10
-          Shaft Length: 0.30000001192092896
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /uav1/orca/goal
-          Unreliable: false
-          Value: true
+          Name: UAV4
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav6/sunray/uav_mesh
+              Name: Marker
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Alpha: 1
+              Buffer Length: 150
+              Class: rviz/Path
+              Color: 255; 170; 127
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: Path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /uav6/sunray/uav_trajectory
+              Unreliable: false
+              Value: true
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/Pose
+              Color: 255; 25; 0
+              Enabled: true
+              Head Length: 0.30000001192092896
+              Head Radius: 0.10000000149011612
+              Name: Pose
+              Queue Size: 10
+              Shaft Length: 1
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow
+              Topic: /goal_6
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav6/orca/goal
+              Name: goal
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+          Enabled: true
+          Name: UAV6
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav5/sunray/uav_mesh
+              Name: Marker
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Alpha: 1
+              Buffer Length: 150
+              Class: rviz/Path
+              Color: 0; 255; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: Path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /uav5/sunray/uav_trajectory
+              Unreliable: false
+              Value: true
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/Pose
+              Color: 255; 25; 0
+              Enabled: true
+              Head Length: 0.30000001192092896
+              Head Radius: 0.10000000149011612
+              Name: Pose
+              Queue Size: 10
+              Shaft Length: 1
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow
+              Topic: /goal_5
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /uav5/orca/goal
+              Name: goal
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+          Enabled: true
+          Name: UAV5
       Enabled: true
-      Name: UAV1
+      Name: UAV
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 0; 255; 0
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /ugv1/sunray_ugv/mesh
+              Name: Marker
+              Namespaces:
+                mesh: true
+              Queue Size: 100
+              Value: true
+            - Angle Tolerance: 0.10000000149011612
+              Class: rviz/Odometry
+              Covariance:
+                Orientation:
+                  Alpha: 0.5
+                  Color: 255; 255; 127
+                  Color Style: Unique
+                  Frame: Local
+                  Offset: 1
+                  Scale: 1
+                  Value: true
+                Position:
+                  Alpha: 0.30000001192092896
+                  Color: 204; 51; 204
+                  Scale: 1
+                  Value: true
+                Value: false
+              Enabled: false
+              Keep: 1
+              Name: Odometry
+              Position Tolerance: 0.10000000149011612
+              Queue Size: 10
+              Shape:
+                Alpha: 1
+                Axes Length: 0.30000001192092896
+                Axes Radius: 0.05000000074505806
+                Color: 255; 25; 0
+                Head Length: 0.30000001192092896
+                Head Radius: 0.10000000149011612
+                Shaft Length: 1
+                Shaft Radius: 0.05000000074505806
+                Value: Axes
+              Topic: /ugv1/odom
+              Unreliable: false
+              Value: false
+            - Alpha: 1
+              Buffer Length: 100
+              Class: rviz/Path
+              Color: 0; 150; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: Path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /ugv1/sunray_ugv/trajectory
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /ugv1/orca/goal
+              Name: goal
+              Namespaces:
+                goal: true
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: Pose
-          Queue Size: 10
-          Shaft Length: 0.5
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /goal_2
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Buffer Length: 150
-          Class: rviz/Path
-          Color: 255; 85; 0
+          Name: UGV1
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /ugv2/sunray_ugv/mesh
+              Name: Marker
+              Namespaces:
+                mesh: true
+              Queue Size: 100
+              Value: true
+            - Alpha: 1
+              Buffer Length: 100
+              Class: rviz/Path
+              Color: 255; 170; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: Path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /ugv2/sunray_ugv/trajectory
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /ugv2/orca/goal
+              Name: goal
+              Namespaces:
+                goal: true
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Billboards
-          Line Width: 0.05000000074505806
-          Name: uav_path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /uav2/sunray/uav_trajectory
-          Unreliable: false
-          Value: true
-        - Class: rviz/Marker
+          Name: UGV2
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /ugv3/sunray_ugv/mesh
+              Name: Marker
+              Namespaces:
+                mesh: true
+              Queue Size: 100
+              Value: true
+            - Alpha: 1
+              Buffer Length: 100
+              Class: rviz/Path
+              Color: 170; 85; 0
+              Enabled: true
+              Head Diameter: 0.30000001192092896
+              Head Length: 0.20000000298023224
+              Length: 0.30000001192092896
+              Line Style: Billboards
+              Line Width: 0.05000000074505806
+              Name: Path
+              Offset:
+                X: 0
+                Y: 0
+                Z: 0
+              Pose Color: 255; 85; 255
+              Pose Style: None
+              Queue Size: 10
+              Radius: 0.029999999329447746
+              Shaft Diameter: 0.10000000149011612
+              Shaft Length: 0.10000000149011612
+              Topic: /ugv3/sunray_ugv/trajectory
+              Unreliable: false
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /ugv3/orca/goal
+              Name: goal
+              Namespaces:
+                goal: true
+              Queue Size: 100
+              Value: true
           Enabled: true
-          Marker Topic: /uav2/sunray/uav_mesh
-          Name: uav_mesh
-          Namespaces:
-            mesh: true
-          Queue Size: 100
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 85; 0
+          Name: UGV3
+        - Class: rviz/Group
+          Displays: ~
           Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: goal
-          Queue Size: 10
-          Shaft Length: 0.30000001192092896
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /uav2/orca/goal
-          Unreliable: false
-          Value: true
+          Name: UGV4
+        - Class: rviz/Group
+          Displays: ~
+          Enabled: true
+          Name: UGV5
+        - Class: rviz/Group
+          Displays: ~
+          Enabled: true
+          Name: UGV6
       Enabled: true
-      Name: UAV2
-    - Class: rviz/Group
-      Displays:
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 0; 100; 255
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: Pose
-          Queue Size: 10
-          Shaft Length: 0.5
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /goal_3
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Buffer Length: 150
-          Class: rviz/Path
-          Color: 85; 0; 0
-          Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Billboards
-          Line Width: 0.05000000074505806
-          Name: uav_path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /uav3/sunray/uav_trajectory
-          Unreliable: false
-          Value: true
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /uav3/sunray/uav_mesh
-          Name: uav_mesh
-          Namespaces:
-            mesh: true
-          Queue Size: 100
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 85; 0; 0
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: goal
-          Queue Size: 10
-          Shaft Length: 0.30000001192092896
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /uav3/orca/goal
-          Unreliable: false
-          Value: true
-      Enabled: true
-      Name: UAV3
-    - Class: rviz/Group
-      Displays:
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 0; 127
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: goal
-          Queue Size: 10
-          Shaft Length: 0.30000001192092896
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /uav4/orca/goal
-          Unreliable: false
-          Value: true
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /uav4/sunray/uav_mesh
-          Name: Marker
-          Namespaces:
-            mesh: true
-          Queue Size: 100
-          Value: true
-        - Alpha: 1
-          Buffer Length: 150
-          Class: rviz/Path
-          Color: 255; 0; 127
-          Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Billboards
-          Line Width: 0.05000000074505806
-          Name: Path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /uav4/sunray/uav_trajectory
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 25; 0
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: Pose
-          Queue Size: 10
-          Shaft Length: 1
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /goal_4
-          Unreliable: false
-          Value: true
-      Enabled: true
-      Name: UAV4
-    - Class: rviz/Group
-      Displays:
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /uav5/sunray/uav_mesh
-          Name: Marker
-          Namespaces:
-            mesh: true
-          Queue Size: 100
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 0; 255; 0
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: goal
-          Queue Size: 10
-          Shaft Length: 0.30000001192092896
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /uav5/orca/goal
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Buffer Length: 150
-          Class: rviz/Path
-          Color: 0; 255; 0
-          Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Billboards
-          Line Width: 0.05000000074505806
-          Name: Path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /uav5/sunray/uav_trajectory
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 25; 0
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: Pose
-          Queue Size: 10
-          Shaft Length: 1
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /goal_5
-          Unreliable: false
-          Value: true
-      Enabled: true
-      Name: UAV5
-    - Class: rviz/Group
-      Displays:
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 170; 127
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: goal
-          Queue Size: 10
-          Shaft Length: 0.30000001192092896
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /uav6/orca/goal
-          Unreliable: false
-          Value: true
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /uav6/sunray/uav_mesh
-          Name: Marker
-          Namespaces:
-            mesh: true
-          Queue Size: 100
-          Value: true
-        - Alpha: 1
-          Buffer Length: 150
-          Class: rviz/Path
-          Color: 255; 170; 127
-          Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Billboards
-          Line Width: 0.05000000074505806
-          Name: Path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /uav6/sunray/uav_trajectory
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz/Pose
-          Color: 255; 25; 0
-          Enabled: true
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: Pose
-          Queue Size: 10
-          Shaft Length: 1
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic: /goal_6
-          Unreliable: false
-          Value: true
-      Enabled: true
-      Name: UAV6
+      Name: UGV
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -495,7 +638,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.134964942932129
+      Distance: 5.829482555389404
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -511,9 +654,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 1.5297963619232178
       Target Frame: <Fixed Frame>
-      Yaw: 3.141739845275879
+      Yaw: 2.9367473125457764
     Saved: ~
 Window Geometry:
   Displays:
@@ -531,5 +674,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1060
-  X: 1361
-  Y: 412
+  X: 191
+  Y: 210
