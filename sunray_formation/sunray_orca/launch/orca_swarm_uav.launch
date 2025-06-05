@@ -1,0 +1,33 @@
+<launch>
+	<arg name="agent_id" default="1" />
+	<arg name="agent_name" default="uav" />
+	<arg name="agent_type" default="1" />
+	<arg name="agent_num" default="6" />
+	<arg name="orca_params/neighborDist" default="1.5" />
+	<arg name="orca_params/maxNeighbors" default="10" />
+	<arg name="orca_params/timeHorizon" default="2.0" />
+	<arg name="orca_params/timeHorizonObst" default="2.0" />
+	<arg name="orca_params/radius" default="0.3" />
+	<arg name="orca_params/maxSpeed" default="0.85" />
+	<arg name="orca_params/time_step" default="0.1" />
+
+	<node pkg="sunray_orca" type="orca_node" name="orca_node_$(arg agent_id)" output="screen">
+		<param name="agent_id" value="$(arg agent_id)" />
+		<param name="agent_name" value="$(arg agent_name)" />
+		<param name="agent_type" value="$(arg agent_type)" />
+		<param name="agent_num" value="$(arg agent_num)" />
+		<param name="orca_params/neighborDist" value="$(arg orca_params/neighborDist)" />
+		<param name="orca_params/maxNeighbors" value="$(arg orca_params/maxNeighbors)" />
+		<param name="orca_params/timeHorizon" value="$(arg orca_params/timeHorizon)" />
+		<param name="orca_params/timeHorizonObst" value="$(arg orca_params/timeHorizonObst)" />
+		<param name="orca_params/radius" value="$(arg orca_params/radius)" />
+		<param name="orca_params/maxSpeed" value="$(arg orca_params/maxSpeed)" />
+		<param name="orca_params/time_step" value="$(arg orca_params/time_step)" />
+	</node>
+
+	<!-- Recursively generate UAV nodes -->
+    <include file="$(find sunray_orca)/launch/orca_swarm.launch" if="$(eval (arg('agent_num') > arg('agent_id')))">
+        <arg name="agent_id" value="$(eval arg('agent_id') + 1)" />
+		<arg name="agent_num" value="$(arg agent_num)" />
+    </include>
+</launch>

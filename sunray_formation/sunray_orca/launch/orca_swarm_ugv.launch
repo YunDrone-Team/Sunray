@@ -1,9 +1,9 @@
 <launch>
 	<arg name="agent_id" default="1" />
-	<arg name="agent_name" default="uav" />
+	<arg name="agent_name" default="ugv" />
 	<arg name="agent_type" default="1" />
 	<arg name="agent_num" default="6" />
-	<arg name="orca_params/neighborDist" default="2" />
+	<arg name="orca_params/neighborDist" default="1.5" />
 	<arg name="orca_params/maxNeighbors" default="10" />
 	<arg name="orca_params/timeHorizon" default="2.0" />
 	<arg name="orca_params/timeHorizonObst" default="2.0" />
@@ -26,7 +26,8 @@
 	</node>
 
 	<!-- Recursively generate UAV nodes -->
-    <include file="$(find sunray_orca)/launch/orca_swarm.launch" if="$(eval (arg('agent_num') > arg('agent_id')))">
+    <include file="$(find sunray_orca)/launch/orca_swarm_ugv.launch" if="$(eval (arg('agent_num') > arg('agent_id')))">
         <arg name="agent_id" value="$(eval arg('agent_id') + 1)" />
+		<arg name="agent_num" value="$(arg agent_num)" />
     </include>
 </launch>

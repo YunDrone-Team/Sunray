@@ -180,3 +180,38 @@ void traj_generator::save_trajectory(std::vector<std::tuple<float, float, float>
         std::cerr << "Unable to open file " << filename << std::endl;
     }
 }
+
+std::tuple<float, float> traj_generator::circle_trajectory_online(int t)
+{
+    int num_points = 2 * M_PI * std::max(this->radius_x, this->radius_y) / this->linear_speed * 10;
+    int offset = int(num_points / this->vehicles_num) * (vehicle_id - 1);
+    t = (t + offset) % num_points;
+    float ti = 2.0 * M_PI * t / num_points;
+    // 计算x和y坐标
+    double x = this->lissa_a * sin(this->lissa_a * ti + this->lissa_delta);
+    double y = this->lissa_b * sin(this->lissa_b * ti);
+    x = x * this->radius_x + this->center_x;
+    y = y * this->radius_y + this->center_y;
+    return std::make_tuple(x, y);
+}
+
+std::tuple<float, float> traj_generator::figure_eight_online(int t)
+{
+    int num_points = 2 * M_PI * std::max(this->radius_x, this->radius_y) / this->linear_speed * 10;
+    int offset = int(num_points / this->vehicles_num) * (vehicle_id - 1);
+    if (vehicle_id <= (this->vehicles_num / 2))
+    {
+        t = (t + offset + int(num_points / vehicles_num / vehicles_num)) % num_points;
+    }
+    else
+    {
+        t = (t + offset - int(num_points / vehicles_num / vehicles_num)) % num_points;
+    }
+    float ti = 2.0 * M_PI * t / num_points;
+    // 计算x和y坐标
+    double x = this->lissa_a * sin(this->lissa_a * ti + this->lissa_delta);
+    double y = this->lissa_b * sin(this->lissa_b * ti);
+    x = x * this->radius_x + this->center_x;
+    y = y * this->radius_y + this->center_y;
+    return std::make_tuple(x, y);
+}

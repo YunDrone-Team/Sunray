@@ -56,9 +56,9 @@ include_directories(
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
-add_library(uav_formation src/uav_formation.cpp)
-add_executable(uav_formation_node src/uav_formation_node.cpp)
-target_link_libraries(uav_formation_node uav_formation ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES})
+add_library(formation_control src/formation_control.cpp src/traj_generator.cpp)
+add_executable(formation_control_node src/formation_control_node.cpp)
+target_link_libraries(formation_control_node formation_control ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(traj_generator src/traj_generator.cpp)
 add_executable(traj_generator_node src/traj_generator_node.cpp)
@@ -73,12 +73,12 @@ target_link_libraries(formation_switch_node  ${catkin_LIBRARIES})
 # )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
-)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-)
+# install(DIRECTORY launch/
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+# )

@@ -256,59 +256,59 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
     ugv_state.vel_setpoint[1] = current_ugv_cmd.desired_vel[1];
     ugv_state.yaw_setpoint = current_ugv_cmd.desired_yaw;
 
-    switch (msg->cmd)
-    {
-    // 收到INIT指令
-    case sunray_msgs::UGVControlCMD::INIT: // 0
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: INIT!";
-        Logger::print_color(int(LogColor::blue), text_info.data);
-        break;
-    // 收到HOLD指令
-    case sunray_msgs::UGVControlCMD::HOLD: // 1
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: HOLD!";
-        Logger::print_color(int(LogColor::blue), text_info.data);
-        break;
-    // 收到POS_CONTROL指令
-    case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU: // 2
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_ENU!";
-        Logger::print_color(int(LogColor::blue), text_info.data);
-        break;
-    // 收到VEL_CONTROL_BODY指令：此处不做任何处理，在主循环中处理
-    case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY: // 4
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
-        Logger::print_color(int(LogColor::blue), text_info.data);
-        break;
-    // 收到VEL_CONTROL_ENU指令：此处不做任何处理，在主循环中处理
-    case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU: // 3
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
-        Logger::print_color(int(LogColor::blue), text_info.data);
-        break;
-    case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU: // 6
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_VEL_CONTROL_ENU!";
-        Logger::print_color(int(LogColor::blue), text_info.data);
-        break;
-    case sunray_msgs::UGVControlCMD::Point_Control_with_Astar: // 5
-        if (enable_astar)
-        {
-            planner_goal.pose.position.x = msg->desired_pos[0];
-            planner_goal.pose.position.y = msg->desired_pos[1];
-            goal_set = true; // 触发路径规划
-            text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Point_Control_with_Astar!";
-            Logger::print_color(int(LogColor::blue), text_info.data);
-        }
-        else
-        {
-            text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " astar disable!! switch to hold";
-            Logger::print_color(int(LogColor::blue), text_info.data);
-            current_ugv_cmd.cmd = sunray_msgs::UGVControlCMD::INIT;
-        }
-        break;
-    default:
-        text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Wrong!";
-        Logger::print_color(int(LogColor::red), text_info.data);
-        return;
-        break;
-    }
+    // switch (msg->cmd)
+    // {
+    // // 收到INIT指令
+    // case sunray_msgs::UGVControlCMD::INIT: // 0
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: INIT!";
+    //     Logger::print_color(int(LogColor::blue), text_info.data);
+    //     break;
+    // // 收到HOLD指令
+    // case sunray_msgs::UGVControlCMD::HOLD: // 1
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: HOLD!";
+    //     Logger::print_color(int(LogColor::blue), text_info.data);
+    //     break;
+    // // 收到POS_CONTROL指令
+    // case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU: // 2
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_ENU!";
+    //     Logger::print_color(int(LogColor::blue), text_info.data);
+    //     break;
+    // // 收到VEL_CONTROL_BODY指令：此处不做任何处理，在主循环中处理
+    // case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY: // 4
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
+    //     Logger::print_color(int(LogColor::blue), text_info.data);
+    //     break;
+    // // 收到VEL_CONTROL_ENU指令：此处不做任何处理，在主循环中处理
+    // case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU: // 3
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
+    //     Logger::print_color(int(LogColor::blue), text_info.data);
+    //     break;
+    // case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU: // 6
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_VEL_CONTROL_ENU!";
+    //     Logger::print_color(int(LogColor::blue), text_info.data);
+    //     break;
+    // case sunray_msgs::UGVControlCMD::Point_Control_with_Astar: // 5
+    //     if (enable_astar)
+    //     {
+    //         planner_goal.pose.position.x = msg->desired_pos[0];
+    //         planner_goal.pose.position.y = msg->desired_pos[1];
+    //         goal_set = true; // 触发路径规划
+    //         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Point_Control_with_Astar!";
+    //         Logger::print_color(int(LogColor::blue), text_info.data);
+    //     }
+    //     else
+    //     {
+    //         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " astar disable!! switch to hold";
+    //         Logger::print_color(int(LogColor::blue), text_info.data);
+    //         current_ugv_cmd.cmd = sunray_msgs::UGVControlCMD::INIT;
+    //     }
+    //     break;
+    // default:
+    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Wrong!";
+    //     Logger::print_color(int(LogColor::red), text_info.data);
+    //     return;
+    //     break;
+    // }
     // text_info_pub.publish(text_info);
 }
 

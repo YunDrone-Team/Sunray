@@ -30,15 +30,6 @@ int main(int argc, char **argv)
 
     bool arrived_all_goals{false};
 
-    while(!orca.start_flag && ros::ok())
-    {
-        // 回调函数
-        ros::spinOnce();
-        cout << YELLOW << "ORCA wait for start! " << TAIL << endl;
-        // sleep
-        sleep(2.0);
-    }
-
     ros::Time start_time = ros::Time::now();
     // 主循环
     while (ros::ok())
@@ -49,6 +40,10 @@ int main(int argc, char **argv)
         arrived_all_goals = orca.orca_run();
         if(ros::Time::now() - start_time > ros::Duration(2.0))
         {
+            if(!orca.start_flag)
+            {
+                cout << YELLOW << "ORCA wait for start! " << TAIL << endl;
+            }
             if(orca.goal_reached_printed && ros::ok())
             {
                 cout << YELLOW << "ORCA wait for goal! " << TAIL << endl;

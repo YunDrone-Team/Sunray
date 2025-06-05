@@ -17,6 +17,11 @@ class ORCA
 public:
     // 构造函数
     ORCA() {};
+    // 析构函数
+    ~ORCA()
+    {
+        delete sim;
+    };
     // 初始化函数
     void init(ros::NodeHandle &nh);
     // 主循环函数
@@ -27,11 +32,13 @@ public:
 
 private:
     int agent_id;
+    int agent_num;
+    int orca_state;
     string agent_name;
     string node_name; // 节点名称
     string agent_prefix;
-    int agent_num;
-    int orca_state;
+    bool agent_state_ready;
+    std::vector<bool> odom_valid;
     RVO::RVOSimulator *sim = new RVO::RVOSimulator();
 
     // ORCA算法参数
@@ -50,22 +57,24 @@ private:
     bool arrived_goal; // 是否到达目标点
     float goal_pos[3];
     float goal_yaw;
+    float max_yaw_rate;
     sunray_msgs::OrcaCmd OrcaCmd;
     sunray_msgs::UAVControlCMD agent_control_cmd;
-    std::map<int, geometry_msgs::PoseStamped> agent_state;
+    std::map<int, nav_msgs::Odometry> agent_state;
     std::map<int, ros::Subscriber> agent_state_sub;
     std::map<int, ros::Subscriber> cmd_sub;
 
     ros::Publisher cmd_pub;  // 发布话题
-    ros::Publisher goal_pub;  // 发布话题
-    ros::Timer debug_timer;
+    ros::Publisher goal_pub; // 发布话题
+    ros::Timer check_timer;
 
-    void debugCb(const ros::TimerEvent &e);
-    void agent_state_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int i);
+    void agent_state_cb(const nav_msgs::Odometry::ConstPtr &msg, int i);
     void setup_obstacles();
     void setup_agents();
     void setup_cb(const sunray_msgs::OrcaSetup::ConstPtr &msg, int i);
     bool reachedGoal(int i);
     void printf_param();
+    double calculateOptimalTurn(double current, double target);
+    void checkAgentState(const ros::TimerEvent &e);
 };
 #endif

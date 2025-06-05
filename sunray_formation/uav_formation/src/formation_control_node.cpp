@@ -1,4 +1,4 @@
-#include "uav_formation.h"
+#include "formation_control.h"
 
 int main(int argc, char** argv)
 {
