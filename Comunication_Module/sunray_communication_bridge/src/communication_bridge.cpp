@@ -111,6 +111,11 @@ void communication_bridge::init(ros::NodeHandle &nh)
         }
     }
 
+    // 【订阅】
+    formation_sub=nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd", 1, boost::bind(&communication_bridge::formation_cmd_cb, this,_1));
+    // 【发布】
+    formation_pub=nh.advertise<sunray_msgs::Formation>("/sunray/formation_cmd/ground", 1);
+
     // 【定时器】 定时发送TCP心跳包到地面站
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
     // 【定时器】 定时检测启动的子进程是否存活
@@ -204,8 +209,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
 
     switch (readData.dataFrame.seq)
     {
-    // 搜索在线智能体 - SearchData（#200）
-    case MessageID::SearchMessageID:
+    case MessageID::SearchMessageID:// 搜索在线智能体 - SearchData（#200）
     {
         // std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         DataFrame backData;
@@ -258,19 +262,26 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
 
         break;
     }
-    // 无人机状态 - UAVState#2
-    case MessageID::UAVStateMessageID:
+    case MessageID::UAVStateMessageID:    // 无人机状态 - UAVState#2
         // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
         if (uav_id == readData.dataFrame.robot_ID || is_simulation)
             return;
         SynchronizationUAVState(readData.dataFrame.data.uavState);
         break;
-    // 无人车状态 - UGVState（#20）
-    case MessageID::UGVStateMessageID:
+    case MessageID::UGVStateMessageID:// 无人车状态 - UGVState（#20）
         if (ugv_id == readData.dataFrame.robot_ID-100 || is_simulation)
             return;
         SynchronizationUGVState(readData.dataFrame.data.ugvState);
         break;
+    case MessageID::FormationMessageID:// 编队切换 - Formation（#40）
+    {    
+        sunray_msgs::Formation sendMSG;
+        sendMSG.cmd=readData.dataFrame.data.formation.cmd;
+        sendMSG.formation_type=readData.dataFrame.data.formation.formation_type;
+        sendMSG.name=readData.dataFrame.data.formation.name;
+        formation_pub.publish(sendMSG);
+        break;   
+    }     
     default:
         break;
     }
@@ -386,9 +397,7 @@ void communication_bridge::executiveDemo(std::string orderStr)
         perror("fork failed");
         // return EXIT_FAILURE;
         return;
-    }
-    else if (pid == 0)
-    {
+    }else if (pid == 0){
         // 子进程
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
@@ -402,9 +411,7 @@ void communication_bridge::executiveDemo(std::string orderStr)
         // 如果execlp返回，说明执行失败
         perror("execlp failed");
         _exit(EXIT_FAILURE);
-    }
-    else
-    {
+    }else{
         // 父进程
         int status;
         demoPID = pid;
@@ -423,11 +430,10 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         robot_id = readData.dataFrame.robot_ID;
     else
         robot_id = readData.dataFrame.robot_ID-100;
-    std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
+    // std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
     switch (readData.dataFrame.seq)
     {
-    // 无人机控制指令 - UAVControlCMD（#102）
-    case MessageID::UAVControlCMDMessageID:
+    case MessageID::UAVControlCMDMessageID:// 无人机控制指令 - UAVControlCMD（#102）
     {
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = readData.dataFrame.data.uavControlCMD.cmd;
@@ -468,8 +474,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(uav_cmd);
         break;
     }
-    // 无人机设置指令 - UAVSetup（#103）
-    case MessageID::UAVSetupMessageID:
+    case MessageID::UAVSetupMessageID:// 无人机设置指令 - UAVSetup（#103）
     {
         setup.header.stamp = ros::Time::now();
         if (readData.dataFrame.data.uavSetup.control_mode == UAVSetupType::SetControlMode)
@@ -486,8 +491,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(setup);
         break;
     }
-    // 无人机demo - DemoData（#202）
-    case MessageID::DemoMessageID:
+    case MessageID::DemoMessageID:// 无人机demo - DemoData（#202）
         if(!is_simulation)
         {
             if(readData.dataFrame.robot_ID<=100)
@@ -534,8 +538,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             }
         }
         break;
-    // 功能脚本 - ScriptData（#203）
-    case MessageID::ScriptMessageID:
+    case MessageID::ScriptMessageID:// 功能脚本 - ScriptData（#203）
         if(!is_simulation)
         {
             if(readData.dataFrame.robot_ID<=100)
@@ -555,8 +558,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 executeScript(+readData.dataFrame.data.agentScrip.scriptStr, "/scripts_exp/");
         }
         break;
-    // 无人机航点 - WaypointData（#104）
-    case MessageID::WaypointMessageID:
+    case MessageID::WaypointMessageID:// 无人机航点 - WaypointData（#104）
     {
         sunray_msgs::UAVWayPoint waypoint_msg;
         waypoint_msg.header.stamp = ros::Time::now();
@@ -602,8 +604,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(waypoint_msg);
         break;
     }
-    // 无人车控制指令 - UGVControlCMD （#120）
-    case MessageID::UGVControlCMDMessageID:
+    case MessageID::UGVControlCMDMessageID:// 无人车控制指令 - UGVControlCMD （#120）
     {
 
         auto it = ugv_controlCMD_pub.find(robot_id);
@@ -624,6 +625,15 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(msg);
         break;
     }
+    case MessageID::FormationMessageID:// 编队切换 - Formation（#40）
+    {    
+        sunray_msgs::Formation sendMSG;
+        sendMSG.cmd=readData.dataFrame.data.formation.cmd;
+        sendMSG.formation_type=readData.dataFrame.data.formation.formation_type;
+        sendMSG.name=readData.dataFrame.data.formation.name;
+        formation_pub.publish(sendMSG);
+        break;   
+    }  
     default:
         break;
     }
@@ -1030,6 +1040,30 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     for (const auto &ip : tempVec)
         GSIPHash.erase(ip);
     tempVec.clear();
+}
+
+void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg)
+{
+    std::cout << "formation_cmd_cb:" << std::endl;
+    if(!is_simulation)
+        return;
+    DataFrame formationData;
+
+    if (uav_experiment_num > 0)
+        formationData.robot_ID = uav_id;
+    else if (ugv_experiment_num > 0)
+        formationData.robot_ID = ugv_id+100;
+
+    formationData.seq=MessageID::FormationMessageID;
+    formationData.data.formation.init();
+    
+    formationData.data.formation.cmd=msg->cmd;
+    formationData.data.formation.formation_type=msg->formation_type;
+    formationData.data.formation.nameSize=msg->name.size();
+    strcpy(formationData.data.formation.name, msg->name.c_str());
+    // 本节点 --UDP--> 其他智能体 编队切换组播链路发送
+    int back = udpSocket->sendUDPMulticastData(codec.coder(formationData), udp_port);
+    
 }
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
