@@ -1,34 +1,72 @@
 <launch>
     <!-- 无人策划控制节点 -->
+    <arg name="ugv_num" default="1" />
     <arg name="ugv_id" default="1" />
+    <arg name="ugv_name" default="ugv" />
+    <arg name="flag_printf" default="true" />
+    <arg name="enable_rviz" default="true" />
+    <arg name="server" default="192.168.25.27"/>
+    <!-- 定位源：0 gazebo 1 动捕 2 odom 配合odom_topic 3 viobot 4 UWb -->
+    <!-- 对于仿真模型 wheeltec_with_2d_lidar 和 wheeltec_with_mid360 location_source=0 不生效需要手动设置对应的话题-->
+    <arg name="location_source" default="1" />
+    <!-- 仅location_source=2 需要读取odom_topic -->
+    <arg name="odom_topic" default="/odom" />
+    <!-- odom_type 1:从 odom_topic中获取 其他:从ugv_state中获取-->
+    <arg name="odom_type" value="2" />
+     <!-- vel_topic为空时将自动拼接 /ugv_name_ugv_id/cmd_vel 对于仿真模型 wheeltec_with_2d_lidar 和 wheeltec_with_mid360不适用-->
+    <arg name="vel_topic" default="" />
+    <!-- 是否启用规划模块 -->
+    <arg name="enable_astar" default="true" />
+    <arg name="laser_topic" default="/scan" />
+    <arg name="octomap_topic" default="/octomap_full" />
+    <arg name="occupancy_topic" default="/map" />
+    <arg name="map/resolution" default="0.4" />
+    <arg name="map/inflate" default="0.3" />
+    <!-- 控制参数 -->
+    <arg name="ugv_control_param/Kp_xy" default="2.0" />
+    <arg name="ugv_control_param/Kp_yaw" default="3.14" />
+    <arg name="ugv_control_param/max_vel_xy" default="1.5" />
+    <arg name="ugv_control_param/max_vel_yaw" default="6" />
+    <!-- 地理围栏参数 -->
+    <arg name="ugv_geo_fence/max_x" default="100.0" />
+    <arg name="ugv_geo_fence/min_x" default="-100.0" />
+    <arg name="ugv_geo_fence/max_y" default="100.0" />
+    <arg name="ugv_geo_fence/min_y" default="-100.0" />
     <node name="ugv_control_node" pkg="sunray_ugv_control" type="ugv_control_node" output="screen">
-        <param name="ugv_id" value="1" />
-        <param name="flag_printf" value="true" />
-        <param name="enable_rviz" value="true" />
-        <param name="enable_astar" value="false" />
-        <param name="location_source" value="3" />
-        <!-- 改成slam的odom -->
-        <param name="odom_topic" value="/baton/stereo3/odometry" />
-        <param name="vel_topic" value="/ugv$(arg ugv_id)/cmd_vel" />
-        <!-- 控制参数 -->
-        <param name="ugv_control_param/Kp_xy" value="1.4" />
-        <param name="ugv_control_param/Kp_yaw" value="1.5" />
-        <param name="ugv_control_param/max_vel_xy" value="0.5" />
-        <param name="ugv_control_param/max_vel_yaw" value="1.57" />
+        <param name="ugv_id" value="$(arg ugv_id)" />
+        <param name="ugv_name" value="$(arg ugv_name)" />
+        <param name="flag_printf" value="$(arg flag_printf)" />
+        <param name="enable_rviz" value="$(arg enable_rviz)" />
+        <!-- 定位 驱动话题 -->
+        <param name="location_source" value="$(arg location_source)" />
+        <param name="odom_topic" value="$(arg odom_topic)" />
+        <param name="odom_type" value="$(arg odom_type)" />
+        <param name="vel_topic" value="$(arg vel_topic)" />
+       <!-- 控制参数 -->
+        <param name="ugv_control_param/Kp_xy" value="$(arg ugv_control_param/Kp_xy)" />
+        <param name="ugv_control_param/Kp_yaw" value="$(arg ugv_control_param/Kp_yaw)" />
+        <param name="ugv_control_param/max_vel_xy" value="$(arg ugv_control_param/max_vel_xy)" />
+        <param name="ugv_control_param/max_vel_yaw" value="$(arg ugv_control_param/max_vel_yaw)" />
         <!-- 地理围栏参数 -->
-        <param name="ugv_geo_fence/max_x" value="10.0" />
-        <param name="ugv_geo_fence/min_x" value="-10.0" />
-        <param name="ugv_geo_fence/max_y" value="10.0" />
-        <param name="ugv_geo_fence/min_y" value="-10.0" />
+        <param name="ugv_geo_fence/max_x" value="$(arg ugv_geo_fence/max_x)" />
+        <param name="ugv_geo_fence/min_x" value="$(arg ugv_geo_fence/min_x)" />
+        <param name="ugv_geo_fence/max_y" value="$(arg ugv_geo_fence/max_y)" />
+        <param name="ugv_geo_fence/min_y" value="$(arg ugv_geo_fence/min_y)" />
         <!-- 地图参数 -->
-        <param name="map/resolution" value="0.4" />
-        <param name="map/inflate" value="0.4" />
-
-        <!-- map generator 模块使用 -->
-        <!-- odom_type 1:从 odom_topic中获取 其他:从ugv_state中获取-->
-        <param name="odom_type" value="2" />
-        <param name="laser_topic" value="/scan" />
-        <param name="octomap_topic" value="/octomap_full" />
-        <param name="occupancy_topic" value="/occupancy_grid" />
+        <param name="enable_astar" value="$(arg enable_astar)" />
+        <param name="map/resolution" value="$(arg map/resolution)" />
+        <param name="map/inflate" value="$(arg map/inflate)" />
+        <!-- 雷达话题参数 -->
+        <param name="laser_topic" value="$(arg laser_topic)" />
+        <!-- 地图相关话题参数 -->
+        <param name="octomap_topic" value="$(arg octomap_topic)" />
+        <param name="occupancy_topic" value="$(arg occupancy_topic)" />
     </node>
+
+    <!-- 启动 vrpn_client_ros -->
+    <include file="$(find sunray_ugv_control)/launch/sunray_vrpn.launch" if="$(eval location_source == 1)">
+        <arg name="server" value="$(arg server)"/>
+        <arg name="ugv_id" value="$(arg ugv_id)"/>
+    </include>
+
 </launch>
