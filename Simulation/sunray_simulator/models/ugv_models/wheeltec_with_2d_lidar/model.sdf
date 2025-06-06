@@ -74,7 +74,7 @@
           </noise>
         </ray>
         <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
-          <topicName>/sunray/ugv1/scan</topicName>
+          <topicName>/ugv1/scan</topicName>
           <frameName>/ugv1/base_link</frameName>
         </plugin>
 

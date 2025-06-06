@@ -31,6 +31,7 @@ void SunrayFormation::init(ros::NodeHandle &nh_)
     node_name = ros::this_node::getName();
     // 【订阅】
     formation_cmd_sub = nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd", 10, &SunrayFormation::formation_cmd_callback, this);
+    formation_cmd_ground_sub = nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd/ground", 10, &SunrayFormation::formation_cmd_callback, this);
     orca_cmd_sub = nh.subscribe<sunray_msgs::OrcaCmd>(topic_prefix + "/orca_cmd", 10, &SunrayFormation::orca_cmd_callback, this);
     goal_sub = nh.subscribe<geometry_msgs::PoseStamped>("/goal_" + std::to_string(agent_id), 10, &SunrayFormation::goal_callback, this);
     // 【发布】

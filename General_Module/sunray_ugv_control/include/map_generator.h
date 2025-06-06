@@ -115,7 +115,7 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     // 二维雷达
     if (input_type == 0)
     {
-        nh.param<std::string>("laser_topic", laser_topic, "/sunray/ugv1/scan");
+        nh.param<std::string>("laser_topic", laser_topic, "/ugv1/scan");
         mode_sub = nh.subscribe<sensor_msgs::LaserScan>(laser_topic, 1, &MapGenerator::updateMapFromLaserScan, this);
     }
     // 三维雷达

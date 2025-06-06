@@ -154,7 +154,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /sunray/ugv1/scan
+      Topic: /ugv1/scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
