@@ -7,8 +7,8 @@ std_msgs/Header header
 uint8 cmd
 
 ## 无人机Setup类型枚举
-uint8 DISARM = 0                ## 解锁无人机
-uint8 ARM = 1                   ## 无人机上锁
+uint8 DISARM = 0                ## 无人机上锁
+uint8 ARM = 1                   ## 解锁无人机
 uint8 SET_PX4_MODE = 2          ## 设置PX4模式，需要配合px4_mode进行设置
 uint8 REBOOT_PX4 = 3            ## 重启PX4飞控
 uint8 SET_CONTROL_MODE = 4      ## 设置无人机控制模式，需要配合control_mode进行设置

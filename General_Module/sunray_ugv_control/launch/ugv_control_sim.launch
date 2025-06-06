@@ -9,7 +9,7 @@
     <!-- 定位源：0 gazebo 1 动捕 2 odom 配合odom_topic 3 viobot 4 UWb -->
     <arg name="location_source" default="2" />
     <arg name="odom_topic" default="/odom" />
-    <arg name="vel_topic" default="" />
+    <arg name="vel_topic" default="/cmd_vel" />
     <!-- 是否启用规划模块 -->
     <arg name="enable_astar" default="true" />
     <arg name="laser_topic" default="/scan" />
@@ -23,7 +23,6 @@
     <arg name="ugv_control_param/max_vel_xy" default="1.5" />
     <arg name="ugv_control_param/max_vel_yaw" default="6" />
     <!-- 地理围栏参数 -->
-    <arg name="ugv_geo_fence/max_x" default="100.0" />
     <arg name="ugv_geo_fence/max_x" default="100.0" />
     <arg name="ugv_geo_fence/min_x" default="-100.0" />
     <arg name="ugv_geo_fence/max_y" default="100.0" />
