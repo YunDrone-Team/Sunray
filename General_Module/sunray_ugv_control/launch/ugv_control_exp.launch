@@ -1,8 +1,6 @@
 <launch>
-    <!-- 无人策划控制节点 -->
-    <arg name="ugv_num" default="1" />
     <arg name="ugv_id" default="1" />
-    <arg name="ugv_name" default="ugv" />
+    <arg name="ugv_name" default="car" />
     <arg name="flag_printf" default="true" />
     <arg name="enable_rviz" default="true" />
     <arg name="server" default="192.168.25.27"/>
@@ -23,7 +21,7 @@
     <arg name="map/resolution" default="0.4" />
     <arg name="map/inflate" default="0.3" />
     <!-- 控制参数 -->
-    <arg name="ugv_control_param/Kp_xy" default="2.0" />
+    <arg name="ugv_control_param/Kp_xy" default="1.2" />
     <arg name="ugv_control_param/Kp_yaw" default="3.14" />
     <arg name="ugv_control_param/max_vel_xy" default="1.5" />
     <arg name="ugv_control_param/max_vel_yaw" default="6" />
