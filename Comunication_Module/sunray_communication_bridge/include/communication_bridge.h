@@ -11,7 +11,7 @@
 #include "sunray_msgs/UGVControlCMD.h"
 #include "sunray_msgs/UAVState.h"
 #include "sunray_msgs/UAVControlCMD.h"
-
+#include "sunray_msgs/Formation.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -87,7 +87,8 @@ private:
     std::map<int,ros::Publisher> ugv_controlCMD_pub;
 
     std::map<int,ros::Publisher> uav_waypoint_pub;
-
+    ros::Subscriber  formation_sub;
+    ros::Publisher  formation_pub;
 
     ros::Timer HeartbeatTimer;
     ros::Timer CheckChildProcessTimer;
@@ -125,6 +126,7 @@ private:
 
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
+    void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
 
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);
