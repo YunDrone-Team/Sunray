@@ -14,7 +14,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【参数】编号
     nh.param<int>("ugv_id", ugv_id, 1);
     // 【参数】名称
-    nh.param<string>("ugv_name", ugv_name, "name");
+    nh.param<string>("ugv_name", ugv_name, "ugv");
     // 【参数】是否发布到rviz
     nh.param<bool>("enable_rviz", enable_rviz, false);
     // 【参数】是否启动自带A*
