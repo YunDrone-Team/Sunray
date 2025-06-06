@@ -75,8 +75,8 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     else if (location_source == 1)
     {
         // 【订阅】订阅动捕的数据(位置+速度) vrpn -> 本节点
-        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + ugv_name + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
-        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + ugv_name + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
+        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + topic_prefix + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
+        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + topic_prefix + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
     }
     else if (location_source == 2)
     {
