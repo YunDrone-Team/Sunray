@@ -93,6 +93,7 @@ enum MessageID
     UAVStateMessageID           = 2,
     UGVStateMessageID           = 20,
     NodeMessageID               = 30,
+    FormationMessageID          = 40,
 //    TakeoffMessageID    = 101,
     UAVControlCMDMessageID      = 102,
     UAVSetupMessageID           = 103,
@@ -163,7 +164,25 @@ enum WaypointYawType
     CirclePoint     =3,
 };
 
+enum FormationCMD
+{
+     FormationINIT=0 ,
+     FormationTAKEOFF=1 ,    // 起飞
+     FormationLAND=2,        // 降落
+     FormationHOVER=3,       // 悬停
+     FormationFORMATION=4,   // 设置编队
+     FormationSET_HOME=5,    // 设置home点
+     FormationRETURN_HOME=6, // 返回home点
+};
 
+enum FormationType
+{
+    FormationGOAL=0,
+    FormationSTATIC=1,
+    FormationDYNAMIC=2,
+    FormationLEADER=3,
+    FormationFLLOW=4,
+};
 
 //  心跳包
 struct HeartbeatData
@@ -527,6 +546,20 @@ struct UGVState
 
 };
 
+struct Formation
+{
+    uint8_t cmd;
+    uint8_t formation_type;
+    uint16_t nameSize;
+    char name[300];
+    void init()
+    {
+       cmd=0;
+       formation_type=0;
+       nameSize=0;
+    }
+};
+
 // 有效数据部分联合体，用于传递有效数据
 union Payload
 {
@@ -542,6 +575,7 @@ union Payload
     UGVState ugvState;              // 无人车状态 - UGVState（#20）
     UGVControlCMD ugvControlCMD;    // 无人车控制指令 - UGVControlCMD（#120）
     NodeData nodeInformation;       // 机载电脑ROS节点 - NodeData（#30）
+    Formation formation;            // 编队切换 - Formation（#40）
 };
 
 //整个数据帧

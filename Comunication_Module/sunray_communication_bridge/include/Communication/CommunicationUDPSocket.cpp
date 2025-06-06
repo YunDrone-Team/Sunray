@@ -368,6 +368,8 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             index=findStdVectorComponent(0Xad,0X21,copyData);
         if(index<0)
             index=findStdVectorComponent(0Xfd,0X32,copyData);
+        if(index<0)
+            index=findStdVectorComponent(0Xcc,0X90,copyData);
 //        std::cout << "UDP find head "<<index<<std::endl;
         if( index>=0 )
         {

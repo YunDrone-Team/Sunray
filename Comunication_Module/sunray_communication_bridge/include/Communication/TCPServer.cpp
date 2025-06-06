@@ -54,6 +54,8 @@ void TCPServer::TCPServerManagingData(std::vector<uint8_t> &data, std::string IP
         if (copyData.size() < 19)
             break;
         int index = findStdVectorComponent(0Xac, 0X43, copyData);
+        if(index<0)
+            index=findStdVectorComponent(0Xcc,0X90,copyData);
         // std::cout << "查找TCPServer帧头 "<<index<<std::endl;
 
         if (index >= 0)
