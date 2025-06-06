@@ -8,11 +8,10 @@
     <arg name="simulation_mode" default="true" />
     <!-- 定位源：0 gazebo 1 动捕 2 odom 配合odom_topic 3 viobot 4 UWb -->
     <!-- 对于仿真模型 wheeltec_with_2d_lidar 和 wheeltec_with_mid360 location_source=0 不生效需要手动设置对应的话题-->
-    <arg name="location_source" default="0" />
-    <!-- 仅location_source=2 需要读取odom_topic -->
+    <arg name="location_source" default="2" />
     <arg name="odom_topic" default="/odom" />
     <!-- vel_topic为空时将自动拼接 /ugv_name_ugv_id/cmd_vel 对于仿真模型 wheeltec_with_2d_lidar 和 wheeltec_with_mid360不适用-->
-    <arg name="vel_topic" default="" />
+    <arg name="vel_topic" default="/cmd_vel" />
     <!-- 是否启用规划模块 -->
     <arg name="enable_astar" default="true" />
     <arg name="laser_topic" default="/scan" />

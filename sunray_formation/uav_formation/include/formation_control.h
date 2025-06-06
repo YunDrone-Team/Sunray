@@ -76,6 +76,7 @@ private:
     ros::Publisher uav_setup_pub;                                            // 发布无人机模式
     ros::Publisher ugv_control_cmd;                                          // 发布无人车控制指令
     ros::Subscriber formation_cmd_sub;                                       // 订阅阵型指令
+    ros::Subscriber formation_cmd_ground_sub;                                // 订阅地面站阵型指令
     ros::Subscriber orca_cmd_sub;                                            // 订阅orca返回值
     ros::Subscriber goal_sub;                                                // 订阅目标点
     ros::Timer pub_timer;                                                    // 发布无人机状态到orca
