@@ -112,6 +112,29 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
     return lastTwoBytes;
 }
 
+ void Codec::decodernFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+ {
+     Formation& data = dataFrameStruct.data.formation;
+     data.init();
+
+     data.cmd= static_cast<uint8_t>(dataFrame[0]);
+     data.formation_type= static_cast<uint8_t>(dataFrame[1]);
+
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+     // 读取nameSize（2字节，小端序）
+     data.nameSize = static_cast<uint16_t>(dataFrame[0]);
+     data.nameSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+     // 读取name
+     for (uint16_t j = 0; j < data.nameSize; ++j)
+         data.name[j] = static_cast<char>(dataFrame[j]);
+     data.name[data.nameSize] = '\0';  //添加终止符
+
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.nameSize);
+ }
+
 
 void Codec::decodernNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node)
 {
@@ -481,7 +504,8 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
     // 解析帧头（2字节，大端序）
     decoderData.head = undecodedData[1] | (static_cast<uint16_t>(undecodedData[0]) << 8);
 
-    if( decoderData.head!=0xac43 && decoderData.head!=0xad21 && decoderData.head!=0xfd32 && decoderData.head!=0xab65)
+    if( decoderData.head!=0xac43 && decoderData.head!=0xad21 && decoderData.head!=0xfd32
+        && decoderData.head!=0xab65 && decoderData.head!=0xcc90 )
         return false;
 
     decoderData.length=0;
@@ -514,6 +538,7 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
     case MessageID::HeartbeatMessageID:
         /*Payload心跳数据反序列化*/
         decoderData.data.heartbeat.agentType=static_cast<uint8_t>(undecodedData[0]);
+        decoderData.data.heartbeat.count=0;
         for (int i = 0; i <(int)sizeof(uint32_t); ++i)
             decoderData.data.heartbeat.count |= static_cast<uint32_t>(static_cast<uint8_t>(undecodedData[i+1])) << (i * 8);
         break;
@@ -563,6 +588,10 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload机载电脑ROS节点数据反序列化*/
         decodernNodePayload(undecodedData,decoderData);
         break;
+    case MessageID::FormationMessageID:
+        /*Payload编队切换数据反序列化*/
+        decodernFormationPayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
@@ -594,9 +623,15 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::SearchMessageID:
         //UDP请求帧头 0xad21
         codelessData.head=PackBytesLE(0xad,0x21);
+        break;
     case MessageID::ACKMessageID:
         //UDP回复帧头 UDP回复：0xfd32
         codelessData.head=PackBytesLE(0xfd,0x32);
+        break;
+    case MessageID::FormationMessageID:
+        //TCP和UDP共用帧头 不带回复回复：0xcc90
+        codelessData.head=PackBytesLE(0xcc,0x90);
+        break;
     default:break;
     }
 }
@@ -870,7 +905,6 @@ void Codec::coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
 {
     NodeData data=codelessData.data.nodeInformation;
 
-
     for (int i = 0; i < (int)sizeof(uint16_t); i++)
         payload.push_back(static_cast<uint8_t>((data.nodeCount >> (i * 8)) & 0xFF));
 
@@ -885,6 +919,22 @@ void Codec::coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
 
     for(int j=0;j<data.nodeSize;++j)
         payload.push_back(static_cast<uint8_t>(data.nodeStr[j]));
+}
+
+void Codec::coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    Formation data=codelessData.data.formation;
+    payload.push_back(static_cast<uint8_t>(data.cmd));
+    payload.push_back(static_cast<uint8_t>(data.formation_type));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.nameSize >> (i * 8)) & 0xFF));
+
+    if(payload.capacity()<data.nameSize+4)
+        payload.reserve(data.nameSize+4);
+
+    for(int j=0;j<data.nameSize;++j)
+        payload.push_back(static_cast<uint8_t>(data.name[j]));
 }
 
 std::vector<uint8_t> Codec::coder(DataFrame codelessData)
@@ -948,6 +998,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::NodeMessageID:
         /*Payload机载电脑ROS节点数据序列化*/
         coderNodePayload(PayloadData,codelessData);
+        break;
+    case MessageID::FormationMessageID:
+        /*Payload编队切换数据序列化*/
+        coderFormationPayload(PayloadData,codelessData);
         break;
     default:break;
     }
