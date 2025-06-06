@@ -13,12 +13,13 @@ using namespace std;
 #define NODE_NAME "ugv_terminal_control"
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>全 局 变 量<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 string ugv_name;
-int ugv_id = 1;
+int ugv_id;
 sunray_msgs::UGVControlCMD ugv_control_cmd; // 无人车外部控制指令
 ros::Publisher command_pub;
 float state_desired[3];
-string ugv_prefix = "ugv" + std::to_string(ugv_id);
-string topic_prefix = "/" + ugv_prefix;
+string ugv_prefix;
+string topic_prefix;
+
 
 std::string format_float_two_decimal(float value)
 {
@@ -40,9 +41,10 @@ int main(int argc, char **argv)
     ros::NodeHandle nh("~");
 
     // 无人机编号 1号无人机则为1
-    nh.param("ugv_id", ugv_id, 1);
-
-    ugv_name = "/ugv" + std::to_string(ugv_id);
+    nh.param<int>("ugv_id", ugv_id, 1);
+    nh.param<string>("ugv_name", ugv_name, "ugv");
+    ugv_prefix = ugv_name + std::to_string(ugv_id);
+    topic_prefix = "/" + ugv_prefix;
 
     // 【发布】控制指令
     command_pub = nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 10);
@@ -63,19 +65,9 @@ int main(int argc, char **argv)
         else if (start_flag == 1)
         {
             Logger::print_color(int(LogColor::green), "In HOLD");
-            Logger::print_color(int(LogColor::green), "desired state: --- linear_vel_x(body) [m/s]");
-            cin >> state_desired[0];
-            Logger::print_color(int(LogColor::green), "desired state: --- linear_vel_y(body) [m/s]");
-            cin >> state_desired[1];
-            Logger::print_color(int(LogColor::green), "desired state: --- yawRate(body) [deg/s]");
-            cin >> state_desired[2];
 
             ugv_control_cmd.cmd = sunray_msgs::UGVControlCMD::HOLD;
-            ugv_control_cmd.desired_vel[0] = state_desired[0];
-            ugv_control_cmd.desired_vel[1] = state_desired[1];
-            ugv_control_cmd.angular_vel = state_desired[2] / 180.0 * M_PI;
             command_pub.publish(ugv_control_cmd);
-            Logger::print_color(int(LogColor::blue), "state_desired [linear angular] : " + format_float_two_decimal(state_desired[0]) + " [m/s] " + format_float_two_decimal(state_desired[1]) + " [m/s] " + format_float_two_decimal(state_desired[2]) + " [deg/s] ");
         }
         else if (start_flag == 2)
         {
@@ -111,24 +103,6 @@ int main(int argc, char **argv)
             command_pub.publish(ugv_control_cmd);
             Logger::print_color(int(LogColor::blue), "state_desired[velolity] : " + format_float_two_decimal(state_desired[0]) + " [m/s] " + format_float_two_decimal(state_desired[1]) + " [m/s] ");
         }
-        // else if (start_flag == 5)
-        // {
-        //     cout << "Move in Point control, Pls input the desired velocity and angular "<<endl;
-        //     cout << "desired state: --- x [m/s] "<<endl;
-        //     cin >> state_desired[0];
-        //     // cout << "desired state: --- y [m/s]"<<endl;
-        //     // cin >> state_desired[1];
-        //     cout << "desired state: --- yaw [deg/s]"<<endl;
-        //     cin >> state_desired[2];
-
-        //     ugv_control_cmd.cmd = 5;
-        //     ugv_control_cmd.desired_vel[0] = state_desired[0];
-        //     // ugv_control_cmd.desired_vel[1] = state_desired[1];
-        //     ugv_control_cmd.angular_vel  = state_desired[2]/180.0*M_PI;
-        //     command_pub.publish(ugv_control_cmd);
-        //     cout << "state_desired [X Y] : " << state_desired[0] << " [ m/s ] "<< state_desired[1] <<" [ m/s ] "<< endl;
-        //     cout << "state_desired [YAW] : " << state_desired[2] << " [ deg ] "<< endl;
-        // }
         else if (start_flag == 4)
         {
             Logger::print_color(int(LogColor::green), "Move in VEL_CONTROL_BODY, Pls input the desired position and yaw");
