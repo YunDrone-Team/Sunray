@@ -14,7 +14,7 @@ class ROSMulticastBridge:
 		# 获取参数
 		self.multicast_group = rospy.get_param('~multicast_group', '224.0.0.1')
 		self.multicast_port = rospy.get_param('~multicast_port', 8989)
-		self.config_file = rospy.get_param('~config_file', "/home/yundrone/Sunray/sunray_formation/uav_formation/scrpts/pub.yaml")
+		self.config_file = rospy.get_param('~config_file', "/home/yundrone/Sunray/sunray_formation/formation_control/scrpts/pub.yaml")
 		self.ttl = rospy.get_param('~ttl', 2)  # Time To Live for multicast packets
 		
 		# 设置组播socket

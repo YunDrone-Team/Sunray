@@ -1,0 +1,18 @@
+static_fromation:
+  file_path:
+    [
+      "/home/yundrone/Sunray/sunray_formation/formation_control/config/static_formation.yaml",
+    ]
+
+dynamic_fromation:
+  file_path:
+    [
+      "/home/yundrone/Sunray/sunray_formation/formation_control/config/circle.yaml",
+      "/home/yundrone/Sunray/sunray_formation/formation_control/config/figure_eight.yaml",
+    ]
+
+waypoint:
+  file_path:
+    [
+      "/home/yundrone/Sunray/sunray_formation/formation_control/config/waypoint.yaml",
+    ]
