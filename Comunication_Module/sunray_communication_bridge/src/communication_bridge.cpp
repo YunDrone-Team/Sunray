@@ -111,9 +111,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
         }
     }
 
-    // 【订阅】
+    // 【订阅】编队切换
     formation_sub=nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd", 1, boost::bind(&communication_bridge::formation_cmd_cb, this,_1));
-    // 【发布】
+    // 【发布】编队切换
     formation_pub=nh.advertise<sunray_msgs::Formation>("/sunray/formation_cmd/ground", 1);
 
     // 【定时器】 定时发送TCP心跳包到地面站
@@ -1044,8 +1044,8 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
 
 void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg)
 {
-    std::cout << "formation_cmd_cb:" << std::endl;
-    if(!is_simulation)
+    // std::cout << "formation_cmd_cb:" << std::endl;
+    if(is_simulation)
         return;
     DataFrame formationData;
 
@@ -1068,7 +1068,7 @@ void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstP
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
 {
-    std::cout << "ugv_state_cb:" << robot_id<< std::endl;
+    // std::cout << "ugv_state_cb:" << robot_id<< std::endl;
 
     int index = robot_id - 1;
     ugvStateData[index].data.ugvState.init();
