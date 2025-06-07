@@ -7,7 +7,7 @@ void SunrayFormation::init(ros::NodeHandle &nh_)
     nh.param<int>("agent_num", agent_num, 1);
     nh.param<int>("agent_type", agent_type, 0);
     nh.param<std::string>("agent_name", agent_name, "uav");
-    nh.param<std::string>("file_path", file_path, "/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml");
+    nh.param<std::string>("file_path", file_path, "/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml");
 
     nh.param<int>("dynamic_type", dynamic_type, 0);
     nh.param<float>("circle/lissa_a", circle_params.lissa_a, 0);
@@ -156,6 +156,9 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
     {
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+
+        ugv_cmd.header.stamp = ros::Time::now();
+        ugv_cmd.cmd = sunray_msgs::UGVControlCMD::HOLD;
     }
     // 如果是运行状态，则发送速度指令
     else if (msg->state == sunray_msgs::OrcaCmd::RUN)

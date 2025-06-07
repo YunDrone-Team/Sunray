@@ -13,8 +13,8 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "uav_formation_node");
     ros::NodeHandle nh("~");
 
-    SunrayFormation uav_formation;
-    uav_formation.init(nh);
+    SunrayFormation formation_control;
+    formation_control.init(nh);
     ros::spin();
 
     return 0;

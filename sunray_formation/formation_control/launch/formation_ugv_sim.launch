@@ -1,15 +1,15 @@
 <launch>
     <arg name="enable_rviz" default="true" />
+    <arg name="agent_id" default="1" />
     <!-- 0：读取配置文件中的轨迹 1: 实时计算 -->
     <arg name="dynamic_type" default="1" />
     <!-- agent name -->
-    <arg name="agent_name" default="uav" />
+    <arg name="agent_name" default="ugv" />
     <!-- 集群数量 -->
     <arg name="agent_num" default="3" />
     <!-- agent类型 0：uav 1: ugv -->
-    <arg name="agent_type" default="0" />
-    <!-- 配置文件路径 -->
-    <arg name="file_path" default="/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml" />
+    <arg name="agent_type" default="1" />
+    <arg name="file_path" default="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
     <arg name="circle/lissa_a" default="1" />
     <arg name="circle/lissa_b" default="1" />
     <arg name="circle/lissa_delta" default="1.5707" />
@@ -26,13 +26,13 @@
     <arg name="figure_eight/center_x" default="0" />
     <arg name="figure_eight/center_y" default="0" />
     <arg name="figure_eight/linear_speed" default="0.25" />
-    
-    <node name="uav_formation_node_1" pkg="sunray_formation" type="formation_control_node" output="screen">
-        <param name="agent_id" type="int" value="1" />
+
+    <node name="ugv_formation_node_$(arg agent_id)" pkg="sunray_formation" type="formation_control_node" output="screen">
+        <param name="agent_id" type="int" value="$(arg agent_id)" />
         <param name="agent_name" type="string" value="$(arg agent_name)" />
         <param name="agent_num" type="int" value="$(arg agent_num)" />
         <param name="agent_type" type="int" value="$(arg agent_type)" />
-        <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/uav_formation/config/config.yaml" />
+        <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
         <param name="dynamic_type" type="int" value="$(arg dynamic_type)" />
         <param name="circle/lissa_a" type="double" value="$(arg circle/lissa_a)" />
         <param name="circle/lissa_b" type="double" value="$(arg circle/lissa_b)" />
@@ -52,9 +52,14 @@
         <param name="figure_eight/linear_speed" type="double" value="$(arg figure_eight/linear_speed)" />
     </node>
 
+    <include file="$(find sunray_formation)/launch/formation_ugv_sim.launch" if="$(eval (arg('agent_num') > arg('agent_id')))">
+        <arg name="agent_id" value="$(eval arg('agent_id') + 1)" />
+        <arg name="agent_num" value="$(arg agent_num)" />
+        <arg name="enable_rviz" value="false" />
+    </include>
+
     <group if="$(arg enable_rviz)">
         <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/formation.rviz"/>
         <node type="rviz" name="rviz_external_fusion" pkg="rviz" args="-d $(arg rivz_config)"/>
     </group>
-
 </launch>

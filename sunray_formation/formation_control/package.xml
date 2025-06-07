@@ -2,7 +2,7 @@
 <package format="2">
   <name>sunray_formation</name>
   <version>0.0.0</version>
-  <description>The uav_formation package</description>
+  <description>The formation_control package</description>
 
   <maintainer email="sunray2023@126.com">Yundrone Tech</maintainer>
 

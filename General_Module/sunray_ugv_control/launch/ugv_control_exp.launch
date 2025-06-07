@@ -4,6 +4,7 @@
     <arg name="flag_printf" default="true" />
     <arg name="enable_rviz" default="true" />
     <arg name="server" default="192.168.25.27"/>
+    <arg name="simulation_mode" default="false" />
     <!-- 定位源：0 gazebo 1 动捕 2 odom 配合odom_topic 3 viobot 4 UWb -->
     <!-- 对于仿真模型 wheeltec_with_2d_lidar 和 wheeltec_with_mid360 location_source=0 不生效需要手动设置对应的话题-->
     <arg name="location_source" default="1" />
@@ -35,6 +36,7 @@
         <param name="ugv_name" value="$(arg ugv_name)" />
         <param name="flag_printf" value="$(arg flag_printf)" />
         <param name="enable_rviz" value="$(arg enable_rviz)" />
+        <param name="simulation_mode" value="$(arg simulation_mode)" />
         <!-- 定位 驱动话题 -->
         <param name="location_source" value="$(arg location_source)" />
         <param name="odom_topic" value="$(arg odom_topic)" />

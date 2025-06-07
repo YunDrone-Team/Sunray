@@ -5,8 +5,8 @@ from matplotlib.animation import FuncAnimation
 import io
 
 data = None
-with open('/home/yundrone/Sunray/sunray_formation/uav_formation/config/circle.yaml') as f:
-# with open('/home/yundrone/Sunray/sunray_formation/uav_formation/config/figure_eight.yaml') as f:
+with open('/home/yundrone/Sunray/sunray_formation/formation_control/config/circle.yaml') as f:
+# with open('/home/yundrone/Sunray/sunray_formation/formation_control/config/figure_eight.yaml') as f:
     data = yaml.safe_load(f)
 
 # 提取点的数量
