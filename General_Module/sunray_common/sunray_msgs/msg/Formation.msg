@@ -24,4 +24,6 @@ uint8 DYNAMIC=2
 uint8 LEADER=3
 uint8 FLLOW=4
 
+uint8 leader_id
+
 string name
