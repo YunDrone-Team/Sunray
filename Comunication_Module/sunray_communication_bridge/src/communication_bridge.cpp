@@ -630,6 +630,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         sunray_msgs::Formation sendMSG;
         sendMSG.cmd=readData.dataFrame.data.formation.cmd;
         sendMSG.formation_type=readData.dataFrame.data.formation.formation_type;
+        sendMSG.leader_id= readData.dataFrame.data.formation.leader_id;
         sendMSG.name=readData.dataFrame.data.formation.name;
         formation_pub.publish(sendMSG);
         break;   
@@ -1059,6 +1060,7 @@ void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstP
     
     formationData.data.formation.cmd=msg->cmd;
     formationData.data.formation.formation_type=msg->formation_type;
+    formationData.data.formation.leader_id=msg->leader_id;
     formationData.data.formation.nameSize=msg->name.size();
     strcpy(formationData.data.formation.name, msg->name.c_str());
     // 本节点 --UDP--> 其他智能体 编队切换组播链路发送

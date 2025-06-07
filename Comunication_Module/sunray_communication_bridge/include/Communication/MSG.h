@@ -550,10 +550,12 @@ struct Formation
 {
     uint8_t cmd;
     uint8_t formation_type;
+    uint8_t leader_id;
     uint16_t nameSize;
     char name[300];
     void init()
     {
+       leader_id=0;
        cmd=0;
        formation_type=0;
        nameSize=0;

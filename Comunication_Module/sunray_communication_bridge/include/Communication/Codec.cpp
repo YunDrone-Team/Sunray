@@ -119,8 +119,9 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
 
      data.cmd= static_cast<uint8_t>(dataFrame[0]);
      data.formation_type= static_cast<uint8_t>(dataFrame[1]);
+     data.leader_id= static_cast<uint8_t>(dataFrame[2]);
 
-     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);
 
      // 读取nameSize（2字节，小端序）
      data.nameSize = static_cast<uint16_t>(dataFrame[0]);
@@ -926,6 +927,7 @@ void Codec::coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codel
     Formation data=codelessData.data.formation;
     payload.push_back(static_cast<uint8_t>(data.cmd));
     payload.push_back(static_cast<uint8_t>(data.formation_type));
+    payload.push_back(static_cast<uint8_t>(data.leader_id));
 
     for (int i = 0; i < (int)sizeof(uint16_t); i++)
         payload.push_back(static_cast<uint8_t>((data.nameSize >> (i * 8)) & 0xFF));
