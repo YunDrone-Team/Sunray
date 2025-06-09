@@ -1,5 +1,6 @@
 <launch>
     <arg name="enable_rviz" default="true" />
+    <arg name="agent_id" default="1" />
     <!-- 0：读取配置文件中的轨迹 1: 实时计算 -->
     <arg name="dynamic_type" default="1" />
     <!-- agent name -->

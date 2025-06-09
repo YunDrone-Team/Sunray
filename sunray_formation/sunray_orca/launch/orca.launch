@@ -10,6 +10,11 @@
   <arg name="orca_params/maxSpeed" default="0.5" />
   <arg name="orca_params/time_step" default="0.1" />
 
+  <arg name="geo_fence/max_x" default="3.0" />
+  <arg name="geo_fence/min_x" default="-3.0" />
+  <arg name="geo_fence/max_y" default="3.0" />
+  <arg name="geo_fence/min_y" default="-3.0" />
+
   <node pkg="sunray_orca" type="orca_node" name="orca_node" output="screen">
     <param name="agent_id" value="$(arg agent_id)" />
     <param name="agent_name" value="$(arg agent_name)" />
@@ -21,5 +26,10 @@
     <param name="orca_params/radius" value="$(arg orca_params/radius)" />
     <param name="orca_params/maxSpeed" value="$(arg orca_params/maxSpeed)" />
     <param name="orca_params/time_step" value="$(arg orca_params/time_step)" />
+
+    <param name="geo_fence/max_x" value="$(arg geo_fence/max_x)" />
+    <param name="geo_fence/min_x" value="$(arg geo_fence/min_x)" />
+    <param name="geo_fence/max_y" value="$(arg geo_fence/max_y)" />
+    <param name="geo_fence/min_y" value="$(arg geo_fence/min_y)" />
   </node>
 </launch>
