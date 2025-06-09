@@ -147,14 +147,14 @@ bool ORCA::orca_run()
 		// double target_yaw = atan2(goal_pos[1] - agent_state[idx].pose.pose.position.y, goal_pos[0] - agent_state[idx].pose.pose.position.x);
 		// float angle = this->calculateOptimalTurn(current_yaw, target_yaw);
 		OrcaCmd.angular[2] = 0;
-		if (angle > 0 && angle > max_yaw_rate)
-		{
-			OrcaCmd.angular[2] = max_yaw_rate;
-		}
-		else if (angle < 0 && angle < -max_yaw_rate)
-		{
-			OrcaCmd.angular[2] = -max_yaw_rate;
-		}
+		// if (angle > 0 && angle > max_yaw_rate)
+		// {
+		// 	OrcaCmd.angular[2] = max_yaw_rate;
+		// }
+		// else if (angle < 0 && angle < -max_yaw_rate)
+		// {
+		// 	OrcaCmd.angular[2] = -max_yaw_rate;
+		// }
 		cmd_pub.publish(OrcaCmd);
 		return false;
 	}
