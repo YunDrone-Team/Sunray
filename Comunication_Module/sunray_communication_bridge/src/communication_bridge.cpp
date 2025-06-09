@@ -1148,7 +1148,7 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
         // 无人车状态 - UGVState（#20）
         ugvStateData[index].seq=MessageID::UGVStateMessageID;
         int sendBack = udpSocket->sendUDPData(codec.coder(ugvStateData[robot_id - 1]), ip, udp_ground_port);
-        std::cout << "sendBack: " << sendBack<< std::endl;
+        // std::cout << "sendBack: " << sendBack<< std::endl;
 
         if (sendBack < 0)
             tempVec.push_back(ip);
