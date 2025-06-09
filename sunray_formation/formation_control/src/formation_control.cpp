@@ -164,8 +164,8 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
     else if (msg->state == sunray_msgs::OrcaCmd::RUN)
     {
         uav_cmd.header.stamp = ros::Time::now();
-        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYaw;
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
         uav_cmd.desired_vel[0] = msg->linear[0];
         uav_cmd.desired_vel[1] = msg->linear[1];
         uav_cmd.desired_pos[0] = msg->goal_pos[0];
