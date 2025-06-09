@@ -117,6 +117,10 @@ private:
     std::string getCurrentProgramPath();
     std::string getSunrayPath();
 
+
+    uint64_t getCurrentTimestampMs();//本地实现的时间戳生成函数,c++用
+    uint64_t calculateMessageDelay(uint64_t msgTimestamp);//计算消息延迟
+
     uint8_t getPX4ModeEnum(std::string modeStr);
     void sendMsgCb(const ros::TimerEvent &e);
     void sendHeartbeatPacket(const ros::TimerEvent &e);

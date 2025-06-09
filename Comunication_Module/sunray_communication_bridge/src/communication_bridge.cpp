@@ -170,6 +170,18 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
     }
 }
 
+uint64_t communication_bridge::calculateMessageDelay(uint64_t msgTimestamp) 
+{
+    uint64_t currentTimestamp = getCurrentTimestampMs();
+    return (currentTimestamp >= msgTimestamp) ? (currentTimestamp - msgTimestamp) : 0;
+}
+
+uint64_t communication_bridge::getCurrentTimestampMs() 
+{
+    auto now = std::chrono::system_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+}
+
 uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
 {
     uint8_t back;
@@ -206,6 +218,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
     int back;
     //  std::cout << " GroundControl::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
+    // std::cout << "UDP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
 
     switch (readData.dataFrame.seq)
     {
@@ -431,6 +444,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     else
         robot_id = readData.dataFrame.robot_ID-100;
     // std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
+    // std::cout << "TCP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
     switch (readData.dataFrame.seq)
     {
     case MessageID::UAVControlCMDMessageID:// 无人机控制指令 - UAVControlCMD（#102）
@@ -900,7 +914,6 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
     if(!station_connected)
         return;
     
-
     // 心跳包数据结构
     DataFrame Heartbeatdata;
     Heartbeatdata.seq=MessageID::HeartbeatMessageID;
