@@ -1,6 +1,6 @@
 <launch>
     <arg name="ugv_id" default="1" />
-    <arg name="ugv_name" default="car" />
+    <arg name="ugv_name" default="ugv" />
     <arg name="flag_printf" default="true" />
     <arg name="enable_rviz" default="true" />
     <arg name="server" default="192.168.25.27"/>
