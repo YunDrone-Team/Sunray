@@ -164,14 +164,15 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
     else if (msg->state == sunray_msgs::OrcaCmd::RUN)
     {
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;
-        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
         uav_cmd.desired_vel[0] = msg->linear[0];
         uav_cmd.desired_vel[1] = msg->linear[1];
         uav_cmd.desired_pos[0] = msg->goal_pos[0];
         uav_cmd.desired_pos[1] = msg->goal_pos[1];
         uav_cmd.desired_pos[2] = 1;
-        uav_cmd.desired_yaw_rate = msg->angular[2];
+        uav_cmd.desired_yaw = 0;
+        // uav_cmd.desired_yaw_rate = 0;
 
         ugv_cmd.header.stamp = ros::Time::now();
         // ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
@@ -181,7 +182,7 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
         ugv_cmd.desired_vel[1] = msg->linear[1];
         ugv_cmd.desired_pos[0] = msg->goal_pos[0];
         ugv_cmd.desired_pos[1] = msg->goal_pos[1];
-        ugv_cmd.angular_vel = msg->angular[2];
+        ugv_cmd.angular_vel = 0;
     }
     // 如果是到达状态，则发送位置指令
     else if (msg->state == sunray_msgs::OrcaCmd::ARRIVED)
@@ -431,7 +432,7 @@ void SunrayFormation::agent_mode_check(const ros::TimerEvent &e)
             Logger::print_color(int(LogColor::red), node_name, "ORCA节点超时，切换至悬停模式");
         }
     }
-    if (state == sunray_msgs::Formation::TAKEOFF)
+    if (state == sunray_msgs::Formation::TAKEOFF && agent_type == 0)
     {
         float time_diff = ros::Time::now().toSec() - mode_takeoff_time.toSec();
         if (time_diff < 5 &&
@@ -483,7 +484,7 @@ void SunrayFormation::agent_mode_check(const ros::TimerEvent &e)
             state = sunray_msgs::Formation::INIT;
         }
     }
-    else if (state == sunray_msgs::Formation::LAND)
+    else if (state == sunray_msgs::Formation::LAND && agent_type == 0)
     {
         uav_setup.header.stamp = ros::Time::now();
         uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
@@ -493,9 +494,19 @@ void SunrayFormation::agent_mode_check(const ros::TimerEvent &e)
     }
     else if (state == sunray_msgs::Formation::HOVER)
     {
-        uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
-        uav_control_cmd.publish(uav_cmd);
+
+        if (agent_type == 0)
+        {
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+            uav_control_cmd.publish(uav_cmd);
+        }
+        else if (agent_type == 1)
+        {
+            ugv_cmd.header.stamp = ros::Time::now();
+            ugv_cmd.cmd = sunray_msgs::UGVControlCMD::HOLD;
+            ugv_control_cmd.publish(ugv_cmd);
+        }
         state = sunray_msgs::Formation::INIT;
     }
 }
@@ -710,15 +721,15 @@ void SunrayFormation::debug()
     {
         Logger::print_color(int(LogColor::green), this->node_name, "当前状态: ", "FORMATION");
     }
-    if(this->formation_type == sunray_msgs::Formation::STATIC)
+    if (this->formation_type == sunray_msgs::Formation::STATIC)
     {
         Logger::print_color(int(LogColor::green), this->node_name, "当前阵型: ", "STATIC");
     }
-    else if(this->formation_type == sunray_msgs::Formation::DYNAMIC)
+    else if (this->formation_type == sunray_msgs::Formation::DYNAMIC)
     {
         Logger::print_color(int(LogColor::green), this->node_name, "当前阵型: ", "DYNAMIC");
     }
-    else if(this->formation_type == sunray_msgs::Formation::LEADER)
+    else if (this->formation_type == sunray_msgs::Formation::LEADER)
     {
         Logger::print_color(int(LogColor::green), this->node_name, "当前阵型: ", "LEADER");
     }

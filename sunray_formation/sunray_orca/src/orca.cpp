@@ -144,9 +144,9 @@ bool ORCA::orca_run()
 		// double current_yaw = tf::getYaw(agent_state[idx].pose.pose.orientation);
 		double current_yaw = 0;
 		// double target_yaw = atan2(vel.y(), vel.x());
-		double target_yaw = atan2(goal_pos[1] - agent_state[idx].pose.pose.position.y, goal_pos[0] - agent_state[idx].pose.pose.position.x);
-		float angle = this->calculateOptimalTurn(current_yaw, target_yaw);
-		OrcaCmd.angular[2] = angle;
+		// double target_yaw = atan2(goal_pos[1] - agent_state[idx].pose.pose.position.y, goal_pos[0] - agent_state[idx].pose.pose.position.x);
+		// float angle = this->calculateOptimalTurn(current_yaw, target_yaw);
+		OrcaCmd.angular[2] = 0;
 		if (angle > 0 && angle > max_yaw_rate)
 		{
 			OrcaCmd.angular[2] = max_yaw_rate;
