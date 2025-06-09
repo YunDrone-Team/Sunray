@@ -8,12 +8,12 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<bool>("is_simulation", is_simulation, false);      // 【参数】确认当前是仿真还是真机实验
     nh.param<int>("uav_experiment_num", uav_experiment_num, 0); // 【参数】无人机真机数量（用于智能体之间的通信）
     nh.param<int>("uav_simulation_num", uav_simulation_num, 0); // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
-    nh.param<int>("uav_id", uav_id, 1);                         // 【参数】无人机编号(真机为本机，仿真为1)
+    nh.param<int>("uav_id", uav_id, -1);                         // 【参数】无人机编号(真机为本机，仿真为1)
     nh.param<string>("uav_name", uav_name, "uav");              // 【参数】无人机名字前缀
 
     nh.param<int>("ugv_experiment_num", ugv_experiment_num, 0); // 【参数】无人车真车数量
     nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0); // 【参数】仿真无人车数量
-    nh.param<int>("ugv_id", ugv_id, 1);                         // 【参数】无人车编号(真机为本机，仿真为1)
+    nh.param<int>("ugv_id", ugv_id, -1);                         // 【参数】无人车编号(真机为本机，仿真为1)
     nh.param<string>("ugv_name", ugv_name, "ugv");              // 【参数】无人车名字前缀
 
     nh.param<string>("tcp_port", tcp_port, "8969");          // 【参数】TCP绑定端口
@@ -63,7 +63,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
         }
     }else{
         // 无人机Sunray和地面站之间的通信（此部分仅针对真机）
-        if (uav_experiment_num > 0)
+        if (uav_experiment_num > 0 && uav_id>=0 )
         {
             //  无人机名字 = 无人机名字前缀 + 无人机ID
             std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
@@ -78,7 +78,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
         }
 
         // 无人车Sunray和地面站之间的通信（此部分仅针对真机）
-        if (ugv_experiment_num > 0)
+        if (ugv_experiment_num > 0 && ugv_id>=0)
         {
             //  无人车名字 = 无人车名字前缀 + 无人车ID
             std::string topic_prefix = "/" + ugv_name + std::to_string(ugv_id);
@@ -240,7 +240,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
         // 真机无人机应答
-        if (uav_experiment_num > 0)
+        if (uav_experiment_num > 0 && uav_id>=0)
         {
             backData.robot_ID = uav_id;
             backData.data.ack.ID = uav_id;
@@ -250,7 +250,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             std::lock_guard<std::mutex> lock(_mutexUDP);
         }
         // 真机无人车应答
-        if (ugv_experiment_num > 0)
+        if (ugv_experiment_num > 0 && ugv_id>=0)
         {
             backData.robot_ID = ugv_id+100;
             backData.data.ack.ID = ugv_id;
