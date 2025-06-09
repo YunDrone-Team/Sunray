@@ -66,7 +66,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 初始化变量
     goal_set = false;
 
-    topic_prefix = ugv_name + std::to_string(ugv_id);
+    topic_prefix = "/" + ugv_name + std::to_string(ugv_id);
     // 根据 location_source
     if (location_source == 0)
     {
