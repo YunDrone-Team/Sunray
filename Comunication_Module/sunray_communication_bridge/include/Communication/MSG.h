@@ -83,6 +83,7 @@ enum UAVSetupType
     RebootPX4ControlType    = 3,
     SetControlMode          = 4,
     KillControlType         = 5,
+    LandSetupType         = 6,
 };
 
 

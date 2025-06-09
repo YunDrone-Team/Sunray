@@ -491,9 +491,12 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     case MessageID::UAVSetupMessageID:// 无人机设置指令 - UAVSetup（#103）
     {
         setup.header.stamp = ros::Time::now();
-        if (readData.dataFrame.data.uavSetup.control_mode == UAVSetupType::SetControlMode)
+        if (readData.dataFrame.data.uavSetup.cmd == UAVSetupType::SetControlMode)
         {
-            setup.control_mode = "CMD_CONTROL";
+            if (readData.dataFrame.data.uavSetup.control_mode == UAVSetupType::SetControlMode)
+                setup.control_mode = "CMD_CONTROL";
+            else if (readData.dataFrame.data.uavSetup.control_mode == UAVSetupType::LandSetupType)
+                setup.control_mode = "LAND_CONTROL";
         }
         setup.cmd = readData.dataFrame.data.uavSetup.cmd;
         auto it = uav_setup_pub.find(robot_id);
