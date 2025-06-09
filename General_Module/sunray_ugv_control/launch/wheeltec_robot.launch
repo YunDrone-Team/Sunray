@@ -1,6 +1,6 @@
 <launch>
 	<arg name="ugv_id" default="1"/>
-	<arg name="ugv_name" default="car"/>
+	<arg name="ugv_name" default="ugv"/>
 	<!-- 开启 底层单片机控制节点 -->
 	<node pkg="turn_on_wheeltec_robot" type="wheeltec_robot_node" name="wheeltec_robot_$(arg ugv_id)" output="screen">
 		<remap from="/cmd_vel"           to="/$(arg ugv_name)$(arg ugv_id)/cmd_vel"/>
