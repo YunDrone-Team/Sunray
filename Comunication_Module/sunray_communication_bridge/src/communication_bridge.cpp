@@ -614,6 +614,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             break;
         }
         sunray_msgs::UGVControlCMD msg;
+        msg.header.stamp = ros::Time::now();
         msg.cmd = readData.dataFrame.data.ugvControlCMD.cmd;
         msg.yaw_type = readData.dataFrame.data.ugvControlCMD.yaw_type;
         msg.desired_pos[0] = readData.dataFrame.data.ugvControlCMD.desired_pos[0];
@@ -652,6 +653,7 @@ bool communication_bridge::SynchronizationUGVState(UGVState Data)
     }
 
     sunray_msgs::UGVState msg;
+    msg.header.stamp = ros::Time::now();
     msg.ugv_id = Data.ugv_id;
     msg.connected = Data.connected;
     msg.battery_state = Data.battery_state;
@@ -705,6 +707,7 @@ bool communication_bridge::SynchronizationUAVState(UAVState Data)
     }
 
     sunray_msgs::UAVState msg;
+    msg.header.stamp = ros::Time::now();
     msg.uav_id = Data.uav_id;
     msg.connected = Data.connected;
     msg.armed = Data.armed;
