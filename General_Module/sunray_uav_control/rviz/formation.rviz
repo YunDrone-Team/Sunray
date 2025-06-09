@@ -506,6 +506,14 @@ Visualization Manager:
                 goal: true
               Queue Size: 100
               Value: true
+            - Class: rviz/MarkerArray
+              Enabled: true
+              Marker Topic: /ugv1/orca/geo_fence
+              Name: MarkerArray
+              Namespaces:
+                fence: true
+              Queue Size: 100
+              Value: true
           Enabled: true
           Name: UGV1
         - Class: rviz/Group
@@ -638,7 +646,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.829482555389404
+      Distance: 6.511358261108398
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -654,9 +662,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5297963619232178
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
-      Yaw: 2.9367473125457764
+      Yaw: 3.0767481327056885
     Saved: ~
 Window Geometry:
   Displays:
@@ -675,4 +683,4 @@ Window Geometry:
     collapsed: true
   Width: 1060
   X: 191
-  Y: 210
+  Y: 173

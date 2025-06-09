@@ -1,0 +1,3 @@
+<launch>
+    <node name="formation_switch_node" pkg="sunray_formation" type="formation_switch_node" output="screen"></node>
+</launch>

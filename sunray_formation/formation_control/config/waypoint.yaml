@@ -1,7 +1,7 @@
 initial_point:
   name: waypoint
   ReadyPoint_1: 0
-point_1: [2.0, -2.0, 0]
-point_2: [2.0, 2.0, 0]
-point_3: [-2.0, 2.0, 0]
-point_4: [-2.0, -2.0, 0]
+point_1: [2.0, -2.0, 1]
+point_2: [2.0, 2.0, 1]
+point_3: [-2.0, 2.0, 1]
+point_4: [-2.0, -2.0, 1]

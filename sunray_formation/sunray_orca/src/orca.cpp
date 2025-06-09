@@ -21,12 +21,18 @@ void ORCA::init(ros::NodeHandle &nh)
 	nh.param<float>("orca_params/maxSpeed", orca_params.maxSpeed, 0.5);
 	// 【参数】时间步长 不确定有啥用
 	nh.param<float>("orca_params/time_step", orca_params.time_step, 0.1);
+	// 【参数】地理围栏
+	nh.param<float>("geo_fence/min_x", geo_fence_min_x, -5.0);
+	nh.param<float>("geo_fence/max_x", geo_fence_max_x, 5.0);
+	nh.param<float>("geo_fence/min_y", geo_fence_min_y, -5.0);
+	nh.param<float>("geo_fence/max_y", geo_fence_max_y, 5.0);
 
 	// 初始化订阅器和发布器
 	string topic_prefix = "/" + agent_name + std::to_string(agent_id);
 
 	cmd_pub = nh.advertise<sunray_msgs::OrcaCmd>(topic_prefix + "/orca_cmd", 10);
 	goal_pub = nh.advertise<visualization_msgs::Marker>(topic_prefix + "/orca/goal", 10);
+	geo_pub = nh.advertise<visualization_msgs::MarkerArray>(topic_prefix + "/orca/geo_fence", 10);
 	for (int i = 0; i < agent_num; i++)
 	{
 		topic_prefix = "/" + agent_name + std::to_string(i + 1);
@@ -44,14 +50,16 @@ void ORCA::init(ros::NodeHandle &nh)
 	agent_state_ready = false;
 	goal_reached_printed = false;
 	odom_valid.resize(agent_num, false);
-
+	goal_pos[0] = 0.0;
+	goal_pos[1] = 0.0;
+	goal_pos[2] = 0.0;
 	// 【函数】打印参数
 	printf_param();
 
 	// ORCA算法初始化 - 添加智能体
 	setup_agents();
 	// ORCA算法初始化 - 添加障碍物
-	// setup_obstacles();
+	setup_obstacles();
 
 	node_name = ros::this_node::getName();
 }
@@ -70,6 +78,17 @@ bool ORCA::orca_run()
 	int idx = agent_id - 1;
 	if (!start_flag || orca_state == sunray_msgs::OrcaCmd::INIT || !agent_state_ready)
 	{
+		orca_state = sunray_msgs::OrcaCmd::INIT;
+		OrcaCmd.state = orca_state;
+		OrcaCmd.linear[0] = 0.0;
+		OrcaCmd.linear[1] = 0.0;
+		OrcaCmd.angular[0] = 0.0;
+		OrcaCmd.angular[1] = 0.0;
+		OrcaCmd.angular[2] = 0.0;
+		OrcaCmd.goal_pos[0] = goal_pos[0];
+		OrcaCmd.goal_pos[1] = goal_pos[1];
+		OrcaCmd.goal_pos[2] = goal_pos[2];
+		cmd_pub.publish(OrcaCmd);
 		return false;
 	}
 
@@ -167,38 +186,113 @@ void ORCA::setup_obstacles()
 	std::vector<RVO::Vector2> obstacle1, obstacle2, obstacle3, obstacle4;
 
 	// 障碍物示例：中心在原点，边长为1的正方体
-	// obstacle1.push_back(RVO::Vector2(0.5f, 0.5f));
-	// obstacle1.push_back(RVO::Vector2(-0.5f, 0.5f));
-	// obstacle1.push_back(RVO::Vector2(-0.5f, 0.5f));
-	// obstacle1.push_back(RVO::Vector2(0.5f, -0.5f));
+	obstacle1.push_back(RVO::Vector2(geo_fence_max_x + 0.2, geo_fence_max_y));
+	obstacle1.push_back(RVO::Vector2(geo_fence_max_x, geo_fence_max_y));
+	obstacle1.push_back(RVO::Vector2(geo_fence_max_x, geo_fence_min_y));
+	obstacle1.push_back(RVO::Vector2(geo_fence_max_x + 0.2, geo_fence_min_y));
 
-	obstacle2.push_back(RVO::Vector2(10.0f, 40.0f));
-	obstacle2.push_back(RVO::Vector2(10.0f, 10.0f));
-	obstacle2.push_back(RVO::Vector2(40.0f, 10.0f));
-	obstacle2.push_back(RVO::Vector2(40.0f, 40.0f));
+	obstacle2.push_back(RVO::Vector2(geo_fence_max_x, geo_fence_max_y + 0.2));
+	obstacle2.push_back(RVO::Vector2(geo_fence_min_x, geo_fence_max_y + 0.2));
+	obstacle2.push_back(RVO::Vector2(geo_fence_min_x, geo_fence_max_y));
+	obstacle2.push_back(RVO::Vector2(geo_fence_max_x, geo_fence_max_y));
 
-	// obstacle3.push_back(RVO::Vector2(10.0f, -40.0f));
-	// obstacle3.push_back(RVO::Vector2(40.0f, -40.0f));
-	// obstacle3.push_back(RVO::Vector2(40.0f, -10.0f));
-	// obstacle3.push_back(RVO::Vector2(10.0f, -10.0f));
+	obstacle3.push_back(RVO::Vector2(geo_fence_min_x, geo_fence_max_y));
+	obstacle3.push_back(RVO::Vector2(geo_fence_min_x - 0.2, geo_fence_max_y));
+	obstacle3.push_back(RVO::Vector2(geo_fence_min_x - 0.2, geo_fence_min_y));
+	obstacle3.push_back(RVO::Vector2(geo_fence_min_x, geo_fence_min_y));
 
-	// obstacle4.push_back(RVO::Vector2(-10.0f, -40.0f));
-	// obstacle4.push_back(RVO::Vector2(-10.0f, -10.0f));
-	// obstacle4.push_back(RVO::Vector2(-40.0f, -10.0f));
-	// obstacle4.push_back(RVO::Vector2(-40.0f, -40.0f));
+	obstacle4.push_back(RVO::Vector2(geo_fence_max_x, geo_fence_min_y));
+	obstacle4.push_back(RVO::Vector2(geo_fence_min_x, geo_fence_min_y));
+	obstacle4.push_back(RVO::Vector2(geo_fence_min_x, geo_fence_min_y - 0.2));
+	obstacle4.push_back(RVO::Vector2(geo_fence_max_x, geo_fence_min_y - 0.2));
 
 	// 在算法中添加障碍物
-	// sim->addObstacle(obstacle1);
+	sim->addObstacle(obstacle1);
 	sim->addObstacle(obstacle2);
-	// sim->addObstacle(obstacle3);
-	// sim->addObstacle(obstacle4);
+	sim->addObstacle(obstacle3);
+	sim->addObstacle(obstacle4);
 
 	// 在算法中处理障碍物信息
 	sim->processObstacles();
 
+	visualization_msgs::Marker fence_marker;
+
+	// 设置 Marker 基本属性
+	fence_marker.header.frame_id = "world"; // 参考坐标系（如 map, odom）
+	fence_marker.header.stamp = ros::Time::now();
+	fence_marker.ns = "fence";
+	fence_marker.id = 0;
+	fence_marker.type = visualization_msgs::Marker::LINE_STRIP; // 线段形式
+	fence_marker.action = visualization_msgs::Marker::ADD;
+
+	// 设置 Marker 的尺寸和颜色
+	fence_marker.scale.x = 0.1; // 线宽
+	fence_marker.color.r = 1.0; // 红色 (RGB, 0-1)
+	fence_marker.color.g = 0.0;
+	fence_marker.color.b = 0.0;
+	fence_marker.color.a = 1.0; // 透明度 (1=不透明)
+
+	// 四元素
+	fence_marker.pose.position.x = 0.0; // 初始位置
+	fence_marker.pose.position.y = 0.0;
+	fence_marker.pose.position.z = 0.0;
+	fence_marker.pose.orientation.x = 0.0;
+	fence_marker.pose.orientation.y = 0.0;
+	fence_marker.pose.orientation.z = 0.0;
+	fence_marker.pose.orientation.w = 1.0;
+
+	// 定义围栏的形状（示例：矩形）
+	geometry_msgs::Point p1, p2, p3, p4;
+	p1.x = geo_fence_max_x + 0.2; p1.y = geo_fence_max_y; p1.z = 1.0;
+	p2.x = geo_fence_max_x; p2.y = geo_fence_max_y; p2.z = 1.0;
+	p3.x = geo_fence_max_x; p3.y = geo_fence_min_y; p3.z = 1.0;
+	p4.x = geo_fence_max_x + 0.2; p4.y = geo_fence_min_y; p4.z = 1.0;
+	fence_marker.points.push_back(p1);
+	fence_marker.points.push_back(p2);
+	fence_marker.points.push_back(p3);
+	fence_marker.points.push_back(p4);
+	fence_marker.points.push_back(p1); // 闭合
+	geo_fence_marker_array.markers.push_back(fence_marker);
+	// 添加其他障碍物的 Marker
+	p1.x = geo_fence_max_x; p1.y = geo_fence_max_y + 0.2; p1.z = 1.0;
+	p2.x = geo_fence_min_x; p2.y = geo_fence_max_y + 0.2; p2.z = 1.0;
+	p3.x = geo_fence_min_x; p3.y = geo_fence_max_y; p3.z = 1.0;
+	p4.x = geo_fence_max_x; p4.y = geo_fence_max_y; p4.z = 1.0;
+	fence_marker.points.clear();
+	fence_marker.id = 1;
+	fence_marker.points.push_back(p1);
+	fence_marker.points.push_back(p2);
+	fence_marker.points.push_back(p3);
+	fence_marker.points.push_back(p4);
+	fence_marker.points.push_back(p1); // 闭合
+	geo_fence_marker_array.markers.push_back(fence_marker);
+	p1.x = geo_fence_min_x; p1.y = geo_fence_max_y; p1.z = 1.0;
+	p2.x = geo_fence_min_x - 0.2; p2.y = geo_fence_max_y; p2.z = 1.0;
+	p3.x = geo_fence_min_x - 0.2; p3.y = geo_fence_min_y; p3.z = 1.0;
+	p4.x = geo_fence_min_x; p4.y = geo_fence_min_y; p4.z = 1.0;
+	fence_marker.points.clear();
+	fence_marker.id = 2;
+	fence_marker.points.push_back(p1);
+	fence_marker.points.push_back(p2);
+	fence_marker.points.push_back(p3);
+	fence_marker.points.push_back(p4);
+	fence_marker.points.push_back(p1); // 闭合
+	geo_fence_marker_array.markers.push_back(fence_marker);
+	p1.x = geo_fence_max_x; p1.y = geo_fence_min_y; p1.z = 1.0;
+	p2.x = geo_fence_min_x; p2.y = geo_fence_min_y; p2.z = 1.0;
+	p3.x = geo_fence_min_x; p3.y = geo_fence_min_y - 0.2; p3.z = 1.0;
+	p4.x = geo_fence_max_x; p4.y = geo_fence_min_y - 0.2; p4.z = 1.0;
+	fence_marker.points.clear();
+	fence_marker.id = 3;
+	fence_marker.points.push_back(p1);
+	fence_marker.points.push_back(p2);
+	fence_marker.points.push_back(p3);
+	fence_marker.points.push_back(p4);
+	fence_marker.points.push_back(p1); // 闭合
+	geo_fence_marker_array.markers.push_back(fence_marker);
+
 	cout << BLUE << node_name << ":  Set obstacles success!" << TAIL << endl;
 }
-
 
 bool ORCA::reachedGoal(int i)
 {
@@ -380,4 +474,19 @@ void ORCA::checkAgentState(const ros::TimerEvent &e)
 			cout << RED << node_name << ": Agent " << i + 1 << " has not received odometry data for more than 1 second!" << TAIL << endl;
 		}
 	}
+	if (orca_state = sunray_msgs::OrcaCmd::RUN)
+	{
+		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "INIT" << TAIL << endl;
+	}
+	else if (orca_state = sunray_msgs::OrcaCmd::STOP)
+	{
+		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "STOP" << TAIL << endl;
+	}
+	else if (orca_state = sunray_msgs::OrcaCmd::INIT)
+	{
+		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "INIT" << TAIL << endl;
+	}
+
+	// 定时发布地理围栏Marker
+	geo_pub.publish(geo_fence_marker_array);
 }

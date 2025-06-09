@@ -100,7 +100,7 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 【订阅】控制指令 外部控制节点 -> 本节点
     ugv_cmd_sub = nh.subscribe<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 10, &UGV_CONTROL::ugv_cmd_cb, this);
     // 【订阅】ugv电池的数据 ugv_driver -> 本节点
-    battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/sunray_ugv/battery", 1, &UGV_CONTROL::battery_cb, this);
+    battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/PowerVoltage", 1, &UGV_CONTROL::battery_cb, this);
     // 【订阅】目标点 move_base_simple（RVIZ） -> 本节点
     planner_goal_sub = nh.subscribe<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1, &UGV_CONTROL::goal_point_cb, this);
     // 【发布】状态 本节点 -> 地面站/其他节点
