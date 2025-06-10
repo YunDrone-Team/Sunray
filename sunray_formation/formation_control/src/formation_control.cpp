@@ -26,6 +26,8 @@ void SunrayFormation::init(ros::NodeHandle &nh_)
     nh.param<float>("figure_eight/center_x", figure_eight_params.center_x, 0);
     nh.param<float>("figure_eight/center_y", figure_eight_params.center_y, 0);
     nh.param<float>("figure_eight/linear_speed", figure_eight_params.linear_speed, 0);
+    // leader_id 1~100为无人机，101~200为无人车
+    nh.param<int>("leader_id", leader_id, 1);
 
     topic_prefix = "/" + agent_name + std::to_string(agent_id);
     node_name = ros::this_node::getName();
@@ -47,6 +49,24 @@ void SunrayFormation::init(ros::NodeHandle &nh_)
     state = sunray_msgs::Formation::INIT;
     formation_type = 0;
     orca_cmd_time = ros::Time::now();
+
+    // 初始化 home_pose 和 leader_pose
+    leader_pose_time = ros::Time::now();
+    for (int i = 0; i < 3; i++)
+    {
+        home_pose[i] = 0.0;
+        leader_pose[i] = 0.0;
+    }
+
+    if (leader_id > 100)
+    {
+        leader_pose_sub = nh.subscribe<sunray_msgs::UGVState>("/ugv" + std::to_string(leader_id - 100) + "/sunray_ugv/ugv_state", 10, &SunrayFormation::ugv_leader_callback, this);
+    }
+    else if (leader_id <= 100)
+    {
+        leader_pose_sub = nh.subscribe<sunray_msgs::UAVState>("/uav" + std::to_string(leader_id) + "/sunray/uav_state", 10, &SunrayFormation::uav_leader_callback, this);
+    }
+
     // 订阅无人机或无人车的状态
     for (int i = 0; i < agent_num; i++)
     {
@@ -241,6 +261,22 @@ void SunrayFormation::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, i
     agent_state[i].pose.pose.orientation = msg->attitude_q;
 }
 
+void SunrayFormation::uav_leader_callback(const sunray_msgs::UAVState::ConstPtr &msg)
+{
+    leader_pose_time = msg->header.stamp;
+    leader_pose[0] = msg->position[0];
+    leader_pose[1] = msg->position[1];
+    leader_pose[2] = msg->position[2];
+}
+
+void SunrayFormation::ugv_leader_callback(const sunray_msgs::UGVState::ConstPtr &msg)
+{
+    leader_pose_time = msg->header.stamp;
+    leader_pose[0] = msg->position[0];
+    leader_pose[1] = msg->position[1];
+    leader_pose[2] = 0;
+}
+
 // 目标点回调
 void SunrayFormation::goal_callback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
@@ -380,7 +416,7 @@ void SunrayFormation::timer_dynamic_formation(const ros::TimerEvent &e)
 void SunrayFormation::leader_formation_pub()
 {
     // 如果自己是领队
-    if (agent_id == 1)
+    if ((agent_type == 0 && agent_id == leader_id) || (agent_type == 1 && agent_id == leader_id - 100))
     {
         // 读取巡航点
         float goal_x = waypoints[now_idx % waypoints.size()].pose_x;
@@ -405,9 +441,38 @@ void SunrayFormation::leader_formation_pub()
         // 计算自己相对于领队的位置
         // float leader_yaw = tf::getYaw(agent_state[0].pose.pose.orientation);
         float leader_yaw = 0; // 写死角度 四旋翼旋转太快跟随者跟不上
-        std::tuple<float, float> goal = calculateFollowerPosition(agent_id,
-                                                                  agent_state[0].pose.pose.position.x,
-                                                                  agent_state[0].pose.pose.position.y,
+        int pos_idx = 0;
+        if (agent_type == 0 && leader_id > 100) // 无人机leader是ugv时
+        {
+            pos_idx = agent_id;
+        }
+        else if ((agent_type == 1 && leader_id > 100) && agent_id < (leader_id%100))
+        {
+            pos_idx = agent_id;
+        }
+        else if ((agent_type == 1 && leader_id > 100) && agent_id > (leader_id%100))
+        {
+            pos_idx = agent_id - 1;
+        }
+        else if(agent_type == 1 && leader_id <= 100)
+        {
+            pos_idx = agent_id;
+        }
+        else if(agent_type == 0 && leader_id <= 100 && agent_id > leader_id)
+        {
+            pos_idx = agent_id-1;
+        }
+        else if(agent_type == 0 && leader_id <= 100 && agent_id > leader_id)
+        {
+            pos_idx = agent_id;
+        }
+        else
+        {
+            Logger::error(node_name, "无法计算跟随者位置，请检查无人机编号和领队编号");
+        }
+        std::tuple<float, float> goal = calculateFollowerPosition(pos_idx,
+                                                                  leader_pose[0],
+                                                                  leader_pose[1],
                                                                   leader_yaw,
                                                                   1.0,
                                                                   1.0);
@@ -521,68 +586,41 @@ void SunrayFormation::set_home()
 
 // 根据ID计算跟随位置
 std::tuple<float, float> SunrayFormation::calculateFollowerPosition(int vehicleId, double leaderPos_x, double leaderPos_y, double yaw,
-                                                                    double baseSpacing, double lateralSpacing)
+                                                                    double base_x, double base_y)
 {
-    if (vehicleId < 2 || vehicleId > 6)
-    {
-        throw std::invalid_argument("Vehicle ID must be between 2 and 6");
-    }
-
-    // 计算前进方向向量
-    double forwardX = -sin(yaw);
-    double forwardY = cos(yaw);
-
-    // 计算横向方向向量（垂直于前进方向）
-    double lateralX = cos(yaw);
-    double lateralY = sin(yaw);
-
-    std::tuple<float, float> position = std::make_tuple(0.0, 0.0);
-    /*
-        [ID0] (领头车)
-            |
-        [ID1] (第1层)
-        /     \
-    [ID2]   [ID3] (第2层)
-    /   |     |   \
-    [ID4][ID5][ID6] (第3层)
-    */
+    // 田字型包围 最大8个跟随者
+    std::tuple<float, float> followerPos;
     switch (vehicleId)
     {
-        // case 1: // 第1层 - 中间
-        //     std::get<0>(position) = leaderPos_x - baseSpacing * forwardX;
-        //     std::get<1>(position) = leaderPos_y - baseSpacing * forwardY;
-        //     break;
-
-    case 2: // 第2层 - 左侧
-        std::get<0>(position) = leaderPos_x - 2 * baseSpacing * forwardX - lateralSpacing * lateralX;
-        std::get<1>(position) = leaderPos_y - 2 * baseSpacing * forwardY - lateralSpacing * lateralY;
+    case 1:
+        followerPos = std::make_tuple(leaderPos_x + base_x, leaderPos_y + base_y);
         break;
-
-    case 3: // 第2层 - 右侧
-        std::get<0>(position) = leaderPos_x - 2 * baseSpacing * forwardX + lateralSpacing * lateralX;
-        std::get<1>(position) = leaderPos_y - 2 * baseSpacing * forwardY + lateralSpacing * lateralY;
+    case 2:
+        followerPos = std::make_tuple(leaderPos_x + base_x, leaderPos_y - base_y);
         break;
-
-    case 4: // 第3层 - 左侧
-        std::get<0>(position) = leaderPos_x - 3 * baseSpacing * forwardX - 1.5 * lateralSpacing * lateralX;
-        std::get<1>(position) = leaderPos_y - 3 * baseSpacing * forwardY - 1.5 * lateralSpacing * lateralY;
+    case 3:
+        followerPos = std::make_tuple(leaderPos_x - base_x, leaderPos_y - base_y);
         break;
-
-    case 5: // 第3层 - 中间
-        std::get<0>(position) = leaderPos_x - 3 * baseSpacing * forwardX;
-        std::get<1>(position) = leaderPos_y - 3 * baseSpacing * forwardY;
+    case 4:
+        followerPos = std::make_tuple(leaderPos_x - base_x, leaderPos_y + base_y);
         break;
-
-    case 6: // 第3层 - 右侧
-        std::get<0>(position) = leaderPos_x - 3 * baseSpacing * forwardX + 1.5 * lateralSpacing * lateralX;
-        std::get<1>(position) = leaderPos_y - 3 * baseSpacing * forwardY + 1.5 * lateralSpacing * lateralY;
+    case 5:
+        followerPos = std::make_tuple(leaderPos_x, leaderPos_y + base_y);
         break;
-
+    case 6:
+        followerPos = std::make_tuple(leaderPos_x + base_x, leaderPos_y);
+        break;
+    case 7:
+        followerPos = std::make_tuple(leaderPos_x, leaderPos_y - base_y);
+        break;
+    case 8:
+        followerPos = std::make_tuple(leaderPos_x - base_x, leaderPos_y);
+        break;
     default:
-        throw std::logic_error("Unexpected vehicle ID");
+        followerPos = std::make_tuple(leaderPos_x, leaderPos_y);
+        break;
     }
-
-    return position;
+    return followerPos;
 }
 
 void SunrayFormation::read_formation_yaml()
@@ -734,5 +772,5 @@ void SunrayFormation::debug()
         Logger::print_color(int(LogColor::green), this->node_name, "当前阵型: ", "LEADER");
     }
     Logger::print_color(int(LogColor::green), this->node_name, "当前目标点: ", this->orca_cmd.goal_pos[0], this->orca_cmd.goal_pos[1]);
-    Logger::print_color(int(LogColor::green), this->node_name, "当前控制速度: ", this->orca_cmd.linear[1], this->orca_cmd.linear[1]);
+    Logger::print_color(int(LogColor::green), this->node_name, "当前控制速度: ", this->orca_cmd.linear[0], this->orca_cmd.linear[1]);
 }

@@ -121,7 +121,7 @@ bool ORCA::orca_run()
 	{
 		if (!goal_reached_printed)
 		{
-			cout << agent_name + std::to_string(agent_id) << " Arrived." << endl;
+			// cout << agent_name + std::to_string(agent_id) << " Arrived." << endl;
 			goal_reached_printed = true;
 		}
 		orca_state = sunray_msgs::OrcaCmd::ARRIVED;
@@ -476,7 +476,7 @@ void ORCA::checkAgentState(const ros::TimerEvent &e)
 	}
 	if (orca_state = sunray_msgs::OrcaCmd::RUN)
 	{
-		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "INIT" << TAIL << endl;
+		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "RUN" << TAIL << endl;
 	}
 	else if (orca_state = sunray_msgs::OrcaCmd::STOP)
 	{
@@ -485,6 +485,14 @@ void ORCA::checkAgentState(const ros::TimerEvent &e)
 	else if (orca_state = sunray_msgs::OrcaCmd::INIT)
 	{
 		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "INIT" << TAIL << endl;
+	}
+	else if (orca_state = sunray_msgs::OrcaCmd::ARRIVED)
+	{
+		cout << GREEN << node_name << ": Agent " << agent_id << " state: " << "ARRIVED" << TAIL << endl;
+	}
+	else
+	{
+		cout << RED << node_name << ": Agent " << agent_id << " state: " << "UNKNOWN" << TAIL << endl;
 	}
 
 	// 定时发布地理围栏Marker

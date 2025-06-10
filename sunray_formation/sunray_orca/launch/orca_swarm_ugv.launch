@@ -5,18 +5,18 @@
 	<arg name="agent_num" default="6" />
 	<arg name="orca_params/neighborDist" default="1.5" />
 	<arg name="orca_params/maxNeighbors" default="10" />
-	<arg name="orca_params/timeHorizon" default="2.0" />
-	<arg name="orca_params/timeHorizonObst" default="2.0" />
-	<arg name="orca_params/radius" default="0.3" />
+	<arg name="orca_params/timeHorizon" default="3.0" />
+	<arg name="orca_params/timeHorizonObst" default="3.0" />
+	<arg name="orca_params/radius" default="0.25" />
 	<arg name="orca_params/maxSpeed" default="0.85" />
 	<arg name="orca_params/time_step" default="0.1" />
 
-	<arg name="geo_fence/max_x" default="2.0" />
-	<arg name="geo_fence/min_x" default="-2.0" />
-	<arg name="geo_fence/max_y" default="2.0" />
-	<arg name="geo_fence/min_y" default="-2.0" />
+	<arg name="geo_fence/max_x" default="3.0" />
+	<arg name="geo_fence/min_x" default="-3.0" />
+	<arg name="geo_fence/max_y" default="3.0" />
+	<arg name="geo_fence/min_y" default="-3.0" />
 
-	<node pkg="sunray_orca" type="orca_node" name="orca_node_$(arg agent_id)" output="screen">
+	<node pkg="sunray_orca" type="orca_node" name="orca_node_$(arg agent_name)$(arg agent_id)" output="screen">
 		<param name="agent_id" value="$(arg agent_id)" />
 		<param name="agent_name" value="$(arg agent_name)" />
 		<param name="agent_type" value="$(arg agent_type)" />

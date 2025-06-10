@@ -21,13 +21,13 @@
     <arg name="figure_eight/lissa_a" default="1" />
     <arg name="figure_eight/lissa_b" default="2" />
     <arg name="figure_eight/lissa_delta" default="1.5707" />
-    <arg name="figure_eight/radius_x" default="2.5" />
+    <arg name="figure_eight/radius_x" default="2.0" />
     <arg name="figure_eight/radius_y" default="0.8" />
     <arg name="figure_eight/center_x" default="0" />
     <arg name="figure_eight/center_y" default="0" />
     <arg name="figure_eight/linear_speed" default="0.25" />
     
-    <node name="uav_formation_node_$(arg agent_id)" pkg="sunray_formation" type="formation_control_node" output="screen">
+    <node name="uav_formation_node_$(arg agent_name)$(arg agent_id)" pkg="sunray_formation" type="formation_control_node" output="screen">
         <param name="agent_id" type="int" value="$(arg agent_id)" />
         <param name="agent_name" type="string" value="$(arg agent_name)" />
         <param name="agent_num" type="int" value="$(arg agent_num)" />

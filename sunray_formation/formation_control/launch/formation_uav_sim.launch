@@ -7,6 +7,8 @@
     <arg name="agent_name" default="uav" />
     <!-- 集群数量 -->
     <arg name="agent_num" default="6" />
+    <!-- leader_id -->
+    <arg name="leader_id" default="1" />
     <!-- agent类型 0：uav 1: uav -->
     <arg name="agent_type" default="0" />
     <arg name="file_path" default="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
@@ -21,7 +23,7 @@
     <arg name="figure_eight/lissa_a" default="1" />
     <arg name="figure_eight/lissa_b" default="2" />
     <arg name="figure_eight/lissa_delta" default="1.5707" />
-    <arg name="figure_eight/radius_x" default="2.5" />
+    <arg name="figure_eight/radius_x" default="2.0" />
     <arg name="figure_eight/radius_y" default="0.8" />
     <arg name="figure_eight/center_x" default="0" />
     <arg name="figure_eight/center_y" default="0" />
@@ -31,6 +33,7 @@
         <param name="agent_id" type="int" value="$(arg agent_id)" />
         <param name="agent_name" type="string" value="$(arg agent_name)" />
         <param name="agent_num" type="int" value="$(arg agent_num)" />
+        <param name="leader_id" type="int" value="$(arg leader_id)" />--
         <param name="agent_type" type="int" value="$(arg agent_type)" />
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
         <param name="dynamic_type" type="int" value="$(arg dynamic_type)" />
