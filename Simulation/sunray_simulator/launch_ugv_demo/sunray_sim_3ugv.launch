@@ -25,17 +25,17 @@
     <arg name="ugv_model" default="wheeltec" />
 
     <!-- ugv1初始位置 -->
-    <arg name="init_1_x" default="0"/>
+    <arg name="init_1_x" default="1"/>
     <arg name="init_1_y" default="0"/>
     <arg name="init_1_yaw" default="0"/>
 
     <!-- ugv2初始位置 -->
-    <arg name="init_2_x" default="0"/>
+    <arg name="init_2_x" default="1"/>
     <arg name="init_2_y" default="1"/>
     <arg name="init_2_yaw" default="0" />
 
     <!-- ugv3初始位置 -->
-    <arg name="init_3_x" default="0"/>
+    <arg name="init_3_x" default="1"/>
     <arg name="init_3_y" default="-1"/>
     <arg name="init_3_yaw" default="0" />
 

@@ -50,7 +50,9 @@ private:
     int agent_type;                                                          // 无人机类型 0:无人机 1:无人车
     int now_idx;                                                             // 当前动态阵型目标点索引
     int dynamic_type;                                                        // 动态阵型类型 0:离线读取 1:在线计算
+    int leader_id;                                                           // 阵型领导者
     float home_pose[3];                                                      // home点
+    float leader_pose[3];                                                    // 领导者位置
     std::string agent_name;                                                  // 无人机名称
     std::string file_path;                                                   // 配置文件路径
     std::string formation_name;                                              // 阵型名称
@@ -67,7 +69,7 @@ private:
     std::map<std::string, int> init_idx;                                     // 动态阵型初始索引
     sunray_msgs::OrcaSetup orca_setup;                                       // 设置orca模式 目标点消息
     sunray_msgs::UAVControlCMD uav_cmd;                                      // 无人机控制指令
-    sunray_msgs::UGVControlCMD ugv_cmd;                                       // 无人车控制指令
+    sunray_msgs::UGVControlCMD ugv_cmd;                                      // 无人车控制指令
     sunray_msgs::UAVState uav_state;                                         // 无人机状态
     sunray_msgs::UAVSetup uav_setup;                                         // 无人机模式
     sunray_msgs::OrcaCmd orca_cmd;                                           // orca返回值
@@ -79,12 +81,14 @@ private:
     ros::Subscriber formation_cmd_ground_sub;                                // 订阅地面站阵型指令
     ros::Subscriber orca_cmd_sub;                                            // 订阅orca返回值
     ros::Subscriber goal_sub;                                                // 订阅目标点
+    ros::Subscriber leader_pose_sub;                                         // 订阅领导者位置
     ros::Timer pub_timer;                                                    // 发布无人机状态到orca
     ros::Timer dynamic_timer;                                                // 动态阵型发布
     ros::Timer mode_timer;                                                   // 检查无人机模式
     ros::Time first_dynamic_time;                                            // 第一次进入动态阵型时间
     ros::Time mode_takeoff_time;                                             // 第一次进入模式时间
     ros::Time orca_cmd_time;                                                 // orca返回值时间
+    ros::Time leader_pose_time;                                              // 领导者位置时间
     std::map<int, ros::Subscriber> agent_state_sub;                          // 订阅无人机状态
     std::map<int, ros::Publisher> agent_state_pub;                           // 发布无人机状态
 
@@ -96,6 +100,8 @@ private:
     void orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &msg);        // orca返回值回调
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int i);     // 无人机状态回调
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int i);     // 无人车状态回调
+    void ugv_leader_callback(const sunray_msgs::UGVState::ConstPtr &msg);     // 无人车领导者状态回调
+    void uav_leader_callback(const sunray_msgs::UAVState::ConstPtr &msg);     // 无人机领导者状态回调
     void goal_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);      // 订阅目标点
     void timer_pub_state(const ros::TimerEvent &e);                           // 定时发布无人机状态到orca
     void timer_dynamic_formation(const ros::TimerEvent &e);                   // 定时动态阵型发布
@@ -107,6 +113,6 @@ private:
                                                        double leaderPos_x,
                                                        double leaderPos_y,
                                                        double yaw,
-                                                       double baseSpacing,
-                                                       double lateralSpacing);
+                                                       double base_x,
+                                                       double base_y);
 };

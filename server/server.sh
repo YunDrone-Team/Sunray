@@ -67,25 +67,30 @@ fi
 # 启动地面站后台节点
 start_ground_station() {
     gnome-terminal --title="sunray_communication_bridge" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-    source ~/Sunray/devel/setup.bash; roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${UAV_ID:=1}; exec bash"
+    source ~/Sunray/devel/setup.bash; roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${NUM:=1}; exec bash"
 }
+
+# start_ground_station() {
+#     gnome-terminal --title="sunray_communication_bridge" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
+#     source ~/Sunray/devel/setup.bash; roslaunch sunray_communication_bridge sunray_communication_bridge.launch ugv_id:=${ID:=1} ugv_experiment_num:=${NUM:=1}; exec bash"
+# }
 
 # 启动mavros节点
 start_mavros_station() {
     gnome-terminal --title="sunray_mavros" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-    source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${UAV_ID} ip:=${IP}; exec bash"
+    source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${ID} ip:=${IP}; exec bash"
 }
 
 # 启动外部定位节点
 start_external_position() {
     gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-     source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control external_fusion.launch uav_id:=${UAV_ID} external_source:=${EXTERNAL_SOURCE}; exec bash"
+     source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control external_fusion.launch uav_id:=${ID} external_source:=${EXTERNAL_SOURCE}; exec bash"
 }
 
 # 启动控制节点
 start_control() {
     gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-    source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${UAV_ID}; exec bash"
+    source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${ID}; exec bash"
 }
 
 # 主逻辑

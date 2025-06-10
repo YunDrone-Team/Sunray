@@ -23,7 +23,7 @@
     <arg name="use_offset" default="false" />
 
     <!-- 启动 uav_control_node -->
-    <node name="uav_control_1" pkg="sunray_uav_control" type="uav_control_node" output="screen">
+    <node name="uav_control" pkg="sunray_uav_control" type="uav_control_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="uav_name" value="$(arg uav_name)" />
         <!-- 起飞高度 | 降落第一阶段高度 | 降落速度 -->

@@ -48,7 +48,7 @@ int main(int argc, char **argv)
              << YELLOW << " 105 " << GREEN << "return home" << TAIL << endl;
         cout << GREEN << "CMD: "
              << YELLOW << "1 " << GREEN << "正三角形,"
-             << YELLOW << " 2 " << GREEN << "倒三角形,"
+             << YELLOW << " 2 " << GREEN << "四边形,"
              << YELLOW << " 3 " << GREEN << "横向一字阵型,"
              << YELLOW << " 4 " << GREEN << "纵向一字阵型,"
              << YELLOW << " 5 " << GREEN << "动态圆形阵型,"
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
         case 2:
             formation_cmd.cmd = sunray_msgs::Formation::FORMATION;
             formation_cmd.formation_type = sunray_msgs::Formation::STATIC;
-            formation_cmd.name = "triangle_reverse";
+            formation_cmd.name = "square";
             formation_pub.publish(formation_cmd);
             break;
         case 3:
