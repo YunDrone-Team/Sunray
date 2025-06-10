@@ -2,8 +2,8 @@
     <arg name="is_simulation" default="false" />     <!-- 是否处于仿真状态 -->
 
     <arg name="uav_name" default="uav" />
-    <arg name="uav_id" default="1" />               <!-- 当前无人机id，默认值为-1 -->
-    <arg name="uav_experiment_num" default="1" />   <!-- 无人机真机数量 -->
+    <arg name="uav_id" default="-1" />               <!-- 当前无人机id，默认值为-1 -->
+    <arg name="uav_experiment_num" default="0" />   <!-- 无人机真机数量 -->
     <arg name="uav_simulation_num" default="0" />   <!-- 仿真无人机数量 -->
 
     <arg name="ugv_name" default="ugv" />
