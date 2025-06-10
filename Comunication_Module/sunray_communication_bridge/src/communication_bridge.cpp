@@ -259,8 +259,8 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.ID = uav_id;
             backData.data.ack.agentType = 0;
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
-            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
+            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
         // 真机无人车应答
         if (ugv_experiment_num > 0 && ugv_id>=0)
@@ -269,8 +269,8 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.ID = ugv_id;
             backData.data.ack.agentType = 1;
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
-            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
             std::lock_guard<std::mutex> lock(_mutexUDP);
+            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
 
         break;
