@@ -31,7 +31,6 @@
     #include<string.h>
     #include<signal.h>
 
-//新加的，待验证
 #include <ifaddrs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
