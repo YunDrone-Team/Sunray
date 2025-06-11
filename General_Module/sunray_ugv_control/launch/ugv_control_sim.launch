@@ -15,9 +15,9 @@
     <arg name="vel_topic" default="" />
     <!-- 是否启用规划模块 -->
     <arg name="enable_astar" default="true" />
-    <arg name="laser_topic" default="/scan" />
+    <arg name="laser_topic" default="/ugv1/scan" />
     <arg name="octomap_topic" default="/octomap_full" />
-    <arg name="occupancy_topic" default="/map" />
+    <arg name="occupancy_topic" default="/occupancy_grid" />
     <arg name="map/resolution" default="0.4" />
     <arg name="map/inflate" default="0.3" />
     <!-- 控制参数 -->

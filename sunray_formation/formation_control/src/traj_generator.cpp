@@ -201,11 +201,26 @@ std::tuple<float, float> traj_generator::figure_eight_online(int t)
     int offset = int(num_points / this->vehicles_num) * (vehicle_id - 1);
     if (vehicle_id <= (this->vehicles_num / 2))
     {
-        t = (t + offset + int(num_points / vehicles_num / vehicles_num)) % num_points;
+        if(this->vehicles_num > 2)
+        {
+            t = (t + offset + int(num_points / vehicles_num / vehicles_num)) % num_points;
+        }
+        else
+        {
+            t = (t + offset) % num_points;
+        }
+        
     }
     else
     {
-        t = (t + offset - int(num_points / vehicles_num / vehicles_num)) % num_points;
+        if(this->vehicles_num >= 2)
+        {
+            t = (t + offset - int(num_points / vehicles_num / vehicles_num)) % num_points;
+        }
+        else
+        {
+            t = (t + offset) % num_points;
+        }
     }
     float ti = 2.0 * M_PI * t / num_points;
     // 计算x和y坐标
