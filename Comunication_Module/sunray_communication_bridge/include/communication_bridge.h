@@ -93,11 +93,12 @@ private:
     ros::Timer HeartbeatTimer;
     ros::Timer CheckChildProcessTimer;
     ros::Timer UpdateROSNodeInformationTimer;
+    ros::Timer UpdateUDPMulticastTimer;
 
     // UDPServer udp_server;
 
     TCPServer tcpServer;
-    CommunicationUDPSocket *udpSocket;
+    CommunicationUDPSocket *udpSocket=nullptr;
     Codec codec;
     DataFrame uavStateData[MAX_AGENT_NUM];
     DataFrame ugvStateData[MAX_AGENT_NUM]; 
@@ -127,6 +128,8 @@ private:
     void CheckChildProcessCallBack(const ros::TimerEvent &e);
     void UpdateROSNodeInformation(const ros::TimerEvent &e);
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
+    void UpdateUDPMulticast(const ros::TimerEvent &e);
+
 
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);

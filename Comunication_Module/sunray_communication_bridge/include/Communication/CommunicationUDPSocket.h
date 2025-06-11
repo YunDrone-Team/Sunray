@@ -49,11 +49,14 @@ public:
     void setRunState(bool state);
     int findStdVectorComponent(uint8_t a,uint8_t b,std::vector<uint8_t> Data);
 
+    void UpdateMulticast();
     void Close(SOCKET tempSock);
     SOCKET SocketConfiguration(SOCKET tempSock);
     ~CommunicationUDPSocket();
 private:
     CommunicationUDPSocket();
+
+    SOCKET UpdateMulticastConfiguration(SOCKET tempSock);
 
     std::vector<NetworkInterface> getNetworkInterfaces();// 遍历网卡函数
     bool isLinuxInterfaceActive(const std::string& interfaceName); // 检查 Linux 网卡是否活动
