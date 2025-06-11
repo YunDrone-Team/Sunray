@@ -871,6 +871,101 @@ int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::strin
     return sendResult;
 }
 
+SOCKET CommunicationUDPSocket::UpdateMulticastConfiguration(SOCKET tempSock)
+{
+#ifdef _WIN32
+    // 尝试退出组播
+    struct ip_mreq mreqLeave;
+    SOCKADDR_IN multicastAddrLeave;
+    INT addrLenLeave = sizeof(multicastAddrLeave);
+
+    std::string nonConstMulticastIPLeave = multicastIP;
+    if (WSAStringToAddressA(&nonConstMulticastIPLeave[0], AF_INET, nullptr,
+                           reinterpret_cast<sockaddr*>(&multicastAddrLeave), &addrLenLeave) == 0) {
+        mreqLeave.imr_multiaddr.s_addr = multicastAddrLeave.sin_addr.s_addr;
+        mreqLeave.imr_interface.s_addr = INADDR_ANY;
+
+        // 尝试退出组播（即使之前未加入也不会出错）
+        setsockopt(tempSock, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+                  reinterpret_cast<const char *>(&mreqLeave), sizeof(mreqLeave));
+    }
+
+    // 添加组播设置
+    struct ip_mreq mreqn;
+    // 使用 WSAStringToAddressA 来转换组播组地址
+    SOCKADDR_IN multicastAddr;
+
+    INT addrLen = sizeof(multicastAddr);
+    std::string nonConstMulticastIP = multicastIP;  // 创建非 const 副本，因为 WSAStringToAddressA 第一个参数要求非 const
+    if (WSAStringToAddressA(&nonConstMulticastIP[0], AF_INET, nullptr, reinterpret_cast<sockaddr*>(&multicastAddr), &addrLen) != 0)
+    {
+        std::cerr << "WSAStringToAddressA failed: " << WSAGetLastError() << std::endl;
+        return INVALID_SOCKET;
+    }
+    mreqn.imr_multiaddr.s_addr = multicastAddr.sin_addr.s_addr;
+    // 本地接口地址，使用 INADDR_ANY 表示任意接口
+    mreqn.imr_interface.s_addr = INADDR_ANY;
+
+    if (setsockopt(tempSock, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<const char *>(&mreqn), sizeof(mreqn)) < 0)
+    {
+        perror("setsockopt for multicast");
+        // 处理错误
+        return INVALID_SOCKET;
+    }
+    // 禁止组播环回
+    const int loop = 0;
+    if (setsockopt(tempSock, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast<const char *>(&loop), sizeof(loop)) < 0)
+    {
+        perror("setsockopt for disabling multicast loop");
+        return INVALID_SOCKET;
+    }
+#else
+    // 尝试退出组播
+    struct ip_mreq mreqLeave;
+    inet_pton(AF_INET, multicastIP.c_str(), &mreqLeave.imr_multiaddr);
+    mreqLeave.imr_interface.s_addr = htonl(INADDR_ANY);
+
+    // 尝试退出组播（即使之前未加入也不会出错）
+    setsockopt(tempSock, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+               (const char *)&mreqLeave, sizeof(mreqLeave));
+
+    // 添加组播设置
+    struct ip_mreq mreq;
+    // 组播组地址
+    inet_pton(AF_INET, multicastIP.c_str(), &mreq.imr_multiaddr);
+    // 本地接口地址，使用INADDR_ANY表示任意接口
+    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+
+    if (setsockopt(tempSock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char *)&mreq, sizeof(mreq)) < 0)
+    {
+        perror("setsockopt for multicast");
+        // 处理错误
+        return INVALID_SOCKET;
+    }
+
+    // 禁止组播环回
+    const int loop = 0;
+    if (setsockopt(tempSock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) < 0)
+    {
+        perror("setsockopt for disabling multicast loop");
+        return INVALID_SOCKET;
+    }
+#endif
+    // std::cout << "CommunicationUDPSocket::UpdateMulticastConfiguration end  "<<std::endl;
+    return tempSock;
+}
+
+
+void CommunicationUDPSocket::UpdateMulticast()
+{
+    for (const auto& pair : ipSocketMap)
+    {
+        SOCKET socket = pair.second;
+        UpdateMulticastConfiguration(socket);
+    }
+}
+
+
 SOCKET CommunicationUDPSocket::SocketConfiguration(SOCKET tempSock)
 {
     /*设置SO_REUSEADDR SO_REUSEADDR套接字选项允许在同一本地地址和端口上启动监听套接字，SO_REUSEPORT
