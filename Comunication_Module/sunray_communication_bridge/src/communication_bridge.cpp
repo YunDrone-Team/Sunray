@@ -145,6 +145,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
     udpSocket->Bind(static_cast<unsigned short>(udp_port));
     // 【UDP通信】 UDP通信：接收UDP消息的回调函数 - 包括：地面站搜索在线智能体、机间通信
     udpSocket->sigUDPUnicastReadData.connect(boost::bind(&communication_bridge::UDPCallBack, this, _1));
+    // 【定时器】 定时更新UDP组播
+    UpdateUDPMulticastTimer= nh.createTimer(ros::Duration(30), &communication_bridge::UpdateUDPMulticast, this);
     // 【UDP通信】 UDP通信启动
     udpSocket->setRunState(true);
 
@@ -797,6 +799,14 @@ void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
         nodeMap.erase(key);
 }
 
+void communication_bridge::UpdateUDPMulticast(const ros::TimerEvent &e)
+{
+    std::lock_guard<std::mutex> lock(_mutexUDP);
+    if(udpSocket!=nullptr)
+        udpSocket->UpdateMulticast();
+}
+
+
 void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
 {
     // 用于存储节点名称的向量
@@ -1089,7 +1099,7 @@ void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstP
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
 {
-    // std::cout << "ugv_state_cb:" << robot_id<< std::endl;
+    std::cout << "ugv_state_cb:" << robot_id<< std::endl;
 
     int index = robot_id - 1;
     ugvStateData[index].data.ugvState.init();
@@ -1136,6 +1146,8 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
     {
         ugvStateData[index].seq=MessageID::UGVStateMessageID;
         int back = udpSocket->sendUDPMulticastData(codec.coder(ugvStateData[index]), udp_port);
+        std::cout << "sendUDPMulticastData back:" << back<< std::endl;
+
     }
 
     std::vector<std::string> tempVec;
