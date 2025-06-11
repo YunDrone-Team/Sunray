@@ -88,7 +88,7 @@ struct SquareGrid
         for (auto wall : walls)
         {
             // std::cout << wall.x << " " << wall.y << std::endl;
-            Logger::print_color(int(LogColor::white), std::to_string(wall.x) + " " + std::to_string(wall.y));
+            Logger::print_color(int(LogColor::white), std::to_string(wall.x), std::to_string(wall.y));
         }
     }
 
@@ -246,7 +246,7 @@ public:
     void setStart(int x, int y)
     {
         // std::cout << "set start: " << x << " " << y << std::endl;
-        Logger::print_color(int(LogColor::white), "set start: " + std::to_string(x) + std::to_string(y));
+        Logger::print_color(int(LogColor::white), "set start: ",std::to_string(x), std::to_string(y));
         start_set = true;
         start.x = x;
         start.y = y;
@@ -254,7 +254,7 @@ public:
     void setGoal(int x, int y)
     {
         // std::cout << "set goal: " << x << " " << y << std::endl;
-        Logger::print_color(int(LogColor::white), "set goal: " + std::to_string(x) + std::to_string(y));
+        Logger::print_color(int(LogColor::white), "set goal: ", std::to_string(x), std::to_string(y));
         goal_set = true;
         goal.x = x;
         goal.y = y;
@@ -343,11 +343,14 @@ void Astar::a_star_search()
         }
     }
     // 添加路径失败判断
-    if (came_from.find(goal) == came_from.end()) {
+    if (came_from.find(goal) == came_from.end())
+    {
         // std::cout << "Path planning failed: No path exists from start to goal." << std::endl;s
         Logger::print_color(int(LogColor::white), "Path planning failed: No path exists from start to goal.");
         path_found = false;
-    } else {
+    }
+    else
+    {
         path_found = true;
     }
 }

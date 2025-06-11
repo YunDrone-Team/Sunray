@@ -101,7 +101,7 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     std::string octomap_topic, occupancy_topic;
     nh.param<int>("ugv_id", ugv_id, 1);
     nh.param<int>("odom_type", odom_type, 2);
-    nh.param<int>("input_type", input_type, 1);
+    nh.param<int>("input_type", input_type, 0);
     nh.param<std::string>("odom_topic", odom_topic, "/car_odom");
     nh.param<std::string>("octomap_topic", octomap_topic, "/octomap_tree");
     nh.param<std::string>("occupancy_topic", occupancy_topic, "/occupancy_grid");
@@ -160,7 +160,7 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
 // 发布地图数据
 void MapGenerator::PublishOctomap()
 {
-    octomap_msg.header.frame_id = "odom";
+    octomap_msg.header.frame_id = "world";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
     octomap_pub.publish(octomap_msg);
 
@@ -213,7 +213,7 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
         octoCloud.push_back(octomap::point3d(point.x, point.y, point.z));
     }
     tree->insertPointCloud(octoCloud, octomap::point3d(0.0, 0.0, 0.0));
-    octomap_msg.header.frame_id = "odom";
+    octomap_msg.header.frame_id = "world";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
     PublishOctomap();
     // std::cout << "Map updated from point cloud." << std::endl;
@@ -263,7 +263,7 @@ void MapGenerator::updateMapFromMid360Scan(const sensor_msgs::PointCloud2::Const
         octoCloud.push_back(octomap::point3d(point.x, point.y, point.z));
     }
     tree->insertPointCloud(octoCloud, octomap::point3d(0.0, 0.0, 0.0));
-    octomap_msg.header.frame_id = "odom";
+    octomap_msg.header.frame_id = "world";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
     PublishOctomap();
     // std::cout << "Map updated from point cloud." << std::endl;
@@ -275,7 +275,7 @@ void MapGenerator::odomCallback(const nav_msgs::Odometry::ConstPtr &odom_msg)
     is_odom_received = true;
     odom = *odom_msg;
     transform.stamp_ = odom_msg->header.stamp;
-    transform.frame_id_ = "odom";
+    transform.frame_id_ = "world";
     transform.child_frame_id_ = "base_link";
     transform.setOrigin(tf::Vector3(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z));
     transform.setRotation(tf::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y, odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
@@ -301,7 +301,7 @@ void MapGenerator::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
     odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
 
     transform.stamp_ = odom.header.stamp;
-    transform.frame_id_ = "odom";
+    transform.frame_id_ = "world";
     transform.child_frame_id_ = "base_link";
     transform.setOrigin(tf::Vector3(odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z));
     transform.setRotation(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w));

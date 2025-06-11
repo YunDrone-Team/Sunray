@@ -255,61 +255,6 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
     ugv_state.vel_setpoint[0] = current_ugv_cmd.desired_vel[0];
     ugv_state.vel_setpoint[1] = current_ugv_cmd.desired_vel[1];
     ugv_state.yaw_setpoint = current_ugv_cmd.desired_yaw;
-
-    // switch (msg->cmd)
-    // {
-    // // 收到INIT指令
-    // case sunray_msgs::UGVControlCMD::INIT: // 0
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: INIT!";
-    //     Logger::print_color(int(LogColor::blue), text_info.data);
-    //     break;
-    // // 收到HOLD指令
-    // case sunray_msgs::UGVControlCMD::HOLD: // 1
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: HOLD!";
-    //     Logger::print_color(int(LogColor::blue), text_info.data);
-    //     break;
-    // // 收到POS_CONTROL指令
-    // case sunray_msgs::UGVControlCMD::POS_CONTROL_ENU: // 2
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_CONTROL_ENU!";
-    //     Logger::print_color(int(LogColor::blue), text_info.data);
-    //     break;
-    // // 收到VEL_CONTROL_BODY指令：此处不做任何处理，在主循环中处理
-    // case sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY: // 4
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_BODY!";
-    //     Logger::print_color(int(LogColor::blue), text_info.data);
-    //     break;
-    // // 收到VEL_CONTROL_ENU指令：此处不做任何处理，在主循环中处理
-    // case sunray_msgs::UGVControlCMD::VEL_CONTROL_ENU: // 3
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: VEL_CONTROL_ENU!";
-    //     Logger::print_color(int(LogColor::blue), text_info.data);
-    //     break;
-    // case sunray_msgs::UGVControlCMD::POS_VEL_CONTROL_ENU: // 6
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: POS_VEL_CONTROL_ENU!";
-    //     Logger::print_color(int(LogColor::blue), text_info.data);
-    //     break;
-    // case sunray_msgs::UGVControlCMD::Point_Control_with_Astar: // 5
-    //     if (enable_astar)
-    //     {
-    //         planner_goal.pose.position.x = msg->desired_pos[0];
-    //         planner_goal.pose.position.y = msg->desired_pos[1];
-    //         goal_set = true; // 触发路径规划
-    //         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Point_Control_with_Astar!";
-    //         Logger::print_color(int(LogColor::blue), text_info.data);
-    //     }
-    //     else
-    //     {
-    //         text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " astar disable!! switch to hold";
-    //         Logger::print_color(int(LogColor::blue), text_info.data);
-    //         current_ugv_cmd.cmd = sunray_msgs::UGVControlCMD::INIT;
-    //     }
-    //     break;
-    // default:
-    //     text_info.data = node_name + ": ugv_" + to_string(ugv_id) + " Get ugv_cmd: Wrong!";
-    //     Logger::print_color(int(LogColor::red), text_info.data);
-    //     return;
-    //     break;
-    // }
-    // text_info_pub.publish(text_info);
 }
 
 // 位置控制算法
@@ -506,7 +451,7 @@ void UGV_CONTROL::path_control()
     }
     if (abs(x_ref - ugv_state.position[0]) < 0.2 && abs(y_ref - ugv_state.position[1]) < 0.2)
     {
-        Logger::print_color(int(LogColor::blue), "astar_path size: " + astar_path.size());
+        Logger::print_color(int(LogColor::blue), "astar_path size: ",astar_path.size());
         astar_path.erase(astar_path.begin());
     }
 }
@@ -569,33 +514,33 @@ const char *Location_sourceToString(uint8_t source)
 // 定时器回调函数：定时打印
 void UGV_CONTROL::show_ctrl_state()
 {
-    Logger::print_color(int(LogColor::green), ">>>>>>>>>>>>>> UGV [" + std::to_string(ugv_id) + "] <<<<<<<<<<<<<<<");
+    Logger::print_color(int(LogColor::green), ">>>>>>>>>>>>>> UGV [", std::to_string(ugv_id), "] <<<<<<<<<<<<<<<");
 
     if (11.3f < ugv_state.battery_state < 13.0f)
     {
-        Logger::print_color(int(LogColor::green), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
+        Logger::print_color(int(LogColor::green), "Battery : ", ugv_state.battery_state, " [V] <<<<<<<<<<<<<");
     }
     else if (11.0f < ugv_state.battery_state < 11.3f)
     {
-        Logger::print_color(int(LogColor::yellow), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
+        Logger::print_color(int(LogColor::yellow), "Battery : ", ugv_state.battery_state, " [V] <<<<<<<<<<<<<");
     }
     else
     {
-        Logger::print_color(int(LogColor::red), "Battery : " + format_float_two_decimal(ugv_state.battery_state) + " [V] <<<<<<<<<<<<<");
+        Logger::print_color(int(LogColor::red), "Battery : ", ugv_state.battery_state, " [V] <<<<<<<<<<<<<");
     }
 
-    Logger::print_color(int(LogColor::green), "connected : " + std::string(ugv_state.connected ? "true" : "false"));
-    Logger::print_color(int(LogColor::green), "location_source: " + std::string(Location_sourceToString(location_source)));
-    Logger::print_color(int(LogColor::green), "odom_valid : " + std::string(ugv_state.odom_valid ? "true" : "false"));
+    Logger::print_color(int(LogColor::green), "connected : ", std::string(ugv_state.connected ? "true" : "false"));
+    Logger::print_color(int(LogColor::green), "location_source: ", std::string(Location_sourceToString(location_source)));
+    Logger::print_color(int(LogColor::green), "odom_valid : ", std::string(ugv_state.odom_valid ? "true" : "false"));
 
-    Logger::print_color(int(LogColor::green), "UGV_pos [X Y] : " + format_float_two_decimal(ugv_state.position[0]) + " [ m ] " + format_float_two_decimal(ugv_state.position[1]) + " [ m ]");
-    Logger::print_color(int(LogColor::green), "UGV_vel [X Y] : " + format_float_two_decimal(ugv_state.velocity[0]) + " [ m ] " + format_float_two_decimal(ugv_state.velocity[1]) + " [ m ]");
-    Logger::print_color(int(LogColor::green), "UGV_att [Yaw] : " + format_float_two_decimal(ugv_state.yaw * 180 / M_PI) + " [deg] ");
+    Logger::print_color(int(LogColor::green), "UGV_pos [X Y] : ", ugv_state.position[0], " [ m ] ", (ugv_state.position[1]), " [ m ]");
+    Logger::print_color(int(LogColor::green), "UGV_vel [X Y] : ", ugv_state.velocity[0], " [ m ] ", (ugv_state.velocity[1]), " [ m ]");
+    Logger::print_color(int(LogColor::green), "UGV_att [Yaw] : ", ugv_state.yaw * 180 / M_PI, " [deg] ");
 
-    Logger::print_color(int(LogColor::green), "control_mode : " + std::string(controlModeToString(ugv_state.control_mode)));
-    Logger::print_color(int(LogColor::green), "pos_setpoint : " + format_float_two_decimal(ugv_state.pos_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.pos_setpoint[1]) + " [ m ]");
-    Logger::print_color(int(LogColor::green), "vel_setpoint : " + format_float_two_decimal(ugv_state.vel_setpoint[0]) + " [ m ] " + format_float_two_decimal(ugv_state.vel_setpoint[1]) + " [ m ]");
-    Logger::print_color(int(LogColor::green), "yaw_setpoint : " + format_float_two_decimal(ugv_state.yaw_setpoint * 180 / M_PI) + " [deg] ");
+    Logger::print_color(int(LogColor::green), "control_mode : ", std::string(controlModeToString(ugv_state.control_mode)));
+    Logger::print_color(int(LogColor::green), "pos_setpoint : ", ugv_state.pos_setpoint[0], " [ m ] ", (ugv_state.pos_setpoint[1]), " [ m ]");
+    Logger::print_color(int(LogColor::green), "vel_setpoint : ", ugv_state.vel_setpoint[0], " [ m ] ", (ugv_state.vel_setpoint[1]), " [ m ]");
+    Logger::print_color(int(LogColor::green), "yaw_setpoint : ", ugv_state.yaw_setpoint * 180 / M_PI, " [deg] ");
 
     // 动捕丢失情况下，不执行控制指令，直到动捕恢复
     if (!ugv_state.odom_valid)
@@ -863,7 +808,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     // 发布当前执行速度的方向箭头
     geometry_msgs::TwistStamped vel_rviz;
     vel_rviz.header.stamp = ros::Time::now();
-    vel_rviz.header.frame_id = "/ugv" + format_float_two_decimal(ugv_id) + "/base_link";
+    vel_rviz.header.frame_id = "/ugv" + std::to_string(ugv_id) + "/base_link";
     vel_rviz.twist.linear.x = desired_vel.linear.x;
     vel_rviz.twist.linear.y = desired_vel.linear.y;
     vel_rviz.twist.linear.z = desired_vel.linear.z;
@@ -908,7 +853,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
     tfs.header.frame_id = "world";       // 相对于世界坐标系
     tfs.header.stamp = ros::Time::now(); // 时间戳
     //  |----坐标系 ID
-    tfs.child_frame_id = "/ugv" + format_float_two_decimal(ugv_id) + "/base_link"; // 子坐标系，无人机的坐标系
+    tfs.child_frame_id = "/ugv" + std::to_string(ugv_id) + "/base_link"; // 子坐标系，无人机的坐标系
     // tfs.child_frame_id = "/lidar"; //子坐标系，无人机的坐标系
     //  |----坐标系相对信息设置  偏移量  无人机相对于世界坐标系的坐标
     tfs.transform.translation.x = ugv_state.position[0];
