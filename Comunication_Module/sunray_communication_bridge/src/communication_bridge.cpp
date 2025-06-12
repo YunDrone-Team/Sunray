@@ -1039,8 +1039,9 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     uavStateData[index].data.uavState.land_pos[1] = msg->land_pos[1];
     uavStateData[index].data.uavState.land_pos[2] = msg->land_pos[2];
     uavStateData[index].data.uavState.land_yaw= msg->land_yaw;
-        // std::cout << "sendUDPMulticastData back:" << back<< std::endl;
+    // std::cout << "sendUDPMulticastData back:" << back<< std::endl;
 
+    std::string mode = msg->mode;
     if (mode.length() > 15)
         mode = mode.substr(0, 15);
     else if (mode.length() < 15)
