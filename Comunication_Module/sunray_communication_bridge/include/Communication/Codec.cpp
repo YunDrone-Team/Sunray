@@ -112,7 +112,18 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
     return lastTwoBytes;
 }
 
- void Codec::decodernFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+void Codec::decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    Goal& data = dataFrameStruct.data.goal ;
+    data.init();
+
+    uint8tArrayToDouble(dataFrame, data.positionX);
+    uint8tArrayToDouble(dataFrame, data.positionY);
+    uint8tArrayToDouble(dataFrame, data.positionZ);
+
+}
+
+ void Codec::decoderFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
  {
      Formation& data = dataFrameStruct.data.formation;
      data.init();
@@ -137,7 +148,7 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
  }
 
 
-void Codec::decodernNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node)
+void Codec::decoderNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node)
 {
     NodeData& data = node.data.nodeInformation;
     data.init();
@@ -587,11 +598,14 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         break;
     case MessageID::NodeMessageID:
         /*Payload机载电脑ROS节点数据反序列化*/
-        decodernNodePayload(undecodedData,decoderData);
+        decoderNodePayload(undecodedData,decoderData);
         break;
     case MessageID::FormationMessageID:
         /*Payload编队切换数据反序列化*/
-        decodernFormationPayload(undecodedData,decoderData);
+        decoderFormationPayload(undecodedData,decoderData);
+    case MessageID::GoalMessageID:
+        /*Payload编队规划点数据反序列化*/
+        decoderGoalPayload(undecodedData,decoderData);
         break;
     default:break;
     }
@@ -612,7 +626,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::HeartbeatMessageID:case MessageID::UAVControlCMDMessageID:
     case MessageID::UGVControlCMDMessageID:case MessageID::UAVSetupMessageID:
     case MessageID::DemoMessageID:case MessageID::ScriptMessageID:
-    case MessageID::WaypointMessageID:
+    case MessageID::WaypointMessageID:case MessageID::GoalMessageID:
         //TCP帧头 0xac43
         codelessData.head=PackBytesLE(0xac,0x43);
         break;
@@ -922,6 +936,16 @@ void Codec::coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
         payload.push_back(static_cast<uint8_t>(data.nodeStr[j]));
 }
 
+void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    Goal data=codelessData.data.goal;
+    doubleCopyToUint8tArray(payload,data.positionX);
+    doubleCopyToUint8tArray(payload,data.positionY);
+    doubleCopyToUint8tArray(payload,data.positionZ);
+
+
+}
+
 void Codec::coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     Formation data=codelessData.data.formation;
@@ -1004,6 +1028,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::FormationMessageID:
         /*Payload编队切换数据序列化*/
         coderFormationPayload(PayloadData,codelessData);
+        break;
+    case MessageID::GoalMessageID:
+        /*Payload规划点数据序列化*/
+        coderGoalPayload(PayloadData,codelessData);
         break;
     default:break;
     }

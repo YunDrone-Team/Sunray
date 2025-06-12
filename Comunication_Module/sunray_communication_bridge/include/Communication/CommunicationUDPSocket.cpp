@@ -951,7 +951,7 @@ SOCKET CommunicationUDPSocket::UpdateMulticastConfiguration(SOCKET tempSock)
         return INVALID_SOCKET;
     }
 #endif
-    // std::cout << "CommunicationUDPSocket::UpdateMulticastConfiguration end  "<<std::endl;
+//    std::cout << "CommunicationUDPSocket::UpdateMulticastConfiguration end  "<<std::endl;
     return tempSock;
 }
 

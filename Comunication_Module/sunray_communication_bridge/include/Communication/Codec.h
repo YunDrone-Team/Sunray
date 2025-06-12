@@ -52,6 +52,8 @@ public:
     void coderWaypointPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+
 
     void decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人机状态Payload帧
     void decoderUGVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人车状态Payload帧
@@ -62,8 +64,9 @@ public:
     void decoderDemoPayload(std::vector<uint8_t>& dataFrame,DataFrame& demo); //解码智能体demo的Payload帧
     void decoderScriptPayload(std::vector<uint8_t>& dataFrame,DataFrame& script); //解码无人机script的Payload帧
     void decoderWaypointPayload(std::vector<uint8_t>& dataFrame,DataFrame& waypointData);//解码无人机航点Payload帧
-    void decodernNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node); //解码智能体在线ROS节点Payload帧
-    void decodernFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码编队切换Payload帧
+    void decoderNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node); //解码智能体在线ROS节点Payload帧
+    void decoderFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码编队切换Payload帧
+    void decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码规划点Payload帧
 
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
@@ -94,7 +97,8 @@ private:
         MessageID::ACKMessageID,
         MessageID::DemoMessageID,
         MessageID::ScriptMessageID,
-        MessageID::FormationMessageID
+        MessageID::FormationMessageID,
+        MessageID::GoalMessageID
     };
 
 };

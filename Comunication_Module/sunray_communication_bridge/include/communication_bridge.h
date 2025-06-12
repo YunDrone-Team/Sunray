@@ -85,6 +85,9 @@ private:
     std::map<int,ros::Publisher> uav_state_pub;
     std::map<int,ros::Publisher> ugv_state_pub;
     std::map<int,ros::Publisher> ugv_controlCMD_pub;
+    std::map<int,ros::Publisher> uav_goal_pub;
+    std::map<int,ros::Publisher> ugv_goal_pub;
+
 
     std::map<int,ros::Publisher> uav_waypoint_pub;
     ros::Subscriber  formation_sub;
