@@ -49,6 +49,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             uav_setup_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             uav_waypoint_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
+            // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
+            uav_goal_pub.insert(std::make_pair(i, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(i), 1))));
         }
 
         // 无人车Sunray与地面站之间的通信（此部分仅针对仿真）
@@ -60,6 +62,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&communication_bridge::ugv_state_cb, this, _1, i)));
             // 【发布】无人车控制指令 地面站 --TCP--> 本节点 --ROS topic--> ugv_control_node
             ugv_controlCMD_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
+            // 【发布】无人车规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
+            ugv_goal_pub.insert(std::make_pair(i, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(i), 1))));
         }
     }else{
         // 无人机Sunray和地面站之间的通信（此部分仅针对真机）
@@ -75,6 +79,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             uav_setup_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
+            // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
+            uav_goal_pub.insert(std::make_pair(uav_id, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(uav_id), 1))));
         }
 
         // 无人车Sunray和地面站之间的通信（此部分仅针对真机）
@@ -86,6 +92,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             ugv_state_sub.push_back(nh.subscribe<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1, boost::bind(&communication_bridge::ugv_state_cb, this, _1, ugv_id)));
             // 【发布】无人车控制指令 地面站 --TCP--> 本节点 --ROS topic--> ugv_control_node
             ugv_controlCMD_pub.insert(std::make_pair(ugv_id, (nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 1))));
+            // 【发布】无人车规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
+            ugv_goal_pub.insert(std::make_pair(ugv_id, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(ugv_id), 1))));
         }
 
         // 无人机Sunray和其他Sunray（包括无人机和车）之间的通信（此部分仅针对真机）
@@ -445,7 +453,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         robot_id = readData.dataFrame.robot_ID;
     else
         robot_id = readData.dataFrame.robot_ID-100;
-    // std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
+     std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
     // std::cout << "TCP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
     switch (readData.dataFrame.seq)
     {
@@ -653,6 +661,50 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         sendMSG.leader_id= readData.dataFrame.data.formation.leader_id;
         sendMSG.name=readData.dataFrame.data.formation.name;
         formation_pub.publish(sendMSG);
+        break;   
+    }  
+    case MessageID::GoalMessageID:// 规划点- Goal（#204）
+    {    
+        if(readData.dataFrame.robot_ID<=100)
+        {
+            auto it = uav_goal_pub.find(robot_id);
+            if (it == uav_goal_pub.end())
+            {
+                std::cout << "Goal UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+                break;
+            }      
+            geometry_msgs::PoseStamped sendMSG;
+            sendMSG.header.stamp = ros::Time::now();
+            sendMSG.header.frame_id = "world";
+            sendMSG.pose.orientation.x = 0;
+            sendMSG.pose.orientation.y = 0;
+            sendMSG.pose.orientation.z = 0;
+            sendMSG.pose.orientation.w = 1;
+            sendMSG.pose.position.x = readData.dataFrame.data.goal.positionX;
+            sendMSG.pose.position.y = readData.dataFrame.data.goal.positionY;
+            sendMSG.pose.position.z = readData.dataFrame.data.goal.positionZ;
+            it->second.publish(sendMSG);
+
+        }else if(readData.dataFrame.robot_ID>100){
+            auto it = ugv_goal_pub.find(robot_id);
+            if (it == ugv_goal_pub.end())
+            {
+                std::cout << "Goal UGV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+                break;
+            }      
+            geometry_msgs::PoseStamped sendMSG;
+            sendMSG.header.stamp = ros::Time::now();
+            sendMSG.header.frame_id = "world";
+            sendMSG.pose.orientation.x = 0;
+            sendMSG.pose.orientation.y = 0;
+            sendMSG.pose.orientation.z = 0;
+            sendMSG.pose.orientation.w = 1;
+            sendMSG.pose.position.x = readData.dataFrame.data.goal.positionX;
+            sendMSG.pose.position.y = readData.dataFrame.data.goal.positionY;
+            sendMSG.pose.position.z = readData.dataFrame.data.goal.positionZ;
+            it->second.publish(sendMSG);
+        }
+        
         break;   
     }  
     default:

@@ -104,6 +104,7 @@ enum MessageID
     ACKMessageID                = 201,
     DemoMessageID               = 202,
     ScriptMessageID             = 203,
+    GoalMessageID               = 204,
 
 };
 
@@ -547,6 +548,23 @@ struct UGVState
 
 };
 
+//规划点- Goal（#204）
+struct Goal
+{
+
+    double positionX;
+    double positionY;
+    double positionZ;
+
+    void init()
+    {
+        positionX=0;
+        positionY=0;
+        positionZ=0;
+
+    }
+};
+
 struct Formation
 {
     uint8_t cmd;
@@ -579,6 +597,7 @@ union Payload
     UGVControlCMD ugvControlCMD;    // 无人车控制指令 - UGVControlCMD（#120）
     NodeData nodeInformation;       // 机载电脑ROS节点 - NodeData（#30）
     Formation formation;            // 编队切换 - Formation（#40）
+    Goal goal;                      // 规划点- Goal（#204）
 };
 
 //整个数据帧

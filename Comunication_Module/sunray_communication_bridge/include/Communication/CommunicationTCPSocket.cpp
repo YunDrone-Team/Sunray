@@ -663,7 +663,8 @@ void CommunicationTCPSocket::Close()
 #endif
         _sock = INVALID_SOCKET;
         ipSocketMap.clear();
-
         TCPServerCacheDataMap.clear();
+
     }
+
 }
