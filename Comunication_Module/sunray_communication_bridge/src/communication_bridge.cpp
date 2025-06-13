@@ -453,7 +453,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         robot_id = readData.dataFrame.robot_ID;
     else
         robot_id = readData.dataFrame.robot_ID-100;
-     std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
+    //  std::cout << "communication_bridge::TCPServerCallBack:" << (int)readData.dataFrame.seq<< std::endl;
     // std::cout << "TCP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
     switch (readData.dataFrame.seq)
     {
