@@ -114,7 +114,7 @@ uint16_t Codec::getChecksum(std::vector<uint8_t> data)
 
 void Codec::decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
-    Goal& data = dataFrameStruct.data.goal ;
+    Goal& data = dataFrameStruct.data.goal;
     data.init();
 
     uint8tArrayToDouble(dataFrame, data.positionX);
@@ -603,6 +603,7 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
     case MessageID::FormationMessageID:
         /*Payload编队切换数据反序列化*/
         decoderFormationPayload(undecodedData,decoderData);
+        break;
     case MessageID::GoalMessageID:
         /*Payload编队规划点数据反序列化*/
         decoderGoalPayload(undecodedData,decoderData);
