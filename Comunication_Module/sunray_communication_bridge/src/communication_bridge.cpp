@@ -1132,9 +1132,9 @@ void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstP
         return;
     DataFrame formationData;
 
-    if (uav_experiment_num > 0)
+    if (uav_experiment_num > 0 && uav_id>=0 )
         formationData.robot_ID = uav_id;
-    else if (ugv_experiment_num > 0)
+    else if (ugv_experiment_num > 0 && ugv_id>=0)
         formationData.robot_ID = ugv_id+100;
 
     formationData.seq=MessageID::FormationMessageID;
