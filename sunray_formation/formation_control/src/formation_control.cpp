@@ -152,6 +152,8 @@ void SunrayFormation::formation_cmd_callback(const sunray_msgs::Formation::Const
             Logger::error(node_name, "Home 点未设置!");
             return;
         }
+        state = sunray_msgs::Formation::FORMATION;
+        formation_type = sunray_msgs::Formation::GOAL;
         orca_setup.header.stamp = ros::Time::now();
         orca_setup.cmd = sunray_msgs::OrcaSetup::GOAL_RUN;
         orca_setup.desired_pos[0] = this->home_pose[0];
