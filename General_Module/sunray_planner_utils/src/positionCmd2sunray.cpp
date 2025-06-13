@@ -75,7 +75,6 @@ public:
             if (msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
             {
                 uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
-                Logger::print_color(int(LogColor::green), node_name, ": Enter XyzPosYaw Mode Successfully");
             }
             else
             {
@@ -83,23 +82,19 @@ public:
                 if (control_type == 0)
                 {
                     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
-                    Logger::print_color(int(LogColor::green), node_name, ": Enter XyzPosYaw Mode Successfully");
                 }
                 // XyzVelYaw
                 else if (control_type == 1)
                 {
                     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYaw;
-                    Logger::print_color(int(LogColor::green), node_name, ": Enter XyzVelYaw Mode Successfully");
                 }
                 // XyzPosVelYaw
                 else if (control_type == 2)
                 {
                     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
-                    Logger::print_color(int(LogColor::green), node_name, ": Enter XyzPosVelYaw Mode Successfully");
                 }
                 else
                 {
-                    Logger::print_color(int(LogColor::red), node_name, "control_type error!");
                     return;
                 }
                 uav_cmd.desired_pos[0] = cmd_value.x;
@@ -132,17 +127,14 @@ public:
             if (control_type == 0)
             {
                 ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
-                Logger::print_color(int(LogColor::green), node_name, ": Enter POS_CONTROL_ENU Mode Successfully");
             }
             // XyVelYaw
             else if (control_type == 1)
             {
                 ugv_cmd.cmd = sunray_msgs::UGVControlCMD::VEL_CONTROL_BODY;
-                Logger::print_color(int(LogColor::green), node_name, ": Enter VEL_CONTROL_BODY Mode Successfully");
             }
             else
             {
-                Logger::print_color(int(LogColor::red), node_name, "control_type error!");
                 return;
             }
             ugv_cmd.desired_pos[0] = cmd_value.x;

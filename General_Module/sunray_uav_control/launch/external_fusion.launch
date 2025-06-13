@@ -3,7 +3,7 @@
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="0" />
     <arg name="uav_name" default="uav" />
-    <arg name="position_topic" default="/uav1/sunray/gazebo_pose" />
+    <arg name="position_topic" default="/Odometry" />
     <arg name="enable_rviz" default="false" />
     <arg name="enable_range_sensor" default="false" />
     <arg name="server" default="192.168.25.11"/>
