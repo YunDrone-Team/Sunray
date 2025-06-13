@@ -109,6 +109,7 @@ private:
     void set_home();                                                          // 设置home点
     void read_formation_yaml();                                               // 读取阵型yaml文件
     void debug();                                                             // 打印信息
+    double calculateTargetYaw(double target_x, double target_y);
     std::tuple<float, float> calculateFollowerPosition(int vehicleId,
                                                        double leaderPos_x,
                                                        double leaderPos_y,
