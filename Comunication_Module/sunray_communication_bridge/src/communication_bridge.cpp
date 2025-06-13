@@ -1003,14 +1003,14 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
         }
     }else{
         // 无人机心跳包 - 真机发送
-        if (uav_experiment_num > 0)
+        if (uav_experiment_num > 0 && uav_id>=0)
         {
             Heartbeatdata.robot_ID = uav_id;
             Heartbeatdata.data.heartbeat.agentType = UAVType;
             tcpServer.allSendData(codec.coder( Heartbeatdata));
         }
         // 无人车心跳包 - 真机发送
-        if (ugv_experiment_num > 0)
+        if (ugv_experiment_num > 0&& ugv_id>=0)
         {
             Heartbeatdata.robot_ID = ugv_id+100;
             Heartbeatdata.data.heartbeat.agentType = UGVType;
