@@ -185,6 +185,7 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
     // 如果是运行状态，则发送速度指令
     else if (msg->state == sunray_msgs::OrcaCmd::RUN)
     {
+        double yaw = calculateTargetYaw(msg->goal_pos[0], msg->goal_pos[1]);
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYaw;
         // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
@@ -193,7 +194,7 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
         uav_cmd.desired_pos[0] = msg->goal_pos[0];
         uav_cmd.desired_pos[1] = msg->goal_pos[1];
         uav_cmd.desired_pos[2] = 1;
-        uav_cmd.desired_yaw = 0;
+        uav_cmd.desired_yaw = yaw;
         // uav_cmd.desired_yaw_rate = 0;
 
         ugv_cmd.header.stamp = ros::Time::now();
@@ -204,24 +205,26 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
         ugv_cmd.desired_vel[1] = msg->linear[1];
         ugv_cmd.desired_pos[0] = msg->goal_pos[0];
         ugv_cmd.desired_pos[1] = msg->goal_pos[1];
-        ugv_cmd.angular_vel = 0;
+        ugv_cmd.desired_yaw = yaw;
     }
     // 如果是到达状态，则发送位置指令
     else if (msg->state == sunray_msgs::OrcaCmd::ARRIVED)
     {
+        double yaw = calculateTargetYaw(msg->goal_pos[0] + 1, msg->goal_pos[1]);
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
-        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
         uav_cmd.desired_pos[0] = msg->goal_pos[0];
         uav_cmd.desired_pos[1] = msg->goal_pos[1];
         // uav_cmd.desired_vel[0] = msg->linear[0];
         // uav_cmd.desired_vel[1] = msg->linear[1];
         uav_cmd.desired_pos[2] = 1;
-
+        uav_cmd.desired_yaw = yaw;
         ugv_cmd.header.stamp = ros::Time::now();
         ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
         ugv_cmd.desired_pos[0] = msg->goal_pos[0];
         ugv_cmd.desired_pos[1] = msg->goal_pos[1];
+        ugv_cmd.desired_yaw = yaw;
     }
     else
     {
@@ -448,23 +451,23 @@ void SunrayFormation::leader_formation_pub()
         {
             pos_idx = agent_id;
         }
-        else if ((agent_type == 1 && leader_id > 100) && agent_id < (leader_id%100))
+        else if ((agent_type == 1 && leader_id > 100) && agent_id < (leader_id % 100))
         {
             pos_idx = agent_id;
         }
-        else if ((agent_type == 1 && leader_id > 100) && agent_id > (leader_id%100))
+        else if ((agent_type == 1 && leader_id > 100) && agent_id > (leader_id % 100))
         {
             pos_idx = agent_id - 1;
         }
-        else if(agent_type == 1 && leader_id <= 100)
+        else if (agent_type == 1 && leader_id <= 100)
         {
             pos_idx = agent_id;
         }
-        else if(agent_type == 0 && leader_id <= 100 && agent_id > leader_id)
+        else if (agent_type == 0 && leader_id <= 100 && agent_id > leader_id)
         {
-            pos_idx = agent_id-1;
+            pos_idx = agent_id - 1;
         }
-        else if(agent_type == 0 && leader_id <= 100 && agent_id > leader_id)
+        else if (agent_type == 0 && leader_id <= 100 && agent_id > leader_id)
         {
             pos_idx = agent_id;
         }
@@ -775,4 +778,55 @@ void SunrayFormation::debug()
     }
     Logger::print_color(int(LogColor::green), this->node_name, "当前目标点: ", this->orca_cmd.goal_pos[0], this->orca_cmd.goal_pos[1]);
     Logger::print_color(int(LogColor::green), this->node_name, "当前控制速度: ", this->orca_cmd.linear[0], this->orca_cmd.linear[1]);
+}
+
+// 计算目标角度
+double SunrayFormation::calculateTargetYaw(double target_x, double target_y)
+{
+    // 计算目标点相对于当前位置的角度
+    double delta_x = target_x - agent_state[agent_id - 1].pose.pose.position.x;
+    double delta_y = target_y - agent_state[agent_id - 1].pose.pose.position.y;
+    double target_yaw = atan2(delta_y, delta_x);
+    // 限制目标角度在[-pi, pi]范围内
+    if (target_yaw < -M_PI)
+    {
+        target_yaw += 2 * M_PI;
+    }
+    else if (target_yaw > M_PI)
+    {
+        target_yaw -= 2 * M_PI;
+    }
+    // 限制最大转向角度
+    double current_yaw = tf::getYaw(agent_state[agent_id - 1].pose.pose.orientation);
+    double yaw_diff = target_yaw - current_yaw;
+    if (yaw_diff > M_PI)
+    {
+        yaw_diff -= 2 * M_PI;
+    }
+    else if (yaw_diff < -M_PI)
+    {
+        yaw_diff += 2 * M_PI;
+    }
+    // 如果转向角度超过最大限制，则调整目标角度
+    if (fabs(yaw_diff) > M_PI / 12) // 最大转向角度为15度
+    {
+        if (yaw_diff > 0)
+        {
+            target_yaw = current_yaw + M_PI / 12;
+        }
+        else
+        {
+            target_yaw = current_yaw - M_PI / 12;
+        }
+    }
+    // 返回计算后的目标角度
+    if (target_yaw < -M_PI)
+    {
+        target_yaw += 2 * M_PI;
+    }
+    else if (target_yaw > M_PI)
+    {
+        target_yaw -= 2 * M_PI;
+    }
+    return target_yaw;
 }
