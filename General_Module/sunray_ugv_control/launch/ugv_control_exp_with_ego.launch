@@ -10,14 +10,14 @@
         <param name="odom_topic" value="/xxxx" />
         <param name="vel_topic" value="/ugv$(arg ugv_id)/cmd_vel" />
         <!-- 控制参数 -->
-        <param name="ugv_control_param/Kp_xy" value="1.4" />
-        <param name="ugv_control_param/Kp_yaw" value="1.5" />
-        <param name="ugv_control_param/max_vel_xy" value="0.5" />
-        <param name="ugv_control_param/max_vel_yaw" value="1.57" />
-        <!-- 地理围栏参数 -->
-        <param name="ugv_geo_fence/max_x" value="100.0" />
-        <param name="ugv_geo_fence/min_x" value="-100.0" />
-        <param name="ugv_geo_fence/max_y" value="100.0" />
-        <param name="ugv_geo_fence/min_y" value="-100.0" />
+    <arg name="ugv_control_param/Kp_xy" default="2.0" />
+    <arg name="ugv_control_param/Kp_yaw" default="0.95" />
+    <arg name="ugv_control_param/max_vel_xy" default="1.5" />
+    <arg name="ugv_control_param/max_vel_yaw" default="1.57" />
+    <!-- 地理围栏参数 -->
+    <arg name="ugv_geo_fence/max_x" default="12.0" />
+    <arg name="ugv_geo_fence/min_x" default="-12.0" />
+    <arg name="ugv_geo_fence/max_y" default="12.0" />
+    <arg name="ugv_geo_fence/min_y" default="-12.0" />
     </node>
 </launch>

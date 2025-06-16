@@ -22,14 +22,14 @@
     <arg name="map/inflate" default="0.3" />
     <!-- 控制参数 -->
     <arg name="ugv_control_param/Kp_xy" default="2.0" />
-    <arg name="ugv_control_param/Kp_yaw" default="3.14" />
+    <arg name="ugv_control_param/Kp_yaw" default="0.95" />
     <arg name="ugv_control_param/max_vel_xy" default="1.5" />
-    <arg name="ugv_control_param/max_vel_yaw" default="6" />
+    <arg name="ugv_control_param/max_vel_yaw" default="1.57" />
     <!-- 地理围栏参数 -->
-    <arg name="ugv_geo_fence/max_x" default="100.0" />
-    <arg name="ugv_geo_fence/min_x" default="-100.0" />
-    <arg name="ugv_geo_fence/max_y" default="100.0" />
-    <arg name="ugv_geo_fence/min_y" default="-100.0" />
+    <arg name="ugv_geo_fence/max_x" default="12.0" />
+    <arg name="ugv_geo_fence/min_x" default="-12.0" />
+    <arg name="ugv_geo_fence/max_y" default="12.0" />
+    <arg name="ugv_geo_fence/min_y" default="-12.0" />
 
     <node name="ugv_control_node" pkg="sunray_ugv_control" type="ugv_control_node" output="screen">
         <param name="ugv_id" value="$(arg ugv_id)" />
