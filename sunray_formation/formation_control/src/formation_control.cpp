@@ -808,15 +808,15 @@ double SunrayFormation::calculateTargetYaw(double target_x, double target_y)
         yaw_diff += 2 * M_PI;
     }
     // 如果转向角度超过最大限制，则调整目标角度
-    if (fabs(yaw_diff) > M_PI / 12) // 最大转向角度为15度
+    if (fabs(yaw_diff) > M_PI / 6) // 最大转向角度为30度
     {
         if (yaw_diff > 0)
         {
-            target_yaw = current_yaw + M_PI / 12;
+            target_yaw = current_yaw + M_PI / 6;
         }
         else
         {
-            target_yaw = current_yaw - M_PI / 12;
+            target_yaw = current_yaw - M_PI / 6;
         }
     }
     // 返回计算后的目标角度
