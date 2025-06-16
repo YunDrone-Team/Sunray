@@ -115,7 +115,7 @@ std::vector<NetworkInterface> CommunicationUDPSocket::getNetworkInterfaces()
 bool CommunicationUDPSocket::InitSocket()                                        //初始化Socket
 {
 
-    std::cout << "CommunicationUDPSocket::InitSocket() "<<std::endl;
+//    std::cout << "CommunicationUDPSocket::InitSocket() "<<std::endl;
 #ifdef _WIN32
         //启动Windows socket 2.x环境
         WORD ver = MAKEWORD(2, 2);
@@ -133,7 +133,7 @@ bool CommunicationUDPSocket::InitSocket()                                       
         std::vector<NetworkInterface> interfaces = getNetworkInterfaces();
         for (const auto& iface : interfaces)
         {
-            std::cout << "Interface: " << iface.name << ", IP: " << iface.ip << std::endl;
+//            std::cout << "Interface: " << iface.name << ", IP: " << iface.ip << std::endl;
             std::lock_guard<std::mutex> lock(mutexSocket);
             auto it = ipSocketMap.find(iface.ip);
             if (it != ipSocketMap.end())
@@ -321,7 +321,6 @@ void CommunicationUDPSocket::setDecoderInterfacePtr(DecoderInterfaceBase* ptr)
 
 CommunicationUDPSocket::~CommunicationUDPSocket()
 {
-    std::cout << "~CommunicationUDPSocket()"<<std::endl;
 
     for (const auto& pair : ipSocketMap)
         Close(pair.second);
@@ -338,7 +337,6 @@ CommunicationUDPSocket::~CommunicationUDPSocket()
 #else
 
 #endif
-    std::cout << "~CommunicationUDPSocket() end"<<std::endl;
 
 }
 

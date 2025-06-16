@@ -14,20 +14,9 @@ TCPClient::TCPClient()
 
 TCPClient::~TCPClient()
 {
-//    for(int i=0;i<ClientNumber;++i)
-//    {
-//        if(client[i]!=nullptr)
-//        {
-//            client[i]->Close();
-//            delete client[i];
-//            client[i]=nullptr;
-//        }
-//    }
-    std::cout << "TCPClient::~TCPClient()"<<std::endl;
 
     threadState=false;
     createThreadRun=false;
-    std::cout << "TCPClient::~TCPClient() end"<<std::endl;
 
 }
 
