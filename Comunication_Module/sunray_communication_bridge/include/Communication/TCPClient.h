@@ -40,7 +40,6 @@ public:
 
     int  clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp);      //服务端发送数据接口,目的ip
     void closeLine(std::string ip);
-    CommunicationTCPSocket* client[ClientNumber]={nullptr};
     void createThread();
     void onRun();
     std::atomic<bool> threadState;
