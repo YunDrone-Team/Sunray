@@ -53,6 +53,7 @@ public:
     void coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData);
 
 
     void decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人机状态Payload帧
@@ -67,6 +68,7 @@ public:
     void decoderNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node); //解码智能体在线ROS节点Payload帧
     void decoderFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码编队切换Payload帧
     void decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码规划点Payload帧
+    void decoderAgentComputerStatusPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码智能体电脑状态Payload帧
 
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
@@ -98,7 +100,8 @@ private:
         MessageID::DemoMessageID,
         MessageID::ScriptMessageID,
         MessageID::FormationMessageID,
-        MessageID::GoalMessageID
+        MessageID::GoalMessageID,
+        MessageID::AgentComputerStatusMessageID
     };
 
 };

@@ -123,6 +123,16 @@ void Codec::decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFr
 
 }
 
+void Codec::decoderAgentComputerStatusPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    AgentComputerStatus& data = dataFrameStruct.data.computerStatus;
+    data.init();
+
+    uint8tArrayToDouble(dataFrame, data.cpuLoad);
+    uint8tArrayToDouble(dataFrame, data.memoryUsage);
+    uint8tArrayToDouble(dataFrame, data.cpuTemperature);
+}
+
  void Codec::decoderFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
  {
      Formation& data = dataFrameStruct.data.formation;
@@ -605,8 +615,12 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         decoderFormationPayload(undecodedData,decoderData);
         break;
     case MessageID::GoalMessageID:
-        /*Payload编队规划点数据反序列化*/
+        /*Payload规划点数据反序列化*/
         decoderGoalPayload(undecodedData,decoderData);
+        break;
+    case MessageID::AgentComputerStatusMessageID:
+        /*Payload智能体电脑状态数据反序列化*/
+        decoderAgentComputerStatusPayload(undecodedData,decoderData);
         break;
     default:break;
     }
@@ -632,7 +646,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
         codelessData.head=PackBytesLE(0xac,0x43);
         break;
     case MessageID::UAVStateMessageID: case MessageID::UGVStateMessageID:
-    case MessageID::NodeMessageID:
+    case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -944,7 +958,14 @@ void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
     doubleCopyToUint8tArray(payload,data.positionY);
     doubleCopyToUint8tArray(payload,data.positionZ);
 
+}
 
+void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    AgentComputerStatus data=codelessData.data.computerStatus;
+    doubleCopyToUint8tArray(payload,data.cpuLoad);
+    doubleCopyToUint8tArray(payload,data.memoryUsage);
+    doubleCopyToUint8tArray(payload,data.cpuTemperature);
 }
 
 void Codec::coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
@@ -1033,6 +1054,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::GoalMessageID:
         /*Payload规划点数据序列化*/
         coderGoalPayload(PayloadData,codelessData);
+        break;
+    case MessageID::AgentComputerStatusMessageID:
+        /*Payload智能体电脑状态数据序列化*/
+        coderAgentComputerStatusload(PayloadData,codelessData);
         break;
     default:break;
     }

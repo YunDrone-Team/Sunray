@@ -4,12 +4,12 @@
     <arg name="uav_name" default="uav" />
     <arg name="uav_id" default="1" />               <!-- 当前无人机id，默认值为1 -->
     <arg name="uav_experiment_num" default="0" />   <!-- 无人机真机数量 -->
-    <arg name="uav_simulation_num" default="4" />   <!-- 仿真无人机数量 -->
+    <arg name="uav_simulation_num" default="3" />   <!-- 仿真无人机数量 -->
 
     <arg name="ugv_name" default="ugv" />
     <arg name="ugv_id" default="1" />               <!-- 当前无人车id，默认值为1 -->
     <arg name="ugv_experiment_num" default="0" />   <!-- 无人车真车数量 -->
-    <arg name="ugv_simulation_num" default="2" />   <!-- 仿真无人车数量 -->
+    <arg name="ugv_simulation_num" default="3" />   <!-- 仿真无人车数量 -->
 
     <arg name="tcp_port" default="8969" />          <!-- TCP绑定端口-->
     <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->

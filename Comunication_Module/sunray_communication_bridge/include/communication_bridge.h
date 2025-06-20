@@ -21,12 +21,22 @@
 #include <unordered_set>
 #include <pwd.h>
 #include <limits.h>
+#include <string>
+#include <iostream>
+#include <thread>
 
 #define UAVType 0
 #define UGVType 1
 #define MAX_AGENT_NUM 30
 
 using namespace std;
+
+// Structure to store CPU time statistics
+struct CpuData {
+    unsigned long long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
+};
+
+
 class communication_bridge
 {
 public:
@@ -97,8 +107,9 @@ private:
     ros::Timer CheckChildProcessTimer;
     ros::Timer UpdateROSNodeInformationTimer;
     ros::Timer UpdateUDPMulticastTimer;
+    ros::Timer UpdateCPUUsageRateTimer;
 
-    // UDPServer udp_server;
+    CpuData prevData;
 
     TCPServer tcpServer;
     CommunicationUDPSocket *udpSocket=nullptr;
@@ -130,6 +141,8 @@ private:
     void sendHeartbeatPacket(const ros::TimerEvent &e);
     void CheckChildProcessCallBack(const ros::TimerEvent &e);
     void UpdateROSNodeInformation(const ros::TimerEvent &e);
+    void UpdateComputerStatus(const ros::TimerEvent &e);
+
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
     void UpdateUDPMulticast(const ros::TimerEvent &e);
 
@@ -147,4 +160,11 @@ private:
     pid_t OrderCourse(std::string orderStr);
     pid_t executeScript(std::string scriptStr,std::string filePath);
     pid_t CheckChildProcess(pid_t pid); // 检查子进程是否已经结束
+
+
+    CpuData readCpuData();// 读取CPU数据
+    double calculateCpuUsage(const CpuData& prev, const CpuData& curr);// 计算CPU使用率
+
+    double getMemoryUsage(); // 获取内存使用率
+    std::vector<double> getCpuTemperatures(); // 获取CPU温度
 };
