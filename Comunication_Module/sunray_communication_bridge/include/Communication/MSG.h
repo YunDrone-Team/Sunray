@@ -90,21 +90,22 @@ enum UAVSetupType
 //MESSAGE ID
 enum MessageID
 {
-    HeartbeatMessageID          = 1,
-    UAVStateMessageID           = 2,
-    UGVStateMessageID           = 20,
-    NodeMessageID               = 30,
-    FormationMessageID          = 40,
+    HeartbeatMessageID              = 1,
+    UAVStateMessageID               = 2,
+    UGVStateMessageID               = 20,
+    NodeMessageID                   = 30,
+    AgentComputerStatusMessageID    = 31,
+    FormationMessageID              = 40,
 //    TakeoffMessageID    = 101,
-    UAVControlCMDMessageID      = 102,
-    UAVSetupMessageID           = 103,
-    WaypointMessageID           = 104,
-    UGVControlCMDMessageID      = 120,
-    SearchMessageID             = 200,
-    ACKMessageID                = 201,
-    DemoMessageID               = 202,
-    ScriptMessageID             = 203,
-    GoalMessageID               = 204,
+    UAVControlCMDMessageID          = 102,
+    UAVSetupMessageID               = 103,
+    WaypointMessageID               = 104,
+    UGVControlCMDMessageID          = 120,
+    SearchMessageID                 = 200,
+    ACKMessageID                    = 201,
+    DemoMessageID                   = 202,
+    ScriptMessageID                 = 203,
+    GoalMessageID                   = 204,
 
 };
 
@@ -548,6 +549,21 @@ struct UGVState
 
 };
 
+//智能体电脑状态 -AgentComputerStatus（#31）
+struct AgentComputerStatus
+{
+    double cpuLoad;         // CPU 负载百分比（0.0-100.0）
+    double memoryUsage;     // 内存使用率（0.0-100.0）
+    double cpuTemperature;  // CPU 温度（摄氏度，保留小数精度）
+    void init()
+    {
+        cpuLoad=0;
+        memoryUsage=0;
+        cpuTemperature=0;
+    }
+
+};
+
 //规划点- Goal（#204）
 struct Goal
 {
@@ -584,20 +600,21 @@ struct Formation
 // 有效数据部分联合体，用于传递有效数据
 union Payload
 {
-    HeartbeatData heartbeat;        // 无人机心跳包 - HeartbeatData（#1）
-    UAVState uavState;              // 无人机状态 - UAVState（#2）
-    UAVControlCMD uavControlCMD;    // 无人机控制指令 - UAVControlCMD（#102）
-    UAVSetup uavSetup;              // 无人机设置指令 - UAVSetup（#103）
-    WaypointData waypointData;      // 无人机航点 - WaypointData（#104）
-    SearchData search;              // 搜索在线智能体 - SearchData（#200）
-    ACKData ack;                    // 智能体应答 - ACKData（#201）
-    DemoData demo;                  // 无人机demo - DemoData（#202）
-    ScriptData agentScrip;          // 功能脚本 - ScriptData（#203）
-    UGVState ugvState;              // 无人车状态 - UGVState（#20）
-    UGVControlCMD ugvControlCMD;    // 无人车控制指令 - UGVControlCMD（#120）
-    NodeData nodeInformation;       // 机载电脑ROS节点 - NodeData（#30）
-    Formation formation;            // 编队切换 - Formation（#40）
-    Goal goal;                      // 规划点- Goal（#204）
+    HeartbeatData heartbeat;            // 无人机心跳包 - HeartbeatData（#1）
+    UAVState uavState;                  // 无人机状态 - UAVState（#2）
+    UAVControlCMD uavControlCMD;        // 无人机控制指令 - UAVControlCMD（#102）
+    UAVSetup uavSetup;                  // 无人机设置指令 - UAVSetup（#103）
+    WaypointData waypointData;          // 无人机航点 - WaypointData（#104）
+    SearchData search;                  // 搜索在线智能体 - SearchData（#200）
+    ACKData ack;                        // 智能体应答 - ACKData（#201）
+    DemoData demo;                      // 无人机demo - DemoData（#202）
+    ScriptData agentScrip;              // 功能脚本 - ScriptData（#203）
+    UGVState ugvState;                  // 无人车状态 - UGVState（#20）
+    UGVControlCMD ugvControlCMD;        // 无人车控制指令 - UGVControlCMD（#120）
+    NodeData nodeInformation;           // 机载电脑ROS节点 - NodeData（#30）
+    Formation formation;                // 编队切换 - Formation（#40）
+    Goal goal;                          // 规划点- Goal（#204）
+    AgentComputerStatus computerStatus; // 智能体电脑状态 -AgentComputerStatus（#31）
 };
 
 //整个数据帧

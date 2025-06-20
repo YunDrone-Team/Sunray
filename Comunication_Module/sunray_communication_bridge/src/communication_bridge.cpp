@@ -1,6 +1,3 @@
-#include <string>
-#include <iostream>
-#include <thread>
 #include "communication_bridge.h"
 
 void communication_bridge::init(ros::NodeHandle &nh)
@@ -130,7 +127,10 @@ void communication_bridge::init(ros::NodeHandle &nh)
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
     // 【定时器】 定时发送ROS节点信息到地面站
     UpdateROSNodeInformationTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateROSNodeInformation, this);
-
+    
+    prevData = readCpuData();
+    // 【定时器】 定时发送智能体电脑状态到地面站
+    UpdateCPUUsageRateTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateComputerStatus, this);
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -961,7 +961,6 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(DataFrame data)
 
     for (const auto &ip : GSIPHash)
     {
-        // 机载电脑ROS节点 -NodeData（#30）
         int sendBack = udpSocket->sendUDPData(codec.coder(data), ip, udp_ground_port);
         if (sendBack < 0)
             tempVec.push_back(ip);
@@ -1091,7 +1090,7 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     uavStateData[index].data.uavState.land_pos[1] = msg->land_pos[1];
     uavStateData[index].data.uavState.land_pos[2] = msg->land_pos[2];
     uavStateData[index].data.uavState.land_yaw= msg->land_yaw;
-    // std::cout << "sendUDPMulticastData back:" << back<< std::endl;
+    // std::cout << "sendUDPMulticastData uav_state_cb:" << std::endl;
 
     std::string mode = msg->mode;
     if (mode.length() > 15)
@@ -1105,24 +1104,9 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
         uavStateData[index].seq=MessageID::UAVStateMessageID;
         int back = udpSocket->sendUDPMulticastData(codec.coder(uavStateData[index]), udp_port);
     }
-    std::vector<std::string> tempVec;
 
-    // 发送数据到地面站 本节点 --UDP--> 地面站
-    // 仿真情况下，所有无人机状态都通过本节点回传（仿真时只有一个通信节点，真机时有N个机载通信节点）
-    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
-
-    for (const auto &ip : GSIPHash)
-    {
-        uavStateData[index].seq=MessageID::UAVStateMessageID;
-        // 无人机状态 - UAVState（#2）
-        int sendBack = udpSocket->sendUDPData(codec.coder(uavStateData[index]), ip, udp_ground_port);
-        if (sendBack < 0)
-            tempVec.push_back(ip);
-    }
-
-    for (const auto &ip : tempVec)
-        GSIPHash.erase(ip);
-    tempVec.clear();
+    uavStateData[index].seq=MessageID::UAVStateMessageID;
+    SendUdpDataToAllOnlineGroundStations(uavStateData[index]);
 }
 
 void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg)
@@ -1202,26 +1186,8 @@ void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &m
         // std::cout << "sendUDPMulticastData back:" << back<< std::endl;
 
     }
-
-    std::vector<std::string> tempVec;
-    // 发送数据到地面站 本节点 --UDP--> 地面站
-    // 仿真情况下，所有无人机状态都通过本节点回传（仿真时只有一个通信节点，真机时有N个机载通信节点）
-    std::lock_guard<std::mutex> lock(_mutexTCPLinkState);
-
-    for (const auto &ip : GSIPHash)
-    {
-        // 无人车状态 - UGVState（#20）
-        ugvStateData[index].seq=MessageID::UGVStateMessageID;
-        int sendBack = udpSocket->sendUDPData(codec.coder(ugvStateData[robot_id - 1]), ip, udp_ground_port);
-        // std::cout << "sendBack: " << sendBack<< std::endl;
-
-        if (sendBack < 0)
-            tempVec.push_back(ip);
-    }
-
-    for (const auto &ip : tempVec)
-        GSIPHash.erase(ip);
-    tempVec.clear();
+    ugvStateData[index].seq=MessageID::UGVStateMessageID;
+    SendUdpDataToAllOnlineGroundStations(ugvStateData[index]);
 }
 
 std::string communication_bridge::getUserDirectoryPath()
@@ -1264,4 +1230,337 @@ std::string communication_bridge::getSunrayPath()
         return fullPath.substr(0, pos);
     }
     return fullPath;
+}
+
+// Read CPU time statistics from /proc/stat
+CpuData communication_bridge::readCpuData() {
+    std::ifstream statFile("/proc/stat");
+    std::string line;
+    
+    // Read the first line which contains total CPU time
+    std::getline(statFile, line);
+    
+    std::istringstream iss(line);
+    std::string cpuLabel;
+    CpuData data;
+    
+    // Parse CPU time data from the line
+    iss >> cpuLabel >> data.user >> data.nice >> data.system >> data.idle 
+        >> data.iowait >> data.irq >> data.softirq >> data.steal 
+        >> data.guest >> data.guest_nice;
+    
+    return data;
+}
+
+// Calculate CPU usage percentage based on previous and current CPU data
+double communication_bridge::calculateCpuUsage(const CpuData& prev, const CpuData& curr)
+ {
+    // Calculate total CPU time difference
+    unsigned long long prevTotal = prev.user + prev.nice + prev.system + prev.idle + 
+                                  prev.iowait + prev.irq + prev.softirq + prev.steal;
+    unsigned long long currTotal = curr.user + curr.nice + curr.system + curr.idle + 
+                                  curr.iowait + curr.irq + curr.softirq + curr.steal;
+    unsigned long long totalDiff = currTotal - prevTotal;
+    
+    // Calculate idle time difference
+    unsigned long long idleDiff = curr.idle - prev.idle;
+    
+    // Calculate CPU usage percentage: (1 - idle_time/total_time) * 100%
+    if (totalDiff == 0) return 0.0; // Avoid division by zero
+    return (1.0 - static_cast<double>(idleDiff) / static_cast<double>(totalDiff)) * 100.0;
+}
+
+void communication_bridge::UpdateComputerStatus(const ros::TimerEvent &e)
+{
+    //计算CPU使用率
+    CpuData currData = readCpuData();
+    double cpuUsage = calculateCpuUsage(prevData, currData);
+    prevData = currData;
+    // std::cout << "CPU 占用率: " << cpuUsage <<"%" << std::endl;
+
+    //获取内存占用率
+    double memUsage = getMemoryUsage();
+    // std::cout << "内存占用率:" << memUsage <<"%" << std::endl;
+
+    //获取CPU温度
+    auto cpu_temps = getCpuTemperatures();
+    // std::cout << "CPU温度: ";
+    // 计算平均值
+    double avgTemp = 0.0;
+    for (size_t i = 0; i < cpu_temps.size(); ++i) 
+    {
+        // std::cout << "核心" << i << ": " << cpu_temps[i] << "°C ";
+        avgTemp += cpu_temps[i];
+    }
+    avgTemp /= cpu_temps.size();
+    // std::cout << "(平均: " << avgTemp << "°C)" << std::endl;
+
+    //发送UDP单播数据到在线地面站
+    DataFrame sendDataFrame;
+    sendDataFrame.data.computerStatus.init();
+    sendDataFrame.seq=MessageID::AgentComputerStatusMessageID;
+    sendDataFrame.data.computerStatus.cpuLoad =cpuUsage;
+    sendDataFrame.data.computerStatus.memoryUsage=memUsage;
+    sendDataFrame.data.computerStatus.cpuTemperature =avgTemp;
+
+    if (is_simulation)
+    {
+        for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+        {
+            sendDataFrame.robot_ID=i;
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+
+        for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
+        {
+            sendDataFrame.robot_ID=i+100;
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+    }else{
+        if (uav_experiment_num > 0 && uav_id>=0 )
+        {
+            sendDataFrame.robot_ID=uav_id;
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+
+        if (ugv_experiment_num > 0 && ugv_id>=0)
+        {
+            sendDataFrame.robot_ID=ugv_id+100;
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+    }
+
+        
+}
+
+// 获取系统内存占用率（百分比）
+double communication_bridge::getMemoryUsage() 
+{
+    std::ifstream meminfo("/proc/meminfo");
+    if (!meminfo.is_open()) 
+    {
+        std::cout <<"无法打开/proc/meminfo文件"<< std::endl;
+        return -1.0;
+    }
+
+    long total_mem = 0, available_mem = 0;
+    std::string line;
+
+    while (std::getline(meminfo, line)) 
+    {
+        if (line.find("MemTotal:") != std::string::npos) 
+        {
+            std::istringstream iss(line);
+            std::string key, unit;
+            iss >> key >> total_mem >> unit;
+            if (unit != "kB") 
+                std::cout <<"内存单位不是kB，可能导致计算错误"<< std::endl;
+            
+        } else if (line.find("MemAvailable:") != std::string::npos) {
+            std::istringstream iss(line);
+            std::string key, unit;
+            iss >> key >> available_mem >> unit;
+            if (unit != "kB") 
+                std::cout <<"内存单位不是kB，可能导致计算错误"<< std::endl;
+            
+            break;
+        }
+    }
+
+    meminfo.close();
+
+    // 确保数据有效性
+    if (total_mem <= 0 || available_mem < 0) 
+    {
+        std::cout << "无效的内存数据: MemTotal="<<total_mem<<", MemAvailable="<<available_mem<< std::endl;
+        return -1.0;
+    }
+
+    // 计算实际已用内存百分比（使用MemAvailable更准确）
+    double used_percent = (1.0 - (double)available_mem / total_mem) * 100.0;
+    
+    // std::cout << "内存统计: 总内存="<<total_mem / 1024.0 / 1024.0<<"GB, 可用内存="<<available_mem / 1024.0 / 1024.0
+    // <<" GB, 使用率="<<used_percent<< std::endl;
+    
+    return used_percent;
+}
+
+// 获取CPU温度（摄氏度），过滤非CPU传感器数据
+std::vector<double> communication_bridge::getCpuTemperatures()
+{
+    std::vector<double> cpu_temps;
+    
+    // 打印调试信息
+    // std::cout << "[DEBUG] 开始获取CPU温度..." << std::endl;
+    
+    // 尝试方法1: /sys/class/hwmon路径（优先）
+    // std::cout << "[DEBUG] 尝试方法1: /sys/class/hwmon路径..." << std::endl;
+    std::vector<std::string> cpu_sensors = {"coretemp", "k10temp", "amdgpu"};
+    std::vector<std::string> cpu_labels = {"core", "cpu", "package"};
+    
+    for (const auto& sensor : cpu_sensors) 
+    {
+        for (int i = 0; i < 10; ++i)
+         {
+            std::string hwmon_path = "/sys/class/hwmon/hwmon" + std::to_string(i);
+            std::ifstream name_file(hwmon_path + "/name");
+            
+            std::string device_name;
+            if (name_file >> device_name && device_name == sensor) 
+            {
+                // std::cout << "[DEBUG] 找到传感器: " << device_name << " (hwmon" << i << ")" << std::endl;
+                
+                for (int j = 1; j < 10; ++j) 
+                {
+                    std::string temp_input = hwmon_path + "/temp" + std::to_string(j) + "_input";
+                    std::string temp_label = hwmon_path + "/temp" + std::to_string(j) + "_label";
+                    
+                    std::ifstream temp_file(temp_input);
+                    if (temp_file.good()) 
+                    {
+                        long temp_millis;
+                        if (temp_file >> temp_millis) 
+                        {
+                            std::string label = "temp" + std::to_string(j);
+                            std::ifstream label_file(temp_label);
+                            
+                            bool has_label = false;
+                            if (label_file >> label) 
+                            {
+                                std::transform(label.begin(), label.end(), label.begin(), ::tolower);
+                                has_label = true;
+                            }
+                            
+                            // 判断是否为CPU温度
+                            bool is_cpu = false;
+                            if (has_label) 
+                            {
+                                for (const auto& cpu_label : cpu_labels) 
+                                {
+                                    if (label.find(cpu_label) != std::string::npos) 
+                                    {
+                                        is_cpu = true;
+                                        break;
+                                    }
+                                }
+                            } else {
+                                // 无标签时，根据传感器类型判断
+                                is_cpu = true;
+                            }
+                            
+                            if (is_cpu)
+                            {
+                                cpu_temps.push_back(temp_millis / 1000.0);
+                                std::cout << "[DEBUG] 获取到温度: " 
+                                          << (has_label ? label : "unknown") 
+                                          << " = " << temp_millis / 1000.0 << "°C" << std::endl;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    if (!cpu_temps.empty()) 
+    {
+        // std::cout << "[INFO] 方法1成功获取到" << cpu_temps.size() << "个CPU温度值" << std::endl;
+        return cpu_temps;
+    }
+    
+    // 尝试方法2: /sys/class/thermal路径
+    // std::cout << "[DEBUG] 尝试方法2: /sys/class/thermal路径..." << std::endl;
+    for (int i = 0; i < 10; ++i) 
+    {
+        std::string type_path = "/sys/class/thermal/thermal_zone" + std::to_string(i) + "/type";
+        std::string temp_path = "/sys/class/thermal/thermal_zone" + std::to_string(i) + "/temp";
+        
+        std::ifstream type_file(type_path);
+        std::string zone_type;
+        if (type_file >> zone_type)
+         {
+            // 检查是否为CPU相关区域
+            std::transform(zone_type.begin(), zone_type.end(), zone_type.begin(), ::tolower);
+            bool is_cpu_zone = (zone_type.find("cpu") != std::string::npos || 
+                               zone_type.find("x86_pkg_temp") != std::string::npos);
+            
+            if (is_cpu_zone)
+            {
+                std::ifstream temp_file(temp_path);
+                if (temp_file.good()) 
+                {
+                    long temp_value;
+                    if (temp_file >> temp_value) 
+                    {
+                        // 通常是毫摄氏度
+                        double temperature = temp_value / 1000.0;
+                        cpu_temps.push_back(temperature);
+                        std::cout << "[DEBUG] 获取到温度: thermal_zone" << i 
+                                  << " (" << zone_type << ") = " << temperature << "°C" << std::endl;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (!cpu_temps.empty())
+     {
+        // std::cout << "[INFO] 方法2成功获取到" << cpu_temps.size() << "个CPU温度值" << std::endl;
+        return cpu_temps;
+    }
+    
+    // 尝试方法3: /proc/acpi/thermal_zone路径（适用于旧系统）
+    // std::cout << "[DEBUG] 尝试方法3: /proc/acpi/thermal_zone路径..." << std::endl;
+    for (int i = 0; i < 10; ++i) 
+    {
+        std::string zone_path = "/proc/acpi/thermal_zone/THM" + std::to_string(i) + "/temperature";
+        std::ifstream temp_file(zone_path);
+        
+        if (temp_file.good()) 
+        {
+            std::string line;
+            while (std::getline(temp_file, line)) 
+            {
+                if (line.find("temperature:") != std::string::npos) 
+                {
+                    size_t pos = line.find(":");
+                    if (pos != std::string::npos)
+                     {
+                        std::string temp_part = line.substr(pos + 1);
+                        // 解析温度值（格式可能为" temperature: 45 C"）
+                        size_t value_start = temp_part.find_first_not_of(" \t");
+                        if (value_start != std::string::npos) 
+                        {
+                            std::istringstream iss(temp_part.substr(value_start));
+                            double temp;
+                            std::string unit;
+                            if (iss >> temp >> unit && unit == "C") 
+                            {
+                                cpu_temps.push_back(temp);
+                                // std::cout << "[DEBUG] 获取到温度: THM" << i << " = " << temp << "°C" << std::endl;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if (!cpu_temps.empty()) 
+    {
+        // std::cout << "[INFO] 方法3成功获取到" << cpu_temps.size() << "个CPU温度值" << std::endl;
+        return cpu_temps;
+    }
+    
+    
+    // 所有方法均失败
+    // std::cerr << "[ERROR] 所有方法均无法获取CPU温度数据！" << std::endl;
+    // std::cerr << "[ERROR] 请检查: 1) 传感器驱动是否加载 2) 程序是否有读取权限 3) 硬件是否支持温度检测" << std::endl;
+    
+    double temp=-300;
+    cpu_temps.push_back(temp);
+    return cpu_temps;
+                             
+                 
 }
