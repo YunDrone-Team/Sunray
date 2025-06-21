@@ -6,6 +6,27 @@
 #include <vector>
 #include <string>
 
+//MESSAGE ID
+enum MessageID
+{
+    HeartbeatMessageID              = 1,
+    UAVStateMessageID               = 2,
+    UGVStateMessageID               = 20,
+    NodeMessageID                   = 30,
+    AgentComputerStatusMessageID    = 31,
+    FormationMessageID              = 40,
+//    TakeoffMessageID    = 101,
+    UAVControlCMDMessageID          = 102,
+    UAVSetupMessageID               = 103,
+    WaypointMessageID               = 104,
+    UGVControlCMDMessageID          = 120,
+    SearchMessageID                 = 200,
+    ACKMessageID                    = 201,
+    DemoMessageID                   = 202,
+    ScriptMessageID                 = 203,
+    GoalMessageID                   = 204,
+
+};
 
 // 控制命令宏定义 - 同 UAVControlCMD.msg 中的控制命令枚举
 enum ControlType
@@ -37,7 +58,6 @@ enum ControlType
     ReturnControlType                      =104,         //返航
 };
 
-
 enum ControlMode // 无人机控制模式
 {
   INIT              = 0,     // 初始模式
@@ -59,8 +79,6 @@ enum class UGVControlMode // 无人车控制模式
 
 };
 
-
-
 //stop
 enum ModelType
 {
@@ -70,9 +88,6 @@ enum ModelType
     StabilizedModelType    = 4,
     ManualModelType        = 5,
 };
-
-
-
 
 //Arm解锁 Vehicle control type
 enum UAVSetupType
@@ -85,32 +100,6 @@ enum UAVSetupType
     KillControlType         = 5,
     LandSetupType         = 6,
 };
-
-
-//MESSAGE ID
-enum MessageID
-{
-    HeartbeatMessageID              = 1,
-    UAVStateMessageID               = 2,
-    UGVStateMessageID               = 20,
-    NodeMessageID                   = 30,
-    AgentComputerStatusMessageID    = 31,
-    FormationMessageID              = 40,
-//    TakeoffMessageID    = 101,
-    UAVControlCMDMessageID          = 102,
-    UAVSetupMessageID               = 103,
-    WaypointMessageID               = 104,
-    UGVControlCMDMessageID          = 120,
-    SearchMessageID                 = 200,
-    ACKMessageID                    = 201,
-    DemoMessageID                   = 202,
-    ScriptMessageID                 = 203,
-    GoalMessageID                   = 204,
-
-};
-
-
-
 
 //1.INIT；2.RC_CONTROL；3.CMD_CONTROL；4.LAND_CONTROL
 enum ControlState
@@ -144,8 +133,6 @@ enum TCPClientState
     ConnectionBreak         =3,
     ConnectionTimeout       =4,
 };
-
-
 
 enum WaypointType
 {
@@ -190,7 +177,6 @@ enum FormationType
 //  心跳包
 struct HeartbeatData
 {
-
     uint8_t agentType;
     int32_t count;       /**< @param head message header 心跳包计数，未启用 */
 
