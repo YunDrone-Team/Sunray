@@ -286,7 +286,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
 
         break;
     }
-    case MessageID::UAVStateMessageID:    // 无人机状态 - UAVState#2
+    case MessageID::UAVStateMessageID: // 无人机状态 - UAVState (#2)
     {
         // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
         // 如果是仿真模式，直接返回；如果是真机模式，则判断ID是否匹配
@@ -371,16 +371,6 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
 
-        // 设置环境变量和参数
-        // char *const envp[] = {NULL};
-        // char *const argv[] = {(char*)"bash", (char*)"-c", (char*)fullCommand.c_str(), NULL};
-
-        // // 直接执行命令，不打开新终端
-        // execve("/bin/bash", argv, envp);
-
-        // // 如果execve返回，说明执行失败
-        // perror("OrderCourse Error!");
-        // _exit(EXIT_FAILURE);
     }
     else
         printf("This is the parent process. Child PID: %d\n", pid);
@@ -465,7 +455,14 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     {
     case MessageID::UAVControlCMDMessageID:// 无人机控制指令 - UAVControlCMD（#102）
     {
+        auto it = control_cmd_pub.find(robot_id);
+        if (it == control_cmd_pub.end())
+        {
+            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+        }
         // ROS话题赋值
+        sunray_msgs::UAVControlCMD uav_cmd;
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = readData.dataFrame.data.uavControlCMD.cmd;
         uav_cmd.desired_pos[0] = readData.dataFrame.data.uavControlCMD.desired_pos[0];
@@ -496,18 +493,18 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         uav_cmd.altitude = readData.dataFrame.data.uavControlCMD.altitude;
 
         // 根据robot_id查找对应的话题进行发布
-        auto it = control_cmd_pub.find(robot_id);
-        if (it == control_cmd_pub.end())
-        {
-            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
-            break;
-        }
         it->second.publish(uav_cmd);
         break;
     }
     case MessageID::UAVSetupMessageID:// 无人机设置指令 - UAVSetup（#103）
     {
-
+        auto it = uav_setup_pub.find(robot_id);
+        if (it == uav_setup_pub.end())
+        {
+            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+        }
+        sunray_msgs::UAVSetup setup;
         setup.header.stamp = ros::Time::now();
         if (readData.dataFrame.data.uavSetup.cmd == UAVSetupType::SetControlMode)
         {
@@ -518,12 +515,6 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         }
         setup.cmd = readData.dataFrame.data.uavSetup.cmd;
 
-        auto it = uav_setup_pub.find(robot_id);
-        if (it == uav_setup_pub.end())
-        {
-            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
-            break;
-        }
         it->second.publish(setup);
         break;
     }
@@ -596,6 +587,12 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         break;
     case MessageID::WaypointMessageID:// 无人机航点 - WaypointData（#104）
     {
+        auto it = uav_waypoint_pub.find(robot_id);
+        if (it == uav_waypoint_pub.end())
+        {
+            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
+            break;
+        }
         sunray_msgs::UAVWayPoint waypoint_msg;
         waypoint_msg.header.stamp = ros::Time::now();
         waypoint_msg.wp_num = readData.dataFrame.data.waypointData.wp_num;
@@ -631,12 +628,6 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                                     readData.dataFrame.data.waypointData.wp_point_10[2], readData.dataFrame.data.waypointData.wp_point_10[3]};
         waypoint_msg.wp_circle_point = {readData.dataFrame.data.waypointData.wp_circle_point[0], readData.dataFrame.data.waypointData.wp_circle_point[1]};
 
-        auto it = uav_waypoint_pub.find(robot_id);
-        if (it == uav_waypoint_pub.end())
-        {
-            std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
-            break;
-        }
         it->second.publish(waypoint_msg);
         break;
     }
@@ -662,7 +653,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(msg);
         break;
     }
-    case MessageID::FormationMessageID:// 编队切换 - Formation（#40）
+    case MessageID::GroundFormationMessageID:// 编队切换 - Formation（#40）
     {    
         sunray_msgs::Formation sendMSG;
         sendMSG.cmd=readData.dataFrame.data.formation.cmd;
