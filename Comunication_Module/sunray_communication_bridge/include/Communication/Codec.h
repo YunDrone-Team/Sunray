@@ -101,7 +101,8 @@ private:
         MessageID::ScriptMessageID,
         MessageID::FormationMessageID,
         MessageID::GoalMessageID,
-        MessageID::AgentComputerStatusMessageID
+        MessageID::AgentComputerStatusMessageID,
+        MessageID::GroundFormationMessageID,
     };
 
 };

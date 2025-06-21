@@ -610,7 +610,7 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload机载电脑ROS节点数据反序列化*/
         decoderNodePayload(undecodedData,decoderData);
         break;
-    case MessageID::FormationMessageID:
+    case MessageID::FormationMessageID:case MessageID::GroundFormationMessageID:
         /*Payload编队切换数据反序列化*/
         decoderFormationPayload(undecodedData,decoderData);
         break;
@@ -658,7 +658,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
         //UDP回复帧头 UDP回复：0xfd32
         codelessData.head=PackBytesLE(0xfd,0x32);
         break;
-    case MessageID::FormationMessageID:
+    case MessageID::FormationMessageID: case MessageID::GroundFormationMessageID:
         //TCP和UDP共用帧头 不带回复回复：0xcc90
         codelessData.head=PackBytesLE(0xcc,0x90);
         break;
@@ -1047,7 +1047,7 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
         /*Payload机载电脑ROS节点数据序列化*/
         coderNodePayload(PayloadData,codelessData);
         break;
-    case MessageID::FormationMessageID:
+    case MessageID::FormationMessageID:case MessageID::GroundFormationMessageID:
         /*Payload编队切换数据序列化*/
         coderFormationPayload(PayloadData,codelessData);
         break;
