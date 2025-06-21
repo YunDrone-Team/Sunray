@@ -2,15 +2,16 @@
 
 void communication_bridge::init(ros::NodeHandle &nh)
 {
-    nh.param<bool>("is_simulation", is_simulation, false);      // 【参数】确认当前是仿真还是真机实验
+    nh.param<bool>("is_simulation", is_simulation, false);      // 【参数】仿真模式or真机模式：仿真模式下，多个飞机只启动一个公用的通信节点，真机模式下，每个飞机在机载电脑中分别启动一个通信节点
+
     nh.param<int>("uav_experiment_num", uav_experiment_num, 0); // 【参数】无人机真机数量（用于智能体之间的通信）
     nh.param<int>("uav_simulation_num", uav_simulation_num, 0); // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
-    nh.param<int>("uav_id", uav_id, -1);                         // 【参数】无人机编号(真机为本机，仿真为1)
+    nh.param<int>("uav_id", uav_id, -1);                        // 【参数】无人机编号(真机为本机，仿真为1)
     nh.param<string>("uav_name", uav_name, "uav");              // 【参数】无人机名字前缀
 
     nh.param<int>("ugv_experiment_num", ugv_experiment_num, 0); // 【参数】无人车真车数量
     nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0); // 【参数】仿真无人车数量
-    nh.param<int>("ugv_id", ugv_id, -1);                         // 【参数】无人车编号(真机为本机，仿真为1)
+    nh.param<int>("ugv_id", ugv_id, -1);                        // 【参数】无人车编号(真机为本机，仿真为1)
     nh.param<string>("ugv_name", ugv_name, "ugv");              // 【参数】无人车名字前缀
 
     nh.param<string>("tcp_port", tcp_port, "8969");          // 【参数】TCP绑定端口
@@ -31,6 +32,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // uav_id =1   uav_experiment_num=0 uav_simulation_num=3
     // ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=2
 
+    // 仿真模式
     if (is_simulation)
     {
         // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
@@ -127,7 +129,6 @@ void communication_bridge::init(ros::NodeHandle &nh)
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
     // 【定时器】 定时发送ROS节点信息到地面站
     UpdateROSNodeInformationTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateROSNodeInformation, this);
-    
     prevData = readCpuData();
     // 【定时器】 定时发送智能体电脑状态到地面站
     UpdateCPUUsageRateTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateComputerStatus, this);
@@ -151,7 +152,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     udpSocket->setDecoderInterfacePtr(new Codec);
     // 【UDP通信】 绑定UDP监听端口
     udpSocket->Bind(static_cast<unsigned short>(udp_port));
-    // 【UDP通信】 UDP通信：接收UDP消息的回调函数 - 包括：地面站搜索在线智能体、机间通信
+    // 【UDP通信】 UDP通信：接收UDP消息的回调函数 - 包括：地面站搜索在线智能体、机间通信相关的消息
     udpSocket->sigUDPUnicastReadData.connect(boost::bind(&communication_bridge::UDPCallBack, this, _1));
     // 【定时器】 定时更新UDP组播
     UpdateUDPMulticastTimer= nh.createTimer(ros::Duration(30), &communication_bridge::UpdateUDPMulticast, this);
@@ -226,7 +227,7 @@ uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
 
 void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
-    int back;
+    int send_result;
     //  std::cout << " GroundControl::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
     // std::cout << "UDP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
 
@@ -248,8 +249,8 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             // std::cout << "应答数据: " << int(backData.ack.ID) << std::endl;
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
-            //  std::cout << "发送结果: " << back << std::endl;
+            send_result = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
+            //  std::cout << "发送结果: " << send_result << std::endl;
         }
         // 仿真无人车应答
         for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
@@ -260,7 +261,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.agentType = 1;
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
+            send_result = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
         // 真机无人机应答
         if (uav_experiment_num > 0 && uav_id>=0)
@@ -270,7 +271,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.agentType = 0;
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
+            send_result = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
         // 真机无人车应答
         if (ugv_experiment_num > 0 && ugv_id>=0)
@@ -280,22 +281,27 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.agentType = 1;
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             std::lock_guard<std::mutex> lock(_mutexUDP);
-            back = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
+            send_result = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
 
         break;
     }
     case MessageID::UAVStateMessageID:    // 无人机状态 - UAVState#2
+    {
         // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
+        // 如果是仿真模式，直接返回；如果是真机模式，则判断ID是否匹配
         if (uav_id == readData.dataFrame.robot_ID || is_simulation)
             return;
         SynchronizationUAVState(readData.dataFrame.data.uavState);
         break;
+    }
     case MessageID::UGVStateMessageID:// 无人车状态 - UGVState（#20）
-        if (ugv_id == readData.dataFrame.robot_ID-100 || is_simulation)
+    {
+        if (ugv_id == readData.dataFrame.robot_ID - 100 || is_simulation)
             return;
         SynchronizationUGVState(readData.dataFrame.data.ugvState);
         break;
+    }
     case MessageID::FormationMessageID:// 编队切换 - Formation（#40）
     {    
         sunray_msgs::Formation sendMSG;
@@ -459,6 +465,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     {
     case MessageID::UAVControlCMDMessageID:// 无人机控制指令 - UAVControlCMD（#102）
     {
+        // ROS话题赋值
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = readData.dataFrame.data.uavControlCMD.cmd;
         uav_cmd.desired_pos[0] = readData.dataFrame.data.uavControlCMD.desired_pos[0];
@@ -488,7 +495,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         uav_cmd.longitude = readData.dataFrame.data.uavControlCMD.longitude;
         uav_cmd.altitude = readData.dataFrame.data.uavControlCMD.altitude;
 
-
+        // 根据robot_id查找对应的话题进行发布
         auto it = control_cmd_pub.find(robot_id);
         if (it == control_cmd_pub.end())
         {
@@ -500,6 +507,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
     }
     case MessageID::UAVSetupMessageID:// 无人机设置指令 - UAVSetup（#103）
     {
+
         setup.header.stamp = ros::Time::now();
         if (readData.dataFrame.data.uavSetup.cmd == UAVSetupType::SetControlMode)
         {
@@ -509,6 +517,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
                 setup.control_mode = "LAND_CONTROL";
         }
         setup.cmd = readData.dataFrame.data.uavSetup.cmd;
+
         auto it = uav_setup_pub.find(robot_id);
         if (it == uav_setup_pub.end())
         {
