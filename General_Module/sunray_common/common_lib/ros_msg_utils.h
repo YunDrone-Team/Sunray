@@ -73,3 +73,4 @@
 #include <tf/transform_datatypes.h>
 #include "tf2_ros/transform_broadcaster.h"  //发布动态坐标关系
 #include <tf2_ros/transform_listener.h>
+#include <gazebo_msgs/ModelState.h>

@@ -100,6 +100,10 @@ add_executable(ugv_circle_vel_body src/ugv_circle_vel_body.cpp)
 add_dependencies(ugv_circle_vel_body sunray_tutorial_gencpp)
 target_link_libraries(ugv_circle_vel_body ${catkin_LIBRARIES})
 
+add_executable(land_on_a_moving_car advanced/land_on_a_moving_car.cpp)
+add_dependencies(land_on_a_moving_car sunray_tutorial_gencpp)
+target_link_libraries(land_on_a_moving_car ${catkin_LIBRARIES})
+
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

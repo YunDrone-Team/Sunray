@@ -4,11 +4,10 @@
 
     <include>
       <uri>model://wheeltec</uri>
-      <pose>0 0 0.16 0 0 0</pose>
     </include>
 
     <link name='tag'>
-      <pose frame=''> 0.0 0.0 0.45 0.0 0.0 0.0</pose>
+      <pose frame=''> 0.0 0.0 0.28 0.0 0.0 0.0</pose>
       <collision name="platform_collision">
         <geometry>
           <box>
@@ -18,8 +17,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1.0</mu>
-              <mu2>1.0</mu2>
+              <mu>100</mu>
+              <mu2>50.0</mu2>
             </ode>
           </friction>
         </surface>

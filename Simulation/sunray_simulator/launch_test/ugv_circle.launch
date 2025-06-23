@@ -1,0 +1,6 @@
+<launch>
+
+    <node pkg="sunray_simulator" type="ugv_circle" name="ugv_circle" output="screen">
+    </node>
+    
+</launch>

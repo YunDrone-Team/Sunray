@@ -42,9 +42,9 @@ add_executable(set_model_state_example src/set_model_state_example.cpp)
 add_dependencies(set_model_state_example sunray_simulator_gencpp)
 target_link_libraries(set_model_state_example ${catkin_LIBRARIES})
 
-# add_executable(trajectory_bezier_node src/trajectory_bezier_node.cpp)
-# add_dependencies(trajectory_bezier_node sunray_control_gencpp)
-# target_link_libraries(trajectory_bezier_node ${catkin_LIBRARIES})
+add_executable(ugv_circle src/ugv_circle.cpp)
+add_dependencies(ugv_circle sunray_simulator_gencpp)
+target_link_libraries(ugv_circle ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/

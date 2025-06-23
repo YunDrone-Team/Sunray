@@ -1,0 +1,29 @@
+<launch>
+	<arg name="uav_id" default="1"/>
+    <arg name="uav_name" default="uav" />
+    <!-- P控制参数用于计算速度 -->
+    <arg name="k_p_xy" default="0.9" />
+    <arg name="k_p_z" default="0.5" />
+    <!-- <arg name="k_p_yaw" default="0.04" /> -->
+    <!-- 最大速度限制 -->
+    <arg name="max_vel" default="0.5" />
+    <arg name="max_vel_z" default="0.2" />
+    <!-- <arg name="max_yaw" default="0.4" /> -->
+    <!-- 水平误差阈值与垂直误差阈值  无人机与目标点距离小于error_xy且者高度小于error_z 或 相对高度低于0.2m时进入最后一阶段的降落-->
+	<arg name="error_xy" default="0.05" />
+    <arg name="error_z" default="0.25" />
+    <!-- 最后一段降落速度与时间 无人机在接近地面时受风力影响较大被吹飞时可减小last_land_time或增大land_vel-->
+    <!-- 以land_v的速度下降land_time时间后停桨 -->
+    <arg name="land_vel" default="-0.3" />
+    <arg name="last_land_time" default="1.5" />
+    <!-- 是否运行时自动起飞 -->
+    <arg name="auto_takeoff" default="true"/>
+    <!-- 自动起飞高度 -->
+    <arg name="height" default="2.5"/>
+    
+	<node pkg="sunray_tutorial" type="land_on_a_moving_car" name="land_on_a_moving_car_$(arg uav_id)" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
+</launch>
+
