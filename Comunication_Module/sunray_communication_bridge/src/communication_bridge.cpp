@@ -1451,9 +1451,9 @@ std::vector<double> communication_bridge::getCpuTemperatures()
                             if (is_cpu)
                             {
                                 cpu_temps.push_back(temp_millis / 1000.0);
-                                std::cout << "[DEBUG] 获取到温度: " 
-                                          << (has_label ? label : "unknown") 
-                                          << " = " << temp_millis / 1000.0 << "°C" << std::endl;
+                                // std::cout << "[DEBUG] 获取到温度: " 
+                                //           << (has_label ? label : "unknown") 
+                                //           << " = " << temp_millis / 1000.0 << "°C" << std::endl;
                             }
                         }
                     }
@@ -1496,8 +1496,8 @@ std::vector<double> communication_bridge::getCpuTemperatures()
                         // 通常是毫摄氏度
                         double temperature = temp_value / 1000.0;
                         cpu_temps.push_back(temperature);
-                        std::cout << "[DEBUG] 获取到温度: thermal_zone" << i 
-                                  << " (" << zone_type << ") = " << temperature << "°C" << std::endl;
+                        // std::cout << "[DEBUG] 获取到温度: thermal_zone" << i 
+                        //           << " (" << zone_type << ") = " << temperature << "°C" << std::endl;
                     }
                 }
             }
