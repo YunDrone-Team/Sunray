@@ -105,7 +105,6 @@ int main(int argc, char **argv)
     // 切换到指令控制模式(同时，PX4模式将切换至OFFBOARD模式)
     while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::CMD_CONTROL)
     {
-
         uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
         uav_setup.control_mode = "CMD_CONTROL";
         uav_setup_pub.publish(uav_setup);

@@ -1,0 +1,11 @@
+#!/bin/bash
+# start gazebo
+gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch sunray_simulator sunray_sim_autonomous_landing.launch; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch sunray_simulator ugv_circle.launch; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control external_fusion.launch external_source:=2; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=1; exec bash"' \
+--tab -e 'bash -c "sleep 1.0; roslaunch sunray_simulator sim_rviz.launch; exec bash"' \
+
+gnome-terminal --window -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial landmark_detection_sim.launch; exec bash"' \
+--tab -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial land_on_a_moving_car.launch; exec bash"' \
