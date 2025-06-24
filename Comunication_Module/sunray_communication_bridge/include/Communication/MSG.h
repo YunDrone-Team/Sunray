@@ -289,7 +289,7 @@ struct WaypointData
             wp_point_7[i]=0;
             wp_point_8[i]=0;
             wp_point_9[i]=0;
-            wp_point_10[2]=0;
+            wp_point_10[i]=0;
         }
        wp_circle_point[0]=0;
        wp_circle_point[1]=0;
