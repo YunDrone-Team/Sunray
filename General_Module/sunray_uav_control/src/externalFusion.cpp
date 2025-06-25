@@ -77,11 +77,15 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_name + "/mavros/vision_pose/pose", 10);
     // 【发布】PX4无人机综合状态 - 本节点 -> uav_control_node
     px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10);
+    // 【发布】mavros/vision_pose/pose - 本节点 -> mavros
+    ext_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/mavros/odometry/out", 10);
 
-    // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
     if (enable_vision_pose)
     {
-        timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_vision_pose_cb, this);
+        // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
+        // timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_vision_pose_cb, this);
+
+        timer_pub_ext_odom = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_ext_odom_cb, this);
     }
     // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
     timer_pub_px4_state = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_px4_state_cb, this);
@@ -134,6 +138,47 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_state.thrust_setpoint = 0.0;
 
     Logger::info("external fusion node init");
+}
+
+// 定时器回调函数
+void ExternalFusion::timer_pub_ext_odom_cb(const ros::TimerEvent &event)
+{
+    // 外部定位失效时，停止发布vision_pose（因为发了也是错的，还不如不发让飞控端了解到已经丢失数据了）
+    if (!ext_pos.external_odom.odom_valid)
+    {
+        // TODO: 加一个打印
+        return;
+    }
+
+    // 将外部定位数据赋值到vision_pose，并发布至PX4（PX4接收并处理该消息需要修改EKF2参数，从而使能EKF2模块融合VISION数据）
+    // 发布的ROS话题为~/mavros/vision_pose/pose，对应的MAVLINK消息为VISION_POSITION_ESTIMATE(#102)
+    ext_odom.header.stamp = ros::Time::now();
+    ext_odom.header.frame_id = "odom";
+    ext_odom.child_frame_id = "base_link";
+    ext_odom.pose.pose.position.x = ext_pos.external_odom.position[0];
+    ext_odom.pose.pose.position.y = ext_pos.external_odom.position[1];
+    ext_odom.pose.pose.position.z = ext_pos.external_odom.position[2];
+
+    ext_odom.pose.pose.position.x = NAN;
+    ext_odom.pose.pose.position.y = NAN;
+    ext_odom.pose.pose.position.z = NAN;
+
+    ext_odom.twist.twist.linear.x = ext_pos.external_odom.velocity[0];
+    ext_odom.twist.twist.linear.y = ext_pos.external_odom.velocity[1];
+    ext_odom.twist.twist.linear.z = ext_pos.external_odom.velocity[2];
+
+    // ext_odom.twist.twist.linear.x = NAN;
+    // ext_odom.twist.twist.linear.y = NAN;
+    // ext_odom.twist.twist.linear.z = NAN;
+
+    ext_odom.pose.pose.orientation.x = ext_pos.external_odom.attitude_q.x;
+    ext_odom.pose.pose.orientation.y = ext_pos.external_odom.attitude_q.y;
+    ext_odom.pose.pose.orientation.z = ext_pos.external_odom.attitude_q.z;
+    ext_odom.pose.pose.orientation.w = ext_pos.external_odom.attitude_q.w;
+    ext_odom_pub.publish(ext_odom);
+
+
+
 }
 
 // 定时器回调函数

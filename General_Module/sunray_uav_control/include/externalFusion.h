@@ -31,6 +31,7 @@ private:
     std::set<int> err_msg;                                  // 错误信息集合
     ros::Time px4_state_time;                               // 无人机状态时间戳
     bool enable_range_sensor;                               // 是否使用距离传感器数据
+    nav_msgs::Odometry ext_odom;                 // vision_pose消息
 
     ExternalPosition ext_pos;                     // 外部定位源的回调和处理
 
@@ -52,7 +53,9 @@ private:
     ros::Publisher uav_trajectory_pub; // 【发布】无人机轨迹发布
     ros::Publisher uav_mesh_pub;       // 【发布】无人机mesh发布
     ros::Publisher px4_state_pub;      // 【发布】无人机状态
+    ros::Publisher ext_odom_pub;        
 
+    ros::Timer timer_pub_ext_odom; // 定时器发布mavros/vision_pose/pose
     ros::Timer timer_pub_vision_pose; // 定时器发布mavros/vision_pose/pose
     ros::Timer timer_rviz_pub;        // 定时发布rviz显示消息
     ros::Timer timer_pub_px4_state;   // 定时发布px4_state
@@ -82,6 +85,8 @@ public:
     void px4_pos_target_callback(const mavros_msgs::PositionTarget::ConstPtr &msg); // 无人机位置设定值回调函数
     void px4_distance_callback(const sensor_msgs::Range::ConstPtr &msg);             //无人机距离传感器原始数据
     // void px4_odom_callback(const nav_msgs::Odometry::ConstPtr &msg);           // 无人机里程计回调函数（同时包含了位置和速度 但是是机体系）
+    void timer_pub_ext_odom_cb(const ros::TimerEvent &event);                 // 定时器更新和发布
+
 };
 
 ExternalFusion::~ExternalFusion()

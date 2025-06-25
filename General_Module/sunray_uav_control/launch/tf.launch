@@ -1,0 +1,10 @@
+<!-- <launch>
+
+    <node pkg="tf" type="static_transform_publisher" name="tf_odom_externalPoseParentFrame"
+        args="0 0 0 0.0 0.0 0.0 map map_ned 1000"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="tf_baseLink_externalPoseChildFrame"
+        args="0 0 0 0.0 0.0 0.0 base_link base_link_frd 1000"/>
+
+
+</launch> -->
