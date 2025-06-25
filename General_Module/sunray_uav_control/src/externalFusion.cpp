@@ -77,14 +77,14 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_name + "/mavros/vision_pose/pose", 10);
     // 【发布】PX4无人机综合状态 - 本节点 -> uav_control_node
     px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10);
-    // 【发布】mavros/vision_pose/pose - 本节点 -> mavros
+    // 【发布】mavros/odometry/out - 本节点 -> mavros
     ext_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/mavros/odometry/out", 10);
 
     if (enable_vision_pose)
     {
         // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
         // timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_vision_pose_cb, this);
-
+        // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/odometry/out
         timer_pub_ext_odom = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_ext_odom_cb, this);
     }
     // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
@@ -159,9 +159,9 @@ void ExternalFusion::timer_pub_ext_odom_cb(const ros::TimerEvent &event)
     ext_odom.pose.pose.position.y = ext_pos.external_odom.position[1];
     ext_odom.pose.pose.position.z = ext_pos.external_odom.position[2];
 
-    ext_odom.pose.pose.position.x = NAN;
-    ext_odom.pose.pose.position.y = NAN;
-    ext_odom.pose.pose.position.z = NAN;
+    // ext_odom.pose.pose.position.x = NAN;
+    // ext_odom.pose.pose.position.y = NAN;
+    // ext_odom.pose.pose.position.z = NAN;
 
     ext_odom.twist.twist.linear.x = ext_pos.external_odom.velocity[0];
     ext_odom.twist.twist.linear.y = ext_pos.external_odom.velocity[1];
@@ -175,10 +175,19 @@ void ExternalFusion::timer_pub_ext_odom_cb(const ros::TimerEvent &event)
     ext_odom.pose.pose.orientation.y = ext_pos.external_odom.attitude_q.y;
     ext_odom.pose.pose.orientation.z = ext_pos.external_odom.attitude_q.z;
     ext_odom.pose.pose.orientation.w = ext_pos.external_odom.attitude_q.w;
+
+
+    ext_odom.twist.twist.angular.x = NAN;
+    ext_odom.twist.twist.angular.y = NAN;
+    ext_odom.twist.twist.angular.z = NAN;
+
+    for(int i=0;i<36;i++)
+    {
+        ext_odom.pose.covariance[i] = NAN;
+        ext_odom.twist.covariance[i] = NAN;
+    }
+    
     ext_odom_pub.publish(ext_odom);
-
-
-
 }
 
 // 定时器回调函数
