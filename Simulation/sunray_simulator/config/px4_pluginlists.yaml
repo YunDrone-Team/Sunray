@@ -27,7 +27,6 @@ plugin_blacklist:
   - mount_control
   - nav_controller_output
   - obstacle_distance
-  - odom
   - onboard_computer_status
   - play_tune
   - px4flow
@@ -63,3 +62,4 @@ plugin_whitelist: # 如果模块即被同时声明在plugin_blacklist和plugin_w
   - sys_time
   - vision_pose_estimate
   - vision_speed_estimate
+  - odom
