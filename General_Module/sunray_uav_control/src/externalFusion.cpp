@@ -641,6 +641,37 @@ void ExternalFusion::show_px4_state()
         Logger::print_color(int(LogColor::green), "enable_vision_pose: [DISABLED]");
     }
 
+
+    // 控制误差打印
+    Logger::print_color(int(LogColor::white_bg_green), ">>>>> CONTROL ERROR");
+
+
+    if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
+    {
+        pos_control_error[0] = px4_state.pos_setpoint[0] - px4_state.position[0];
+        pos_control_error[1] = px4_state.pos_setpoint[1] - px4_state.position[1];
+        pos_control_error[2] = px4_state.pos_setpoint[2] - px4_state.position[2];
+
+        // 无GPS模式的情况
+        Logger::print_color(int(LogColor::green), "POS CONTROL ERROR [X Y Z norm]:",
+                            pos_control_error[0],
+                            pos_control_error[1],
+                            pos_control_error[2],
+                            pos_control_error.norm(),
+                            "[ m ]");
+        Logger::print_color(int(LogColor::green), "VEL CONTROL ERROR [X Y Z]:",
+                            px4_state.vel_setpoint[0] - px4_state.velocity[0],
+                            px4_state.vel_setpoint[1] - px4_state.velocity[1],
+                            px4_state.vel_setpoint[2] - px4_state.velocity[2],
+                            "[m/s]");
+        Logger::print_color(int(LogColor::green), "ATT CONTROL ERROR [X Y Z]:",
+                            px4_state.att_setpoint[0] / M_PI * 180 - px4_state.attitude[0] / M_PI * 180,
+                            px4_state.att_setpoint[1] / M_PI * 180 - px4_state.attitude[1] / M_PI * 180,
+                            px4_state.att_setpoint[2] / M_PI * 180 - px4_state.attitude[2] / M_PI * 180,
+                            "[deg]");
+    }
+
+
     // 打印报错信息
     for (int msg : err_msg)
     {

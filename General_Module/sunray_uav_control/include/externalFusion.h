@@ -33,6 +33,8 @@ private:
     bool enable_range_sensor;                               // 是否使用距离传感器数据
     nav_msgs::Odometry ext_odom;                 // vision_pose消息
 
+    Eigen::Vector3d pos_control_error; // 控制误差（位置）
+
     ExternalPosition ext_pos;                     // 外部定位源的回调和处理
 
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
