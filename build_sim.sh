@@ -14,3 +14,5 @@ catkin_make --source Simulation/sunray_simulator --build build/sunray_simulator
 catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # 编译gazebo_plugin模块
 catkin_make --source Simulation/gazebo_plugin --build build/gazebo_plugin
+# 编译gazebo_plugin模块
+catkin_make --source General_Module/mavlink --build build/mavlink
