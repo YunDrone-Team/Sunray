@@ -1,0 +1,31 @@
+<launch>
+  <!-- 开启机器人底层相关节点 同时开启导航功能 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch" >
+    <!-- 关闭rtab提供的定位补偿，使用amcl进行定位补偿 -->
+    <arg name="odom_frame_id"  value="odom"/>
+    <arg name="navigation"  value="true"/>
+  </include>
+
+  <!-- turn on lidar开启雷达  -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_lidar.launch" />
+
+  <include file="$(find turn_on_wheeltec_robot)/launch/include/amcl.launch" >
+   <arg name="use_map_topic" value="true"/>
+   <arg name="map_topic" value="/rtabmap/grid_map"/>
+  </include>
+
+  <!-- 开启摄像头 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_camera.launch" />
+
+  <!-- 开启3d导航 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/include/rtabmap_nav.launch" />
+  <param name="move_base/global_costmap/static_layer/map_topic"   type="string" value="/rtabmap/grid_map"/>
+  <param name="move_base/local_costmap/static_layer/map_topic"    type="string" value="/rtabmap/grid_map"/>
+
+  <!-- move_base节点检测 -->
+ <node name='node_detection' pkg="turn_on_wheeltec_robot" type="node_ping.py">
+  <param name="node_name" type="string" value="/move_base"/>
+ </node>
+
+</launch>
+

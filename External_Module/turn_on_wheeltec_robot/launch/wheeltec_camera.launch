@@ -1,0 +1,64 @@
+<launch>
+    <arg name="camera_mode"  default="Astra_S" 
+    doc="opt: Astra_S, Astra_Pro, Astra_Dabai,Astra_Gemini,
+              RgbCam,
+              Astra_S+RgbCam,Astra_Pro+RgbCam,Astra_Dabai+RgbCam,Astra_Gemini+RgbCam"/>
+
+<!-- false：启动深度相机   true：除astra-s相机外，优先启动RgbCam相机，没有RgbCam相机的启动深度相机的RGB功能 -->
+    <arg name="if_usb_cam" default="false"/>
+
+    <group if="$(eval if_usb_cam and (camera_mode=='Astra_Pro' or 
+                                      camera_mode=='Astra_Dabai' or 
+                                      camera_mode=='Astra_Gemini' or 
+                                      camera_mode=='RgbCam' or
+                                      camera_mode=='Astra_S+RgbCam' or
+                                      camera_mode=='Astra_Pro+RgbCam' or
+                                      camera_mode=='Astra_Dabai+RgbCam' or 
+                                      camera_mode=='Astra_Gemini+RgbCam'))" >
+        <param name="/use_usb_cam" value="yes" />
+        <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+            <param if="$(eval camera_mode=='RgbCam' or 
+                              camera_mode=='Astra_S+RgbCam' or
+                              camera_mode=='Astra_Pro+RgbCam' or 
+                              camera_mode=='Astra_Dabai+RgbCam' or
+                              camera_mode=='Astra_Gemini+RgbCam')" 
+                              name="video_device" value="/dev/RgbCam" />
+            <param if="$(eval camera_mode=='Astra_Pro' or 
+                              camera_mode=='Astra_Dabai' or
+                              camera_mode=='Astra_Gemini')" 
+                              name="video_device" value="/dev/$(arg camera_mode)"/>
+            <param name="image_width" value="640" />
+            <param name="image_height" value="480" />
+            <param name="pixel_format" value="yuyv" />
+            <param name="camera_frame_id" value="usb_cam" />
+            <param name="io_method" value="mmap"/>
+            <remap from="/usb_cam/image_raw/compressed" to="/image_raw/compressed"/>
+        </node>
+    </group>
+
+    <!-- 启动奥比中光Astra_S相机 -->
+    <group if="$(eval camera_mode == 'Astra_S' or camera_mode == 'Astra_S+RgbCam')">
+        <include unless="$(eval if_usb_cam and camera_mode == 'Astra_S+RgbCam')" file="$(find astra_camera)/launch/astra.launch"/>
+        <node if="$(eval if_usb_cam and camera_mode == 'Astra_S')" name="usb_cam" pkg="usb_cam" type="app_read.py" >
+            <remap from="/usb_cam/image_raw/compressed" to="/image_raw/compressed"/>
+        </node>
+    </group>
+
+    <!-- 启动奥比中光Astra_Pro相机 -->
+    <group if="$(eval camera_mode == 'Astra_Pro' or camera_mode == 'Astra_Pro+RgbCam')">
+        <include unless="$(eval if_usb_cam)" file="$(find astra_camera)/launch/astrapro.launch"/>
+    </group>
+
+    <!-- 启动奥比中光Astra_Dabai相机 -->
+    <group if="$(eval camera_mode == 'Astra_Dabai' or camera_mode == 'Astra_Dabai+RgbCam')">
+        <include unless="$(eval if_usb_cam)" file="$(find astra_camera)/launch/dabai_u3.launch"/>
+    </group>
+
+    <!-- 启动奥比中光Gemini Pro相机 -->
+    <group if="$(eval camera_mode == 'Astra_Gemini' or camera_mode == 'Astra_Gemini+RgbCam')">
+        <include unless="$(eval if_usb_cam)" file="$(find astra_camera)/launch/gemini.launch"/>
+    </group>
+
+
+</launch>
+

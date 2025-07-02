@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="ugv_id" default="1"/>
+    <arg name="max_vel" default="0.5" />
+    <arg name="x_min" default="-100.0"/>
+    <arg name="x_max" default="100.0"/>
+    <arg name="y_min" default="-100.0"/>
+    <arg name="y_max" default="100.0"/>
+
+    <!-- 加载 UGV 参数 -->
+    <rosparam command="load" file="$(find sunray_swarm)/launch_sim/ugv_params_wheeltec.yaml" />
+
+    <!-- <group ns="/sunray_swarm/wheeltec_$(arg ugv_id)"> -->
+    <group>
+        <!-- 开启底层单片机控制节点 -->
+        <node pkg="turn_on_wheeltec_robot" type="wheeltec_robot_node" name="wheeltec_robot_node" output="screen">
+            <remap from="/cmd_vel"        to="/sunray_swarm/ugv_$(arg ugv_id)/cmd_vel"/>
+            <remap from="/PowerVoltage"        to="/sunray_swarm/ugv_$(arg ugv_id)/battery"/>
+            <param name="usart_port_name" type="string" value="/dev/ttyACM0"/>  
+            <param name="serial_baud_rate" type="int" value="115200"/>
+        </node>
+    </group>
+
+    <!-- 启动ugv_control_node -->
+    <node pkg="sunray_swarm" type="ugv_control_node" name="ugv_control_node" output="screen">
+        <param name="pose_source" type="int" value="2"/>
+    </node>
+</launch>

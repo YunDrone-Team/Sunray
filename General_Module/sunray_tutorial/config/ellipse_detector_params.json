@@ -1,0 +1,20 @@
+{
+    "EllipseDetector": {
+        "radiusInMeter": 0.25,
+        "preProcessingGaussKernel": 5,
+        "preProcessingGaussSigma": 1.306,
+        "thPosition": 1.0,
+        "maxCenterDistance": 0.05,
+        "minEdgeLength": 9,
+        "minOrientedRectSide": 2.984,
+        "distanceToEllipseContour": 0.111,
+        "minScore": 0.511,
+        "minReliability": 0.470,
+        "ns": 22,
+        "percentNe": 0.946,
+        "T_CNC": 0.121,
+        "T_TCN_L": 0.468,
+        "T_TCN_P": 0.560,
+        "thRadius": 0.202
+    }
+}

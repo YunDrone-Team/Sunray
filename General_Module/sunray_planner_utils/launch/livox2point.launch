@@ -1,0 +1,16 @@
+<launch>
+  <arg name="pointcloud_topic" default="/livox/pointcloud2"/>
+  <arg name="livox_topic" default="/livox/lidar"/>
+  <arg name="filter_distance" default="0.3"/>
+  <arg name="imu_topic" default="/livox/imu"/>
+  <arg name="odom_convert" default="false"/>
+
+  <node name="livox2Point" pkg="sunray_planner_utils" type="livox2Point" output="screen">
+    <param name="pointcloud_topic" value="$(arg pointcloud_topic)"/>
+    <param name="livox_topic" value="$(arg livox_topic)"/>
+    <param name="filter_distance" value="$(arg filter_distance)"/>
+    <param name="imu_topic" value="$(arg imu_topic)"/>
+    <param name="odom_convert" value="$(arg odom_convert)"/>
+
+  </node>
+</launch>

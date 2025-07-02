@@ -1,0 +1,34 @@
+<launch>
+	<arg name="uav_id" default="1"/>
+    <arg name="uav_name" default="uav" />
+    <!-- 是否程序运行时自动起飞 -->
+    <arg name="auto_takeoff" default="true"/>
+    <!-- 自动起飞高度 -->
+    <arg name="height" default="2.5"/>
+    <!-- 水平误差阈值与垂直误差阈值  无人机与目标点距离小于error_xy且者高度小于error_z 或 相对高度低于0.2m时进入最后一阶段的降落-->
+	<arg name="error_xy" default="0.05" />
+    <arg name="error_z" default="0.25" />
+    <!-- 最后一段降落速度与时间 无人机在接近地面时受风力影响较大被吹飞时可减小last_land_time或增大land_vel-->
+    <!-- 以land_v的速度下降land_time时间后停桨 -->
+    <arg name="land_vel" default="0.3" />
+    <arg name="last_land_time" default="1.5" />
+    <!-- 计算降落的高度落差 该值越大降落越快 -->
+    <arg name="drop_height" default="0.15" />
+    
+    
+	<node pkg="sunray_tutorial" type="auto_land_by_pose" name="auto_land_$(arg uav_id)" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="auto_takeoff" value="$(arg auto_takeoff)" />
+        <param name="height" value="$(arg height)" />
+        <!-- 当无人机当前位置与标签位置(x,y)误差小于error_xy且z小于error_z时 无人机直接降落 不再进行姿态调整了 -->
+        <param name="error_xy" value="$(arg error_xy)" />
+        <param name="error_z" value="$(arg error_z)" />
+        <!-- 最后一段降落 -->
+        <param name="land_vel" value="$(arg land_vel)" />
+        <param name="last_land_time" value="$(arg last_land_time)" />
+        <!-- 降落的高度落差  -->
+        <param name="drop_height" value="$(arg drop_height)" />
+	</node>
+</launch>
+

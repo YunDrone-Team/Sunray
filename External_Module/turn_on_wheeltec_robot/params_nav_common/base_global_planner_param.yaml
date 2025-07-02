@@ -1,0 +1,37 @@
+#GlobalPlanner官方介绍：http://wiki.ros.org/global_planner
+
+#全局路径规划器GlobalPlanner命名空间
+GlobalPlanner:  
+  #是否使用dijkstra算法进行路径规划，false则选择A*算法进行路径规划
+  use_dijkstra: true
+
+  #是否使用二次逼近法进行计算，false则使用更简单的计算方法
+  use_quadratic: true
+
+  #如果出于某种原因，您想要global_planner精确地反映navfn的行为，则将其设置为true(并为其他布尔参数使用默认值)                                
+  old_navfn_behavior: false
+
+  #是否发布Potential代价地图
+  publish_potential: true
+
+  #如果为true，创建一条遵循网格边界的路径。false，则使用梯度下降法。
+  use_grid_path: false
+
+  #是否允许路径穿过代价地图的未知区域
+  allow_unknown:  true  
+
+  #允许的创建的路径规划终点与设置目标点的偏差为多少，单位：m
+  default_tolerance: 0.0
+
+  #是否对通过PointCloud2计算出来的potential area进行可视化
+  visualize_potential: false
+
+  lethal_cost: 253
+  neutral_cost: 50
+  cost_factor: 3.0
+  #How to set the orientation of each point 
+  orientation_mode: 0
+  #What window to use to determine the orientation based on the position derivative specified by the orientation mode
+  orientation_window_size: 1
+  #用完全占用方格勾勒出全局代价地图。对于“非static_map”(rolling_window)的全局代价地图，需要将其设置为false
+  outline_map: true

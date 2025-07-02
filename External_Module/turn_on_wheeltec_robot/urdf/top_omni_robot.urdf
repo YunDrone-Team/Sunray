@@ -1,0 +1,70 @@
+<?xml version="1.0" ?>
+<robot name="wheeltec_robot">
+
+    <link name="base_link">
+        <visual>
+            <origin xyz=" 0 0 0.076" rpy="0 0 0" />
+            <geometry>
+                <cylinder length="0.1" radius="0.28"/>
+            </geometry>
+            <material name="white">
+                <color rgba="1 1 1 1"/>
+            </material>
+        </visual>
+    </link>   
+
+    <link name="front_wheel">
+        <visual>
+            <origin rpy="0 1.57 0" xyz="0 0 0"/>
+            <geometry>
+                <cylinder length="0.04" radius="0.076"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0 0 0.8 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <link name="left_wheel">
+        <visual>
+            <origin rpy="0 1.57 -1.05" xyz="0 0 0"/>
+            <geometry>
+                <cylinder length="0.04" radius="0.076"/>
+            </geometry>
+            <material name="blue">
+                <color rgba="0 0 0.8 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <link name="right_wheel">
+        <visual>
+            <origin rpy="0 1.57 1.05" xyz="0 0 0"/>
+            <geometry>
+                <cylinder length="0.04" radius="0.076"/>
+            </geometry>
+            <material name="blue">
+                <color rgba="0 0 0.8 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <joint name="base_to_front_wheel" type="fixed">
+        <parent link="base_link"/>
+        <child link="front_wheel"/>
+        <origin rpy="0 0 0" xyz="0.29 0 0.076"/>
+    </joint>
+
+    <joint name="base_to_left_wheel" type="fixed">
+        <parent link="base_link"/>
+        <child link="left_wheel"/>
+        <origin rpy="0 0 0" xyz="-0.145 0.25 0.076"/>
+    </joint>
+
+    <joint name="base_to_right_wheel" type="fixed">
+        <parent link="base_link"/>
+        <child link="right_wheel"/>
+        <origin rpy="0 0 0" xyz="-0.145 -0.25 0.076"/>
+    </joint>
+
+    </robot>

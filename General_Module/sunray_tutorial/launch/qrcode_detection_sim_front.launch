@@ -1,0 +1,25 @@
+<launch>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find sunray_tutorial)/config/rosconsole.config"/>
+    <arg name="camera_name" default="/uav1/monocular_front" />
+    <arg name="image_topic" default="image_raw" />
+    <arg name="queue_size" default="1" />
+
+    <node pkg="qrcode_detection_ros" type="qrcode_detection_ros_node" name="qrcode_detection_ros_node" output="screen">
+        <remap from="image_rect" to="$(arg camera_name)/$(arg image_topic)" />
+        <remap from="camera_info" to="$(arg camera_name)/camera_info" />
+
+        <param name="queue_size" type="int" value="$(arg queue_size)" />
+
+        <param name="uav_id" type="int" value="1" />
+        <param name="x_bias" type="double" value="0" />
+        <param name="y_bias" type="double" value="0" />
+        <param name="draw_tag_detections_image" type="bool" value="true" />
+
+        <param name="rotate" type="int" value="0" /> <!-- 0: no rotation, 1: rotate 180 degree clockwise, 2: rotate 90 degree clockwise  3: rotate -90 degree clockwise-->
+
+        <param name="algorithm_parameters" type="str" value="$(find sunray_tutorial)/config/qrcode_detector_params_sim.json" />
+        <param name="camera_parameters" type="str" value="$(find sunray_tutorial)/config/head_camera_sim.yaml" />
+        <param name="local_saving_path" type="str" value="$(find sunray_tutorial)/output" />
+        
+    </node>
+</launch>

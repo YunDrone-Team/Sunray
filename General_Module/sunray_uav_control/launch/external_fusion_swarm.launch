@@ -1,0 +1,36 @@
+<launch>
+    <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
+    <arg name="uav_id" default="1" />
+    <arg name="external_source" default="2" />
+    <arg name="uav_name" default="uav" />
+    <arg name="enable_rviz" default="false" />
+    <arg name="server" default="192.168.25.13"/>
+    <arg name="uav_num" default="3" />
+
+    <!-- 启动 external_fusion_node-->
+    <node name="external_fusion_$(arg uav_id)" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="external_source" value="$(arg external_source)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="position_topic" value="/$(arg uav_name)$(arg uav_id)/sunray/gazebo_pose" />
+    </node>
+
+    <include file="$(find sunray_uav_control)/launch/external_fusion_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">
+        <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
+        <arg name="uav_num" value="$(arg uav_num)" />
+    </include>
+
+    <group if="$(eval uav_id == 1)">
+        <!-- 启动 vrpn_client_ros -->
+        <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 3)">
+            <arg name="server" value="$(arg server)"/>
+            <arg name="uav_id" value="$(arg uav_id)"/>
+        </include>
+
+        <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/3uav.rviz"/>
+        <!-- 启动Rviz-->
+        <group if="$(arg enable_rviz)">
+            <node type="rviz" name="rviz_external_fusion" pkg="rviz" args="-d $(arg rivz_config)"/>
+        </group>
+    </group>
+</launch>

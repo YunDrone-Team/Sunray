@@ -1,0 +1,54 @@
+# 无人机编号
+uav_id: 1
+# 无人机名字，默认为uav
+uav_name: "uav"
+# 无人机飞行参数
+flight_param:
+  Takeoff_height: 1.0   ## 起飞高度
+  Disarm_height: 0.2    ## 降落时自动上锁高度
+  Land_speed: 0.2       ## 降落速度
+  land_end_time: 1.0    ## 降落最后一阶段时间
+  land_end_speed: 0.3   ## 降落最后一阶段速度
+  land_type: 0          ## 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
+  home_x: 0.0           ## 默认home点 在起飞后运行程序时需要
+  home_y: 0.0           ## 默认home点 在起飞后运行程序时需要
+  home_z: 0.0           ## 默认home点 在起飞后运行程序时需要
+# 地理围栏 - 超出后无人机自动降落
+geo_fence:
+  x_min: -20.0
+  x_max: 20.0
+  y_min: -20.0
+  y_max: 20.0
+  z_min: -1.0
+  z_max: 3.0
+# 系统参数
+system_params:
+  check_cmd_timeout: false  ## 是否检查无人机控制指令超时
+  cmd_timeout: 2.0          ## 无人机控制指令超时阈值
+  use_rc_control: false     ## 是否使用遥控器控制
+  use_offset: false         ## 是否使用位置偏移
+
+# 位置环控制器参数
+ctrl_param:
+  quad_mass: 1.0
+  hov_percent: 0.37
+  pxy_int_max: 10.0
+  pz_int_max: 10.0
+  Kp_xy : 3.0
+  Kp_z : 3.0
+  Kv_xy : 3.0
+  Kv_z : 3.0
+  Kvi_xy : 0.3
+  Kvi_z : 0.3
+  tilt_angle_max: 20.0
+
+## 轨迹生成参数
+TRAJ_GENERATOR:
+  Circle:
+    Center_x: 0.0
+    Center_y: 0.0
+    Center_z: 1.0
+    circle_radius: 2.0          ## m   半径越小越难追踪
+    linear_vel: 0.5             ## m/s  速度越大越难追踪
+    direction: 1.0              ## direction = 1 for CCW 逆时针, direction = -1 for CW 顺时针
+    fixed_yaw: false            ## 是否固定yaw角：true代表yaw角恒定为0，false代表yaw角跟随轨迹移动

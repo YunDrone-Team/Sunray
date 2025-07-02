@@ -1,0 +1,32 @@
+<launch>
+    <arg name="is_simulation" default="false" />     <!-- 是否处于仿真状态 -->
+
+    <arg name="uav_name" default="uav" />
+    <arg name="uav_id" default="-1" />               <!-- 当前无人机id，默认值为-1 -->
+    <arg name="uav_experiment_num" default="0" />   <!-- 无人机真机数量 -->
+    <arg name="uav_simulation_num" default="0" />   <!-- 仿真无人机数量 -->
+
+    <arg name="ugv_name" default="ugv" />
+    <arg name="ugv_id" default="-1" />              <!-- 当前无人车id，默认值为-1 -->
+    <arg name="ugv_experiment_num" default="0" />   <!-- 无人车真车数量 -->
+    <arg name="ugv_simulation_num" default="0" />   <!-- 仿真无人车数量 -->
+
+    <arg name="tcp_port" default="8969" />          <!-- TCP绑定端口-->
+    <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->
+    <arg name="udp_ground_port" default="9696" />   <!-- 组播目标端口，用于机间通信-->
+   
+    <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
+        <param name="uav_experiment_num" value="$(arg uav_experiment_num)" />
+        <param name="uav_simulation_num" value="$(arg uav_simulation_num)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="uav_id" value="$(arg uav_id)" />  <!-- 新增的参数传递给节点 -->  
+        <param name="tcp_port" value="$(arg tcp_port)" />
+        <param name="udp_port" value="$(arg udp_port)" />
+        <param name="udp_ground_port" value="$(arg udp_ground_port)" />
+        <param name="ugv_experiment_num" value="$(arg ugv_experiment_num)" />
+        <param name="ugv_simulation_num" value="$(arg ugv_simulation_num)" />
+        <param name="ugv_id" value="$(arg ugv_id)" />  
+        <param name="ugv_name" value="$(arg ugv_name)" />
+        <param name="is_simulation" value="$(arg is_simulation)" />
+    </node>
+</launch>
