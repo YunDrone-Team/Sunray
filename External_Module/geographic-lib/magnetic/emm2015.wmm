@@ -1,0 +1,25 @@
+WMMF-2
+# A World Magnetic Model (Format 2) file.  For documentation on the
+# format of this file see
+# http://geographiclib.sf.net/html/magnetic.html#magneticformat
+Name            emm2015
+Description     Enhanced Magnetic Model 2015
+URL             http://ngdc.noaa.gov/geomag/EMM/index.html
+Publisher       National Oceanic and Atmospheric Administration
+ReleaseDate     2015-05-15
+ConversionDate  2015-05-16
+DataVersion     1
+Radius          6371200
+NumModels	16
+NumConstants	1
+Epoch           2000
+DeltaEpoch	1
+MinTime         2000
+MaxTime         2020
+MinHeight       -20000
+MaxHeight       10000000
+
+# The coefficients are stored in a file obtained by appending ".cof" to
+# the name of this file.  The coefficients were obtained from
+# EMM2000.COF thru EMM2015.COF and EMM2015SV.COF in the EMM2015 distribution.
+ID              EMM2015A

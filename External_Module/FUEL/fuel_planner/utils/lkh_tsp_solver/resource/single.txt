@@ -1,0 +1,38 @@
+NAME : single.7044.tour
+COMMENT : Length = 7044
+COMMENT : Found by LKH [Keld Helsgaun] Sat May 10 14:34:02 2025
+TYPE : TOUR
+DIMENSION : 30
+TOUR_SECTION
+1
+25
+22
+15
+17
+18
+23
+14
+16
+24
+19
+20
+26
+21
+27
+29
+30
+28
+11
+13
+6
+9
+3
+8
+7
+4
+5
+2
+10
+12
+-1
+EOF

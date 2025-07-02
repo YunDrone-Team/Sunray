@@ -1,0 +1,69 @@
+<launch>
+	<!-- Gazebo 配置 -->
+    <arg name="gazebo_enable" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <!-- 启动 Gazebo -->
+    <group if="$(arg gazebo_enable)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name" value="$(arg world)"/>
+            <arg name="gui" value="$(arg gui)"/>
+            <!-- /use_sim_time true  # 使用仿真时间 -->
+            <!-- /use_sim_time false # 使用系统时间（默认） -->
+            <!-- 如果需要在rviz中正常显示，需要设置为true -->
+			<arg name="use_sim_time" value="false"/>
+        </include>
+    </group>
+
+    <!-- ID -->
+    <arg name="ugv_1_id" default="1"/>
+    <arg name="ugv_2_id" default="2"/>
+    <arg name="ugv_3_id" default="3"/>
+    <!-- name -->
+    <arg name="ugv_name" default="ugv"/>
+    <!-- 模型 -->
+    <arg name="ugv_model" default="wheeltec" />
+
+    <!-- ugv1初始位置 -->
+    <arg name="init_1_x" default="1"/>
+    <arg name="init_1_y" default="0"/>
+    <arg name="init_1_yaw" default="0"/>
+
+    <!-- ugv2初始位置 -->
+    <arg name="init_2_x" default="1"/>
+    <arg name="init_2_y" default="1"/>
+    <arg name="init_2_yaw" default="0" />
+
+    <!-- ugv3初始位置 -->
+    <arg name="init_3_x" default="1"/>
+    <arg name="init_3_y" default="-1"/>
+    <arg name="init_3_yaw" default="0" />
+
+    <!-- ugv1 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_ugv_basic.launch">
+        <arg name="ugv_id" value="$(arg ugv_1_id)" />
+        <arg name="ugv_model" value="$(arg ugv_model)" />
+        <arg name="init_x" value="$(arg init_1_x)"/>
+        <arg name="init_y" value="$(arg init_1_y)"/>
+        <arg name="init_yaw" value="$(arg init_1_yaw)"/>
+    </include>
+
+    <!-- ugv2 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_ugv_basic.launch">
+        <arg name="ugv_id" value="$(arg ugv_2_id)" />
+        <arg name="ugv_model" value="$(arg ugv_model)" />
+        <arg name="init_x" value="$(arg init_2_x)"/>
+        <arg name="init_y" value="$(arg init_2_y)"/>
+        <arg name="init_yaw" value="$(arg init_2_yaw)"/>
+    </include>
+
+    <!-- ugv3 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_ugv_basic.launch">
+        <arg name="ugv_id" value="$(arg ugv_3_id)" />
+        <arg name="ugv_model" value="$(arg ugv_model)" />
+        <arg name="init_x" value="$(arg init_3_x)"/>
+        <arg name="init_y" value="$(arg init_3_y)"/>
+        <arg name="init_yaw" value="$(arg init_3_yaw)"/>
+    </include>
+</launch>
+

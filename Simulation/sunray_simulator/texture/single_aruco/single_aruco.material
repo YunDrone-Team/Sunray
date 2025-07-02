@@ -1,0 +1,28 @@
+material aruco_91
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture aruco_91.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}
+material aruco_92
+{
+ technique
+ {
+   pass
+   {
+     texture_unit
+     {
+       texture aruco_92.png
+       scale 1.0 1.0
+     }
+   }
+ }
+}

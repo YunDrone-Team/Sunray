@@ -1,0 +1,30 @@
+<launch>
+	<arg name="uav_id" default="1"/>
+    <arg name="sim_mode" default="false"/>
+    <arg name="flag_printf" default="true"/>
+    <arg name="uav_name" default="uav" />
+    <arg name="k_p_xy" default="1.5" />
+    <arg name="k_p_z" default="0.5" />
+    <arg name="k_p_yaw" default="0.04" />
+    <arg name="max_vel" default="0.5" />
+    <arg name="max_vel_z" default="0.2" />
+    <arg name="max_yaw" default="0.4" />
+	<arg name="auto_takeoff" default="true"/>
+    <arg name="height" default="2.5"/>
+    
+	<node pkg="sunray_tutorial" type="follow_a_car" name="follow_a_car_$(arg uav_id)" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+        <param name="sim_mode" value="$(arg sim_mode)" />
+		<param name="flag_printf" value="$(arg flag_printf)" />
+		<param name="k_p_xy" value="$(arg k_p_xy)" />
+        <param name="k_p_z" value="$(arg k_p_z)" />
+        <param name="k_p_yaw" value="$(arg k_p_yaw)" />
+        <param name="max_vel" value="$(arg max_vel)" />
+        <param name="max_vel_z" value="$(arg max_vel_z)" />
+        <param name="max_yaw" value="$(arg max_yaw)" />
+        <param name="auto_takeoff" value="$(arg auto_takeoff)" />
+        <param name="height" value="$(arg height)" />
+	</node>
+</launch>
+

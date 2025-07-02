@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2018-11-02T06:42:44Z</created><keywords></keywords><modified>2018-11-02T06:42:44Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <library_images>
+    <image id="Map #1-image" name="Map #1"><init_from>../materials/textures/aws_RetailShopFloor_01.png</init_from></image>
+  </library_images>
+  <library_materials>
+    <material id="Material #27" name="Material #27">
+      <instance_effect url="#Material #27-fx"/>
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="Material #27-fx" name="Material #27">
+      <profile_COMMON>
+        <technique sid="standard">
+          <phong>
+            <emission>
+              <color sid="emission">0.000000  0.000000 0.000000 1.000000</color>
+            </emission>
+            <ambient>
+              <color sid="ambient">0.588000  0.588000 0.588000 1.000000</color>
+            </ambient>
+            <diffuse>
+              <texture texture="Map #1-image" texcoord="CHANNEL0">
+                <extra>
+                  <technique profile="MAYA">
+                    <wrapU sid="wrapU0">TRUE</wrapU>
+                    <wrapV sid="wrapV0">TRUE</wrapV>
+                    <blend_mode>ADD</blend_mode>
+                  </technique>
+                </extra>
+              </texture>
+            </diffuse>
+            <specular>
+              <color sid="specular">0.000000  0.000000 0.000000 1.000000</color>
+            </specular>
+            <shininess>
+              <float sid="shininess">2.000000</float>
+            </shininess>
+            <reflective>
+              <color sid="reflective">0.000000  0.000000 0.000000 1.000000</color>
+            </reflective>
+            <reflectivity>
+              <float sid="reflectivity">1.000000</float>
+            </reflectivity>
+            <transparent opaque="RGB_ZERO">
+              <color sid="transparent">1.000000  1.000000 1.000000 1.000000</color>
+            </transparent>
+            <transparency>
+              <float sid="transparency">0.000000</float>
+            </transparency>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="aws_RetailShopFloor_01_visual-lib" name="aws_RetailShopFloor_01_visualMesh">
+      <mesh>
+        <source id="aws_RetailShopFloor_01_visual-POSITION">
+          <float_array id="aws_RetailShopFloor_01_visual-POSITION-array" count="39">
+-774.380859 -720.847473 27.579144
+-773.083374 229.885956 27.579144
+-774.381042 724.112549 27.579144
+-502.675629 722.816772 27.579144
+-2.675476 722.816406 27.579144
+241.551270 724.112671 27.579144
+774.374329 224.095947 27.579144
+244.315094 226.862549 27.579144
+774.380859 -720.865540 27.579144
+-2.675552 729.922668 27.579144
+-502.675537 729.923157 27.579144
+-2.675537 729.935974 0.244170
+-502.675537 729.935974 0.039872
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopFloor_01_visual-POSITION-array" count="13" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_RetailShopFloor_01_visual-Normal0">
+          <float_array id="aws_RetailShopFloor_01_visual-Normal0-array" count="99">
+-0.001945 -0.001362 0.999997
+-0.001945 -0.001362 0.999997
+-0.001945 -0.001362 0.999997
+0.006172 0.000000 0.999981
+0.006172 0.000000 0.999981
+0.006172 0.000000 0.999981
+0.000000 -0.003452 0.999994
+0.000000 -0.003452 0.999994
+0.000000 -0.003452 0.999994
+-0.004763 0.002613 0.999985
+-0.004763 0.002613 0.999985
+-0.004763 0.002613 0.999985
+0.005278 0.006609 0.999964
+0.005278 0.006609 0.999964
+0.005278 0.006609 0.999964
+-0.001937 0.001063 0.999998
+-0.001937 0.001063 0.999997
+-0.001937 0.001063 0.999998
+0.000000 0.003981 0.999992
+0.000000 0.003981 0.999992
+0.000000 0.003981 0.999992
+0.000000 0.107412 0.994215
+0.000000 0.107412 0.994215
+0.000000 0.107412 0.994215
+-0.000408 0.078969 0.996877
+-0.000408 0.078969 0.996877
+-0.000408 0.078969 0.996877
+0.000001 1.000000 0.000497
+0.000001 1.000000 0.000497
+0.000001 1.000000 0.000497
+0.000000 1.000000 0.000479
+0.000000 1.000000 0.000479
+0.000000 1.000000 0.000479
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopFloor_01_visual-Normal0-array" count="33" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_RetailShopFloor_01_visual-UV0">
+          <float_array id="aws_RetailShopFloor_01_visual-UV0-array" count="30">
+3.792114 10.532201
+8.335661 10.526001
+10.697567 10.532205
+10.691373 9.233728
+10.691373 6.844228
+10.697573 5.677068
+8.307995 3.130709
+8.321214 5.663856
+3.792028 3.130674
+10.725163 6.844228
+10.725163 9.233728
+0.498710 1.118576
+0.499496 -0.077301
+0.602626 -0.077250
+0.601837 1.118628
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopFloor_01_visual-UV0-array" count="15" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_RetailShopFloor_01_visual-UV1">
+          <float_array id="aws_RetailShopFloor_01_visual-UV1-array" count="26">
+0.995230 0.123900
+0.838459 0.124114
+0.756964 0.123900
+0.757178 0.168703
+0.757178 0.251150
+0.756964 0.291422
+0.839414 0.379281
+0.838958 0.291878
+0.995233 0.379282
+0.756012 0.251150
+0.756012 0.168703
+0.756012 0.251150
+0.756012 0.168703
+</float_array>
+          <technique_common>
+            <accessor source="#aws_RetailShopFloor_01_visual-UV1-array" count="13" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="aws_RetailShopFloor_01_visual-VERTEX">
+          <input semantic="POSITION" source="#aws_RetailShopFloor_01_visual-POSITION"/>
+        </vertices>
+        <triangles count="11" material="Material #27"><input semantic="VERTEX" offset="0" source="#aws_RetailShopFloor_01_visual-VERTEX"/><input semantic="NORMAL" offset="1" source="#aws_RetailShopFloor_01_visual-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#aws_RetailShopFloor_01_visual-UV0"/><input semantic="TEXCOORD" offset="3" set="1" source="#aws_RetailShopFloor_01_visual-UV1"/><p> 1 0 1 1 0 1 0 0 7 2 7 7 8 3 8 8 6 4 6 6 7 5 7 7 7 6 7 7 0 7 0 0 8 8 8 8 1 9 1 1 3 10 3 3 2 11 2 2 7 12 7 7 5 13 5 5 4 14 4 4 7 15 7 7 3 16 3 3 1 17 1 1 3 18 3 3 7 19 7 7 4 20 4 4 3 21 3 3 4 22 4 4 10 23 10 10 9 24 9 9 10 25 10 10 4 26 4 4 10 27 11 10 9 28 12 9 11 29 13 11 10 30 11 10 11 31 13 11 12 32 14 12</p></triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="aws_RetailShopFloor_01_visual" name="aws_RetailShopFloor_01_visual">
+      <node name="aws_RetailShopFloor_01_visual" id="aws_RetailShopFloor_01_visual" layer="house" sid="aws_RetailShopFloor_01_visual"><matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_RetailShopFloor_01_visual-lib"><bind_material><technique_common><instance_material symbol="Material #27" target="#Material #27"/></technique_common></bind_material></instance_geometry><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
+      <extra><technique profile="MAX3D"><frame_rate>30.000000</frame_rate></technique><technique profile="FCOLLADA"><start_time>0.000000</start_time><end_time>3.333333</end_time></technique></extra>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#aws_RetailShopFloor_01_visual"></instance_visual_scene>
+  </scene>
+</COLLADA>

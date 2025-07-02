@@ -1,0 +1,16 @@
+<launch>
+  <arg name="uav_id" default="1"/>
+  <arg name="cmd_sub_topic" default="/position_cmd"/>
+  <arg name="control_pub_topic" default="/uav1/sunray/uav_control_cmd"/>
+  <!-- 0 POS  1 VEL  2 POS+VEL -->
+  <arg name="control_type" default="0"/>
+  <arg name="enable_yaw" default="false"/>
+
+  <node name="positionCmd2sunray_node" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
+    <param name="uav_id" value="$(arg uav_id)"/>
+    <param name="cmd_sub_topic" value="$(arg cmd_sub_topic)"/>
+    <param name="control_pub_topic" value="$(arg control_pub_topic)"/>
+    <param name="control_type" value="$(arg control_type)"/>
+    <param name="enable_yaw" value="$(arg enable_yaw)"/>
+  </node>
+</launch>

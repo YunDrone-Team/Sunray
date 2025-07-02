@@ -1,0 +1,32 @@
+<launch>
+
+  <!-- Arguments参数 -->
+  <arg name="car_mode"  default="" />
+
+  <!-- 导航路径规划公共参数 -->
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_nav_common/move_base_params.yaml"          command="load" ns="move_base"/>
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_nav_common/base_global_planner_param.yaml" command="load" ns="move_base"/>
+
+  <!-- 导航TEB局部路径规划器参数 -->
+  <param name="move_base/base_local_planner"    type="string" value="teb_local_planner/TebLocalPlannerROS"/>
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_nav_common/teb_local_planner_params.yaml"  command="load" ns="move_base"/>
+
+  <!-- 导航代价地图公共参数 -->
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_common/costmap_common_params_pure3d.yaml"     command="load" ns="move_base/global_costmap"/>
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_common/costmap_common_params_pure3d.yaml"     command="load" ns="move_base/local_costmap"/>
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_common/local_costmap_params.yaml"      command="load" ns="move_base"/>
+  <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_common/global_costmap_params.yaml"     command="load" ns="move_base"/>
+
+  <!-- 启动导航节点 -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <!-- 全局地图来源 --> 
+    <remap from="map" to="/rtabmap/grid_map"/>
+    <!-- 导航代价地图与路径规划器对应车型参数 -->
+    <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_car/param_$(arg car_mode)/teb_local_planner_params.yaml"  command="load"/>
+    <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_car/param_$(arg car_mode)/costmap_car_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find turn_on_wheeltec_robot)/params_costmap_car/param_$(arg car_mode)/costmap_car_params.yaml" command="load" ns="local_costmap" />
+  </node>
+  
+</launch>
+
+

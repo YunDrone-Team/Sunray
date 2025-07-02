@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- Gazebo 配置 -->
+    <arg name="gazebo_enable" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <!-- 启动 Gazebo -->
+    <group if="$(arg gazebo_enable)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name" value="$(arg world)"/>
+            <arg name="gui" value="$(arg gui)"/>
+			<arg name="use_sim_time" value="false"/>
+        </include>
+    </group>
+
+    <!-- 无人机配置 -->
+    <!-- 无人机模型名称 -->
+    <arg name="vehicle" default="sunray150"/>
+
+    <!--无人机编号-->
+    <arg name="uav1_id" default="1"/>
+    <!-- 无人机初始位置 -->
+    <arg name="uav1_init_x" default="0.0"/>
+    <arg name="uav1_init_y" default="0.0"/>
+    <arg name="uav1_init_yaw" default="0.0"/>
+
+    <!--无人机编号-->
+    <arg name="uav2_id" default="2"/>
+    <!-- 无人机初始位置 -->
+    <arg name="uav2_init_x" default="0.0"/>
+    <arg name="uav2_init_y" default="1.0"/>
+    <arg name="uav2_init_yaw" default="0.0"/>
+
+    <!--无人机编号-->
+    <arg name="uav3_id" default="3"/>
+    <!-- 无人机初始位置 -->
+    <arg name="uav3_init_x" default="0.0"/>
+    <arg name="uav3_init_y" default="-1.0"/>
+    <arg name="uav3_init_yaw" default="0.0"/>
+
+    <!-- UAV1 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
+        <arg name="uav_id" value="$(arg uav1_id)" />
+        <arg name="vehicle" value="$(arg vehicle)" />
+        <arg name="uav_init_x" value="$(arg uav1_init_x)"/>
+        <arg name="uav_init_y" value="$(arg uav1_init_y)"/>
+        <arg name="uav_init_yaw" value="$(arg uav1_init_yaw)"/>
+    </include>
+
+    <!-- UAV2 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
+        <arg name="uav_id" value="$(arg uav2_id)" />
+        <arg name="vehicle" value="$(arg vehicle)" />
+        <arg name="uav_init_x" value="$(arg uav2_init_x)"/>
+        <arg name="uav_init_y" value="$(arg uav2_init_y)"/>
+        <arg name="uav_init_yaw" value="$(arg uav2_init_yaw)"/>
+    </include>
+
+    <!-- UAV3 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_px4_basic.launch">
+        <arg name="uav_id" value="$(arg uav3_id)" />
+        <arg name="vehicle" value="$(arg vehicle)" />
+        <arg name="uav_init_x" value="$(arg uav3_init_x)"/>
+        <arg name="uav_init_y" value="$(arg uav3_init_y)"/>
+        <arg name="uav_init_yaw" value="$(arg uav3_init_yaw)"/>
+    </include>
+</launch>

@@ -1,0 +1,47 @@
+<launch>
+	<!-- Gazebo 配置 -->
+    <arg name="gazebo_enable" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <!-- 启动 Gazebo -->
+    <group if="$(arg gazebo_enable)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name" value="$(arg world)"/>
+            <arg name="gui" value="$(arg gui)"/>
+            <!-- /use_sim_time true  # 使用仿真时间 -->
+            <!-- /use_sim_time false # 使用系统时间（默认） -->
+            <!-- 如果需要在rviz中正常显示，需要设置为true -->
+			<arg name="use_sim_time" value="false"/>
+        </include>
+    </group>
+
+    <!-- 无人车的ID -->
+    <arg name="ugv_id" default="1"/>
+    <!-- 无人车的名称 -->
+    <arg name="ugv_name" default="ugv"/>
+    <!-- 无人车的模型 -->
+    <arg name="ugv_model" default="wheeltec_with_mid360" />
+
+    <!-- 无人车的初始位置坐标 -->
+    <arg name="init_x" default="0"/>
+    <arg name="init_y" default="0"/>
+    <arg name="init_yaw" default="0"/>
+
+    <!-- 启动文件 -->
+    <include file="$(find sunray_simulator)/launch_basic/sunray_ugv_basic.launch">
+        <!-- 传递参数 -->
+        <arg name="ugv_id" value="$(arg ugv_id)" />
+        <arg name="ugv_model" value="$(arg ugv_model)" />
+        <arg name="init_x" value="$(arg init_x)"/>
+        <arg name="init_y" value="$(arg init_y)"/>
+        <arg name="init_yaw" value="$(arg init_yaw)"/>
+    </include>
+    <!-- 启动rviz -->
+    <node name="rviz_ugv" pkg="rviz" type="rviz" args="-d $(find sunray_simulator)/config/ugv.rviz" />
+    <!-- 电池模拟节点 -->
+    <!-- <node pkg="sunray_tutorial" type="battery_simulator" name="ugv1_battery_sim">
+        <param name="ugv_id" value="1"/>
+        <param name="discharge_rate" value="0.08"/> 
+    </node> -->
+</launch>
+

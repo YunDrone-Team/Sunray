@@ -1,0 +1,89 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='camera_down'>
+    <!-- 下视相机link -->
+    <link name='Monocular_down_link'>
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>1e-6</ixx> 
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1e-6</izz>
+        </inertia>
+      </inertial>
+      <visual name='visual'>
+        <geometry>
+          <box>
+            <size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name='collision'>
+        <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+						<size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <!--传感器标签，定义一个名叫camera的传感器，它的类型是camera-->
+      <sensor name='camera' type='camera'>
+        <camera name='__default__'>
+          <!--定义水平视野场，此处为71度-->
+          <horizontal_fov>1.239</horizontal_fov>
+          <!--image标签，功能是定义以像素为单位的图片大小和图片格式-->
+          <image>
+            <width>640</width>
+            <height>480</height>
+          </image>
+          <!--定义远、近剪裁面，不会渲染远、近剪裁平面之外的对象-->
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+          <!--噪音标签，定义噪音模型，它将应用到生成的图片上-->
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.001</stddev>
+          </noise>
+        </camera>
+
+        <!--bool值，定义传感器是否更新，1为true,即传感器会根据update_rate参数定义的频率更新-->
+        <always_on>1</always_on>
+         <!--更新频率参数，默认值为0-->
+        <update_rate>30</update_rate>
+        <!--传感器可视化参数，bool变量，1即为true,表示允许传感器在图形界面被观察到-->
+        <visualize>0</visualize>
+
+        <plugin name='camera_plugin' filename='libgazebo_ros_camera.so'>
+            <robotNamespace></robotNamespace>
+            <alwaysOn>true</alwaysOn>
+            <imageTopicName>image_raw</imageTopicName><!--申明摄像头发布的消息话题为image_raw-->
+            <cameraInfoTopicName>camera_info</cameraInfoTopicName><!--用于发布相机信息的主题名称为camera_info-->
+            <updateRate>30.0</updateRate><!--更新频率为30-->
+            <cameraName>monocular_down</cameraName><!--摄像机命名为monocular_down-->
+            <frameName>/monocular_down_link</frameName><!--定义数据所在的参考系为/monocular_down_link-->
+            <!--相机本身的信息-->
+            <CxPrime>320</CxPrime>
+            <Cx>320</Cx>
+            <Cy>240</Cy>
+            <hackBaseline>0</hackBaseline>
+            <focalLength>448.710659</focalLength>
+            <distortionK1>0.0</distortionK1>
+            <distortionK2>0.0</distortionK2>
+            <distortionK3>0.0</distortionK3>
+            <distortionT1>0.0</distortionT1>
+            <distortionT2>0.0</distortionT2>
+        </plugin>
+
+      </sensor>
+      <self_collide>0</self_collide><!--Bool变量，0为false,即不会Model下的其他link发生碰撞-->
+      <kinematic>0</kinematic><!--bool变量，0为false,如果为true，则表示本link仅为运动学link-->
+    </link>
+  </model>
+</sdf>

@@ -1,0 +1,89 @@
+#代价地图官方介绍：http://wiki.ros.org/costmap_2d
+#静态层官方介绍：http://wiki.ros.org/costmap_2d/hydro/staticmap
+#障碍层官方介绍：http://wiki.ros.org/costmap_2d/hydro/obstacles
+
+#设置静态层参数
+static_layer:
+  #是否开启静态层
+  enabled: true
+  #静态层的订阅的地图话题
+  map_topic: map
+  #地图话题中数据值为多少，会转换为静态层代价地图中的未知区域
+  unknown_cost_value: -1
+  #地图话题中数据值为多少，会转换为静态层代价地图中的完全占用区域
+  lethal_cost_threshold: 100
+  #是否仅把第一次订阅到的地图数据转换为静态层代价地图，无视后续订阅到的地图数据
+  first_map_only: false
+  #是否订阅话题 “map_topic”+“_updates”
+  subscribe_to_updates: false
+  #如果设置为false，地图话题中的未知区域在代价地图中会转换为自由区域
+  track_unknown_space: true
+  #如果设置为true，静态层代价地图只有未知、自由和完全占用三种情况
+  #如果设置为false，静态层代价地图可以有不同的占用程度
+  trinary_costmap: true
+
+
+#设置障碍层参数
+obstacle_layer:
+  #是否开启障碍层
+  enabled: true
+  #设置障碍层的观测源名称，可以一次设置多个观测源observation_sources: scan, scan2, camera
+  observation_sources: scan
+  #设置对应观测源参数
+  scan:
+    #观测源数据话题名称
+    topic: scan
+    #观测源的TF坐标名称，如果设置为空，会自动从话题数据寻找TF坐标名称
+    #以下三种数据格式支持自动寻找TF坐标名称
+    #sensor_msgs/LaserScan, sensor_msgs/PointCloud, and sensor_msgs/PointCloud2
+    sensor_frame: laser
+    #观测源话题的数据格式，可以为LaserScan、PointCloud、PointCloud2
+    data_type: LaserScan
+    #保留多久时间内的全部话题数据作为障碍层输入，设置为0代表只保留最近的一帧数据，单位：s
+    observation_persistence: 0.0
+    #读取观测源话题的频率，如果进行设置，频率应该设置的比传感器频率低一些。默认0，代表允许观测源一直不发布话题。单位：Hz
+    expected_update_rate: 0.0
+    #是否使用该观测源清除自由空间
+    clearing: true
+    #是否使用该观测源添加障碍物
+    marking: true
+    #高于多少的障碍物不加入观测范围，单位：m
+    max_obstacle_height: 2.0
+    #低于多少的障碍物不加入观测范围，单位：m
+    min_obstacle_height: 0.0
+    #多少范围内障碍物会被加入代价地图，单位：m
+    obstacle_range: 2.5
+    #多少范围内障碍物会被追踪，单位：m
+    raytrace_range: 3.0
+
+  #在观测源基础上再次进行设置的参数
+  #高于多少的障碍物不加入观测范围，单位：m
+  max_obstacle_height:  2.0
+  #多少范围内障碍物会被加入代价地图，单位：m
+  obstacle_range: 2.5
+  #多少范围内障碍物会被追踪，单位：m
+  raytrace_range: 3.0
+
+  #如果设置为true，障碍层代价地图会有未知、自由和完全占用三种情况
+  #如果设置为false，障碍层代价地图只有自由和完全占用两种情况
+  track_unknown_space: true
+  #障碍层如何与其它地图层处理的方法。
+  #0：障碍层覆盖其它地图层； 1:障碍物最大化方法，即各层的占用方格会覆盖其它层的自由方格，这是最常用的方法
+  #99：不改变其它地图层，应该是使障碍层层无效的方法
+  combination_method: 1
+
+  #如果障碍层类型是"costmap_2d::VoxelLayer"，可以对以下参数进行设置
+  #代价地图的高度
+  #origin_z: 0.0
+  #障碍层的Z轴方格的高度
+  #z_resolution: 0.2
+  #障碍层Z轴上有几个方格
+  #z_voxels: 10
+  #被认为是“已知”的列中允许的未知单元格数
+  #unknown_threshold: 15
+  #被认为是“自由”的列中允许的标记单元格数
+  #mark_threshold: 0
+  #是否发布障碍层的投影地图层话题
+  #publish_voxel_map: false
+  #如果设置为true，机器人将把它所经过的空间标记为自由区域
+  #footprint_clearing_enabled: true

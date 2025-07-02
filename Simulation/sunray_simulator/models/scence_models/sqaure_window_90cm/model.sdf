@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <static>true</static>
+  <model name="circle_window_90cm">
+    <link name="link">
+      <collision name='collision'>
+        <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://sqaure_window_90cm/meshes/sqaure_window_90cm.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <!-- 显示设置 -->
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://sqaure_window_90cm/meshes/sqaure_window_90cm.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Red</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

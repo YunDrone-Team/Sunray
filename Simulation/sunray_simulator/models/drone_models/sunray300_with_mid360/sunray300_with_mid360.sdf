@@ -1,0 +1,23 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='sunray300_with_mid360'>
+    <include>
+      <uri>model://sunray300</uri> <!--uri编写的p250飞机-->
+    </include>
+   <include>
+      <uri>model://livox_mid360</uri>
+      <pose>0 -0.0155 0.28 0 0 0</pose>
+    </include>
+    <joint name="mid360_joint" type="fixed">
+      <child>livox_mid360::base_link</child>
+      <parent>sunray::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+  </model>
+</sdf>

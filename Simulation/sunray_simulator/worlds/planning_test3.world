@@ -1,0 +1,629 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="planning_test3">
+    <physics type="ode">
+      <gravity>0 0 -9.8066</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>10</iters>
+          <sor>1.3</sor>
+          <use_dynamic_moi_rescaling>0</use_dynamic_moi_rescaling>
+        </solver>
+        <constraints>
+          <cfm>0.00001</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>1000</contact_max_correcting_vel>
+          <contact_surface_layer>0.01</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+      <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
+    </physics>
+
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>-13.0 0.0 12.0 0 0.75 0.0</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 100 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.9 0.9 0.9 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>0.2 0.2 -0.9</direction>
+    </light>
+
+    <scene>
+      <shadows>0</shadows>
+    </scene>
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+     <include>
+      <uri>model://yundrone</uri>
+      <name>yundrone</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- Green cylinders -->
+    
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-10.0</name>
+      <pose>-9 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-8.0</name>
+      <pose>-9 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-6.0</name>
+      <pose>-9 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-4.0</name>
+      <pose>-9 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_-2.0</name>
+      <pose>-9 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_0.0</name>
+      <pose>-9 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_2.0</name>
+      <pose>-9 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_4.0</name>
+      <pose>-9 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_6.0</name>
+      <pose>-9 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_8.0</name>
+      <pose>-9 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-9_10.0</name>
+      <pose>-9 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-10.0</name>
+      <pose>-5 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-8.0</name>
+      <pose>-5 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-6.0</name>
+      <pose>-5 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-4.0</name>
+      <pose>-5 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_-2.0</name>
+      <pose>-5 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_0.0</name>
+      <pose>-5 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_2.0</name>
+      <pose>-5 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_4.0</name>
+      <pose>-5 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_6.0</name>
+      <pose>-5 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_8.0</name>
+      <pose>-5 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-5_10.0</name>
+      <pose>-5 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-10.0</name>
+      <pose>-1 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-8.0</name>
+      <pose>-1 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-6.0</name>
+      <pose>-1 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-4.0</name>
+      <pose>-1 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_-2.0</name>
+      <pose>-1 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_0.0</name>
+      <pose>-1 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_2.0</name>
+      <pose>-1 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_4.0</name>
+      <pose>-1 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_6.0</name>
+      <pose>-1 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_8.0</name>
+      <pose>-1 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_-1_10.0</name>
+      <pose>-1 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-10.0</name>
+      <pose>1 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-8.0</name>
+      <pose>1 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-6.0</name>
+      <pose>1 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-4.0</name>
+      <pose>1 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_-2.0</name>
+      <pose>1 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_0.0</name>
+      <pose>1 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_2.0</name>
+      <pose>1 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_4.0</name>
+      <pose>1 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_6.0</name>
+      <pose>1 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_8.0</name>
+      <pose>1 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1_10.0</name>
+      <pose>1 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-10.0</name>
+      <pose>5 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-8.0</name>
+      <pose>5 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-6.0</name>
+      <pose>5 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-4.0</name>
+      <pose>5 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_-2.0</name>
+      <pose>5 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_0.0</name>
+      <pose>5 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_2.0</name>
+      <pose>5 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_4.0</name>
+      <pose>5 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_6.0</name>
+      <pose>5 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_8.0</name>
+      <pose>5 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5_10.0</name>
+      <pose>5 10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-10.0</name>
+      <pose>9 -10 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-8.0</name>
+      <pose>9 -8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-6.0</name>
+      <pose>9 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-4.0</name>
+      <pose>9 -4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_-2.0</name>
+      <pose>9 -2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_0.0</name>
+      <pose>9 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_2.0</name>
+      <pose>9 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_4.0</name>
+      <pose>9 4 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_6.0</name>
+      <pose>9 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_8.0</name>
+      <pose>9 8 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_9_10.0</name>
+      <pose>9 10 1 0 0 0</pose>
+    </include>
+
+    <!-- Red cylinders -->
+    
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_-9.0</name>
+      <pose>-7 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_-6.0</name>
+      <pose>-7 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_-3.0</name>
+      <pose>-7 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_0.0</name>
+      <pose>-7 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_3.0</name>
+      <pose>-7 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_6.0</name>
+      <pose>-7 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-7_9.0</name>
+      <pose>-7 9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_-9.0</name>
+      <pose>-3 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_-6.0</name>
+      <pose>-3 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_-3.0</name>
+      <pose>-3 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_0.0</name>
+      <pose>-3 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_3.0</name>
+      <pose>-3 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_6.0</name>
+      <pose>-3 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_-3_9.0</name>
+      <pose>-3 9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_-9.0</name>
+      <pose>3 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_-6.0</name>
+      <pose>3 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_-3.0</name>
+      <pose>3 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_0.0</name>
+      <pose>3 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_3.0</name>
+      <pose>3 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_6.0</name>
+      <pose>3 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_3_9.0</name>
+      <pose>3 9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_-9.0</name>
+      <pose>7 -9 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_-6.0</name>
+      <pose>7 -6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_-3.0</name>
+      <pose>7 -3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_0.0</name>
+      <pose>7 0 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_3.0</name>
+      <pose>7 3 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_6.0</name>
+      <pose>7 6 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_7_9.0</name>
+      <pose>7 9 1 0 0 0</pose>
+    </include>
+  </world>
+</sdf>

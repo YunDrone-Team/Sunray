@@ -1,0 +1,92 @@
+<launch>
+    <arg name="uav_num" default="1"/>
+    <arg name="offset_dis" default="1.0"/>
+    <arg name="use_hight" default="true" />
+    <arg name="z_height" default="1" />
+
+    <!-- ego地图大小 -->
+    <arg name="map_size_x" value="30.0"/>
+    <arg name="map_size_y" value="30.0"/>
+    <arg name="map_size_z" value=" 2"/>
+
+    <!--  ego的输出指令 -->
+    <arg name="cmd_sub_topic_1" default="/uav1/pos_cmd"/>
+
+    <!-- 对应的sunray控制指令 -->
+    <arg name="control_pub_topic_1" default="/uav1/sunray/uav_control_cmd"/>
+    <arg name="control_type" default="2"/>
+    <arg name="enable_yaw" default="false"/>
+
+    <!-- 局部坐标系下的点云话题 -->
+    <arg name="local_pointcloud_topic_1" default="/uav1/livox"/>
+
+    <!-- 转换出来的世界坐标系下的点云话题 -->
+    <arg name="world_pointcloud_topic_1" default="/uav1/livox_world"/>
+
+    <arg name="world_frame" default="world"/>
+
+    <!-- 局部坐标系下的点云的frame_id -->
+    <arg name="child_frame_1" default="uav1/livox_laser"/>
+
+    <!-- 世界坐标系下的odom 用于给点云转换提供坐标 -->
+    <arg name="odom_topic_1" default="/uav1/sunray/gazebo_pose"/>
+    
+        <!--  move_base_simple/goal转为三个平行的目标点 输出话题前缀  -->
+    <arg name="goal_topic" default="/goal"/>
+    <!--  三个平行的目标点 供ego中的每个飞机指明目标点 -->
+    <arg name="goal_tipic_1" default="/goal_1"/>
+
+    <!-- ego 输出转换为sunray控制指令 -->
+    <node name="positionCmd2sunray_node_1" pkg="sunray_planner_utils" type="positionCmd2sunray" output="screen">
+        <param name="cmd_sub_topic" value="$(arg cmd_sub_topic_1)"/>
+        <param name="control_pub_topic" value="$(arg control_pub_topic_1)"/>
+        <param name="control_type" value="$(arg control_type)"/>
+        <param name="enable_yaw" value="$(arg enable_yaw)"/>
+    </node>
+
+    <!-- 点云转换为世界坐标系 -->
+    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+        <param name="input_point_topic" value="$(arg local_pointcloud_topic_1)" />
+        <param name="output_point_topic" value="$(arg world_pointcloud_topic_1)" />
+        <param name="odom_topic" value="$(arg odom_topic_1)" />
+        <param name="frame_id" value="$(arg world_frame)" />
+        <param name="child_frame_id" value="$(arg child_frame_1)" />
+    </node>
+
+    <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 将其转为多个平行的目标点发送到ego中的每个规划器-->
+    <node name="goal2swarm" pkg="sunray_planner_utils" type="goal2swarm" output="screen">
+        <param name="uav_num" value="$(arg uav_num)" />
+        <param name="goal_type" value="1" />
+        <param name="offset" value="$(arg offset_dis)" />
+        <param name="goal_topic" value="$(arg goal_topic)" />
+        <param name="use_hight" value="$(arg use_hight)" />
+        <param name="z_height" value="$(arg z_height)" />
+    </node>
+
+    <!-- 如果使用mid360且数据格式不为pointcloud的话需要进行转换 -->
+    <!-- <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include> -->
+
+    <!-- ego-planenr-swarm -->
+    <include file="$(find sunray_planner_utils)/launch/run_in_single.launch">
+        <arg name="drone_id" value="1"/>
+
+        <arg name="init_x" value="-20.0"/>
+        <arg name="init_y" value="-9.0"/>
+        <arg name="init_z" value="0.1"/>
+
+        <arg name="target_x" value="20.0"/>
+        <arg name="target_y" value="9.0"/>
+        <arg name="target_z" value="1"/>
+
+        <arg name="map_size_x" value="$(arg map_size_x)"/>
+        <arg name="map_size_y" value="$(arg map_size_y)"/>
+        <arg name="map_size_z" value="$(arg map_size_z)"/>
+        <arg name="odom_topic" value="$(arg odom_topic_1)"/>
+        <arg name="cloudpoint2_topic" value="$(arg world_pointcloud_topic_1)"/>
+
+        <arg name="goal_name_" value="$(arg goal_tipic_1)"/>
+    </include>
+
+    <!-- <node name="rviz_ego" pkg="rviz" type="rviz" args="-d $(find sunray_planner_utils)/config/sunray.rviz" required="true" /> -->
+
+</launch>

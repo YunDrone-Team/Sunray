@@ -1,0 +1,155 @@
+<?xml version='1.0'?>
+<sdf version='1.7'>
+  <world name='default'>
+    <!-- 环境基础配置 -->
+    <light name='sun' type='directional'>
+      <cast_shadows>1</cast_shadows>
+      <pose>0 0 10 0 -0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+      <spot>
+        <inner_angle>0</inner_angle>
+        <outer_angle>0</outer_angle>
+        <falloff>0</falloff>
+      </spot>
+    </light>
+
+    <physics type='ode'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>1</shadows>
+    </scene>
+
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
+
+    <!-- ================= 模型引用部分 ================= -->
+    <!-- 地面 -->
+    <include>
+      <uri>model://ground_plane</uri>
+      <name>ground_plane</name>
+      <static>1</static>
+    </include>
+
+    <!-- H型标记 -->
+    <include>
+      <uri>model://land_marker_H_50cm</uri>
+      <name>land_marker_H_1</name>
+      <pose>1.46744 1.51376 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <include>
+      <uri>model://land_marker_H_50cm</uri>
+      <name>land_marker_H_2</name>
+      <pose>3.50057 1.50795 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <include>
+      <uri>model://land_marker_H_50cm</uri>
+      <name>land_marker_H_3</name>
+      <pose>5.4857 1.50991 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <!-- 字母标识 -->
+    <include>
+      <uri>model://character_A</uri>
+      <name>character_A_1</name>
+      <pose>5.47355 3.50253 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <include>
+      <uri>model://character_A</uri>
+      <name>character_A_2</name>
+      <pose>2.47757 7.33118 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <include>
+      <uri>model://character_X</uri>
+      <name>character_X_1</name>
+      <pose>5.48396 5.52033 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <!-- 十字标记 -->
+    <include>
+      <uri>model://character_cross</uri>
+      <name>cross_1</name>
+      <pose>1.449 3.4786 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <include>
+      <uri>model://character_cross</uri>
+      <name>cross_2</name>
+      <pose>1.4592 5.4914 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <!-- 绿色立方体 -->
+    <include>
+      <uri>model://cuboid_60cm</uri>
+      <name>green_cuboid</name>
+      <pose>3.48212 6.34692 0 0 0 0</pose>
+    </include>
+
+    <!-- 圆形窗户 -->
+    <include>
+      <uri>model://circle_window_90cm</uri>
+      <name>circle_window</name>
+      <pose>5.49202 7.55473 0 0 0 0</pose>
+    </include>
+
+    <!-- ArUco标记 -->
+    <include>
+      <uri>model://single_aruco_91</uri>
+      <name>aruco_91</name>
+      <pose>6.98675 1.9946 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <!-- 无人机标志 -->
+    <include>
+      <uri>model://yundrone</uri>
+      <name>yundrone_logo</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>1</static>
+    </include>
+
+    <!-- ================= 状态和GUI配置 ================= -->
+    <state world_name='default'>
+      <!-- 保持原有状态配置 -->
+      <sim_time>308 687000000</sim_time>
+      <real_time>357 733864194</real_time>
+      <wall_time>1744348515 421961229</wall_time>
+      <iterations>308687</iterations>
+      <!-- 各模型状态信息... -->
+    </state>
+
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>-18.8747 0.632941 11.3478 0 0.477796 -0.019805</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+  </world>
+</sdf>

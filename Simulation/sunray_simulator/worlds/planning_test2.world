@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<sdf version='1.7'>
+  <world name='planning_test2'>
+    <!-- 动力学库 -->
+    <physics type='ode'>
+      <gravity>0 0 -9.8066</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>10</iters>
+          <sor>1.3</sor>
+          <use_dynamic_moi_rescaling>0</use_dynamic_moi_rescaling>
+        </solver>
+        <constraints>
+          <cfm>0.00001</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>1000</contact_max_correcting_vel>
+          <contact_surface_layer>0.01</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+      <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
+    </physics>
+
+    <!-- 初始视角 -->
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>-13.0 0.0 12.0 0 0.75 0.0</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+    <!-- 光源 -->
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 100 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.9 0.9 0.9 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>0.2 0.2 -0.9</direction>
+    </light>
+
+    <scene>
+      <shadows>0</shadows>
+    </scene>
+
+    <!-- 地面 -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- 无人机标志 -->
+    <include>
+      <uri>model://yundrone</uri>
+      <name>yundrone</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- ============== 圆柱体模型引用 ============== -->
+    
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_0</name>
+      <pose>2 2 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_1</name>
+      <pose>2 0 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_2</name>
+      <pose>2 -2 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_3</name>
+      <pose>6 2 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_4</name>
+      <pose>6 0 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_20cm</uri>
+      <name>cylinder_20cm_5</name>
+      <pose>6 -2 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_0</name>
+      <pose>4 1.5 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <include>
+      <uri>model://cylinder_40cm</uri>
+      <name>cylinder_40cm_1</name>
+      <pose>4 -1.5 1 0 0 0</pose>
+      <static>true</static>
+    </include>
+  </world>
+</sdf>

@@ -1,0 +1,38 @@
+#代价地图官方介绍：http://wiki.ros.org/costmap_2d
+
+#局部代价地图参数命名空间
+local_costmap:
+  #代价地图的TF参考坐标系
+  global_frame: map
+  #机器人的TF坐标名称
+  robot_base_frame: base_footprint
+  #global_frame和robot_base_frame间的TF坐标停止发布多久后，控制机器人停止，单位：s
+  transform_tolerance: 0.5
+  #代价地图刷新频率，单位：Hz
+  update_frequency: 5.0
+  #代价地图的可视化话题发布频率，单位：Hz
+  publish_frequency: 3.0
+
+  #是否直接使用静态地图生成代价地图
+  #static_map: false #使用plugins手动配置代价地图时，该参数无效
+  #代价地图是否跟随机器人移动，static_map为true时该参数必须为false
+  rolling_window: true
+  #代价地图宽度，单位：m
+  width: 4.0 
+  #代价地图高度，单位：m
+  height: 4.0 
+  #代价地图分辨率（米/单元格）
+  resolution: 0.05 
+
+  #为代价地图设置地图层，这里设置了两层，分别作为障碍层和膨胀层
+  #局部代价动态要求高刷新率，不使用静态层以节省计算资源
+  plugins:
+    #定义地图层的名称，设置地图层的类型
+    - {name: static_layer,      type: "costmap_2d::StaticLayer"}
+    #定义地图层的名称，设置地图层的类型
+    - {name: obstacle_layer,      type: "costmap_2d::ObstacleLayer"}
+    #定义地图层的名称，设置地图层的类型
+    - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
+  #各地图层的参数，会以地图层名称作为命名空间
+  #各地图层的参数，会在【costmap_common_params.yaml】内进行设置
+

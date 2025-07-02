@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="3D_lidar">
+    <link name="laser_link">
+      <!-- 物理参数 -->
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <!-- 显示设置 -->
+      <visual name="visual1">
+        <geometry>
+          <mesh>
+            <scale>0.5 0.5 0.5</scale>
+            <uri>model://3D_lidar/meshes/VLP16_base_1.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name='collision1'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.5 0.5 0.5</scale>
+            <uri>model://3D_lidar/meshes/VLP16_base_1.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual2">
+        <geometry>
+          <mesh>
+            <scale>0.5 0.5 0.5</scale>
+            <uri>model://3D_lidar/meshes/VLP16_base_2.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name='collision2'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.5 0.5 0.5</scale>
+            <uri>model://3D_lidar/meshes/VLP16_base_2.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual3">
+        <geometry>
+          <mesh>
+            <scale>0.5 0.5 0.5</scale>
+            <uri>model://3D_lidar/meshes/VLP16_scan.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name='collision3'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.5 0.5 0.5</scale>
+            <uri>model://3D_lidar/meshes/VLP16_scan.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <!-- 传感器参数设置 -->
+      <sensor type='ray' name='3Dlidar'>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>520</samples>
+                <resolution>1</resolution>
+                <min_angle>-3.1415926535897931</min_angle>
+                <max_angle>3.1415926535897931</max_angle>
+              </horizontal>
+              <vertical>
+                <!-- 16线 -->
+                <samples>16</samples>
+                <min_angle>-0.2617993877991494365</min_angle>
+                <max_angle>0.2617993877991494365</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.2</min>
+              <max>20</max>
+              <resolution>0.001</resolution>
+            </range>
+          </ray>
+          <plugin name='3D_laser' filename='libgazebo_ros_velodyne_laser.so'>
+            <topicName>velodyne_points</topicName>
+            <frameName>base_link</frameName>
+            <organize_cloud>0</organize_cloud>
+            <min_range>0.4</min_range>
+            <max_range>20</max_range>
+            <gaussianNoise>0.001</gaussianNoise>
+          </plugin>
+          <always_on>1</always_on>
+          <update_rate>20</update_rate>
+          <visualize>false</visualize>
+        </sensor>
+    </link>
+  </model>
+</sdf>

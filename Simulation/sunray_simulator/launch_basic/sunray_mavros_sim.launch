@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- vehicle model and world -->
+    <arg name="ID" default="0"/>
+
+    <!-- 
+        Mavros端端口号说明
+        udp_port_local: 用于PX4与Mavros进行UDP通信的本地端口号，udp_port_local = 14580 + ID
+        udp_port_remote: 用于PX4与Mavros进行UDP通信的远程端口号，udp_port_remote = 14540 + ID
+        fcu_url: 定义PX4飞控单元的统一资源定位符（URL），包括UDP端口和主机地址等信息。
+    -->
+	<arg name="udp_port_local" value="$(eval 14580 + arg('ID'))"/>
+    <arg name="udp_port_remote" value="$(eval 14540 + arg('ID'))"/>
+    <arg name="fcu_url" default="udp://:$(arg udp_port_remote)@localhost:$(arg udp_port_local)"/>
+    <arg name="gcs_url" default="" />
+    <arg name="respawn_mavros" default="false" />
+
+    <!-- 启动MAVROS -->
+    <node pkg="mavros" type="mavros_node" name="mavros" output="screen" launch-prefix="bash -c 'sleep 8; $0 $@'">
+        <param name="fcu_url" value="$(arg fcu_url)" />
+        <param name="gcs_url" value="$(arg gcs_url)" />
+        <param name="target_system_id" value="$(eval 1 + arg('ID'))"/>
+        <param name="target_component_id" value="1" />
+        <param name="fcu_protocol" value="v2.0" />
+        <rosparam command="load" file="$(find sunray_simulator)/config/px4_config.yaml" />
+        <rosparam command="load" file="$(find sunray_simulator)/config/px4_pluginlists.yaml" />
+    </node>
+</launch>

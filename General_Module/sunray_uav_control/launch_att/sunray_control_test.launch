@@ -1,0 +1,14 @@
+<launch>
+    <arg name="uav_id" default="1" />
+    <arg name="flag_printf" default="true" />
+
+    <!-- 启动uav_control_node -->
+    <node name="uav_control_node$(arg uav_id)" pkg="sunray_uav_control" type="uav_control_node" output="screen">
+        <!-- 无人机ID -->
+		<param name="uav_id" value="$(arg uav_id)" />
+        <!-- 是否打印 -->
+		<param name="flag_printf" value="$(arg flag_printf)" />
+        <!-- 读取参数 -->
+        <rosparam command="load" file="$(find sunray_uav_control)/config/uav_control_param_sim.yaml" />
+	</node>
+</launch>

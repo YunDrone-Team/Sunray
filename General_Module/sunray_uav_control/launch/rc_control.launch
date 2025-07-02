@@ -1,0 +1,27 @@
+<launch>
+    <!-- 遥控器说明 除开1-4通道 其余通道分为3档和2档 将这些档位归一化到[-1, 1]之间区分允许存在0.25的误差 只检测变化量不检测当前量-->
+    <!-- 只有档位发生了变化才会触发事件 [-1]对应值为1000 [0]对应1500 [1]对应2000-->
+    <arg name="joy_node" value="true" />
+
+    <node name="rc_control_node" pkg="sunray_uav_control" type="rc_control_node" output="screen">
+        <param name="uav_id" value="1" />
+        <param name="uav_name" type="string" value="uav" />
+        <param name="channel_arm" value="5" />
+        <param name="channel_mode" value="6" />
+        <param name="channel_land" value="7" />
+        <param name="channel_kill" value="8" />
+        <param name="value_arm" value="1" />
+        <param name="value_disarm" value="-1" />
+        <param name="value_mode_init" value="-1" />
+        <param name="value_mode_rc" value="0" />
+        <param name="value_mode_cmd" value="1" />
+        <param name="value_land" value="1" />
+        <param name="value_kill" value="1" />
+        <!-- 订阅遥控器数据话题 -->
+        <param name="rc_topic" type="string" value="/uav1/sunray/fake_rc_in" /> <!-- 修改为实际使用的遥控器话题 -->
+    </node>
+
+    <group if="$(arg joy_node)"> <!-- 如果joy_node为true，则启动joy_node -->
+        <include file="$(find sunray_uav_control)/launch/joynode.launch" />
+    </group>
+</launch>

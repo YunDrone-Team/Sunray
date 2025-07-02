@@ -1,0 +1,13 @@
+<launch>
+    <!-- map_generator_node config -->
+	<!-- 集群数量 -->
+	<arg name="swarm_num" default="1"/>
+    <!-- 地图,注意与world匹配 -->
+    <arg name="map_name" default="planning_test"/>
+    <!-- map_generator_node: 生成随机地图，并发布全局、局部点云 -->
+    <node pkg="sunray_map_generator" name="map_generator_node" type="map_generator_node" launch-prefix="gnome-terminal --tab --">
+        <remap from="/uav1/sunray/gazebo_pose" to="/drone_0_visual_slam/odom"/>
+        <param name="swarm_num" value="$(arg swarm_num)"/>
+        <param name="map_name" 	value="$(arg map_name)" />  
+    </node>
+</launch>
