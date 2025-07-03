@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <model name="random_region">
+    <static>true</static>
+    <link name="link">
+      <!-- 白色底层 -->
+      <visual name="base_white">
+        <geometry>
+          <box>
+            <size>3.5 2.0 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- 碰撞体 -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.0 0.0 0.0001</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

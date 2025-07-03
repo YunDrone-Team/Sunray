@@ -1,0 +1,13 @@
+material RandomRegion/Texture
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture random_region.png
+      }
+    }
+  }
+}

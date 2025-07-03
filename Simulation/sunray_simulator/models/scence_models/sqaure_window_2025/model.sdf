@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <static>true</static>
+  <model name="sqaure_window_2025">
+    <link name="link">
+      <collision name='collision'>
+        <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+            <mesh>
+            <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
+            <scale>1 1 1</scale>
+            </mesh>
+        </geometry>
+        </collision>
+      <!-- 显示设置 -->
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Red</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

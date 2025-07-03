@@ -1,0 +1,14 @@
+material checkboard_grip
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture gray_white_checkerboard.png
+        scale 0.01 0.01   
+      }
+    }
+  }
+}

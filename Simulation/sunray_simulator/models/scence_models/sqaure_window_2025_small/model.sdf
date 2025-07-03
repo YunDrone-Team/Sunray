@@ -1,38 +1,36 @@
 <?xml version='1.0'?>
 <sdf version='1.7'>
-  <model name='cuboid_100cm'>
+  <model name='sqaure_window_2025_small'>
     <link name='link'>
+      <self_collide>0</self_collide>
       <inertial>
-        <mass>1</mass>
+        <pose>0 0 0 0 -0 0</pose>
         <inertia>
-          <ixx>0.4167</ixx>
-          <iyy>0.4167</iyy>
-          <izz>0.1667</izz>
+          <ixx>1</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
+          <iyy>1</iyy>
           <iyz>0</iyz>
+          <izz>1</izz>
         </inertia>
-        <pose>0 0 0 0 -0 0</pose>
+        <mass>1</mass>
       </inertial>
-      <self_collide>0</self_collide>
       <enable_wind>0</enable_wind>
       <kinematic>0</kinematic>
       <pose>0 0 0 0 -0 0</pose>
       <visual name='visual'>
         <geometry>
-          <box>
-            <size>1 1 2</size>
-          </box>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://sqaure_window_2025_small/meshes/0609.stl</uri>
+          </mesh>
         </geometry>
         <material>
-          <ambient>0 0 1 1</ambient>
-          <diffuse>0 0 1 1</diffuse>
-          <specular>0.1 0.1 0.1 1</specular>
-          <shader type='pixel'/>
           <script>
-            <name>ModelPreview_1::link::visual_MATERIAL_</name>
-            <uri>__default__</uri>
+            <name>Gazebo/Red</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
           </script>
+          <shader type='pixel'/>
         </material>
         <pose>0 0 0 0 -0 0</pose>
         <transparency>0</transparency>
@@ -43,9 +41,10 @@
         <max_contacts>10</max_contacts>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
-          <box>
-            <size>1 1 2</size>
-          </box>
+          <mesh>
+            <uri>/home/yyf/2025futureaircraftcompetition/Simulation/sunray_simulator/models/scence_models/sqaure_window_2025_small/meshes/0609.stl</uri>
+            <scale>1 1 1</scale>
+          </mesh>
         </geometry>
         <surface>
           <friction>

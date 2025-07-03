@@ -7,15 +7,16 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>6 6 2</size>
+            <size>2 2 0.5</size>
           </box>
         </geometry>
       </collision>
 
-      <visual name="visual">
+       <visual name="visual">
         <geometry>
           <mesh>
             <uri>model://box_target_green/meshes/mesh.dae</uri>
+            <scale>0.3333 0.3333 0.25</scale>
           </mesh>
         </geometry>
       </visual>
