@@ -3,8 +3,8 @@
   <model name="wind_zone">
     <static>true</static>
     <link name="link">
-      <!-- 红色底层 -->
-      <visual name="base_red">
+      <!-- 可视化 -->
+      <visual name="visual">
         <geometry>
           <box>
             <size>1.0 2.0 0.01</size>
@@ -20,10 +20,13 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.0 0.0 0.0001</size>
+            <size>1.0 2.0 0.01</size>
           </box>
         </geometry>
       </collision>
     </link>
+
+    <!-- 加载插件 -->
+    <plugin name="wind_zone_plugin" filename="libwind_zone_plugin.so"/>
   </model>
 </sdf>

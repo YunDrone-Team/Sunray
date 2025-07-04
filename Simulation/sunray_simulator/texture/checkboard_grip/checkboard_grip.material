@@ -7,7 +7,7 @@ material checkboard_grip
       texture_unit
       {
         texture gray_white_checkerboard.png
-        scale 0.01 0.01   
+        scale 0.02 0.02  
       }
     }
   }
