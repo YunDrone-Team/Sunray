@@ -15,7 +15,7 @@ catkin_make --source General_Module/sunray_planner_utils --build build/sunray_pl
 #编译sunray_communication_bridge模块
 catkin_make --source Comunication_Module/sunray_communication_bridge --build build/sunray_communication_bridge
 # 编译sunray_media模块
-catkin_make --source General_Module/sunray_media --build build/sunray_media
+# catkin_make --source General_Module/sunray_media --build build/sunray_media
 ## 注意：ego-planner与FUEL不能同时编译 会存在一些链接上的问题
 # 编译ego-planner-swarm模块
 catkin_make --source External_Module/ego-planner-swarm --build build/ego-planner
@@ -26,7 +26,11 @@ catkin_make --source Simulation/simulator_utils --build build/simulator_utils
 # 编译gazebo_plugin模块
 catkin_make --source Simulation/gazebo_plugin --build build/gazebo_plugin
 # 编译sunray_formation模块
-catkin_make --source sunray_formation --build build/sunray_formation
+# catkin_make --source sunray_formation --build build/sunray_formation
+# 编译2025_uav_competition_demo模块
+catkin_make --source Simulation/2025_uav_competiton_demo --build build/2025_uav_competiton_demo
+# 编译wind_zone_plugin模块
+catkin_make --source Simulation/gazebo_plugin/wind_zone_plugin --build build/wind_zone_plugin
 
 # ugv需要octomap、serial相关以依赖
 # 编译sunray_ugv_control模块
