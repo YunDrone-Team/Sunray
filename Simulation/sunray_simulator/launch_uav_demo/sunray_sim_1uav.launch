@@ -3,7 +3,8 @@
 	<!-- Gazebo 配置 -->
     <arg name="gazebo_enable" default="true"/>
     <arg name="gui" default="true"/>
-    <arg name="world" default="$(find sunray_simulator)/worlds/sunray_empty_world.world"/>
+    <!-- 修改为2025_drone_map 原始为sunray_empty_world.world-->
+    <arg name="world" default="$(find sunray_simulator)/worlds/2025_drone_map"/> 
     <!-- 启动 Gazebo -->
     <group if="$(arg gazebo_enable)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -19,8 +20,8 @@
     <!--无人机编号-->
     <arg name="uav_id" default="1"/>
     <!-- 无人机初始位置 -->
-    <arg name="uav_init_x" default="0.0"/>
-    <arg name="uav_init_y" default="0.0"/>
+    <arg name="uav_init_x" default="-2.0"/>
+    <arg name="uav_init_y" default="-2.0"/>
     <arg name="uav_init_yaw" default="0.0"/>
 
     <!-- UAV1 -->

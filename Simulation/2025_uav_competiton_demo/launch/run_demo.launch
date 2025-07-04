@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="uav_id" default="1"/>
+  <arg name="uav_name" default="uav"/>
+
+  <node pkg="2025_uav_competiton_demo"
+        type="uav_demo.py"
+        name="competiton_demo"
+        output="screen">
+    <param name="uav_id" value="$(arg uav_id)"/>
+    <param name="uav_name" value="$(arg uav_name)"/>
+  </node>
+</launch>
