@@ -61,7 +61,7 @@ class CircleVelController:
         self.points = [
             [-0.5, -1.0, self.height],
             [0.7, -2.0, self.height],
-            [1.8, -1.0, self.height],
+            [1.6, -1.0, self.height],
             [1.6, 0.12, self.height],
             [1.46, 1.27, self.height],
             [1.43, 2.0, self.height],
@@ -225,8 +225,22 @@ class CircleVelController:
 
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
+                    if idx == 2:
+                        # 设置偏航到 45
+                        rospy.sleep(1.0)
+                        desired_yaw_deg = 90.0
+                        self.uav_cmd.desired_yaw = math.radians(desired_yaw_deg)
+                        self.uav_cmd.cmd = UAVControlCMD.XyzPosYaw
+                        rospy.loginfo(f"{self.node_name}: Rotating to yaw {desired_yaw_deg} deg")
+                        self.uav_cmd.header.stamp = rospy.Time.now()
+                        self.control_cmd_pub.publish(self.uav_cmd)
+                        rospy.sleep(1.0)  # 等旋转
+                        break
+                    
                     if idx == 6:
                         self.hover()
+                        break
+
                     break
 
                 rate.sleep()

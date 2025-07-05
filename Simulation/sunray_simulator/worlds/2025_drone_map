@@ -1558,7 +1558,7 @@
           <geometry>
             <mesh>
               <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
-              <scale>1 1 1</scale>
+              <scale>1 2 1</scale>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
