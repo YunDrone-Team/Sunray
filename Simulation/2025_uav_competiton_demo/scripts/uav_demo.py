@@ -50,7 +50,7 @@ class CircleVelController:
         self.center_x, self.center_y = 0.0, 0.0 
         self.radius = 1.0 
         self.num_points = 50 
-        self.k_p, self.z_k_p = 0.35, 0.5 
+        self.k_p, self.z_k_p = 1.5, 0.5 
         self.max_vel = 1.0 
         self.height = 1.0 
         self.flip_duration = 2.0  
@@ -130,12 +130,12 @@ class CircleVelController:
 
     "悬停无人机"
     def hover(self):
-        rospy.sleep(5.0)
+        rospy.sleep(1.0)
         rospy.loginfo(f"{self.node_name}: Send UAV Hover cmd.")
         self.uav_cmd.cmd = UAVControlCMD.Hover
         self.uav_cmd.header.stamp = rospy.Time.now()
         self.control_cmd_pub.publish(self.uav_cmd)
-        rospy.sleep(5.0)
+        rospy.sleep(1.0)
 
     "执行圆形轨迹飞行"
     def fly_cirle(self):
@@ -199,6 +199,8 @@ class CircleVelController:
 
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
+                    if idx == 6:
+                        self.hover()
                     break
 
                 rate.sleep()
@@ -223,6 +225,8 @@ class CircleVelController:
 
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
+                    if idx == 6:
+                        self.hover()
                     break
 
                 rate.sleep()
@@ -315,10 +319,10 @@ class CircleVelController:
         self.takeoff()
         self.hover()
         # self.fly_cirle()
-        self.custom_fly_vel()
-        # self.custom_fly_pose()
-        # self.return_to_origin_pose()
-        self.return_to_origin_vel()
+        # self.custom_fly_vel()
+        # self.return_to_origin_vel()
+        self.custom_fly_pose()
+        self.return_to_origin_pose()
         self.land()
 
 if __name__ == "__main__":

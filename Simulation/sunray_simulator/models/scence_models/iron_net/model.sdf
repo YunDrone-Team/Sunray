@@ -1,20 +1,20 @@
 <?xml version="1.0" ?>
 <sdf version="1.7">
-    <model name='target_zone'>
+    <model name='iron_net'>
       <static>true</static>
-      <link name="target_zone">
+      <link name="iron_net">
         <pose frame=''> 0.0 0.0 0.0 0.0 0.0 0.0</pose>
         <visual name="visual">
             <cast_shadows>false</cast_shadows>
             <geometry>
               <box>
-                <size>0.5 0.5 0.01</size>
+                <size>6.0 2.5 0.01</size>
               </box>
             </geometry>
             <material>
               <script>
-                <uri>model://target_img/target_img.material</uri>
-                <name>target_img</name>                 
+                <uri>model://iron_net/iron_net.material</uri>
+                <name>iron_net</name>                 
               </script>
             </material>
         </visual>

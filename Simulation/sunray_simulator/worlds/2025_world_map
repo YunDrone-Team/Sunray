@@ -136,10 +136,10 @@
       <pose>0.489515 2.4907 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>9685 964000000</sim_time>
-      <real_time>179 248844960</real_time>
-      <wall_time>1751704713 149137283</wall_time>
-      <iterations>179041</iterations>
+      <sim_time>9695 561000000</sim_time>
+      <real_time>9 621789886</real_time>
+      <wall_time>1751705895 61723673</wall_time>
+      <iterations>9597</iterations>
       <model name='Room'>
         <pose>4.58476 0.79623 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -233,13 +233,13 @@
         </link>
       </model>
       <model name='sqaure_window_2025_0'>
-        <pose>1.46 1.27 0 -2e-06 -4.2e-05 -1.56931</pose>
+        <pose>1.46 1.27 0 0 0 -1.57</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.46 1.27 0 -2e-06 -4.2e-05 -1.56931</pose>
+          <pose>1.46 1.27 0 0 0 -1.57</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-0 -0 -0.024439 0.000725 -0.488778 0</acceleration>
-          <wrench>-0 -0 -0.024439 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='sqaure_window_2025_small'>
@@ -288,7 +288,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-9.41222 -16.7885 10.2476 0 0.469797 1.03998</pose>
+        <pose>-10.1271 -10.7927 24.2376 0 1.0218 0.59198</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -1553,42 +1553,6 @@
     </model>
     <model name='sqaure_window_2025_0'>
       <link name='link'>
-        <collision name='collision'>
-          <pose>0 0 0 0 -0 0</pose>
-          <geometry>
-            <mesh>
-              <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
-              <scale>1 1 1</scale>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <scale>1 2 1</scale>
-              <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
-            </mesh>
-          </geometry>
-          <material>
-            <script>
-              <name>Gazebo/Red</name>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-            </script>
-          </material>
-        </visual>
         <self_collide>0</self_collide>
         <inertial>
           <pose>0 0 0 0 -0 0</pose>
@@ -1604,8 +1568,85 @@
         </inertial>
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
+        <pose>0 0 0 -0 -0 -0</pose>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>1 2 1</scale>
+              <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Red</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+            <shader type='pixel'/>
+          </material>
+          <pose>0 0 0 0 -0 0</pose>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>/home/yyf/2025futureaircraftcompetition/Simulation/sunray_simulator/models/scence_models/sqaure_window_2025/meshes/0515.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <fdir1>0 0 0</fdir1>
+                <slip1>0</slip1>
+                <slip2>0</slip2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <patch_radius>0</patch_radius>
+                <surface_radius>0</surface_radius>
+                <use_patch_radius>1</use_patch_radius>
+                <ode>
+                  <slip>0</slip>
+                </ode>
+              </torsional>
+            </friction>
+            <bounce>
+              <restitution_coefficient>0</restitution_coefficient>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact>0</collide_without_contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0</min_depth>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
       </link>
-      <pose>-7.09782 0.985741 0 0 -0 0</pose>
+      <static>1</static>
+      <allow_auto_disable>1</allow_auto_disable>
+      <pose>1.46 1.27 -0 -0 -4.2e-05 -1.56931</pose>
     </model>
   </world>
 </sdf>

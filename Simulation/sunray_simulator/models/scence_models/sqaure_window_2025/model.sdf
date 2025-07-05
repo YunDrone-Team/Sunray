@@ -16,7 +16,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <scale>1 1 1</scale>
+            <scale>1 2 1</scale>
             <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
           </mesh>
         </geometry>
