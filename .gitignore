@@ -45,3 +45,6 @@ devel/
 
 # Python
 **.pyc
+
+#sunray_px4
+sunray_px4/
