@@ -8,5 +8,5 @@ gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
 --tab -e 'bash -c "sleep 4.0; roslaunch sunray_uav_control terminal_control.launch uav_id:=1; exec bash"' \
 
 gnome-terminal --window -e 'bash -c "sleep 4.0; roslaunch sunray_planner_utils msg_MID360.launch; exec bash"' \
---tab -e 'bash -c "sleep 6.0; roslaunch sunray_planner_utils mapping_mid360.launch ; exec bash"' \
+--tab -e 'bash -c "sleep 6.0; roslaunch sunray_planner_utils mapping_mid360.launch rviz:=false; exec bash"' \
 --tab -e 'bash -c "sleep 8.0; roslaunch sunray_planner_utils sunray_ego_single_mid360.launch; exec bash"' \
