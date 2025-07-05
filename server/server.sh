@@ -4,6 +4,7 @@ env_file=/home/yundrone/Sunray/server/server.env
 ## 虽然环境变量里面已经做了如下设置，但是设置为开机自启动脚本的时候，系统还没有完全启动，所以需要手动source
 source /opt/ros/noetic/setup.bash
 source ~/Sunray/devel/setup.bash
+source ~/app/sunray_map/devel/setup.bash
 
 # 安全加载 .env 文件（避免代码注入）
 while IFS='=' read -r key value || [[ -n "$key" ]]; do
@@ -31,7 +32,7 @@ validate_bool() {
 }
 
 if [[ "${RUN_SEVER,,}" == "true" ]]; then
-    gnome-terminal --window --title="roscore" -- bash -c "source /opt/ros/noetic/setup.bash; ~/Sunray/devel/setup.bash; roscore; exec bash"
+    gnome-terminal --window --title="roscore" -- bash -c "roscore; exec bash"
 fi
 
 
@@ -66,31 +67,31 @@ fi
 
 # 启动地面站后台节点
 start_ground_station() {
-    gnome-terminal --title="sunray_communication_bridge" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-    source ~/Sunray/devel/setup.bash; roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${NUM:=1}; exec bash"
+    gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
+     roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${NUM:=1}; exec bash"
 }
 
 # start_ground_station() {
-#     gnome-terminal --title="sunray_communication_bridge" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-#     source ~/Sunray/devel/setup.bash; roslaunch sunray_communication_bridge sunray_communication_bridge.launch ugv_id:=${ID:=1} ugv_experiment_num:=${NUM:=1}; exec bash"
+#     gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
+#     roslaunch sunray_communication_bridge sunray_communication_bridge.launch ugv_id:=${ID:=1} ugv_experiment_num:=${NUM:=1}; exec bash"
 # }
 
 # 启动mavros节点
 start_mavros_station() {
-    gnome-terminal --title="sunray_mavros" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-    source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${ID} ip:=${IP}; exec bash"
+    gnome-terminal --title="sunray_mavros" -- bash -c "sleep 5; \
+    roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${ID} ip:=${IP}; exec bash"
 }
 
 # 启动外部定位节点
 start_external_position() {
-    gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-     source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control external_fusion.launch uav_id:=${ID} external_source:=${EXTERNAL_SOURCE}; exec bash"
+    gnome-terminal --title="external_fusion" -- bash -c "sleep 5; \
+    roslaunch sunray_uav_control external_fusion.launch uav_id:=${ID} external_source:=${EXTERNAL_SOURCE}; exec bash"
 }
 
 # 启动控制节点
 start_control() {
-    gnome-terminal --title="external_fusion" -- bash -c "source /opt/ros/noetic/setup.bash; sleep 5; \
-    source ~/Sunray/devel/setup.bash; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${ID}; exec bash"
+    gnome-terminal --title="external_fusion" -- bash -c "sleep 5; \
+    roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${ID}; exec bash"
 }
 
 # 主逻辑
