@@ -75,6 +75,9 @@ void TCPClient::onRun()
 
             temp.clear();
         }
+
+        lockRun.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5)); // 休眠10毫秒
     }
     std::unique_lock<std::mutex> lockRun(mutexRun);
 
@@ -212,7 +215,7 @@ void TCPClient::createThread()
 {
     while (createThreadRun)
     {
-
+//        std::unique_lock<std::mutex> lockRun(mutexRun);
         std::unique_lock<std::mutex> lock(mutexConnect);
         if(WaitConnectVector.size()>0)
         {
