@@ -32,6 +32,7 @@ catkin_make --source Simulation/2025_uav_competiton_demo --build build/2025_uav_
 # 编译wind_zone_plugin模块
 catkin_make --source Simulation/gazebo_plugin/wind_zone_plugin --build build/wind_zone_plugin
 
+catkin_make --source Simulation/future_2025_score --build build/future_2025_score
 # ugv需要octomap、serial相关以依赖
 # 编译sunray_ugv_control模块
 # catkin_make --source General_Module/sunray_ugv_control --build build/sunray_ugv_control
