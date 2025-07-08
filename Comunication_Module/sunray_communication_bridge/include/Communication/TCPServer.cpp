@@ -326,15 +326,11 @@ bool TCPServer::TCPServerOnRun()
             Close();
             threadState = false;
             break;
-        }
-        else if (ret == 0)
-        {
+        }else if (ret == 0){
             // 超时，限定时间内没有IO操作
             // std::cout << "超时，限定时间内没有IO操作 "<<_sock<<std::endl;
             continue;
-        }
-        else
-        {
+        }else{
             // 判断描述符（socket）是否在集合中
             // std::cout << "判断描述符（socket）是否在集合中 "<<FD_ISSET(_sock, &fdRead)<<" "<<_sock<<std::endl;
 
@@ -344,17 +340,10 @@ bool TCPServer::TCPServerOnRun()
                 if (backSock.socket == INVALID_SOCKET)
                 {
                     std::cout << "客户端链接返回值INVALID_SOCKET " << std::endl;
-                }
-                else
-                {
+                }else{
                     FD_SET(backSock.socket, &fdTemp);
                     if (backSock.socket > maxSock)
                         maxSock = backSock.socket;
-
-                    // 这里可能会导致重复收到两条数据，待测
-                    char szRecv[4096] = {};
-                    int len = ReadData(backSock.socket, szRecv, 4096);
-                    readResultDisposal(len, szRecv, backSock.socket, fdTemp, backSock.IP);
                 }
             }
 
