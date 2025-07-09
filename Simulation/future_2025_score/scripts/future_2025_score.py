@@ -238,8 +238,8 @@ class Uav_state:
                 print("已进入风扰区")
             else:
                 pass  
+            rate.sleep()
             check_xyz(self.uav_state.position)
-            rospy.sleep(0.1)
         wind_start = rospy.get_time()
         RMSE_list=[]
         MAE=0
@@ -254,6 +254,7 @@ class Uav_state:
             RMSE_list.append(pe)
             check_xyz(self.uav_state.position)
             k=k+1
+            rate.sleep()
         wind_end = rospy.get_time()
         wind_time = wind_end-wind_start
         MAE=MAE/k
@@ -263,7 +264,7 @@ class Uav_state:
         RMSE=(RMSE_M/k)**0.5
         if wind_time>=10 and wind_time<=20:
             rospy.loginfo(f"风扰区的MAE为{MAE:.4f},RMSE为{RMSE:.4f}!")
-            rospy.loginfo(f"风扰区的停留时间为{wind_time}秒,计算数量k为{k}!")
+            rospy.loginfo(f"风扰区的停留时间为{wind_time:.4f}秒,计算数量k为{k}!")
             rospy.loginfo(f"后续根据MAE和RMSE进行排名加分!")
         else:
             print("未在风扰区停留10至20秒,因此,不进行附加分评比")
@@ -791,10 +792,10 @@ if __name__ == "__main__":
     if not rospy.is_shutdown() and fly_keep:
         if fly_keep:
             distance=UAV_s.land_text()
-            if distance<0.3:
+            if distance<0.2:
                 rospy.loginfo(f"降落区得分为10分,总得分为{score}分")
                 score=score+10
-            elif distance>0.3 and distance<0.8:
+            elif distance>0.2 and distance<0.8:
                 rospy.loginfo(f"降落区得分为5分,总得分为{score}分")
                 score=score+5
             else:
