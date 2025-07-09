@@ -82,27 +82,7 @@ def check_xyz(position):
     else:
         rospy.loginfo(f"无人机xy超过可行范围!x={position[0]} y={position[1]}")
         warn_sum=warn_sum+1
-def simulate_dynamic_collision(detector):
-    """模拟无人机动态飞行并检测碰撞"""
-    detector = CollisionDetector_rect()
-    # 模拟无人机位置更新
-    uav_positions = [
-        (0, 0, 1),   # 在外部
-        (5, 5, 1),   # 进入大矩形
-        (6, 6, 1),   # 在大矩形内
-        (15, 15, 1), # 离开大矩形，进入小矩形
-        (16, 16, 1)  # 在小矩形内
-    ]
 
-    for pos in uav_positions:
-        result = detector.check_collision(
-            big_rect=(5,5,2,4,1,0),    # 大矩形参数
-            small_rect=(15,15,2,2,1,0), # 小矩形参数
-            uav_pos=pos,
-            uav_radius=1.0
-        )
-        print(f"位置{pos}: 穿越大矩形={result['crossed_big']}, 穿越小矩形={result['crossed_small']}")
-        print(f"累计穿越次数: 大矩形={result['crossing_counts']['big_rect']}, 小矩形={result['crossing_counts']['small_rect']}\n") 
 class Uav_state:
     def __init__(self):
         self.node_name = "Score_system" 
@@ -185,6 +165,7 @@ class Uav_state:
         rate = rospy.Rate(20) #20 Hz 
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入障碍区!")
+
         while not condition_met and not rospy.is_shutdown():
             condition_obs=(-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5)  # 自定义函数获取状态
             #print(f"正在检测是否进入障碍区,无人机位置x:{self.uav_state.position[0]} y:{self.uav_state.position[1]}!")
@@ -194,18 +175,21 @@ class Uav_state:
             else:
                 pass  
             check_xyz(self.uav_state.position)
-        detector_obs = CollisionDetector_obs()
+            rate.sleep()
+        detector_obs_1 = CollisionDetector_obs()
+        detector_obs_2 = CollisionDetector_obs()
+        detector_obs_3 = CollisionDetector_obs()
         rospy.loginfo("\n===== 障碍物碰撞检测 =====")
         # 定义障碍物位置和检测范围
-        obs_1 = (0, -2)
-        obs_2 = (0.74, -0.78)
-        obs_3 = (2, -1.75)
+        obs_1 = (-0.5, -2)
+        obs_2 = (0.74, -1)
+        obs_3 = (1.86, -2)
         obs_radius = 0.25
         uav_radius = 0.15
         while not rospy.is_shutdown() and (-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5):
-           is_collision_1, count_1 = detector_obs.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_1, obs_radius)
-           is_collision_2, count_2 = detector_obs.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_2, obs_radius)
-           is_collision_3, count_3 = detector_obs.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_3, obs_radius)
+           is_collision_1, count_1 = detector_obs_1.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_1, obs_radius)
+           is_collision_2, count_2 = detector_obs_2.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_2, obs_radius)
+           is_collision_3, count_3 = detector_obs_3.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_3, obs_radius)
            check_xyz(self.uav_state.position)
         return count_3+count_2+count_1
     def is_rect_zone_test_rect(self):
@@ -214,18 +198,44 @@ class Uav_state:
         rospy.loginfo(f"正在检测是否进入穿框区!")
         while not condition_met and not rospy.is_shutdown():
             condition_rect=(0.5 <= self.uav_state.position[0]<= 2.5) and (-0.5 <= self.uav_state.position[1] <=2.5)  # 自定义函数获取状态
-            #print(f"正在检测是否进入障碍区,无人机位置x:{self.uav_state.position[0]} y:{self.uav_state.position[1]}!")
             if condition_rect:  
                 condition_met = True 
-                print("已进入穿框区")
+                rospy.loginfo("已进入穿框区")
             else:
                 pass  
             check_xyz(self.uav_state.position)
         rospy.loginfo(f"进行穿框区的检测!")
+        rect_1=(1.46,1.27,1, math.radians(0))#x，y的中心位置，旋转角度deg
+        rect_2=(1.63,0.12,0.6,math.radians(0))
+        obs_radius = 0.1
+        uav_radius = 0.15
+        #因为飞行时的高度限制，所以此处只进行框的左右部分检测，不进行上下部分检测
+        rect_1_end=calculate_rotated_rod_endpoints(*rect_1)
+        rect_2_end=calculate_rotated_rod_endpoints(*rect_2)
+        rospy.loginfo(f"坐标点{rect_1_end[0]},{rect_1_end[1]},{rect_2_end[0]},{rect_2_end[1]}!")
+        detector_obs_1 = CollisionDetector_obs()
+        detector_obs_2 = CollisionDetector_obs()
+        detector_obs_3 = CollisionDetector_obs()
+        detector_obs_4 = CollisionDetector_obs()
+        plane_1 = RotatedPlaneCrossDetector(*rect_1)
+        plane_2 = RotatedPlaneCrossDetector(*rect_2)
         while not rospy.is_shutdown() and (0.5 <= self.uav_state.position[0]<= 2.5) and (-0.5 <= self.uav_state.position[1] <=2.5):
             rect_start = rospy.get_time()
             check_xyz(self.uav_state.position)
-        return 0,0,0
+            is_collision_1, count_1 = detector_obs_1.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius,rect_1_end[0], obs_radius)
+            is_collision_2, count_2 = detector_obs_2.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius,rect_1_end[1], obs_radius)
+            is_collision_3, count_3 = detector_obs_3.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius,rect_2_end[0], obs_radius)
+            is_collision_4, count_4 = detector_obs_4.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius,rect_2_end[1], obs_radius)
+            is_crossing_1 = plane_1.update(self.uav_state.position[0],self.uav_state.position[1])
+            is_crossing_2 = plane_2.update(self.uav_state.position[0],self.uav_state.position[1])
+            rate.sleep()
+        rect_sum=count_1+count_2+count_3+count_4
+        rospy.loginfo(f"碰撞次数为{rect_sum}!")
+        rospy.loginfo(f"大框穿越次数为{plane_1.get_cross_count()}，小框穿越次数为{plane_2.get_cross_count()}!")
+        rect_1_count=plane_1.get_cross_count()
+        rect_2_count=plane_2.get_cross_count()
+        
+        return rect_sum,rect_1_count,rect_2_count
     def wind_zone_text(self):
         rate = rospy.Rate(10) #20 Hz
         condition_met = False  # 初始化标志
@@ -346,6 +356,121 @@ class Uav_state:
         # ROS节点关闭时退出
         rospy.loginfo("节点已关闭，终止降落检测")
         return False
+
+class RotatedPlaneCrossDetector:
+    def __init__(self, center_x, center_y, width, rotation_angle=0):
+        """
+        初始化旋转平面穿越检测器
+        
+        参数:
+        center_x, center_y (float): 面的中心点坐标
+        width (float): 面的宽度（长度）
+        rotation_angle (float): 面绕Z轴的旋转角度（弧度），初始与x轴平行
+        """
+        self.center_x = center_x
+        self.center_y = center_y
+        self.width = width
+        self.rotation_angle = rotation_angle
+        
+        # 计算旋转后的面的两个端点（修正核心）
+        half_length = width / 2  # 半长度（更准确的命名）
+        
+        # point1：从中心沿旋转方向延伸半长度
+        self.point1 = (
+            center_x + half_length * math.cos(rotation_angle),
+            center_y + half_length * math.sin(rotation_angle)
+        )
+        
+        # point2：从中心沿旋转方向的反方向延伸半长度（修正点）
+        self.point2 = (
+            center_x - half_length * math.cos(rotation_angle),  # 与point1相反的x分量
+            center_y - half_length * math.sin(rotation_angle)   # 与point1相反的y分量
+        )
+        
+        # 初始化穿越状态
+        self.last_position = None
+        self.cross_count = 0
+    
+    def _is_segment_intersect(self, p1, p2, p3, p4):
+        """判断两条线段是否相交（包括端点接触）"""
+        def ccw(A, B, C):
+            """计算三点的叉积"""
+            return (B[0]-A[0])*(C[1]-A[1]) - (B[1]-A[1])*(C[0]-A[0])
+        
+        ccw1 = ccw(p1, p2, p3)
+        ccw2 = ccw(p1, p2, p4)
+        ccw3 = ccw(p3, p4, p1)
+        ccw4 = ccw(p3, p4, p2)
+        
+        # 严格相交条件
+        if (ccw1 * ccw2 < 0) and (ccw3 * ccw4 < 0):
+            return True
+        
+        # 处理共线或端点接触的情况
+        if ccw1 == 0 and self._is_point_on_segment(p3, p1, p2):
+            return True
+        if ccw2 == 0 and self._is_point_on_segment(p4, p1, p2):
+            return True
+        if ccw3 == 0 and self._is_point_on_segment(p1, p3, p4):
+            return True
+        if ccw4 == 0 and self._is_point_on_segment(p2, p3, p4):
+            return True
+        
+        return False
+    
+    def _is_point_on_segment(self, p, a, b):
+        """判断点是否在线段上"""
+        return (min(a[0], b[0]) - 1e-9 <= p[0] <= max(a[0], b[0]) + 1e-9) and \
+               (min(a[1], b[1]) - 1e-9 <= p[1] <= max(a[1], b[1]) + 1e-9)
+    
+    def update(self, x, y):
+        """更新位置并检测穿越"""
+        current_position = (x, y)
+        is_crossing = False
+        
+        if self.last_position is not None:
+            is_crossing = self._is_segment_intersect(
+                self.last_position, current_position,
+                self.point1, self.point2
+            )
+            
+            if is_crossing:
+                self.cross_count += 1
+        
+        self.last_position = current_position
+        return is_crossing
+    
+    def get_cross_count(self):
+        return self.cross_count
+
+def calculate_rotated_rod_endpoints(x, y, width, rotat_ang):
+    """
+    计算旋转杆的两个端点在世界坐标系下的位置（不使用NumPy）
+    
+    参数:
+    x, y (float): 杆的中心位置坐标
+    width (float): 杆的长度
+    rotat_ang (float): 杆绕自身坐标系的旋转角度（弧度）
+    
+    返回:
+    tuple: 两个端点的坐标 ((x1, y1), (x2, y2))
+    """
+    # 计算半长度
+    half_length = width / 2
+    
+    # 计算旋转角度的正弦和余弦值
+    cos_theta = math.cos(rotat_ang)
+    sin_theta = math.sin(rotat_ang)
+    
+    # 计算端点1的坐标
+    x1 = x + half_length * cos_theta
+    y1 = y + half_length * sin_theta
+    
+    # 计算端点2的坐标（中心对称点）
+    x2 = x - half_length * cos_theta
+    y2 = y - half_length * sin_theta
+    
+    return ((x1, y1), (x2, y2))
 
 class Point3D:
     def __init__(self, x, y, z):
@@ -687,57 +812,7 @@ class DetectionSystem:
                 detector.reset()
             frame['passage_detector'].reset()
 
-# 测试用例：多框不同旋转角度
-def text():
-    system = DetectionSystem()
-    
-    # 添加两个框，设置不同的初始旋转角度
-    system.add_frame("frame1", (0, 0, 1, 1, 1.5, 0.5, 0.1), rotation=0)    # 左框，不旋转
-    system.add_frame("frame2", (3, 0, 1, 1, 1.5, 0.5, 0.1), rotation=30)   # 右框，旋转30度
-    
-    # 动态改变框的旋转角度
-    # system.set_frame_rotation("frame1", 15)  # 左框旋转15度
-    
-    # 设计球体路径：从左到右穿过两个框
-    sphere_path = [
-        (Sphere(Point3D(-1.0, 0.0, 1.0), 0.1), 0.0),
-        (Sphere(Point3D(-0.55, 0.0, 1.0), 0.1), 0.1),
-        (Sphere(Point3D(-0.52, 0.0, 1.0), 0.1), 0.2),
-        (Sphere(Point3D(0.0, 0.0, 1.0), 0.1), 0.3),
-        (Sphere(Point3D(0.52, 0.0, 1.0), 0.1), 0.4),
-        (Sphere(Point3D(0.55, 0.0, 1.0), 0.1), 0.5),
-        (Sphere(Point3D(1.5, 0.0, 1.0), 0.1), 0.6),
-        (Sphere(Point3D(2.55, 0.0, 1.0), 0.1), 0.7),
-        (Sphere(Point3D(2.52, 0.0, 1.0), 0.1), 0.8),
-        (Sphere(Point3D(3.0, 0.0, 1.0), 0.1), 0.9),
-        (Sphere(Point3D(3.52, 0.0, 1.0), 0.1), 1.0),
-        (Sphere(Point3D(3.55, 0.0, 1.0), 0.1), 1.1),
-        (Sphere(Point3D(4.0, 0.0, 1.0), 0.1), 1.2)
-    ]
-    
-    print("===== 多框不同旋转角度的3D碰撞与通过检测测试 =====")
-    print("框1位置: x=0, 旋转角度=15°, 左右边界(-0.5, 0.5), 边框厚度0.1")
-    print("框2位置: x=3, 旋转角度=30°, 左右边界(2.5, 3.5), 边框厚度0.1")
-    print("\n时间 | 球体位置      | 框1: 碰撞数 | 框1: 通过 | 框1: 角度 | 框2: 碰撞数 | 框2: 通过 | 框2: 角度")
-    print("-" * 100)
-    
-    for sphere, t in sphere_path:
-        results = system.detect_all(sphere, t)
-        
-        frame1 = results["frame1"]
-        frame2 = results["frame2"]
-        
-        print(f"{t:.1f}s | {sphere.center} | "
-              f"框1: {frame1['result']['total_collisions']:3d}       | 框1: {frame1['result']['passage_count']:2d}     | 框1: {frame1['rotation']:3d}°  | "
-              f"框2: {frame2['result']['total_collisions']:3d}       | 框2: {frame2['result']['passage_count']:2d}     | 框2: {frame2['rotation']:3d}°")
-    
-    print("\n===== 测试总结 =====")
-    print("预期结果:")
-    print("- 框1: 碰撞2次（左边框1次，右边框1次），通过1次")
-    print("- 框2: 碰撞2次（左边框1次，右边框1次），通过1次")
-    print("\n实际结果:")
-    print(f"- 框1: 碰撞{frame1['result']['total_collisions']}次，通过{frame1['result']['passage_count']}次")
-    print(f"- 框2: 碰撞{frame2['result']['total_collisions']}次，通过{frame2['result']['passage_count']}次")
+
 
 if __name__ == "__main__":
     score=0
@@ -767,10 +842,18 @@ if __name__ == "__main__":
         if fly_keep:
             crash_rect_count,big,small=UAV_s.is_rect_zone_test_rect()
             rospy.loginfo(f"经过穿框区后，碰撞{crash_rect_count},穿越大框{big}次，穿越小框{small}次")
-            if big*10+small*15-crash_rect_count*10>0:
-                score=score+big*10+small*15-crash_rect_count*10
+            rect_score=0
+            if big<=1 and small<=1:
+                rect_score=big*10+small*15
             else:
-                score=score
+                rect_score=0
+            if crash_rect_count==0 and small==1:
+                rect_score=rect_score
+            elif 0<crash_rect_count<=3 and small==1:
+                rect_score=rect_score+5-10*crash_rect_count
+            else:
+                rect_score=0
+            score=score+rect_score
             rospy.loginfo(f"经过穿框区后，总得分为{score}分")
         else:
             pass
