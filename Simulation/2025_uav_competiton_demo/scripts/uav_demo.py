@@ -59,10 +59,10 @@ class CircleVelController:
         self.max_pitch_speed = 2.0  
         self.pose = PoseStamped()
         self.points = [
-            [-0.5, -1.0, self.height],
-            [0.7, -2.0, self.height],
-            [1.6, -1.0, self.height],
-            [1.6, 0.12, self.height],
+            [-0.559, -1.176, self.height],
+            [0.706, -0.761, self.height],
+            [1.25, -0.572, self.height],
+            [1.2678, 0.1259, self.height],
             [1.46, 1.27, self.height],
             [1.43, 2.0, self.height],
             [0.0, 1.5, self.height],
