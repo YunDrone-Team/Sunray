@@ -34,6 +34,7 @@ catkin_make --source Simulation/gazebo_plugin/wind_zone_plugin --build build/win
 # 编译random_cylinder_plugin模块
 catkin_make --source Simulation/gazebo_plugin/random_cylinder_plugin --build build/random_cylinder_plugin
 
+catkin_make --source Simulation/future_2025_score --build build/future_2025_score
 # ugv需要octomap、serial相关以依赖
 # 编译sunray_ugv_control模块
 # catkin_make --source General_Module/sunray_ugv_control --build build/sunray_ugv_control
