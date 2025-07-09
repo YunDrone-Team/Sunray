@@ -31,6 +31,8 @@ catkin_make --source Simulation/gazebo_plugin --build build/gazebo_plugin
 catkin_make --source Simulation/2025_uav_competiton_demo --build build/2025_uav_competiton_demo
 # 编译wind_zone_plugin模块
 catkin_make --source Simulation/gazebo_plugin/wind_zone_plugin --build build/wind_zone_plugin
+# 编译random_cylinder_plugin模块
+catkin_make --source Simulation/gazebo_plugin/random_cylinder_plugin --build build/random_cylinder_plugin
 
 catkin_make --source Simulation/future_2025_score --build build/future_2025_score
 # ugv需要octomap、serial相关以依赖

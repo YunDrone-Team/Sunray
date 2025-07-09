@@ -1,5 +1,6 @@
 <sdf version='1.7'>
   <world name='default'>
+    <plugin name='random_cylinder_plugin' filename='librandom_cylinder_plugin.so'/>
     <light name='sun' type='directional'>
       <cast_shadows>1</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
@@ -136,10 +137,10 @@
       <pose>0.489515 2.4907 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>9685 964000000</sim_time>
-      <real_time>179 248844960</real_time>
-      <wall_time>1751704713 149137283</wall_time>
-      <iterations>179041</iterations>
+      <sim_time>10664 979000000</sim_time>
+      <real_time>980 237773291</real_time>
+      <wall_time>1752029450 410182628</wall_time>
+      <iterations>979015</iterations>
       <model name='Room'>
         <pose>4.58476 0.79623 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -183,20 +184,20 @@
         </link>
       </model>
       <model name='cylinder_25cm_clone'>
-        <pose>1.8675 -2.02211 0.999995 0 -0 0</pose>
+        <pose>1.91387 -2.21189 1 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.8675 -2.02211 0.999995 0 -0 0</pose>
+          <pose>1.91387 -2.21189 1 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='cylinder_25cm_clone_0'>
-        <pose>0.742041 -1.07937 1 0 -0 0</pose>
+        <pose>0.928388 -1.28471 1 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>0.742041 -1.07937 1 0 -0 0</pose>
+          <pose>0.928388 -1.28471 1 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -213,10 +214,10 @@
         </link>
       </model>
       <model name='iron_net'>
-        <pose>0.05456 -2.97679 1.05232 1.57 -0 0</pose>
+        <pose>0.05456 -2.97686 0.970459 1.57 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='iron_net'>
-          <pose>0.05456 -2.97679 1.05232 1.57 -0 0</pose>
+          <pose>0.05456 -2.97686 0.970459 1.57 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -233,20 +234,20 @@
         </link>
       </model>
       <model name='sqaure_window_2025_0'>
-        <pose>1.46 1.27 0 -2e-06 -4.2e-05 -1.56931</pose>
+        <pose>1.46 1.27 0 -0 -4.2e-05 -1.56931</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.46 1.27 0 -2e-06 -4.2e-05 -1.56931</pose>
+          <pose>1.46 1.27 0 -0 -4.2e-05 -1.56931</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-0 -0 -0.024439 0.000725 -0.488778 0</acceleration>
-          <wrench>-0 -0 -0.024439 0 -0 0</wrench>
+          <acceleration>0 0 0.196048 -0.001486 0.999604 0</acceleration>
+          <wrench>0 0 0.196048 0 -0 0</wrench>
         </link>
       </model>
       <model name='sqaure_window_2025_small'>
-        <pose>1.63221 0.12174 0 0 -5.2e-05 -1.57</pose>
+        <pose>1.26784 0.125975 0 0 -5.2e-05 -1.57</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.63221 0.12174 0 0 -5.2e-05 -1.57</pose>
+          <pose>1.26784 0.125975 0 0 -5.2e-05 -1.57</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -288,7 +289,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-9.41222 -16.7885 10.2476 0 0.469797 1.03998</pose>
+        <pose>1.14506 -2.11103 13.0597 7e-06 1.5698 1.84787</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -1558,7 +1559,7 @@
           <geometry>
             <mesh>
               <uri>model://sqaure_window_2025/meshes/0515.stl</uri>
-              <scale>1 1 1</scale>
+              <scale>1 2 1</scale>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
