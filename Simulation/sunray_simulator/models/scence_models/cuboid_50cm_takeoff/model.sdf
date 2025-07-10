@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="cuboid_50cm_takeoff">
+    <link name="link">
+      <!-- 视觉属性 -->
+      <visual name="visual">
+        <geometry>
+          <box>
+            <!-- 格式：长(x) 宽(y) 高(z) -->
+            <size>0.5 0.5 0.01</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <uri>model://fly_takeoff/fly_takeoff.material</uri>
+            <name>fly_takeoff</name>
+          </script>
+        </material>
+      </visual>
+
+      <!-- 碰撞属性 -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.5 0.5 0.01</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <!-- 物理属性（质量1kg） -->
+      <inertial>
+        <mass>1</mass>
+        <inertia>
+          <!-- 长方体惯性矩阵计算公式：
+               Ixx = (mass/12)*(width² + height²)
+               Iyy = (mass/12)*(length² + height²)
+               Izz = (mass/12)*(length² + width²) -->
+          <ixx>0.0208</ixx>
+          <iyy>0.0208</iyy>
+          <izz>0.0416</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+    </link>
+  </model>
+</sdf>
