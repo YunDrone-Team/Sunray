@@ -226,7 +226,7 @@ class CircleVelController:
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
                     if idx == 2:
-                        # 设置偏航到 45
+                        # 设置偏航到 90
                         rospy.sleep(1.0)
                         desired_yaw_deg = 90.0
                         self.uav_cmd.desired_yaw = math.radians(desired_yaw_deg)

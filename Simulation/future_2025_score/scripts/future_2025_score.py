@@ -207,7 +207,7 @@ class Uav_state:
         rospy.loginfo(f"进行穿框区的检测!")
         rect_1=(1.46,1.27,1, math.radians(0))#x，y的中心位置，旋转角度deg
         rect_2=(1.63,0.12,0.6,math.radians(0))
-        obs_radius = 0.1
+        obs_radius = 0.05
         uav_radius = 0.15
         #因为飞行时的高度限制，所以此处只进行框的左右部分检测，不进行上下部分检测
         rect_1_end=calculate_rotated_rod_endpoints(*rect_1)
