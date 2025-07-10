@@ -278,11 +278,12 @@ class Uav_state:
                 pass  
             check_xyz(self.uav_state.position)
         arrive_drop=False
-        while not rospy.is_shutdown() and (-1.75 <= self.uav_state.position[0]<= -1.25) and (1.25 <= self.uav_state.position[1] <=1.75):
+        while not rospy.is_shutdown() and (-2.5 <= self.uav_state.position[0]<= -0.5) and (0.5 <= self.uav_state.position[1] <=2.5):
             check_xyz(self.uav_state.position)
-            if (-2.5 <= self.uav_state.position[0]<= -0.5) and (0.5 <= self.uav_state.position[1] <=2.5):
+            if (-1.75 <= self.uav_state.position[0]<= -1.25) and (1.25 <= self.uav_state.position[1] <=1.75):
                 arrive_drop=True
                 print("正确进入投送点")
+                break
             else:
                 pass
         return arrive_drop
@@ -843,7 +844,7 @@ if __name__ == "__main__":
                 final_score = max(base_score - penalty, 0)
             else:
                 final_score = base_score  # 未满足基础条件或无碰撞，直接取基础分
-            score=score+base_score
+            score=score+final_score
             rospy.loginfo(f"经过穿框区后，总得分为{score}分")
         else:
             pass

@@ -61,7 +61,7 @@ class CircleVelController:
         self.points = [
             [-0.559, -1.176, self.height],
             [0.706, -0.761, self.height],
-            [1.25, -0.572, self.height],
+            [1.22, -0.572, self.height],
             [1.2678, 0.1259, self.height],
             [1.46, 1.27, self.height],
             [1.43, 2.0, self.height],

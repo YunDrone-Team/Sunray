@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+    <model name='target_swjtu'>
+      <static>true</static>
+      <link name="target_swjtu">
+        <pose frame=''> 0.0 0.0 0.0 0.0 0.0 0.0</pose>
+        <visual name="visual">
+            <cast_shadows>false</cast_shadows>
+            <geometry>
+              <box>
+                <size>1 1 0.01</size>
+              </box>
+            </geometry>
+            <material>
+              <script>
+                <uri>model://swjtu/swjtu.material</uri>
+                <name>swjtu</name>                
+              </script>
+            </material>
+        </visual>
+      </link>
+    </model>
+</sdf>
