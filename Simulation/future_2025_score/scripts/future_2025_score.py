@@ -843,7 +843,7 @@ if __name__ == "__main__":
                 final_score = max(base_score - penalty, 0)
             else:
                 final_score = base_score  # 未满足基础条件或无碰撞，直接取基础分
-            score=score+base_score
+            score=score+final_score
             rospy.loginfo(f"经过穿框区后，总得分为{score}分")
         else:
             pass
