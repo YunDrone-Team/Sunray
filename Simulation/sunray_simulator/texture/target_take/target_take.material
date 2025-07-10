@@ -1,4 +1,4 @@
-material fly_drop
+material target_take
 {
  technique
  {
@@ -7,7 +7,7 @@ material fly_drop
      texture_unit
      {
        // Relative to the location of the material script
-       texture fly_drop.png
+       texture target_take.png
        // Repeat the texture over the surface (4 per face)
        scale 1.0 1.0
      }

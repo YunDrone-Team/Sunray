@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+    <model name='target_takeoff'>
+      <static>true</static>
+      <link name="target_takeoff">
+        <pose frame=''> 0.0 0.0 0.0 0.0 0.0 0.0</pose>
+        <visual name="visual">
+            <cast_shadows>false</cast_shadows>
+            <geometry>
+              <box>
+                <size>0.5 0.5 0.01</size>
+              </box>
+            </geometry>
+            <material>
+              <script>
+                <uri>model://target_take/target_take.material</uri>
+                <name>target_take</name>                
+              </script>
+            </material>
+        </visual>
+      </link>
+    </model>
+</sdf>
