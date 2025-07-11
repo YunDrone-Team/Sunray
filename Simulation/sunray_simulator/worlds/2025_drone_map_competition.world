@@ -137,10 +137,10 @@
       <pose>0.489515 2.4907 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>11629 392000000</sim_time>
-      <real_time>248 202443590</real_time>
-      <wall_time>1752197549 160835424</wall_time>
-      <iterations>247944</iterations>
+      <sim_time>12499 237000000</sim_time>
+      <real_time>56 294595359</real_time>
+      <wall_time>1752205573 384668968</wall_time>
+      <iterations>56221</iterations>
       <model name='Room'>
         <pose>4.58476 0.79623 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -174,20 +174,20 @@
         </link>
       </model>
       <model name='cylinder_25cm'>
-        <pose>-0.7 -1.33 1 0 -0 0</pose>
+        <pose>-0.305 -1 1 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-0.7 -1.33 1 0 -0 0</pose>
+          <pose>-0.305 -1 1 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='cylinder_25cm_clone'>
-        <pose>1.03 -2.37 1 0 -0 0</pose>
+        <pose>-0.4 -2.25 1 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.03 -2.37 1 0 -0 0</pose>
+          <pose>-0.4 -2.25 1 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -233,14 +233,34 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
+      <model name='nokov_logo'>
+        <pose>-4.95261 -3.38548 0 0 -0 1.56738</pose>
+        <scale>1.07287 1.28839 1</scale>
+        <link name='nokov_logo'>
+          <pose>-4.95261 -3.38548 0 0 -0 1.56738</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='nokov_logo_clone'>
+        <pose>4.95859 -3.5651 0 0 -0 1.57</pose>
+        <scale>1 1 1</scale>
+        <link name='nokov_logo'>
+          <pose>4.95859 -3.5651 -0 0 -0 1.57</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <model name='sqaure_window_2025_0'>
-        <pose>1.46 1.27 0 -3e-06 -4.2e-05 -1.56931</pose>
+        <pose>1.46 1.27 -0 1e-06 -4.2e-05 -1.56931</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.46 1.27 0 -3e-06 -4.2e-05 -1.56931</pose>
+          <pose>1.46 1.27 -0 1e-06 -4.2e-05 -1.56931</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-0 -0 -0.478987 0.001385 -0.9321 0</acceleration>
-          <wrench>-0 -0 -0.478987 0 -0 0</wrench>
+          <acceleration>0 0 -0.097029 0.001442 -0.970296 0</acceleration>
+          <wrench>0 0 -0.097029 0 -0 0</wrench>
         </link>
       </model>
       <model name='sqaure_window_2025_small'>
@@ -253,21 +273,21 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='target_swjtu_1'>
-        <pose>-4.86086 0.137367 0.01 -1.57027 0 0</pose>
-        <scale>2.28547 1.96419 2.36087</scale>
+      <model name='target_swjtu_1_clone'>
+        <pose>4.96114 -0.140057 0.01 -1.57 0 0</pose>
+        <scale>1 1 1</scale>
         <link name='target_swjtu'>
-          <pose>-4.86086 0.137367 0.01 -1.57027 0 0</pose>
+          <pose>4.96114 -0.140057 0.01 -1.57 0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='target_swjtu_1_clone'>
-        <pose>4.93189 -0.087041 0.01 -1.57027 2.2e-05 -0.009782</pose>
+      <model name='target_swjtu_1_clone_clone'>
+        <pose>-4.96321 -0.026739 0.010042 -1.57027 2.1e-05 0</pose>
         <scale>1 1 1</scale>
         <link name='target_swjtu'>
-          <pose>4.93189 -0.087041 0.01 -1.57027 2.2e-05 -0.009782</pose>
+          <pose>-4.96321 -0.026739 0.010042 -1.57027 2.1e-05 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -275,7 +295,7 @@
       </model>
       <model name='target_zone'>
         <pose>-1.5 1.5 0.27 0 -0 0</pose>
-        <scale>1 1 53.7106</scale>
+        <scale>1 1 1</scale>
         <link name='target_zone'>
           <pose>-1.5 1.5 0.27 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
@@ -299,7 +319,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-0.249504 -9.00368 9.82697 0 0.625796 1.65583</pose>
+        <pose>-1.2275 -8.49065 20.8798 0 1.2298 1.564</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -468,30 +488,6 @@
         <kinematic>0</kinematic>
       </link>
       <pose>2.21057 -1.85591 1.02893 0 -0 0</pose>
-    </model>
-    <model name='target_zone'>
-      <static>1</static>
-      <link name='target_zone'>
-        <pose>0 0 0 0 -0 0</pose>
-        <visual name='visual'>
-          <cast_shadows>0</cast_shadows>
-          <geometry>
-            <box>
-              <size>0.5 0.5 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://target_img/target_img.material</uri>
-              <name>target_img</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>-4.93255 1.61053 0 0 -0 0</pose>
     </model>
     <model name='sqaure_window_2025_small'>
       <link name='link'>
@@ -1499,30 +1495,6 @@
       </link>
       <pose>-7.09782 0.985741 0 0 -0 0</pose>
     </model>
-    <model name='target_swjtu_1'>
-      <static>1</static>
-      <link name='target_swjtu'>
-        <pose>0 0 0 0 -0 0</pose>
-        <visual name='visual'>
-          <cast_shadows>0</cast_shadows>
-          <geometry>
-            <box>
-              <size>1 0.01 2</size>
-            </box>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://yundrone_swjtu/yundrone_swjtu.material</uri>
-              <name>yundrone_swjtu</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>-0.081955 -0.586398 0 0 -0 0</pose>
-    </model>
     <model name='target_swjtu_1_clone'>
       <static>1</static>
       <link name='target_swjtu'>
@@ -1645,6 +1617,102 @@
       <static>1</static>
       <allow_auto_disable>1</allow_auto_disable>
       <pose>0.070851 -1.53038 0 0 -0 0</pose>
+    </model>
+    <model name='target_swjtu_1_clone_clone'>
+      <static>1</static>
+      <link name='target_swjtu'>
+        <pose>0 0 0 0 -0 0</pose>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <box>
+              <size>2.28547 0.019642 4.72174</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://yundrone_swjtu/yundrone_swjtu.material</uri>
+              <name>yundrone_swjtu</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>-6.05951 -0.175726 0.01 -1.57027 2.2e-05 -0.009782</pose>
+    </model>
+    <model name='nokov_logo'>
+      <static>1</static>
+      <link name='nokov_logo'>
+        <pose>0 0 0 0 -0 0</pose>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <box>
+              <size>1.86417 1.75162 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://nokov_logo/nokov_logo.material</uri>
+              <name>nokov_logo</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>-4.93738 -3.52925 0 0 -0 0</pose>
+    </model>
+    <model name='nokov_logo_clone'>
+      <static>1</static>
+      <link name='nokov_logo'>
+        <pose>0 0 0 0 -0 0</pose>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <box>
+              <size>2.14574 2.2836 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://nokov_logo/nokov_logo.material</uri>
+              <name>nokov_logo</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.90408 -3.4999 -0 0 -0 1.56738</pose>
+    </model>
+    <model name='target_zone'>
+      <static>1</static>
+      <link name='target_zone'>
+        <pose>0 0 0 0 -0 0</pose>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <box>
+              <size>0.5 0.5 0.5</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://target_img/target_img.material</uri>
+              <name>target_img</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>-1.49235 1.56289 0 0 -0 0</pose>
     </model>
   </world>
 </sdf>
