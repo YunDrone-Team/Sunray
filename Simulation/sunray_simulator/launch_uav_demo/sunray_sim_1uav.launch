@@ -3,8 +3,8 @@
 	<!-- Gazebo 配置 -->
     <arg name="gazebo_enable" default="true"/>
     <arg name="gui" default="true"/>
-    <!-- 修改为2025_drone_map 原始为sunray_empty_world.world-->
-    <arg name="world" default="$(find sunray_simulator)/worlds/2025_drone_map_1.world"/> 
+    <!-- demo为2025_drone_map_demo.world-->
+    <arg name="world" default="$(find sunray_simulator)/worlds/2025_drone_map_competition.world"/> 
     <!-- 启动 Gazebo -->
     <group if="$(arg gazebo_enable)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
