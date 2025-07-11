@@ -3,7 +3,6 @@
 *.mp4
 *.avi
 #.png
-*.jpg
 *.svj
 .catkin_workspace
 .vsode
