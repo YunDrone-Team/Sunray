@@ -12,9 +12,10 @@ class ModelPosePublisher:
         
         # 初始化发布者
         self.pose_pubs = {
-            "cylinder_25cm": rospy.Publisher('/obstacle_1/pose', PoseStamped, queue_size=10),
-            "cylinder_25cm_clone_0": rospy.Publisher('/obstacle_2/pose', PoseStamped, queue_size=10),
-            "cylinder_25cm_clone": rospy.Publisher('/obstacle_3/pose', PoseStamped, queue_size=10)
+            "cylinder_25cm": rospy.Publisher('/obstcale_1/pose', PoseStamped, queue_size=10),
+            "cylinder_25cm_clone_0": rospy.Publisher('/obstcale_2/pose', PoseStamped, queue_size=10),
+            "cylinder_25cm_clone": rospy.Publisher('/obstcale_3/pose', PoseStamped, queue_size=10),
+            "target_zone": rospy.Publisher('/delivery_target/pose', PoseStamped, queue_size=10)
         }
         
         # 初始化 Gazebo 服务客户端
