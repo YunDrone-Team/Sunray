@@ -3,14 +3,14 @@ import rospy
 from gazebo_msgs.srv import GetModelState
 from geometry_msgs.msg import PoseStamped
 
-class CylinderPosePublisher:
+class ModelPosePublisher:
     def __init__(self):
         # 初始化 ROS 节点
-        rospy.init_node('cylinder_pose_publisher', anonymous=True)
+        rospy.init_node('model_pose_publisher', anonymous=True)
         
-        self.model_names = ["cylinder_25cm", "cylinder_25cm_clone_0", "cylinder_25cm_clone"]
+        self.model_names = ["cylinder_25cm", "cylinder_25cm_clone_0", "cylinder_25cm_clone", "target_zone"]
         
-        # 初始化发布者，每个圆柱体一个独立话题
+        # 初始化发布者
         self.pose_pubs = {
             "cylinder_25cm": rospy.Publisher('/obstacle_1/pose', PoseStamped, queue_size=10),
             "cylinder_25cm_clone_0": rospy.Publisher('/obstacle_2/pose', PoseStamped, queue_size=10),
@@ -25,7 +25,6 @@ class CylinderPosePublisher:
         self.rate = rospy.Rate(100)  # 100Hz
 
     def get_current_poses(self):
-        # 获取每个圆柱体的当前坐标并发布
         for model_name in self.model_names:
             try:
                 # 调用服务获取模型状态
@@ -51,7 +50,7 @@ class CylinderPosePublisher:
 
 if __name__ == '__main__':
     try:
-        publisher = CylinderPosePublisher()
+        publisher = ModelPosePublisher()
         publisher.run()
     except rospy.ROSInterruptException:
         pass

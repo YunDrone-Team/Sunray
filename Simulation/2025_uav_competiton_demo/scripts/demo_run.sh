@@ -12,6 +12,11 @@ roslaunch sunray_simulator sunray_sim_1uav.launch &
 sim_pid=$!
 sleep 5
 
+echo "启动 publisher ..."
+roslaunch 2025_uav_competiton_demo position_pub.launch &
+sim_pid=$!
+sleep 2
+
 echo "启动 fusion ..."
 roslaunch sunray_uav_control external_fusion.launch external_source:=2 enable_rviz:=false &
 fusion_pid=$!
