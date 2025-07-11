@@ -12,9 +12,9 @@ class CylinderPosePublisher:
         
         # 初始化发布者，每个圆柱体一个独立话题
         self.pose_pubs = {
-            "cylinder_25cm": rospy.Publisher('/obstructions_1/pose', PoseStamped, queue_size=10),
-            "cylinder_25cm_clone_0": rospy.Publisher('/obstructions_2/pose', PoseStamped, queue_size=10),
-            "cylinder_25cm_clone": rospy.Publisher('/obstructions_3/pose', PoseStamped, queue_size=10)
+            "cylinder_25cm": rospy.Publisher('/obstacle_1/pose', PoseStamped, queue_size=10),
+            "cylinder_25cm_clone_0": rospy.Publisher('/obstacle_2/pose', PoseStamped, queue_size=10),
+            "cylinder_25cm_clone": rospy.Publisher('/obstacle_3/pose', PoseStamped, queue_size=10)
         }
         
         # 初始化 Gazebo 服务客户端

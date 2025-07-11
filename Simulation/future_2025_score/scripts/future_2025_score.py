@@ -5,8 +5,96 @@ from sunray_msgs.msg import UAVState
 from datetime import datetime, timedelta
 from geometry_msgs.msg import PoseStamped
 import threading
+from typing import Dict, Tuple
+
 
 warn_sum=0
+
+obs_1 = (0.0, 0.0)
+obs_2 = (0.0, 0.0)
+obs_3 = (0.0, 0.0)
+
+class Obstacle:
+    """表示障碍物的类，包含ID、位置和时间戳信息"""
+    
+    def __init__(self, obstacle_id: int, initial_position: Tuple[float, float] = (0.0, 0.0)):
+        self.obstacle_id = obstacle_id
+        self._position = initial_position  # 私有属性，存储当前位置
+        self._timestamp = rospy.Time.now().to_sec()  # 私有属性，记录最后更新时间
+        self._lock = threading.Lock()      # 用于线程安全的锁
+    
+    def update_position(self, position: Tuple[float, float]):
+        """更新障碍物位置并记录时间戳，使用锁保证线程安全"""
+        with self._lock:
+            self._position = position
+            self._timestamp = rospy.Time.now().to_sec()
+    
+    def get_position(self) -> Tuple[float, float]:
+        """获取障碍物的当前位置，使用锁保证线程安全"""
+        with self._lock:
+            return self._position
+    
+    def get_timestamp(self) -> float:
+        """获取最后一次位置更新的时间戳"""
+        with self._lock:
+            return self._timestamp
+
+class ObstacleMonitor:
+    """障碍物监控器，负责订阅话题并更新障碍物位置"""
+    
+    def __init__(self):
+        #rospy.init_node('obstacle_monitor', anonymous=True)
+        
+        self.obstacles = {}  # 存储障碍物对象的字典，键为障碍物ID，值为Obstacle对象
+        self._subscribers = []  # 存储所有订阅者的列表
+        
+        # 初始化三个障碍物
+        for i in range(1, 4):
+            self.obstacles[i] = Obstacle(i)
+        
+        # 订阅三个话题
+        for obstacle_id in self.obstacles:
+            topic_name = f"/obstacle_{obstacle_id}/pose"  # 话题名称格式: /obstacle_1/pose, /obstacle_2/pose, ...
+            subscriber = rospy.Subscriber(
+                topic_name, 
+                PoseStamped, 
+                callback=self._topic_callback, 
+                callback_args=obstacle_id,
+                queue_size=10
+            )
+            self._subscribers.append(subscriber)
+            
+            rospy.loginfo(f"已订阅话题: {topic_name}")
+    
+    def _topic_callback(self, msg: PoseStamped, obstacle_id: int):
+        """话题回调函数，处理接收到的位置消息"""
+        global obs_1, obs_2, obs_3  # 声明使用全局变量
+        
+        try:
+            # 从消息中提取位置数据
+            x = msg.pose.position.x
+            y = msg.pose.position.y
+            position = (x, y)
+            
+            # 更新障碍物位置
+            self.obstacles[obstacle_id].update_position(position)
+            rospy.logdebug(f"障碍物 {obstacle_id} 位置更新为: {position}")
+            
+            # 将位置数据赋值给对应的全局变量
+            if obstacle_id == 1:
+                obs_1 = position
+            elif obstacle_id == 2:
+                obs_2 = position
+            elif obstacle_id == 3:
+                obs_3 = position
+                
+        except Exception as e:
+            rospy.logerr(f"处理障碍物 {obstacle_id} 位置数据时出错: {e}")
+    
+    def get_all_obstacles(self) -> Dict[int, Obstacle]:
+        """获取所有障碍物对象"""
+        return self.obstacles
+
 
 class CollisionCounter_obs:
     """碰撞计数器（处理状态转换和去抖动）"""
@@ -67,7 +155,6 @@ class Uav_state:
         self.uav_id = rospy.get_param("~uav_id", 1) #
         self.uav_name = rospy.get_param("~uav_name", "uav")
         self.uav_name = f"/{self.uav_name}{self.uav_id}"
-
         self.height_limit={ "min": 0.5,"max": 1.5}
         self.area_boundary = {
             "x_min": -2.5,   # X轴最小值
@@ -142,7 +229,6 @@ class Uav_state:
         rate = rospy.Rate(20) #20 Hz 
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入障碍区!")
-        
         while not condition_met and not rospy.is_shutdown():
             condition_obs=(-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5)  # 自定义函数获取状态
             #print(f"正在检测是否进入障碍区,无人机位置x:{self.uav_state.position[0]} y:{self.uav_state.position[1]}!")
@@ -153,14 +239,14 @@ class Uav_state:
                 pass  
             check_xyz(self.uav_state.position)
             rate.sleep()
+        print(f"obs_1: ({obs_1[0]:.2f}, {obs_1[1]:.2f})")
+        print(f"obs_2: ({obs_2[0]:.2f}, {obs_2[1]:.2f})")
+        print(f"obs_3: ({obs_3[0]:.2f}, {obs_3[1]:.2f})")
         detector_obs_1 = CollisionDetector_obs()
         detector_obs_2 = CollisionDetector_obs()
         detector_obs_3 = CollisionDetector_obs()
         rospy.loginfo("\n===== 障碍物碰撞检测 =====")
         # 定义障碍物位置和检测范围
-        obs_1 = (-0.52, -2)
-        obs_2 = (0.93, -1.28)
-        obs_3 = (1.91, -2.21)
         obs_radius = 0.25
         uav_radius = 0.15
         while not rospy.is_shutdown() and (-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5):
@@ -808,6 +894,8 @@ class DetectionSystem:
 if __name__ == "__main__":
     score=0
     rospy.init_node('Score_system', anonymous=True)
+    monitor = ObstacleMonitor()
+    rospy.loginfo("障碍物监控器已启动，正在实时更新障碍物位置...")
     start = rospy.get_time()
     UAV_s=Uav_state()
     UAV_s.wait_for_connection()
