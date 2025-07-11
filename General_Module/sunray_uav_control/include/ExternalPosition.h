@@ -134,7 +134,7 @@ public:
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
             moving_average_filter.setSize(1);
-            source_topic_name = "/baton/stereo3/odometry";
+            //source_topic_name = "/baton/stereo3/odometry";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
             break;
         default:
@@ -248,11 +248,13 @@ public:
         q.setZ(msg->pose.pose.orientation.z);
         // 绕 Z 轴旋转 90°
         tf2::Quaternion q_z;
-        q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90°
+        q_z.setRPY(0, 0, 0);
+        //q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90°
 
         // 绕 Y 轴旋转 -90°
         tf2::Quaternion q_y;
-        q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90°
+        q_y.setRPY(0, 0, 0);
+        //q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90°
 
         // 组合旋转（顺序：先 q_z，再 q_y）
         q = q * q_z * q_y;

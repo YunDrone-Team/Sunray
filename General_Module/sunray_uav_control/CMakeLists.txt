@@ -53,6 +53,9 @@ include_directories(
 ###############################
 ##      声明可执行cpp文件     ##
 ###############################
+add_executable(mocap_odom_node src/mocap_odom.cpp)
+target_link_libraries(mocap_odom_node ${catkin_LIBRARIES})
+
 add_library(uav_control src/uav_control.cpp)
 add_executable(uav_control_node src/uav_control_node.cpp)
 add_dependencies(uav_control_node sunray_control_gencpp)

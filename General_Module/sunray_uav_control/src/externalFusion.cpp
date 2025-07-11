@@ -163,19 +163,18 @@ void ExternalFusion::timer_pub_ext_odom_cb(const ros::TimerEvent &event)
     // ext_odom.pose.pose.position.y = NAN;
     // ext_odom.pose.pose.position.z = NAN;
 
-    ext_odom.twist.twist.linear.x = ext_pos.external_odom.velocity[0];
-    ext_odom.twist.twist.linear.y = ext_pos.external_odom.velocity[1];
-    ext_odom.twist.twist.linear.z = ext_pos.external_odom.velocity[2];
+    // ext_odom.twist.twist.linear.x = ext_pos.external_odom.velocity[0];
+    // ext_odom.twist.twist.linear.y = ext_pos.external_odom.velocity[1];
+    // ext_odom.twist.twist.linear.z = ext_pos.external_odom.velocity[2];
 
-    // ext_odom.twist.twist.linear.x = NAN;
-    // ext_odom.twist.twist.linear.y = NAN;
-    // ext_odom.twist.twist.linear.z = NAN;
+    ext_odom.twist.twist.linear.x = NAN;
+    ext_odom.twist.twist.linear.y = NAN;
+    ext_odom.twist.twist.linear.z = NAN;
 
     ext_odom.pose.pose.orientation.x = ext_pos.external_odom.attitude_q.x;
     ext_odom.pose.pose.orientation.y = ext_pos.external_odom.attitude_q.y;
     ext_odom.pose.pose.orientation.z = ext_pos.external_odom.attitude_q.z;
     ext_odom.pose.pose.orientation.w = ext_pos.external_odom.attitude_q.w;
-
 
     ext_odom.twist.twist.angular.x = NAN;
     ext_odom.twist.twist.angular.y = NAN;

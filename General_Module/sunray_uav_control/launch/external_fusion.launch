@@ -1,12 +1,13 @@
 <launch>
     <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
-    <arg name="uav_id" default="1" />
+    <arg name="uav_id" default="2" />
     <arg name="external_source" default="0" />
     <arg name="uav_name" default="uav" />
-    <arg name="position_topic" default="/Odometry" />
+    <!-- <arg name="position_topic" default="/baton/stereo3/odometry" /> -->
+    <arg name="position_topic" default="/livox/odometry" />
     <arg name="enable_rviz" default="false" />
     <arg name="enable_range_sensor" default="false" />
-    <arg name="server" default="192.168.25.11"/>
+    <arg name="server" default="192.168.25.27"/>
 
     <!-- 启动 external_fusion_node-->
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
@@ -17,8 +18,10 @@
         <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
     </node>
 
+    <node name="mocap_odom_node" pkg="sunray_uav_control" type="mocap_odom_node" output="screen" />
+
     <!-- 启动 vrpn_client_ros -->
-    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 3)">
+    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 4)">
         <arg name="server" value="$(arg server)"/>
         <arg name="uav_id" value="$(arg uav_id)"/>
     </include>
