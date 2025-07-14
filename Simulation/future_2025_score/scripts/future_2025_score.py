@@ -137,6 +137,7 @@ class CollisionDetector_obs:
         return is_collision, self.collision_counter.get_collision_count()
 
 def check_xyz(position):
+    global warn_sum
     if (0.5 <= position[2] <=1.5):
         pass
     else:
@@ -176,7 +177,7 @@ class Uav_state:
             rate.sleep()
         rospy.loginfo(f"{self.node_name}:UAV connected!")
     def is_takeoff_complete(self):
-    #判断无人机是否完成起飞""
+        #判断无人机是否完成起飞
         start_time = rospy.get_time()
         rate = rospy.Rate(10)  # 10Hz检测频率
         timeout=60
@@ -249,6 +250,9 @@ class Uav_state:
         # 定义障碍物位置和检测范围
         obs_radius = 0.25
         uav_radius = 0.15
+        count_1 = 0
+        count_2 = 0
+        count_3 = 0
         while not rospy.is_shutdown() and (-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5):
            is_collision_1, count_1 = detector_obs_1.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_1, obs_radius)
            is_collision_2, count_2 = detector_obs_2.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_2, obs_radius)
@@ -268,8 +272,8 @@ class Uav_state:
                 pass  
             check_xyz(self.uav_state.position)
         rospy.loginfo(f"进行穿框区的检测!")
-        rect_1=(1.46,1.27,1, math.radians(0))#x，y的中心位置，旋转角度deg
-        rect_2=(1.26,0.12,0.6,math.radians(0))
+        rect_1=(1.46,1.27,1, 0)#x，y的中心位置，旋转角度deg
+        rect_2=(1.26,0.12,0.6,0)
         obs_radius = 0.04
         uav_radius = 0.15
         #因为飞行时的高度限制，所以此处只进行框的左右部分检测，不进行上下部分检测
@@ -282,6 +286,10 @@ class Uav_state:
         detector_obs_4 = CollisionDetector_obs()
         plane_1 = RotatedPlaneCrossDetector(*rect_1)
         plane_2 = RotatedPlaneCrossDetector(*rect_2)
+        count_1 = 0
+        count_2 = 0
+        count_3 = 0
+        count_4 = 0
         while not rospy.is_shutdown() and (0.5 <= self.uav_state.position[0]<= 2.5) and (-0.5 <= self.uav_state.position[1] <=2.5):
             rect_start = rospy.get_time()
             check_xyz(self.uav_state.position)
@@ -623,17 +631,18 @@ class CollisionDetector:
             self.pending_state = collision
             self.state_change_time = current_time
         else:
-            elapsed = current_time - self.state_change_time
-            if elapsed >= self.debounce_time:
-                if collision and not self.last_collision_state:
-                    self.collision_count += 1
-                    self.last_collision_state = True
-                if not collision:
-                    self.last_collision_state = False
-                    
-                self.current_state = self.pending_state
-                self.pending_state = None
-                self.state_change_time = None
+            if self.state_change_time is not None:
+                elapsed = current_time - self.state_change_time
+                if elapsed >= self.debounce_time:
+                    if collision and not self.last_collision_state:
+                        self.collision_count += 1
+                        self.last_collision_state = True
+                    if not collision:
+                        self.last_collision_state = False
+                        
+                    self.current_state = self.pending_state
+                    self.pending_state = None
+                    self.state_change_time = None
         
         return self.current_state
     
