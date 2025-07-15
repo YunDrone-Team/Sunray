@@ -82,10 +82,6 @@ add_executable(waypoint_pub utils/waypoint_pub.cpp)
 add_dependencies(waypoint_pub sunray_control_gencpp)
 target_link_libraries(waypoint_pub ${catkin_LIBRARIES})
 
-add_executable(error_estimation utils/error_estimation.cpp)
-add_dependencies(error_estimation sunray_control_gencpp)
-target_link_libraries(error_estimation ${catkin_LIBRARIES})
-
 add_executable(positioning_accuracy utils/positioning_accuracy.cpp)
 add_dependencies(positioning_accuracy sunray_control_gencpp)
 target_link_libraries(positioning_accuracy ${catkin_LIBRARIES})

@@ -134,7 +134,7 @@ public:
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
             moving_average_filter.setSize(1);
-            source_topic_name = "/baton_mini/odometry";
+            // source_topic_name = "/baton_mini/odometry";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
             break;
         default:

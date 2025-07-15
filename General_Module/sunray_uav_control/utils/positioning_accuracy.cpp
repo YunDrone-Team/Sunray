@@ -13,6 +13,7 @@ struct TimeValue
     std::vector<double> vel_x;
     std::vector<double> vel_y;
     std::vector<double> vel_z;
+    std::vector<double> yaw;
 };
 
 // error estimation
@@ -48,7 +49,7 @@ private:
     ros::Timer update_timer;
 
     std::vector<TimeValue> timeValues;
-    std::vector<std::tuple<double, double, double>> points;
+    std::vector<std::tuple<double, double, double, double>> points;
 
 public:
     ErrorEstimation(ros::NodeHandle &nh)
@@ -73,11 +74,11 @@ public:
         record_flag = false;
         last_time = ros::Time::now();
         timeValues.resize(5);
-        points.push_back(std::make_tuple(0, 0, 1));
-        points.push_back(std::make_tuple(1, 1, 1));
-        points.push_back(std::make_tuple(1, -1, 1));
-        points.push_back(std::make_tuple(-1, -1, 1));
-        points.push_back(std::make_tuple(-1, 1, 1));
+        points.push_back(std::make_tuple(0, 0, 1, 0));
+        points.push_back(std::make_tuple(1, 1, 1, 0));
+        points.push_back(std::make_tuple(1, -1, 1, -M_PI / 2));
+        points.push_back(std::make_tuple(-1, -1, 1, -M_PI * 5 / 6));
+        points.push_back(std::make_tuple(-1, 1, 1, M_PI / 2));
     }
 
     void update_callback()
@@ -90,7 +91,8 @@ public:
             if (!record_flag &&
                 abs(uav_state.position[0] - std::get<0>(points[state - 3])) < 0.1 &&
                 abs(uav_state.position[1] - std::get<1>(points[state - 3])) < 0.1 &&
-                abs(uav_state.position[2] - std::get<2>(points[state - 3])) < 0.1)
+                abs(uav_state.position[2] - std::get<2>(points[state - 3])) < 0.1 &&
+                abs(uav_state.attitude[2] - std::get<3>(points[state - 3])) < M_PI / 6)
             {
                 if (abs(uav_state.velocity[0]) < 0.1 &&
                     abs(uav_state.velocity[1]) < 0.1 &&
@@ -109,6 +111,7 @@ public:
                 timeValues[state - 3].vel_x.push_back(abs(uav_state.velocity[0]));
                 timeValues[state - 3].vel_y.push_back(abs(uav_state.velocity[1]));
                 timeValues[state - 3].vel_z.push_back(abs(uav_state.velocity[2]));
+                timeValues[state - 3].yaw.push_back(abs(uav_state.attitude[2] - std::get<3>(points[state - 3])));
             }
         }
     }
@@ -128,6 +131,7 @@ public:
             vel_max[0] = vel_max[1] = vel_max[2] = 0;
             pos_err_mean[0] = pos_err_mean[1] = pos_err_mean[2] = 0;
             vel_mean[0] = vel_mean[1] = vel_mean[2] = 0;
+            yaw_err_max = yaw_err_mean = 0;
 
             pos_err_mean[0] = std::accumulate(timeValues[i].pos_x.begin(), timeValues[i].pos_x.end(), 0.0) / timeValues[i].pos_x.size();
             pos_err_mean[1] = std::accumulate(timeValues[i].pos_y.begin(), timeValues[i].pos_y.end(), 0.0) / timeValues[i].pos_y.size();
@@ -144,6 +148,10 @@ public:
             vel_max[0] = max(vel_max[0], *max_element(timeValues[i].vel_x.begin(), timeValues[i].vel_x.end()));
             vel_max[1] = max(vel_max[1], *max_element(timeValues[i].vel_y.begin(), timeValues[i].vel_y.end()));
             vel_max[2] = max(vel_max[2], *max_element(timeValues[i].vel_z.begin(), timeValues[i].vel_z.end()));
+
+            yaw_err_max = max(pos_err_max[0], *max_element(timeValues[i].yaw.begin(), timeValues[i].yaw.end()));
+            yaw_err_mean = std::accumulate(timeValues[i].yaw.begin(), timeValues[i].yaw.end(), 0.0) / timeValues[i].yaw.size();
+
             Logger::print_color(int(LogColor::blue), LOG_BOLD, "----Point ", i + 1, " --------------------");
             Logger::print_color(int(LogColor::blue), "【POS_ERROR_X_MAX", "POS_ERROR_Y_MAX", "POS_ERROR_Z_MAX】");
             if (pos_err_max[0] > 0.15 || pos_err_max[1] > 0.15 || pos_err_max[2] > 0.15)
@@ -173,6 +181,13 @@ public:
                 Logger::print_color(int(LogColor::red), vel_mean[0], vel_mean[1], vel_mean[2]);
             else
                 Logger::print_color(int(LogColor::green), vel_mean[0], vel_mean[1], vel_mean[2]);
+            Logger::print_color(int(LogColor::blue), "【YAW_ERROR_MAX", "YAW_ERROR_MEAN】");
+            if (yaw_err_max > M_PI / 10)
+                Logger::print_color(int(LogColor::yellow), yaw_err_max / M_PI * 180, yaw_err_mean / M_PI * 180);
+            else if (yaw_err_max > M_PI / 6)
+                Logger::print_color(int(LogColor::red), yaw_err_max / M_PI * 180, yaw_err_mean / M_PI * 180);
+            else
+                Logger::print_color(int(LogColor::green), yaw_err_max / M_PI * 180, yaw_err_mean / M_PI * 180);
         }
 
         // 关闭程序
@@ -268,11 +283,11 @@ public:
                 }
                 last_time = ros::Time::now();
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = 4;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
                 uav_cmd.desired_pos[0] = std::get<0>(points[0]);
                 uav_cmd.desired_pos[1] = std::get<1>(points[0]);
                 uav_cmd.desired_pos[2] = std::get<2>(points[0]);
-                uav_cmd.desired_yaw = 0.0;
+                uav_cmd.desired_yaw = std::get<3>(points[0]);
                 control_cmd_pub.publish(uav_cmd);
             }
 
@@ -287,7 +302,7 @@ public:
                 // std::cout << (ros::Time::now() - start_time).toSec() << std::endl;
                 if ((ros::Time::now() - start_time).toSec() > record_time)
                 {
-                    
+
                     state = 4;
                     last_time = ros::Time::now();
                     record_flag = false;
@@ -305,11 +320,11 @@ public:
                 }
                 last_time = ros::Time::now();
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = 4;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
                 uav_cmd.desired_pos[0] = std::get<0>(points[1]);
                 uav_cmd.desired_pos[1] = std::get<1>(points[1]);
                 uav_cmd.desired_pos[2] = std::get<2>(points[1]);
-                uav_cmd.desired_yaw = 0.0;
+                uav_cmd.desired_yaw = std::get<3>(points[1]);
                 control_cmd_pub.publish(uav_cmd);
             }
 
@@ -321,7 +336,6 @@ public:
 
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
-                
                 state = 5;
                 last_time = ros::Time::now();
                 record_flag = false;
@@ -338,11 +352,11 @@ public:
                 }
                 last_time = ros::Time::now();
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = 4;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
                 uav_cmd.desired_pos[0] = std::get<0>(points[2]);
                 uav_cmd.desired_pos[1] = std::get<1>(points[2]);
                 uav_cmd.desired_pos[2] = std::get<2>(points[2]);
-                uav_cmd.desired_yaw = 0.0;
+                uav_cmd.desired_yaw = std::get<3>(points[2]);
                 control_cmd_pub.publish(uav_cmd);
             }
 
@@ -354,7 +368,6 @@ public:
 
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
-                
                 state = 6;
                 last_time = ros::Time::now();
                 record_flag = false;
@@ -371,11 +384,11 @@ public:
                 }
                 last_time = ros::Time::now();
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = 4;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
                 uav_cmd.desired_pos[0] = std::get<0>(points[3]);
                 uav_cmd.desired_pos[1] = std::get<1>(points[3]);
                 uav_cmd.desired_pos[2] = std::get<2>(points[3]);
-                uav_cmd.desired_yaw = 0.0;
+                uav_cmd.desired_yaw = std::get<3>(points[3]);
                 control_cmd_pub.publish(uav_cmd);
             }
 
@@ -387,7 +400,6 @@ public:
 
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
-                
                 state = 7;
                 last_time = ros::Time::now();
                 record_flag = false;
@@ -404,11 +416,11 @@ public:
                 }
                 last_time = ros::Time::now();
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = 4;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
                 uav_cmd.desired_pos[0] = std::get<0>(points[4]);
                 uav_cmd.desired_pos[1] = std::get<1>(points[4]);
                 uav_cmd.desired_pos[2] = std::get<2>(points[4]);
-                uav_cmd.desired_yaw = 0.0;
+                uav_cmd.desired_yaw = std::get<3>(points[4]);
                 control_cmd_pub.publish(uav_cmd);
             }
 
@@ -420,7 +432,6 @@ public:
 
             if (record_flag && (ros::Time::now() - start_time).toSec() > record_time)
             {
-                
                 state = 8;
                 last_time = ros::Time::now();
                 record_flag = false;

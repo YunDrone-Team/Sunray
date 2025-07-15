@@ -56,5 +56,17 @@
         <param name="system_params/odom_valid_warming_time" value="0.3" />
         <!-- 是否加上初始偏移 只对NED的位置控制有效 解锁位置设置为原点(0,0,0) 适用于GPS或RTK模式 -->
         <param name="system_params/use_offset" value="$(arg use_offset)" />
+        <!-- 姿态控制参数 -->
+        <param name="ctrl_param/quad_mass" value="1.0" />
+        <param name="ctrl_param/hov_percent" value="0.37" />
+        <param name="ctrl_param/pxy_int_max" value="10.0" />
+        <param name="ctrl_param/pz_int_max" value="10.0" />
+        <param name="ctrl_param/Kp_xy" value="3.0" />
+        <param name="ctrl_param/Kp_z" value="3.0" />
+        <param name="ctrl_param/Kv_xy" value="3.0" />
+        <param name="ctrl_param/Kv_z" value="3.0" />
+        <param name="ctrl_param/Kvi_xy" value="0.3" />
+        <param name="ctrl_param/Kvi_z" value="0.3" />
+        <param name="ctrl_param/tilt_angle_max" value="20.0" />
     </node>
 </launch>
