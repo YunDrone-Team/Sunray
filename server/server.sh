@@ -68,13 +68,8 @@ fi
 # 启动地面站后台节点
 start_ground_station() {
     gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
-     roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${NUM:=1}; exec bash"
+     roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${UAV_NUM:=1} ugv_experiment_num:=${UGV_NUM:=1}; exec bash"
 }
-
-# start_ground_station() {
-#     gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
-#     roslaunch sunray_communication_bridge sunray_communication_bridge.launch ugv_id:=${ID:=1} ugv_experiment_num:=${NUM:=1}; exec bash"
-# }
 
 # 启动mavros节点
 start_mavros_station() {

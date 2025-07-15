@@ -1,8 +1,0 @@
-messages:
-  - type: "sunray_msgs/UGVState"
-    topic: "/ugv1/sunray_ugv/ugv_state"
-
-  - type: "sunray_msgs/Formation"
-    topic: "/sunray/formation_cmd"
-
-
