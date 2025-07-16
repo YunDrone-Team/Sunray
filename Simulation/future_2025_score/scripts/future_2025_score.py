@@ -9,7 +9,8 @@ from typing import Dict, Tuple
 
 
 warn_sum=0
-
+score=0
+crash_obs_count=0
 # 全局变量：存储目标位置数据
 obs_1 = (0.0, 0.0, 0.0)
 obs_2 = (0.0, 0.0, 0.0)
@@ -108,13 +109,15 @@ class CollisionCounter_obs:
         self.last_collision_time = 0
         self.debounce_time = 0.1  # 防抖时间（秒）
     
-    def update(self, is_collision, current_time):
-        """更新碰撞状态并计数"""
+    def update(self, is_collision, current_time, uav_pos=None, distance=None):
+        """更新碰撞状态并计数，新增参数用于打印信息"""
         if self.current_state == "NO_COLLISION" and is_collision:
             # 从无碰撞到碰撞：检查防抖时间
             if current_time - self.last_collision_time > self.debounce_time:
                 self.collision_count += 1
                 self.last_collision_time = current_time
+                # 打印碰撞信息
+                print(f"检测到碰撞！UAV位置: {uav_pos}, 距离: {distance:.4f}，检测距离")
             self.current_state = "COLLISION"
         elif self.current_state == "COLLISION" and not is_collision:
             # 从碰撞到无碰撞：更新状态
@@ -132,14 +135,14 @@ class CollisionDetector_obs:
         dx = uav_pos[0] - obs_pos[0]
         dy = uav_pos[1] - obs_pos[1]
         distance = math.sqrt(dx**2 + dy**2)
-        return distance < (obs_radius + uav_radius)
+        return distance < (obs_radius + uav_radius), distance  # 同时返回是否碰撞和距离
     
     def detect_with_count(self, uav_pos, uav_radius, obs_pos, obs_radius):
         current_time = rospy.get_time() if rospy.core.is_initialized() else time.time()
-        is_collision = self.check_collision(uav_pos, uav_radius, obs_pos, obs_radius)
-        self.collision_counter.update(is_collision, current_time)
+        is_collision, distance = self.check_collision(uav_pos, uav_radius, obs_pos, obs_radius)  # 获取距离
+        # 传递额外参数给update方法
+        self.collision_counter.update(is_collision, current_time, uav_pos, distance)
         return is_collision, self.collision_counter.get_collision_count()
-
 # 全局变量：记录警告状态
 height_warned = False
 position_warned = False
@@ -204,7 +207,7 @@ class Uav_state:
         timeout=60
         rospy.loginfo("开始等待无人机起飞完成...")
         
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and warn_sum == 0:
             # 检查是否超时
             elapsed_time = rospy.get_time() - start_time
             if elapsed_time > timeout:
@@ -251,7 +254,7 @@ class Uav_state:
         rate = rospy.Rate(20) #20 Hz 
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入障碍区!")
-        while not condition_met and not rospy.is_shutdown():
+        while not condition_met and not rospy.is_shutdown() and warn_sum == 0:
             condition_obs=(-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5)  # 自定义函数获取状态
             #print(f"正在检测是否进入障碍区,无人机位置x:{self.uav_state.position[0]} y:{self.uav_state.position[1]}!")
             if condition_obs:  
@@ -261,6 +264,9 @@ class Uav_state:
                 pass  
             check_xyz(self.uav_state.position)
             rate.sleep()
+        count_1 = 0
+        count_2 = 0
+        count_3 = 0
         print(f"obs_1: ({obs_1[0]:.2f}, {obs_1[1]:.2f})")
         print(f"obs_2: ({obs_2[0]:.2f}, {obs_2[1]:.2f})")
         print(f"obs_3: ({obs_3[0]:.2f}, {obs_3[1]:.2f})")
@@ -271,7 +277,7 @@ class Uav_state:
         # 定义障碍物位置和检测范围
         obs_radius = 0.25
         uav_radius = 0.15
-        while not rospy.is_shutdown() and (-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5):
+        while not rospy.is_shutdown() and (-1 <= self.uav_state.position[0]<= 2.5) and (-2.5 <= self.uav_state.position[1] <=-0.5) and warn_sum == 0:
            is_collision_1, count_1 = detector_obs_1.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_1[:2] , obs_radius)
            is_collision_2, count_2 = detector_obs_2.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_2[:2], obs_radius)
            is_collision_3, count_3 = detector_obs_3.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius, obs_3[:2], obs_radius)
@@ -281,19 +287,22 @@ class Uav_state:
         rate = rospy.Rate(20) #20 Hz
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入穿框区!")
-        while not condition_met and not rospy.is_shutdown():
+        while not condition_met and not rospy.is_shutdown() and warn_sum == 0:
             condition_rect=(0.5 <= self.uav_state.position[0]<= 2.5) and (-0.5 <= self.uav_state.position[1] <=2.5)  # 自定义函数获取状态
             if condition_rect:  
                 condition_met = True 
                 rospy.loginfo("已进入穿框区")
+                rospy.loginfo(f"经过障碍区后，碰撞{crash_obs_count},总得分为{score}")
             else:
                 pass  
             check_xyz(self.uav_state.position)
-        rospy.loginfo(f"进行穿框区的检测!")
+
+        
+        rospy.loginfo(f"进行穿框区的穿框与碰撞检测!")
         rect_1=(1.46,1.27,1, math.radians(0))#x，y的中心位置，旋转角度deg
         rect_2=(1.26,0.12,0.6,math.radians(0))
-        obs_radius = 0.04
-        uav_radius = 0.15
+        obs_radius = 0.05
+        uav_radius = 0.10
         #因为飞行时的高度限制，所以此处只进行框的左右部分检测，不进行上下部分检测
         rect_1_end=calculate_rotated_rod_endpoints(*rect_1)
         rect_2_end=calculate_rotated_rod_endpoints(*rect_2)
@@ -302,9 +311,13 @@ class Uav_state:
         detector_obs_2 = CollisionDetector_obs()
         detector_obs_3 = CollisionDetector_obs()
         detector_obs_4 = CollisionDetector_obs()
+        count_1 = 0
+        count_2 = 0
+        count_3 = 0
+        count_4 = 0
         plane_1 = RotatedPlaneCrossDetector(*rect_1)
         plane_2 = RotatedPlaneCrossDetector(*rect_2)
-        while not rospy.is_shutdown() and (0.5 <= self.uav_state.position[0]<= 2.5) and (-0.5 <= self.uav_state.position[1] <=2.5):
+        while not rospy.is_shutdown() and (0.5 <= self.uav_state.position[0]<= 2.5) and (-0.5 <= self.uav_state.position[1] <=2.5) and warn_sum == 0:
             rect_start = rospy.get_time()
             check_xyz(self.uav_state.position)
             is_collision_1, count_1 = detector_obs_1.detect_with_count((self.uav_state.position[0],self.uav_state.position[1]), uav_radius,rect_1_end[0], obs_radius)
@@ -315,6 +328,7 @@ class Uav_state:
             is_crossing_2 = plane_2.update(self.uav_state.position[0],self.uav_state.position[1])
             rate.sleep()
         rect_sum=count_1+count_2+count_3+count_4
+        rospy.loginfo(f"坐标点{rect_1_end[0]}:{count_1},坐标点{rect_1_end[1]}:{count_2},坐标点{rect_2_end[0]}:{count_3},坐标点{rect_2_end[1]}:{count_4}!")
         rospy.loginfo(f"碰撞次数为{rect_sum}!")
         rospy.loginfo(f"大框穿越次数为{plane_1.get_cross_count()}，小框穿越次数为{plane_2.get_cross_count()}!")
         rect_1_count=plane_1.get_cross_count()
@@ -325,7 +339,7 @@ class Uav_state:
         rate = rospy.Rate(10) #20 Hz
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入风扰区!")
-        while not condition_met and not rospy.is_shutdown():
+        while not condition_met and not rospy.is_shutdown() and warn_sum == 0:
             condition_rect=(-0.5 <= self.uav_state.position[0]<= 0.5) and (0.5 <= self.uav_state.position[1] <=2.5)  # 自定义函数获取状态
             #print(f"正在检测是否进入障碍区,无人机位置x:{self.uav_state.position[0]} y:{self.uav_state.position[1]}!")
             if condition_rect:  
@@ -342,7 +356,7 @@ class Uav_state:
         crash_wind=False
         crash_wind_cout=0
         rospy.loginfo(f"风扰区碰撞检测!")
-        while not rospy.is_shutdown() and (-0.5 <= self.uav_state.position[0]<= 0.5) and (0.5 <= self.uav_state.position[1] <=2.5):
+        while not rospy.is_shutdown() and (-0.5 <= self.uav_state.position[0]<= 0.5) and (0.5 <= self.uav_state.position[1] <=2.5) and warn_sum == 0:
             x=self.uav_state.position[0]
             y=self.uav_state.position[1]
             z=self.uav_state.position[2]
@@ -360,7 +374,14 @@ class Uav_state:
             rate.sleep()
         wind_end = rospy.get_time()
         wind_time = wind_end-wind_start
-        MAE=MAE/k
+        if k == 0:
+            # 处理k为0的情况，可以设置一个默认值或记录错误
+            MAE = 0  # 或其他合适的默认值
+            # 可选：添加日志记录
+            # import logging
+            # logging.warning("k值为0，无法计算MAE，已设置为默认值0")
+        else:
+            MAE = MAE / k
         RMSE_M=0
         for e in RMSE_list:
             RMSE_M=(e)**2
@@ -377,7 +398,7 @@ class Uav_state:
         rate = rospy.Rate(10) #20 Hz
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入投送区!")
-        while not condition_met and not rospy.is_shutdown():
+        while not condition_met and not rospy.is_shutdown() and warn_sum == 0:
             condition_rect=(-2.5 <= self.uav_state.position[0]<= -0.5) and (0.5 <= self.uav_state.position[1] <=2.5)  # 自定义函数获取状态
             if condition_rect:  
                 condition_met = True 
@@ -386,7 +407,7 @@ class Uav_state:
                 pass  
             check_xyz(self.uav_state.position)
         arrive_drop=False
-        while not rospy.is_shutdown() and (-2.5 <= self.uav_state.position[0]<= -0.5) and (0.5 <= self.uav_state.position[1] <=2.5):
+        while not rospy.is_shutdown() and (-2.5 <= self.uav_state.position[0]<= -0.5) and (0.5 <= self.uav_state.position[1] <=2.5) and warn_sum == 0:
             check_xyz(self.uav_state.position)
             if (delivery_target[0]-0.25 <= self.uav_state.position[0]<= delivery_target[0]+0.25) and (delivery_target[1]-0.25 <= self.uav_state.position[1] <=delivery_target[1]+0.25):
                 arrive_drop=True
@@ -402,7 +423,7 @@ class Uav_state:
         timeout = 90  # 降落超时时间设为90秒，可根据实际情况调整
         rospy.loginfo("开始等待无人机降落完成...")
         
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and warn_sum == 0:
             # 检查是否超时
             elapsed_time = rospy.get_time() - start_time
             if elapsed_time > timeout:
@@ -914,100 +935,95 @@ class DetectionSystem:
 
 
 if __name__ == "__main__":
-    score=0
     rospy.init_node('Score_system', anonymous=True)
     updater = GlobalPoseUpdater()
     rospy.loginfo("障碍物监控器已启动，正在实时更新障碍物位置...")
     start = rospy.get_time()
     UAV_s=Uav_state()
     UAV_s.wait_for_connection()
-    fly_keep=True
-    if not rospy.is_shutdown() and fly_keep:
-        if UAV_s.is_takeoff_complete()==True:
+    fly_keep = True
+# 只有当warn_sum等于0时才执行评分逻辑
+    if not rospy.is_shutdown() and fly_keep and warn_sum == 0:
+        if UAV_s.is_takeoff_complete() == True:
             rospy.loginfo("检测到自主起飞成功，得分+5分")
-            score=score+5
+            score = score + 5
         else:
-            fly_keep=False
+            fly_keep = False
     rospy.sleep(2.5) 
-    if not rospy.is_shutdown() and fly_keep:
-        if fly_keep:
-            crash_obs_count=UAV_s.is_obs_zone_test_obs()
-            if crash_obs_count<=2:
-                score=score+20-crash_obs_count*10
-            else:
-                score=score
-            rospy.loginfo(f"经过障碍区后，总得分为{score}分")
+
+    if not rospy.is_shutdown() and fly_keep and warn_sum == 0:
+        crash_obs_count = UAV_s.is_obs_zone_test_obs()
+        if crash_obs_count <= 2:
+            score = score + 20 - crash_obs_count * 10
         else:
-            pass
-    if not rospy.is_shutdown() and fly_keep:
-        if fly_keep:
-            crash_frame_count,big_passed ,small_passed =UAV_s.is_rect_zone_test_rect()
-            rospy.loginfo(f"经过穿框区后，碰撞{crash_frame_count}次,穿越大框{big_passed}次，穿越小框{small_passed}次")
-            base_score = 0
-            # 检查是否按顺序穿框（先大框后小框）并成功进入风扰区
-            if 0<=big_passed<=1 or 0<=small_passed<=1:
-                base_score = 10*big_passed + 15*small_passed  # 大框10分 + 小框15分
+            score = score
+
+    if not rospy.is_shutdown() and fly_keep and warn_sum == 0:
+        crash_frame_count, big_passed, small_passed = UAV_s.is_rect_zone_test_rect()
+        rospy.loginfo(f"经过穿框区后，碰撞{crash_frame_count}次,穿越大框{big_passed}次，穿越小框{small_passed}次")
+        base_score = 0
+        # 检查是否按顺序穿框（先大框后小框）并成功进入风扰区
+        if 0 <= big_passed <= 1 or 0 <= small_passed <= 1:
+            base_score = 10 * big_passed + 15 * small_passed  # 大框10分 + 小框15分
+        
+        # 处理碰撞扣分（每次扣10分，最低至0）
+        if base_score > 0 and crash_frame_count > 0:
+            penalty = crash_frame_count * 10
+            final_score = max(base_score - penalty, 0)
+        else:
+            final_score = base_score  # 未满足基础条件或无碰撞，直接取基础分
+        score = score + final_score
+        rospy.loginfo(f"经过穿框区后，总得分为{score}分")
+
+    if not rospy.is_shutdown() and fly_keep and warn_sum == 0:
+        windtime, count = UAV_s.wind_zone_text()
+        base_score = 15  # 基础分值
+        score_w = 0        # 初始得分
+        # 判断停留时间是否符合要求（10-20秒）
+        if 10 <= windtime <= 20:
+            # 停留时间符合要求，基础分15分
+            score_w = base_score
             
-            # 处理碰撞扣分（每次扣10分，最低至0）
-            if base_score > 0 and crash_frame_count > 0:
-                penalty = crash_frame_count * 10
-                final_score = max(base_score - penalty, 0)
-            else:
-                final_score = base_score  # 未满足基础条件或无碰撞，直接取基础分
-            score=score+final_score
-            rospy.loginfo(f"经过穿框区后，总得分为{score}分")
+            # 计算碰撞扣分（每次扣10分，最低扣至0）
+            penalty = count * 10
+            score_w = max(score_w - penalty, 0)
         else:
-            pass
-    if not rospy.is_shutdown() and fly_keep:
-        if fly_keep:
-            windtime,count=UAV_s.wind_zone_text()
-            base_score = 15  # 基础分值
-            score_w = 0        # 初始得分
-            # 判断停留时间是否符合要求（10-20秒）
-            if 10 <= windtime <= 20:
-                # 停留时间符合要求，基础分15分
-                score_w = base_score
-                
-                # 计算碰撞扣分（每次扣10分，最低扣至0）
-                penalty = count * 10
-                score_w = max(score_w - penalty, 0)
-            else:
-                # 停留时间不符合要求（不足10s或超过20s）
-                # 扣10分，最低至0
-                score_w = max(base_score - 10, 0)
-            score=score+score_w
-        else:
-            pass
+            # 停留时间不符合要求（不足10s或超过20s）
+            # 扣10分，最低至0
+            score_w = max(base_score - 10, 0)
+        score = score + score_w
         rospy.loginfo(f"经过风扰区后，总得分为{score}分")
-    if not rospy.is_shutdown() and fly_keep:
-        if fly_keep:
-            is_drop=UAV_s.drop_zone_text()
-            if is_drop:
-                score=score+25   
-        else:
-            pass
+
+    if not rospy.is_shutdown() and fly_keep and warn_sum == 0:
+        is_drop = UAV_s.drop_zone_text()
+        if is_drop:
+            score = score + 25   
         rospy.loginfo(f"经过投送区后，总得分为{score}分")
-    if not rospy.is_shutdown() and fly_keep:
-        if fly_keep:
-            distance=UAV_s.land_text()
-            if distance<0.2:
-                rospy.loginfo(f"降落区得分为10分,总得分为{score}分")
-                score=score+10
-            elif distance>0.2 and distance<0.8:
-                rospy.loginfo(f"降落区得分为5分,总得分为{score}分")
-                score=score+5
-            else:
-                rospy.loginfo(f"降落区得分为0分,总得分为{score}分")
-                score=score
+
+    if not rospy.is_shutdown() and fly_keep and warn_sum == 0:
+        distance = UAV_s.land_text()
+        if distance < 0.2:
+            rospy.loginfo(f"降落区得分为10分,总得分为{score}分")
+            score = score + 10
+        elif distance > 0.2 and distance < 0.8:
+            rospy.loginfo(f"降落区得分为5分,总得分为{score}分")
+            score = score + 5
         else:
-            pass
+            rospy.loginfo(f"降落区得分为0分,总得分为{score}分")
+            score = score
         rospy.loginfo(f"进入降落区后，总得分为{score}分")
 
     end = rospy.get_time()
     elapsed = end - start
-    if warn_sum==0:
+    if warn_sum == 0:
         rospy.loginfo(f"飞行过程中飞机一直在可行安全空域")
     else:
         rospy.loginfo(f"飞行过程中飞机超出可行安全空域，成绩作废")
     rospy.loginfo(f"{elapsed:.2f}秒")
     rospy.loginfo(f"比赛结束，该队伍总得分为{score}分")
+
+
+
+
+
+
