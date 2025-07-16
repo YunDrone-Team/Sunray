@@ -201,7 +201,7 @@ class Uav_state:
             rate.sleep()
         rospy.loginfo(f"{self.node_name}:UAV connected!")
     def is_takeoff_complete(self):
-    #判断无人机是否完成起飞""
+        #判断无人机是否完成起飞
         start_time = rospy.get_time()
         rate = rospy.Rate(10)  # 10Hz检测频率
         timeout=60
@@ -666,17 +666,18 @@ class CollisionDetector:
             self.pending_state = collision
             self.state_change_time = current_time
         else:
-            elapsed = current_time - self.state_change_time
-            if elapsed >= self.debounce_time:
-                if collision and not self.last_collision_state:
-                    self.collision_count += 1
-                    self.last_collision_state = True
-                if not collision:
-                    self.last_collision_state = False
-                    
-                self.current_state = self.pending_state
-                self.pending_state = None
-                self.state_change_time = None
+            if self.state_change_time is not None:
+                elapsed = current_time - self.state_change_time
+                if elapsed >= self.debounce_time:
+                    if collision and not self.last_collision_state:
+                        self.collision_count += 1
+                        self.last_collision_state = True
+                    if not collision:
+                        self.last_collision_state = False
+                        
+                    self.current_state = self.pending_state
+                    self.pending_state = None
+                    self.state_change_time = None
         
         return self.current_state
     
