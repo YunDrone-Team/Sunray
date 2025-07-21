@@ -251,6 +251,7 @@ class Uav_state:
         rospy.loginfo("节点已关闭，终止起飞检测")
         return False
     def is_obs_zone_test_obs(self):
+        global warn_sum
         rate = rospy.Rate(20) #20 Hz 
         condition_met = False  # 初始化标志
         rospy.loginfo(f"正在检测是否进入障碍区!")
