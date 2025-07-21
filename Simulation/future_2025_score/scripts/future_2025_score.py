@@ -262,6 +262,12 @@ class Uav_state:
                 print("已进入障碍物区")
             else:
                 pass  
+            condition_rect_1=(-2.5 <= self.uav_state.position[0]<= -0.5) and (-0.5 <= self.uav_state.position[1] <=0.5)  # 自定义函数获取状态
+            if condition_rect_1:
+                warn_sum=warn_sum+1
+                print("请严格按照比赛流程完成任务")
+            else:
+                pass
             check_xyz(self.uav_state.position)
             rate.sleep()
         count_1 = 0
@@ -374,18 +380,19 @@ class Uav_state:
             rate.sleep()
         wind_end = rospy.get_time()
         wind_time = wind_end-wind_start
+        RMSE_M=0
+        for e in RMSE_list:
+            RMSE_M=(e)**2
         if k == 0:
             # 处理k为0的情况，可以设置一个默认值或记录错误
             MAE = 0  # 或其他合适的默认值
+            RMSE_M=0
             # 可选：添加日志记录
             # import logging
             # logging.warning("k值为0，无法计算MAE，已设置为默认值0")
         else:
             MAE = MAE / k
-        RMSE_M=0
-        for e in RMSE_list:
-            RMSE_M=(e)**2
-        RMSE=(RMSE_M/k)**0.5
+            RMSE=(RMSE_M/k)**0.5
         if wind_time>=10 and wind_time<=20:
             rospy.loginfo(f"风扰区的MAE为{MAE:.4f},RMSE为{RMSE:.4f}!")
             rospy.loginfo(f"风扰区的停留时间为{wind_time:.4f}秒,计算数量k为{k}!")
