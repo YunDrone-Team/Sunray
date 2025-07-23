@@ -7,6 +7,7 @@ from geometry_msgs.msg import PoseStamped
 import signal 
 import sys 
 import math 
+from mavros_msgs.srv import ParamSet, ParamSetRequest
 
 class CircleVelController:
     def __init__(self):
@@ -28,6 +29,20 @@ class CircleVelController:
         self.uav_setup_pub = rospy.Publisher(
             self.uav_name + "/sunray/setup", UAVSetup, queue_size=1)
         
+        "使用参数设置服务对舵机进行控制"
+        rospy.wait_for_service(self.uav_name + "/mavros/param/set")
+        self.servo_ctrl = rospy.ServiceProxy(
+            self.uav_name + "/mavros/param/set", ParamSet
+        )
+        self.servo_mode = ParamSetRequest() # 舵机模式 默认是aux1控制（407），使用offboard控制时，切换到最大值（2）
+        self.servo_mode.param_id = "PWM_MAIN_FUNC5"
+        self.servo_angel = ParamSetRequest() # 舵机角度 （200 - 2450）
+        self.servo_angel.param_id = "PWM_MAIN_MAX5"
+
+        # 后续修改这两个参数以适配具体安装方式
+        self.servo_init_angle = 800     # 初始角度
+        self.servo_drop_angle = 2400    # 投放角度
+
         "初始化控制指令和圆形轨迹参数"
         '''
         # 控制命令期望值
@@ -241,6 +256,12 @@ class CircleVelController:
                         self.hover()
                         break
 
+                    if idx == 7:
+                        rospy.sleep(2.0)
+                        self.servo_setangle(self.servo_drop_angle)
+                        rospy.sleep(1.0)
+                        break
+
                     break
 
                 rate.sleep()
@@ -322,19 +343,58 @@ class CircleVelController:
         rospy.loginfo(f"{self.node_name}: Land UAV successfully!")
         rospy.loginfo(f"{self.node_name}: Demo finished, quit!")
 
+    "舵机控制接口"
+    "舵机使用指南："
+    "使用servo_setangle需要先运行self.servo_setmode(2)把舵机模式改成最大值输出"
+    # CONSTANT_MIN = 1
+    # CONSTANT_MAX = 2
+    # RC_AUX1 = 407
+    def servo_setmode(self, modeID):
+        if modeID == 1 or 2 or 407:
+            self.servo_mode.value.integer = modeID
+            try:
+                if self.servo_ctrl.call(self.servo_mode).success:
+                    rospy.loginfo(f"{self.node_name}: Turn Servo mode {modeID}!")
+                else:
+                    rospy.loginfo(f"{self.node_name}: Turn Servo mode False-->no_success")
+            except rospy.ROSInterruptException:
+                pass
+        else:
+            rospy.loginfo(f"{self.node_name}: Turn Servo mode False-->modeID_unuse")
+
+    # angle :200 - 2450
+    def servo_setangle(self, angle):
+        if 200 <= angle and angle <= 2450:
+            self.servo_angel.value.integer = angle
+            try:
+                if self.servo_ctrl.call(self.servo_angel).success:
+                    rospy.loginfo(f"{self.node_name}: Set Servo angle {angle}!")
+                else:
+                    rospy.loginfo(f"{self.node_name}: Set Servo angle False-->no_success")
+            except rospy.ROSInterruptException:
+                pass
+        else:
+            rospy.loginfo(f"{self.node_name}: Set Servo angle False-->angle_limit")
+
 
     "主程序"
     def run(self):
         rospy.init_node("competiton_demo", anonymous=True)
         self.node_name = rospy.get_name()
         self.wait_for_connection()
+
+        self.servo_setmode(2) # 设置舵机输出模式为constmax
+        self.servo_setangle(self.servo_init_angle)
+
         self.set_control_mode()
         self.arm_uav()
         self.takeoff()
         self.hover()
+
         # self.fly_cirle()
         # self.custom_fly_vel()
         # self.return_to_origin_vel()
+
         self.custom_fly_pose()
         self.return_to_origin_pose()
         self.land()
