@@ -257,7 +257,8 @@ class CircleVelController:
                         break
 
                     if idx == 7:
-                        rospy.sleep(2.0)
+                        self.hover()
+                        rospy.sleep(1.0)
                         self.servo_setangle(self.servo_drop_angle)
                         rospy.sleep(1.0)
                         break
@@ -376,6 +377,45 @@ class CircleVelController:
         else:
             rospy.loginfo(f"{self.node_name}: Set Servo angle False-->angle_limit")
 
+    "投送测试函数"
+    def drop_test(self):
+        rospy.init_node("drop_test_demo", anonymous=True)
+        self.node_name = rospy.get_name()
+        self.wait_for_connection()
+        self.servo_setmode(2) # 设置舵机输出模式为constmax
+        self.servo_setangle(self.servo_init_angle)
+        self.set_control_mode()
+        self.arm_uav()
+        self.takeoff()
+        self.hover()
+
+        rospy.loginfo(f"{self.node_name}: Flying to point 7: {self.points[7]}")
+        target_x, target_y, target_z = self.points[7]
+        
+        rate = rospy.Rate(20.0)  # 20 Hz
+        while not rospy.is_shutdown():
+            self.uav_cmd.header.stamp = rospy.Time.now()
+            self.uav_cmd.cmd = UAVControlCMD.XyzPos  # 位置模式
+            self.uav_cmd.desired_pos = [target_x, target_y, target_z]
+            self.control_cmd_pub.publish(self.uav_cmd)
+
+            dx = target_x - self.uav_state.position[0]
+            dy = target_y - self.uav_state.position[1]
+            dz = target_z - self.uav_state.position[2]
+
+            if abs(dx) < 0.1 and abs(dy) < 0.1 and abs(dz) < 0.2:
+                self.hover()
+                rospy.sleep(1.0)
+                self.servo_setangle(self.servo_drop_angle)
+                rospy.loginfo(f"{self.node_name}: Drop Success!")
+                rospy.sleep(1.0)
+                break
+
+            rate.sleep()
+
+        self.return_to_origin_pose()
+        self.land()
+
 
     "主程序"
     def run(self):
@@ -402,6 +442,7 @@ class CircleVelController:
 if __name__ == "__main__":
     try:
         controller = CircleVelController()
-        controller.run()
+        # controller.run()
+        controller.drop_test()
     except rospy.ROSInterruptException:
         pass
