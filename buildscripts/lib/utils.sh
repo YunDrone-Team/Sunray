@@ -1,105 +1,76 @@
 #!/bin/bash
-# 工具函数库 - 提供通用的工具函数
-# 包含日志、颜色输出、时间处理、文件操作等通用功能
+# 工具函数库
 
-# ========== 颜色定义 ==========
-if [ -t 1 ]; then
-    # 基础颜色
-    RED=$(tput setaf 1)
-    GREEN=$(tput setaf 2)
-    YELLOW=$(tput setaf 3)
-    BLUE=$(tput setaf 4)
-    PURPLE=$(tput setaf 5)
-    CYAN=$(tput setaf 6)
-    WHITE=$(tput setaf 7)
-    
-    # 高亮颜色
-    BRIGHT_RED=$(tput bold; tput setaf 1)
-    BRIGHT_GREEN=$(tput bold; tput setaf 2)
-    BRIGHT_YELLOW=$(tput bold; tput setaf 3)
-    BRIGHT_BLUE=$(tput bold; tput setaf 4)
-    BRIGHT_PURPLE=$(tput bold; tput setaf 5)
-    BRIGHT_CYAN=$(tput bold; tput setaf 6)
-    BRIGHT_WHITE=$(tput bold; tput setaf 7)
-    
-    # 背景颜色
-    BG_RED=$(tput setab 1)
-    BG_GREEN=$(tput setab 2)
-    BG_YELLOW=$(tput setab 3)
-    BG_BLUE=$(tput setab 4)
-    BG_PURPLE=$(tput setab 5)
-    BG_CYAN=$(tput setab 6)
-    BG_WHITE=$(tput setab 7)
-    
-    # 特殊效果
-    BOLD=$(tput bold)
-    DIM=$(tput dim)
-    UNDERLINE=$(tput smul)
-    REVERSE=$(tput rev)
-    BLINK=$(tput blink)
-    NC=$(tput sgr0)  # No Color
-else
-    # 非终端环境，禁用颜色
-    RED="" GREEN="" YELLOW="" BLUE="" PURPLE="" CYAN="" WHITE=""
-    BRIGHT_RED="" BRIGHT_GREEN="" BRIGHT_YELLOW="" BRIGHT_BLUE="" BRIGHT_PURPLE="" BRIGHT_CYAN="" BRIGHT_WHITE=""
-    BG_RED="" BG_GREEN="" BG_YELLOW="" BG_BLUE="" BG_PURPLE="" BG_CYAN="" BG_WHITE=""
-    BOLD="" DIM="" UNDERLINE="" REVERSE="" BLINK="" NC=""
+# 颜色定义
+if [[ -z "${COLORS_INITIALIZED:-}" ]]; then
+    if [[ -t 1 ]]; then
+        RED=$(tput setaf 1)
+        GREEN=$(tput setaf 2)
+        YELLOW=$(tput setaf 3)
+        BLUE=$(tput setaf 4)
+        PURPLE=$(tput setaf 5)
+        CYAN=$(tput setaf 6)
+        WHITE=$(tput setaf 7)
+        
+        BRIGHT_RED=$(tput bold; tput setaf 1)
+        BRIGHT_GREEN=$(tput bold; tput setaf 2)
+        BRIGHT_YELLOW=$(tput bold; tput setaf 3)
+        BRIGHT_BLUE=$(tput bold; tput setaf 4)
+        BRIGHT_PURPLE=$(tput bold; tput setaf 5)
+        BRIGHT_CYAN=$(tput bold; tput setaf 6)
+        BRIGHT_WHITE=$(tput bold; tput setaf 7)
+        
+        BOLD=$(tput bold)
+        DIM=$(tput dim)
+        UNDERLINE=$(tput smul)
+        NC=$(tput sgr0)
+    else
+        RED='' GREEN='' YELLOW='' BLUE='' PURPLE='' CYAN='' WHITE=''
+        BRIGHT_RED='' BRIGHT_GREEN='' BRIGHT_YELLOW='' BRIGHT_BLUE=''
+        BRIGHT_PURPLE='' BRIGHT_CYAN='' BRIGHT_WHITE=''
+        BOLD='' DIM='' UNDERLINE='' NC=''
+    fi
+    COLORS_INITIALIZED=1
 fi
 
-# ========== 特殊颜色组合 ==========
 # 状态颜色
-SUCCESS_COLOR="$BRIGHT_GREEN"
-ERROR_COLOR="$BRIGHT_RED"
-WARNING_COLOR="$BRIGHT_YELLOW"
-INFO_COLOR="$BRIGHT_CYAN"
-DEBUG_COLOR="$DIM$CYAN"
+SUCCESS_COLOR="${BRIGHT_GREEN}"
+ERROR_COLOR="${BRIGHT_RED}"
+WARNING_COLOR="${BRIGHT_YELLOW}"
+INFO_COLOR="${BRIGHT_CYAN}"
+DEBUG_COLOR="${DIM}${CYAN}"
 
-# 强调颜色
-HEADER_COLOR="$BOLD$BRIGHT_BLUE"
-TITLE_COLOR="$BOLD$BRIGHT_WHITE"
-SUBTITLE_COLOR="$BOLD$CYAN"
-HIGHLIGHT_COLOR="$BOLD$YELLOW"
-
-# ========== 输出函数 ==========
-
-# 获取时间戳
+# 时间戳获取
 get_timestamp() {
-    date '+%Y-%m-%d %H:%M:%S'
+    printf '%(%Y-%m-%d %H:%M:%S)T\n' -1
 }
 
-# 调试信息
+# 输出函数
 print_debug() {
-    if [[ "${DEBUG:-0}" == "1" ]]; then
-        echo -e "${DEBUG_COLOR}[调试] $1${NC}" >&2
-    fi
+    [[ "${DEBUG:-0}" == "1" ]] && printf '%b[调试] %s%b\n' "${DEBUG_COLOR}" "$1" "${NC}" >&2
 }
 
-# 状态信息
 print_status() {
-    echo -e "${INFO_COLOR}[状态] $1${NC}"
+    printf '%b[状态] %s%b\n' "${INFO_COLOR}" "$1" "${NC}"
 }
 
-# 成功信息
 print_success() {
-    echo -e "${SUCCESS_COLOR}[成功] $1${NC}"
+    printf '%b[成功] %s%b\n' "${SUCCESS_COLOR}" "$1" "${NC}"
 }
 
-# 警告信息
 print_warning() {
-    echo -e "${WARNING_COLOR}[警告] $1${NC}"
+    printf '%b[警告] %s%b\n' "${WARNING_COLOR}" "$1" "${NC}"
 }
 
-# 错误信息
 print_error() {
-    echo -e "${ERROR_COLOR}[错误] $1${NC}" >&2
+    printf '%b[错误] %s%b\n' "${ERROR_COLOR}" "$1" "${NC}" >&2
 }
 
-# 信息提示
 print_info() {
-    echo -e "${INFO_COLOR}[信息] $1${NC}"
+    printf '%b[信息] %s%b\n' "${INFO_COLOR}" "$1" "${NC}"
 }
 
-# 标题打印（无背景色）
+# 标题打印
 print_header() {
     local message="$1"
     echo
@@ -109,27 +80,23 @@ print_header() {
     echo
 }
 
-# 子标题打印
 print_subtitle() {
     echo -e "${SUBTITLE_COLOR}${BOLD}>> $1${NC}"
 }
 
-# 分隔线（使用不同颜色）
 print_separator() {
     echo -e "${DIM}${CYAN}────────────────────────────────────────${NC}"
 }
 
-# 双分隔线（重要分隔）
 print_double_separator() {
     echo -e "${BRIGHT_PURPLE}═══════════════════════════════════════${NC}"
 }
 
-# 高亮打印
 print_highlight() {
     echo -e "${BOLD}${BRIGHT_YELLOW}重点: $1${NC}"
 }
 
-# 简化的模块打印
+# 模块打印
 print_module() {
     local module="$1"
     local description="$2"
@@ -137,7 +104,7 @@ print_module() {
     printf "  ${BOLD}${WHITE}%-30s${NC} ${DIM}%-40s${NC}\n" "$module" "$description"
 }
 
-# 构建进度显示（无背景色）
+# 构建进度显示
 print_build_progress() {
     local current="$1"
     local total="$2"
@@ -178,12 +145,11 @@ print_build_summary() {
     print_double_separator
 }
 
-# 组显示（增强彩色效果）
+# 组显示
 print_group() {
     local group_name="$1"
     local description="$2"
     
-    # 为不同的组使用不同的颜色
     local group_color
     case "$group_name" in
         "all") group_color="$BOLD$BRIGHT_GREEN" ;;
@@ -245,22 +211,16 @@ print_error_details() {
     echo -e "${BOLD}${BRIGHT_RED}错误详情: $error_msg${NC}"
 }
 
-# ========== 时间处理函数 ==========
-
-# 格式化时间（秒转换为可读格式）
+# 时间格式化
 format_duration() {
     local duration="$1"
-    local hours=$((duration / 3600))
-    local minutes=$(((duration % 3600) / 60))
-    local seconds=$((duration % 60))
+    local h=$((duration / 3600))
+    local m=$(((duration % 3600) / 60))
+    local s=$((duration % 60))
     
-    if [ $hours -gt 0 ]; then
-        printf "%dh %dm %ds" "$hours" "$minutes" "$seconds"
-    elif [ $minutes -gt 0 ]; then
-        printf "%dm %ds" "$minutes" "$seconds"
-    else
-        printf "%ds" "$seconds"
-    fi
+    (( h > 0 )) && printf '%dh %dm %ds' "$h" "$m" "$s" && return
+    (( m > 0 )) && printf '%dm %ds' "$m" "$s" && return
+    printf '%ds' "$s"
 }
 
 # 估算剩余时间
@@ -282,8 +242,6 @@ estimate_remaining_time() {
     
     format_duration "$estimated_remaining"
 }
-
-# ========== 文件和目录操作 ==========
 
 # 安全创建目录
 safe_mkdir() {
@@ -321,7 +279,7 @@ safe_rmdir() {
 # 检查磁盘空间
 check_disk_space() {
     local path="${1:-.}"
-    local required_mb="${2:-1024}"  # 默认要求1GB
+    local required_mb="${2:-1024}"
     
     local available_kb=$(df "$path" | awk 'NR==2 {print $4}')
     local available_mb=$((available_kb / 1024))
@@ -334,12 +292,9 @@ check_disk_space() {
     return 0
 }
 
-# ========== 字符串处理函数 ==========
-
 # 字符串去除空白
 trim() {
     local str="$1"
-    # 去除前导和尾随空格
     echo "$str" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
@@ -363,31 +318,25 @@ is_number() {
 array_contains() {
     local element="$1"
     shift
-    local array=("$@")
-    
-    for item in "${array[@]}"; do
-        [ "$item" = "$element" ] && return 0
-    done
-    return 1
+    local IFS='|'
+    [[ "|$*|" == *"|$element|"* ]]
 }
 
-# ========== 系统信息函数 ==========
-
-# 获取CPU核心数
+# CPU核心数获取
 get_cpu_cores() {
-    local cores
-    if command -v nproc >/dev/null 2>&1; then
-        cores=$(nproc)
-    elif [ -r /proc/cpuinfo ]; then
-        cores=$(grep -c '^processor' /proc/cpuinfo)
-    else
-        cores=1  # 默认单核
+    if [[ -z "${_CPU_CORES_CACHE:-}" ]]; then
+        if command -v nproc >/dev/null 2>&1; then
+            _CPU_CORES_CACHE=$(nproc)
+        elif [[ -r /proc/cpuinfo ]]; then
+            _CPU_CORES_CACHE=$(grep -c '^processor' /proc/cpuinfo)
+        else
+            _CPU_CORES_CACHE=1
+        fi
     fi
-    
-    echo "$cores"
+    echo "${_CPU_CORES_CACHE}"
 }
 
-# 获取内存信息（MB）
+# 获取内存信息
 get_memory_info() {
     if [ -r /proc/meminfo ]; then
         awk '/^MemTotal:/ { printf "%.0f\n", $2/1024 }' /proc/meminfo
@@ -396,7 +345,7 @@ get_memory_info() {
     fi
 }
 
-# 检查命令是否存在
+# 命令存在检查
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -417,14 +366,9 @@ check_ros_environment() {
     return 0
 }
 
-# ========== 错误处理函数 ==========
-
 # 设置错误处理
 setup_error_handling() {
-    # 捕获错误并清理
     trap 'handle_error $? $LINENO "$BASH_COMMAND"' ERR
-    
-    # 捕获退出信号并清理
     trap 'cleanup_on_exit' EXIT INT TERM
 }
 
@@ -439,7 +383,6 @@ handle_error() {
     print_error "  行号: $line_number"
     print_error "  命令: $command"
     
-    # 可以在这里添加额外的错误处理逻辑
     cleanup_on_exit
     exit "$exit_code"
 }
@@ -448,22 +391,18 @@ handle_error() {
 cleanup_on_exit() {
     print_debug "执行清理操作..."
     
-    # 清理临时文件
     if [ -n "$TEMP_FILES" ]; then
         for temp_file in $TEMP_FILES; do
             [ -f "$temp_file" ] && rm -f "$temp_file"
         done
     fi
     
-    # 清理临时目录
     if [ -n "$TEMP_DIRS" ]; then
         for temp_dir in $TEMP_DIRS; do
             [ -d "$temp_dir" ] && rm -rf "$temp_dir"
         done
     fi
 }
-
-# ========== 交互函数 ==========
 
 # 询问用户确认
 ask_confirmation() {
@@ -510,19 +449,3 @@ show_menu() {
         echo -1
     fi
 }
-
-# ========== 初始化函数 ==========
-
-# 初始化工具库
-init_utils() {
-    # 设置脚本目录
-    SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-    
-    # 设置错误处理
-    setup_error_handling
-    
-    print_debug "工具库初始化完成"
-}
-
-# 在脚本加载时自动初始化
-init_utils

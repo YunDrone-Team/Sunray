@@ -86,12 +86,14 @@ modules:
     source_path: "External_Module/ego-planner-swarm"
     build_path: "build/ego-planner"
     dependencies: ["sunray_planner_utils", "simulator_utils"]
+    conflicts_with: ["fuel_planner"]
     
   fuel_planner:
     description: "FUEL路径规划器"
     source_path: "External_Module/FUEL"
     build_path: "build/FUEL"
     dependencies: ["sunray_planner_utils"]
+    conflicts_with: ["ego_planner"]
 
   # 编队模块
   sunray_formation:
@@ -103,29 +105,29 @@ modules:
 # ========== 预定义组 ==========
 # 直接基于 build_deprecated 目录的脚本内容
 groups:
-  # 基于 build_control.sh
+  # 无人机飞行控制系统
   control:
-    description: "基于build_control.sh的构建组合"
+    description: "无人机飞行控制系统"
     modules: ["sunray_common", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial"]
     
-  # 基于 build_ego.sh
+  # EGO路径规划系统
   ego:
-    description: "基于build_ego.sh的构建组合"
+    description: "EGO路径规划系统"
     modules: ["ego_planner", "simulator_utils", "sunray_planner_utils"]
     
-  # 基于 build_sim.sh
+  # 仿真环境与测试平台
   sim:
-    description: "基于build_sim.sh的构建组合"  
+    description: "仿真环境与测试平台"  
     modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin"]
     
-  # 基于 build_ugv_control.sh
+  # 地面机器人控制系统
   ugv_control:
-    description: "基于build_ugv_control.sh的构建组合"
+    description: "地面机器人控制系统"
     modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
     
-  # 基于主 build.sh（不包含UGV）
+  # 完整多机系统（不含地面机器人）
   all:
-    description: "基于主build.sh的完整构建（不含UGV）"
+    description: "完整多机系统（不含地面机器人）"
     modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "sunray_planner_utils", "sunray_communication_bridge", "sunray_media", "ego_planner", "simulator_utils", "gazebo_plugin", "sunray_formation"]
 
 # ========== 构建配置 ==========

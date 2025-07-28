@@ -1,9 +1,6 @@
 #!/bin/bash
+# UI交互层
 
-# UI交互层 - 简化的用户界面和交互逻辑
-# 提供命令行参数解析和简洁的用户提示
-
-# 导入工具函数（如果没有被加载的话）
 if ! declare -f print_status >/dev/null 2>&1; then
     source "$(dirname "${BASH_SOURCE[0]}")/utils.sh"
 fi
@@ -11,17 +8,18 @@ if ! declare -f validate_config >/dev/null 2>&1; then
     source "$(dirname "${BASH_SOURCE[0]}")/config.sh"
 fi
 
-# 全局变量
+# UI变量
 SCRIPT_NAME="$(basename "$0")"
 VERBOSE=false
-QUIET=false
-SELECTED_MODULES=()
-BUILD_JOBS=0
 DRY_RUN=false
+AUTO_YES=false
+HAD_CONFLICTS=false
+BUILD_JOBS=0
+SELECTED_MODULES=()
 
 # 显示帮助信息
 show_help() {
-    print_header "Sunray 模块化构建系统"
+    print_header "Sunray 构建系统"
     
     print_help_section "用法"
     echo -e "  ${BRIGHT_WHITE}$SCRIPT_NAME${NC} ${BRIGHT_CYAN}[选项]${NC} ${BRIGHT_YELLOW}[模块...]${NC}"
@@ -30,28 +28,24 @@ show_help() {
     print_help_section "选项"
     print_config "-h, --help" "显示此帮助信息"
     print_config "-v, --verbose" "详细输出模式"
-    print_config "-q, --quiet" "安静模式（最小输出）"
+    print_config "-y, --yes" "自动确认开始构建（仅在无冲突时生效）"
     print_config "-j, --jobs N" "并行构建任务数 (默认: CPU核心数-1)"
     print_config "-l, --list" "列出所有可用模块"
     print_config "-g, --groups" "列出所有模块组"
     print_config "    --clean" "清理构建目录"
-    print_config "    --check-deps" "检查系统依赖项"
     print_config "    --dry-run" "显示将要执行的构建操作但不执行"
     echo
     
     print_help_section "模块选择"
     print_config "[模块名]" "构建指定模块"
     
-    # 确保配置已加载并动态显示真实可用的组
     if ! load_modules_config > /dev/null 2>&1; then
-        # 如果配置加载失败，显示默认组
         print_config "all" "构建所有模块"
         print_config "control" "控制系统构建"
         print_config "ego" "EGO规划器构建"
         print_config "sim" "仿真环境构建"
         print_config "ugv_control" "地面车控制构建"
     else
-        # 配置加载成功，动态显示组
         local groups=($(get_all_groups))
         for group in "${groups[@]}"; do
             local description=$(get_group_description "$group")
@@ -65,6 +59,7 @@ show_help() {
     print_example "$SCRIPT_NAME control" "构建控制系统相关模块"
     print_example "$SCRIPT_NAME ego" "构建EGO规划器相关模块"
     print_example "$SCRIPT_NAME all -j 8" "使用8个并行任务构建所有模块"
+    print_example "$SCRIPT_NAME all -y" "构建所有模块并自动确认开始"
     print_example "$SCRIPT_NAME --list" "列出所有可用模块"
     print_example "$SCRIPT_NAME --dry-run sim" "预览仿真环境构建计划"
     echo
@@ -82,8 +77,8 @@ parse_arguments() {
                 VERBOSE=true
                 shift
                 ;;
-            -q|--quiet)
-                QUIET=true
+            -y|--yes)
+                AUTO_YES=true
                 shift
                 ;;
             -j|--jobs)
@@ -107,10 +102,6 @@ parse_arguments() {
                 clean_build_dirs
                 exit 0
                 ;;
-            --check-deps)
-                check_system_dependencies
-                exit 0
-                ;;
             --dry-run)
                 DRY_RUN=true
                 shift
@@ -127,7 +118,6 @@ parse_arguments() {
         esac
     done
 
-    # 设置默认值 (CPU核心数-1)
     if [[ $BUILD_JOBS -eq 0 ]]; then
         BUILD_JOBS=$(($(get_cpu_cores) - 1))
         if [[ $BUILD_JOBS -lt 1 ]]; then
@@ -135,13 +125,12 @@ parse_arguments() {
         fi
     fi
 
-    # 如果没有指定模块，提示用户
     if [[ ${#SELECTED_MODULES[@]} -eq 0 ]]; then
         show_module_selection_prompt
     fi
 }
 
-# 简化的模块选择提示
+# 模块选择提示
 show_module_selection_prompt() {
     echo "${CYAN}Sunray 模块化构建系统${NC}"
     echo
@@ -189,7 +178,6 @@ list_groups() {
         
         print_group "$group" "$description"
         
-        # 用缩进显示模块列表，每行一个模块
         for module in "${group_modules[@]}"; do
             echo "    ${BRIGHT_WHITE}$module${NC}"
         done
@@ -207,7 +195,6 @@ show_build_plan() {
         return 1
     fi
     
-    # 解析依赖关系
     local resolved_modules=($(resolve_dependencies "${modules_to_build[@]}"))
     local build_order=($(get_build_order "${resolved_modules[@]}"))
     
@@ -230,45 +217,232 @@ show_build_plan() {
     echo
     echo "${YELLOW}总计:${NC} ${#build_order[@]} 个模块"
     
-    # 检查冲突
     local conflicts=($(check_module_conflicts "${resolved_modules[@]}"))
     if [[ ${#conflicts[@]} -gt 0 ]]; then
+        HAD_CONFLICTS=true
         echo
-        echo "${RED}警告: 发现模块冲突:${NC}"
+        echo "${RED}⚠️  发现模块冲突:${NC}"
         for conflict in "${conflicts[@]}"; do
             echo "  - $conflict"
         done
         echo
         
-        if ! confirm "是否继续构建？"; then
+        if ! resolve_module_conflicts conflicts "${resolved_modules[@]}"; then
             return 1
         fi
+        
+        resolved_modules=($(resolve_dependencies "${SELECTED_MODULES[@]}"))
+        build_order=($(get_build_order "${resolved_modules[@]}"))
+        
+        echo
+        echo "${YELLOW}冲突解决后的构建计划:${NC}"
+        for i in "${!build_order[@]}"; do
+            local module="${build_order[i]}"
+            local description=$(get_module_description "$module")
+            
+            printf "%2d. %-30s %s\n" $((i+1)) "$module" "$description"
+        done
+        echo
+        echo "${YELLOW}总计:${NC} ${#build_order[@]} 个模块"
     fi
     
     echo
     return 0
 }
 
-# 确认对话框
+# 冲突解决交互
+resolve_module_conflicts() {
+    local conflicts_var="$1"
+    shift
+    local modules=("$@")
+    
+    echo "${CYAN}如何处理模块冲突？${NC}"
+    echo "  [${BRIGHT_GREEN}m${NC}] 手动选择要构建的模块"
+    echo "  [${BRIGHT_YELLOW}a${NC}] 自动移除冲突模块（保留第一个）"
+    echo "  [${BRIGHT_RED}n${NC}] 取消构建"
+    echo
+    
+    local attempts=0
+    while [[ $attempts -lt 5 ]]; do
+        read -p "请选择处理方式 [m/a/n]: " choice || {
+            echo "输入结束，取消构建"
+            return 1
+        }
+        
+        case "$(echo "$choice" | tr '[:upper:]' '[:lower:]')" in
+            m|manual)
+                handle_manual_conflict_resolution "${modules[@]}"
+                return $?
+                ;;
+            a|auto)
+                handle_auto_conflict_resolution "${modules[@]}"
+                return $?
+                ;;
+            n|no|cancel|"")
+                echo "取消构建"
+                return 1
+                ;;
+            *)
+                echo "请输入 m（手动）、a（自动）或 n（取消）"
+                ((attempts++))
+                ;;
+        esac
+    done
+    
+    echo "输入尝试次数过多，取消构建"
+    return 1
+}
+
+# 手动解决冲突
+handle_manual_conflict_resolution() {
+    local modules=("$@")
+    echo
+    echo "${YELLOW}请选择要构建的模块:${NC}"
+    echo
+    
+    local conflicted_modules=()
+    for module in "${modules[@]}"; do
+        local conflicts_var="CONFIG_modules_${module}_conflicts_with"
+        local conflicts_str="${!conflicts_var}"
+        
+        if [ -n "$conflicts_str" ]; then
+            local conflicting_modules
+            IFS=',' read -ra conflicting_modules <<< "${conflicts_str//[\[\]\"]/}"
+            
+            for conflict_module in "${conflicting_modules[@]}"; do
+                conflict_module=$(echo "$conflict_module" | xargs)
+                
+                # 检查冲突模块是否也在构建列表中
+                for check_module in "${modules[@]}"; do
+                    if [ "$check_module" = "$conflict_module" ]; then
+                        if [[ ! " ${conflicted_modules[@]} " =~ " ${module} " ]]; then
+                            conflicted_modules+=("$module")
+                        fi
+                        if [[ ! " ${conflicted_modules[@]} " =~ " ${conflict_module} " ]]; then
+                            conflicted_modules+=("$conflict_module")
+                        fi
+                    fi
+                done
+            done
+        fi
+    done
+    
+    local updated_modules=()
+    for module in "${modules[@]}"; do
+        if [[ " ${conflicted_modules[@]} " =~ " ${module} " ]]; then
+            local description=$(get_module_description "$module")
+            if confirm "是否保留 ${BRIGHT_WHITE}$module${NC} ($description)？" "n"; then
+                updated_modules+=("$module")
+            fi
+        else
+            updated_modules+=("$module")
+        fi
+    done
+    
+    # 检查是否还有剩余的冲突
+    local remaining_conflicts=($(check_module_conflicts "${updated_modules[@]}"))
+    if [[ ${#remaining_conflicts[@]} -gt 0 ]]; then
+        echo
+        echo "${RED}仍然存在冲突，请重新选择:${NC}"
+        for conflict in "${remaining_conflicts[@]}"; do
+            echo "  - $conflict"
+        done
+        return 1
+    fi
+    
+    SELECTED_MODULES=("${updated_modules[@]}")
+    
+    echo
+    echo "${GREEN}已更新模块列表，冲突已解决${NC}"
+    return 0
+}
+
+# 自动解决冲突（保留第一个遇到的模块）
+handle_auto_conflict_resolution() {
+    local modules=("$@")
+    local updated_modules=()
+    local removed_modules=()
+    
+    for module in "${modules[@]}"; do
+        local should_keep=true
+        
+        # 检查这个模块是否与已经保留的模块冲突
+        local conflicts_var="CONFIG_modules_${module}_conflicts_with"
+        local conflicts_str="${!conflicts_var}"
+        
+        if [ -n "$conflicts_str" ]; then
+            local conflicting_modules
+            IFS=',' read -ra conflicting_modules <<< "${conflicts_str//[\[\]\"]/}"
+            
+            for conflict_module in "${conflicting_modules[@]}"; do
+                conflict_module=$(echo "$conflict_module" | xargs)
+                
+                # 检查冲突模块是否已经在保留列表中
+                for kept_module in "${updated_modules[@]}"; do
+                    if [ "$kept_module" = "$conflict_module" ]; then
+                        should_keep=false
+                        removed_modules+=("$module")
+                        break 2
+                    fi
+                done
+            done
+        fi
+        
+        if [ "$should_keep" = true ]; then
+            updated_modules+=("$module")
+        fi
+    done
+    
+    SELECTED_MODULES=("${updated_modules[@]}")
+    
+    if [[ ${#removed_modules[@]} -gt 0 ]]; then
+        echo
+        echo "${YELLOW}自动移除的冲突模块:${NC}"
+        for module in "${removed_modules[@]}"; do
+            echo "  - $module"
+        done
+    fi
+    
+    echo
+    echo "${GREEN}冲突已自动解决${NC}"
+    return 0
+}
+
+# 确认对话框 - 修复无限循环
 confirm() {
     local message="$1"
     local default="${2:-n}"
     
-    while true; do
+    local attempts=0
+    while [[ $attempts -lt 5 ]]; do
         if [[ "$default" == "y" ]]; then
-            read -p "$message [Y/n]: " answer
-            answer="${answer:-y}"
+            read -p "$message [Y/n]: " answer || {
+                echo "输入结束，使用默认值: $default"
+                answer="$default"
+            }
         else
-            read -p "$message [y/N]: " answer
-            answer="${answer:-n}"
+            read -p "$message [y/N]: " answer || {
+                echo "输入结束，使用默认值: $default"
+                answer="$default"
+            }
+        fi
+        
+        if [[ -z "$answer" ]]; then
+            answer="$default"
         fi
         
         case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
             y|yes) return 0 ;;
             n|no) return 1 ;;
-            *) echo "请输入 y 或 n" ;;
+            *) 
+                echo "请输入 y 或 n"
+                ((attempts++))
+                ;;
         esac
     done
+    
+    echo "输入尝试次数过多，使用默认值: $default"
+    [[ "$default" == "y" ]] && return 0 || return 1
 }
 
 # 清理构建目录
@@ -293,56 +467,11 @@ clean_build_dirs() {
     echo "构建目录清理完成"
 }
 
-# 检查系统依赖项
-check_system_dependencies() {
-    echo "${CYAN}检查系统依赖项...${NC}"
-    
-    local required_commands=(
-        "catkin_make:ROS构建工具"
-        "roscore:ROS核心"
-        "gcc:C编译器"
-        "g++:C++编译器"
-        "cmake:CMake构建系统"
-        "make:Make构建工具"
-    )
-    
-    local missing_deps=()
-    
-    for dep in "${required_commands[@]}"; do
-        local cmd="${dep%%:*}"
-        local desc="${dep##*:}"
-        
-        if command -v "$cmd" >/dev/null 2>&1; then
-            echo "${GREEN}✓${NC} $desc ($cmd)"
-        else
-            echo "${RED}✗${NC} $desc ($cmd) - 缺失"
-            missing_deps+=("$cmd")
-        fi
-    done
-    
-    if [[ ${#missing_deps[@]} -gt 0 ]]; then
-        echo
-        echo "${RED}缺失的依赖项:${NC}"
-        for dep in "${missing_deps[@]}"; do
-            echo "  - $dep"
-        done
-        echo
-        echo "${YELLOW}请安装缺失的依赖项后再运行构建${NC}"
-        return 1
-    else
-        echo
-        echo "${GREEN}所有系统依赖项都已安装${NC}"
-        return 0
-    fi
-}
 
 # 主UI流程
 run_ui_flow() {
-    # 显示简洁的欢迎信息
-    if [[ "$QUIET" != true ]]; then
-        echo "${CYAN}Sunray 模块化构建系统 v2.0${NC}"
-        echo
-    fi
+    echo "${CYAN}Sunray 构建系统${NC}"
+    echo
     
     # 检查配置文件
     if ! validate_config; then
@@ -350,14 +479,12 @@ run_ui_flow() {
         return 1
     fi
     
-    # 如果仍然没有选择模块，使用默认
     if [[ ${#SELECTED_MODULES[@]} -eq 0 ]]; then
         print_error "没有指定要构建的模块"
         show_help
         return 1
     fi
     
-    # 展开模块组和别名
     local expanded_modules=()
     for module in "${SELECTED_MODULES[@]}"; do
         case "$module" in
@@ -365,11 +492,27 @@ run_ui_flow() {
                 expanded_modules+=($(get_all_modules))
                 ;;
             *)
-                # 首先检查是否是个体模块
-                if module_exists "$module"; then
+                local is_module=$(module_exists "$module" && echo "true" || echo "false")
+                local is_group=$(get_group_modules "$module" >/dev/null 2>&1 && echo "true" || echo "false")
+                
+                if [[ "$is_module" == "true" && "$is_group" == "true" ]]; then
+                    # 发现命名冲突，询问用户意图
+                    HAD_CONFLICTS=true
+                    echo
+                    echo "${YELLOW}⚠️  发现命名冲突: '$module'${NC}"
+                    echo "  存在同名的模块和构建组："
+                    echo "  ${CYAN}模块${NC}: $(get_module_description "$module")"
+                    echo "  ${CYAN}构建组${NC}: $(get_group_description "$module")"
+                    echo
+                    
+                    if confirm "是否构建整个 '${BRIGHT_WHITE}$module${NC}' 构建组？" "y"; then
+                        expanded_modules+=($(get_group_modules "$module"))
+                    else
+                        expanded_modules+=("$module")
+                    fi
+                elif [[ "$is_module" == "true" ]]; then
                     expanded_modules+=("$module")
-                # 然后检查是否是组（类别或虚拟组）
-                elif get_group_modules "$module" >/dev/null 2>&1; then
+                elif [[ "$is_group" == "true" ]]; then
                     expanded_modules+=($(get_group_modules "$module"))
                 else
                     print_warning "未知模块: $module"
@@ -380,21 +523,21 @@ run_ui_flow() {
     
     SELECTED_MODULES=($(printf '%s\n' "${expanded_modules[@]}" | sort -u))
     
-    # 显示构建计划
     if ! show_build_plan "${SELECTED_MODULES[@]}"; then
         return 1
     fi
     
-    # 确认构建
     if [[ "$DRY_RUN" == true ]]; then
         print_status "预览模式 - 不执行实际构建"
         return 0
     fi
     
-    if [[ "$QUIET" != true ]]; then
+    if [[ "$AUTO_YES" == true && "$HAD_CONFLICTS" == false ]]; then
+        echo "自动确认开始构建..."
+    else
         if ! confirm "开始构建？" "y"; then
             echo "取消构建"
-            return 0
+            return 2  # 返回特殊退出码表示用户取消
         fi
     fi
     
@@ -406,7 +549,7 @@ get_ui_config() {
     cat << EOF
 {
     "verbose": $VERBOSE,
-    "quiet": $QUIET,
+    "auto_yes": $AUTO_YES,
     "build_jobs": $BUILD_JOBS,
     "selected_modules": [$(printf '"%s",' "${SELECTED_MODULES[@]}" | sed 's/,$//')],
     "dry_run": $DRY_RUN

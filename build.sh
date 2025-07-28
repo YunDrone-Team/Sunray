@@ -1,26 +1,21 @@
 #!/bin/bash
+# Sunray 模块化构建系统
+# ./build.sh --help # 运行构建脚本
 
-# Sunray 模块化构建系统 - 主构建脚本
-# 基于配置驱动的模块化构建架构
-# 作者: 重构自原始构建脚本
-# 用法: ./build.sh [选项] [模块...]
+set -e
 
-set -e  # 任意命令出错则退出
+# 目录设置
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly WORKSPACE_ROOT="$SCRIPT_DIR"
+readonly BUILDSCRIPTS_DIR="$SCRIPT_DIR/buildscripts"
 
-# 脚本目录和根目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="$SCRIPT_DIR"
-
-# 检查并加载模块化构建系统
-BUILDSCRIPTS_DIR="$SCRIPT_DIR/buildscripts"
-
-if [[ ! -d "$BUILDSCRIPTS_DIR" ]]; then
+[[ ! -d "$BUILDSCRIPTS_DIR" ]] && {
     echo "❌ 模块化构建系统未找到: $BUILDSCRIPTS_DIR"
     echo "请确保运行了构建系统初始化"
     exit 1
-fi
+}
 
-# 加载构建系统模块
+# 模块加载
 source "$BUILDSCRIPTS_DIR/lib/utils.sh"
 source "$BUILDSCRIPTS_DIR/lib/config.sh"
 source "$BUILDSCRIPTS_DIR/lib/ui.sh"
@@ -30,102 +25,65 @@ source "$BUILDSCRIPTS_DIR/lib/builder.sh"
 main() {
     local start_time=$(date +%s)
     
-    # 初始化配置系统
-    if ! init_config; then
-        print_error "配置系统初始化失败"
-        exit 1
-    fi
+    init_config && parse_arguments "$@" || exit 1
     
-    # 解析命令行参数
-    parse_arguments "$@"
+    local ui_result
+    run_ui_flow; ui_result=$?
     
-    # 运行UI流程
-    if ! run_ui_flow; then
-        exit 1
-    fi
+    case $ui_result in
+    esac
     
-    # 如果是预览模式，直接退出
-    if [[ "$DRY_RUN" == true ]]; then
-        exit 0
-    fi
+    [[ "$DRY_RUN" == true ]] && exit 0
     
-    # 初始化构建环境
     print_status "初始化构建环境..."
-    if ! init_build_environment "$WORKSPACE_ROOT"; then
-        print_error "构建环境初始化失败"
-        exit 1
-    fi
+    init_build_environment "$WORKSPACE_ROOT" || { print_error "构建环境初始化失败"; exit 1; }
     
-    # 解析要构建的模块
     print_status "解析模块依赖关系..."
     local resolved_modules=($(resolve_dependencies "${SELECTED_MODULES[@]}"))
-    if [[ ${#resolved_modules[@]} -eq 0 ]]; then
-        print_error "没有找到要构建的模块"
-        exit 1
-    fi
+    [[ ${#resolved_modules[@]} -eq 0 ]] && { print_error "没有找到要构建的模块"; exit 1; }
     
-    # 显示最终的构建计划
     echo
     echo "${CYAN}=== 开始构建 ===${NC}"
     echo "构建模块: ${resolved_modules[*]}"
     echo "并行任务: $BUILD_JOBS"
-    echo "配置文件: 默认"
     echo
-
-    # 执行构建
-    local build_result=0
     
-    # 注册清理函数
     trap cleanup_build_environment EXIT
     
     if build_modules_parallel "${resolved_modules[@]}"; then
-        local end_time=$(date +%s)
-        local total_time=$((end_time - start_time))
-        
+        local total_time=$(($(date +%s) - start_time))
         echo
         echo "${GREEN}🎉 构建完成！${NC}"
         echo "总用时: $(format_duration $total_time)"
-        
-        # 构建后处理
         post_build_actions
-        
-        build_result=0
+        return 0
     else
         echo
         echo "${RED}❌ 构建失败！${NC}"
-        build_result=1
+        return 1
     fi
-    
-    return $build_result
 }
 
 # 构建后处理
 post_build_actions() {
     print_status "执行构建后处理..."
     
-    # 更新ROS包路径
-    if [[ -f "devel/setup.bash" ]]; then
+    # ROS工作空间检查
+    [[ -f "devel/setup.bash" ]] && {
         print_status "ROS工作空间设置文件已生成: devel/setup.bash"
-        print_status "使用以下命令设置环境:"
+        echo "使用以下命令设置环境:"
         echo "  ${CYAN}source devel/setup.bash${NC}"
-    fi
+    }
     
-    # 检查磁盘空间
-    check_disk_space
-}
-
-# 检查磁盘空间
-check_disk_space() {
-    local available_space=$(df "$WORKSPACE_ROOT" | awk 'NR==2 {print $4}')
-    local available_gb=$((available_space / 1024 / 1024))
-    
-    if [[ $available_gb -lt 1 ]]; then
+    # 快速磁盘空间检查
+    local available_gb=$(($(df "$WORKSPACE_ROOT" | awk 'NR==2 {print $4}') / 1024 / 1024))
+    [[ $available_gb -lt 1 ]] && {
         print_warning "磁盘空间不足 (剩余 ${available_gb}GB)，建议清理构建缓存"
         print_status "使用以下命令清理: $0 --clean"
-    fi
+    }
 }
 
-# 兼容性函数 - 处理旧式的调用方式
+# 兼容性函数
 handle_legacy_arguments() {
     local legacy_args=()
     
@@ -203,58 +161,40 @@ EOF
 
 # 错误处理
 handle_error() {
-    local exit_code=$?
-    local line_number=$1
+    local exit_code=$? line_number=$1
     
     echo
     print_error "构建脚本在第 $line_number 行发生错误 (退出码: $exit_code)"
     
-    if [[ $exit_code -eq 127 ]]; then
-        print_error "可能是缺少必要的依赖或模块未找到"
-        print_status "尝试运行: $0 --check-deps"
-    elif [[ $exit_code -eq 130 ]]; then
-        print_warning "构建被用户中断"
-    else
-        print_error "构建失败，请查看上方错误信息"
-    fi
-    
-    # 清理构建环境
-    cleanup_build_environment
-    
-    exit $exit_code
-}
-
-# 注册错误处理器
-trap 'handle_error $LINENO' ERR
-
-# 显示版本信息
-show_version() {
-    echo "Sunray 模块化构建系统 v2.0.0"
-    echo "基于配置驱动的现代构建架构"
-    echo "原始版本兼容，增强的功能和用户体验"
-}
-
-# 主入口点
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # 处理特殊的帮助选项
-    case "${1:-}" in
-        --version|-V)
-            show_version
-            exit 0
+    case $exit_code in
+        127) 
+            print_error "可能是缺少必要的依赖或模块未找到" 
             ;;
-        --migration|--migrate)
-            show_migration_help
-            exit 0
+        130) 
+            print_warning "构建被用户中断" 
             ;;
-        --help|-h)
-            show_help
-            exit 0
+        *) 
+            print_error "构建失败，请查看上方错误信息" 
             ;;
     esac
     
-    # 处理兼容性参数
-    processed_args=($(handle_legacy_arguments "$@"))
+    cleanup_build_environment
+    exit $exit_code
+}
+
+trap 'handle_error $LINENO' ERR
+
+# 版本信息显示
+show_version() {
+    echo "Sunray 构建系统"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        --version|-V) show_version; exit 0 ;;
+        --migration|--migrate) show_migration_help; exit 0 ;;
+        --help|-h) show_help; exit 0 ;;
+    esac
     
-    # 运行主函数
-    main "${processed_args[@]}"
+    main $(handle_legacy_arguments "$@")
 fi
