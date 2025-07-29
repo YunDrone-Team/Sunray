@@ -389,7 +389,7 @@ class CircleVelController:
             rate.sleep()
 
         self.hover()
-        # self.land()
+        self.land()
 
     "测试APF路径规划器"
     def plan_test(self):

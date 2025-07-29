@@ -151,7 +151,7 @@ class APF_Planner:
             # print("dis2up:", dis2up)
             force[1] -= self.k_repel * (1/abs(dis2up) - 1/self.d_safe)
         
-        print(f"Boundary Force: {force}")
+        # print(f"Boundary Force: {force}")
         return force
     
     def calculate_velocity(self, pos):
