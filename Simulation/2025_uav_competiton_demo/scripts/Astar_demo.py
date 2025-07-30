@@ -4,10 +4,13 @@
 import rospy 
 from sunray_msgs.msg import UAVState, UAVControlCMD, UAVSetup 
 from geometry_msgs.msg import PoseStamped 
+from nav_msgs.msg import OccupancyGrid, Path
+from geometry_msgs.msg import PoseStamped as PathPose
+from astar import AStar
 import signal 
 import sys 
-import math 
-from mavros_msgs.srv import ParamSet, ParamSetRequest
+import math
+from external import Obs, Servo
 
 class CircleVelController:
     def __init__(self):
@@ -21,7 +24,7 @@ class CircleVelController:
         self.uav_name = rospy.get_param("~uav_name", "uav")
         self.uav_name = f"/{self.uav_name}{self.uav_id}"
 
-        "订阅无人机状态消息，发布无人机控制指令和设置指令"
+        "订阅无人机状态消息和障碍物位置消息，发布无人机控制指令和设置指令"
         self.uav_state_sub = rospy.Subscriber(
             self.uav_name + "/sunray/uav_state", UAVState, self.uav_state_cb)
         self.control_cmd_pub = rospy.Publisher(
@@ -29,20 +32,19 @@ class CircleVelController:
         self.uav_setup_pub = rospy.Publisher(
             self.uav_name + "/sunray/setup", UAVSetup, queue_size=1)
         
-        "使用参数设置服务对舵机进行控制"
-        rospy.wait_for_service(self.uav_name + "/mavros/param/set")
-        self.servo_ctrl = rospy.ServiceProxy(
-            self.uav_name + "/mavros/param/set", ParamSet
-        )
-        self.servo_mode = ParamSetRequest() # 舵机模式 默认是aux1控制（407），使用offboard控制时，切换到最大值（2）
-        self.servo_mode.param_id = "PWM_MAIN_FUNC5"
-        self.servo_angel = ParamSetRequest() # 舵机角度 （200 - 2450）
-        self.servo_angel.param_id = "PWM_MAIN_MAX5"
+        # rviz可视化发布者
+        self.grid_pub = rospy.Publisher('/occupancy_grid', OccupancyGrid, queue_size=1)
+        self.path_pub = rospy.Publisher('/planned_path', Path, queue_size=1)
 
-        # 后续修改这两个参数以适配具体安装方式
-        self.servo_init_angle = 800     # 初始角度
-        self.servo_drop_angle = 2400    # 投放角度
+        self.obs = Obs(sim=True)  # 是否为仿真模式
+        self.obs.open()  # 打开障碍物订阅
+        self.servo = Servo(self.uav_name)
 
+        self.start_x, self.start_y = -2.0, -2.0
+        self.goal_x, self.goal_y = 0.65, -0.72
+        self.obstacle_coords = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]
+        self.astar = AStar()
+    
         "初始化控制指令和圆形轨迹参数"
         '''
         # 控制命令期望值
@@ -62,7 +64,7 @@ class CircleVelController:
         self.uav_cmd.desired_yaw_rate = 0.0
 
         "设置参数"
-        self.center_x, self.center_y = 0.0, 0.0 
+        self.center_x, self.center_y = 0.0, 0.0
         self.radius = 1.0 
         self.num_points = 50 
         self.k_p, self.z_k_p = 1.5, 0.5 
@@ -74,14 +76,14 @@ class CircleVelController:
         self.max_pitch_speed = 2.0  
         self.pose = PoseStamped()
         self.points = [
-            [-0.559, -1.176, self.height],
-            [0.706, -0.761, self.height],
+            # [-0.559, -1.176, self.height],
+            # [0.706, -0.761, self.height],
             [1.22, -0.572, self.height],
             [1.2678, 0.1259, self.height],
             [1.46, 1.27, self.height],
             [1.43, 2.0, self.height],
-            [0.0, 1.5, self.height],
-            [-1.5, 1.5, self.height],
+            [0.0, 2.0, self.height],
+            [-1.5, 1.5, self.height]
         ] 
 
         "退出信号处理"
@@ -96,7 +98,53 @@ class CircleVelController:
     "无人机状态回调函数"
     def uav_state_cb(self, msg):
         self.uav_state = msg
+    
+    def publish_occupancy_grid(self, grid, origin, resolution):
+        """发布栅格地图到rviz"""
+        msg = OccupancyGrid()
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = "world"
         
+        msg.info.resolution = resolution
+        msg.info.width = grid.shape[1]
+        msg.info.height = grid.shape[0]
+        msg.info.origin.position.x = origin[0]
+        msg.info.origin.position.y = origin[1]
+        msg.info.origin.position.z = 0.0
+        msg.info.origin.orientation.w = 1.0
+        
+        # 转换格式：0=free(白色), 100=occupied(黑色), -1=unknown(灰色)
+        flat_grid = grid.flatten()
+        occupancy_data = []
+        for cell in flat_grid:
+            if cell == 0:
+                occupancy_data.append(0)    # free
+            else:
+                occupancy_data.append(100) # occupied
+        
+        msg.data = occupancy_data
+        self.grid_pub.publish(msg)
+        rospy.loginfo("栅格地图已发布到rviz")
+    
+    def publish_path(self, waypoints):
+        """发布路径到rviz"""
+        msg = Path()
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = "world"
+        
+        for wx, wy in waypoints:
+            pose = PathPose()
+            pose.header.stamp = rospy.Time.now()
+            pose.header.frame_id = "world"
+            pose.pose.position.x = wx
+            pose.pose.position.y = wy
+            pose.pose.position.z = 0
+            pose.pose.orientation.w = 1.0
+            msg.poses.append(pose)
+        
+        self.path_pub.publish(msg)
+        rospy.loginfo(f"路径已发布到rviz，包含{len(waypoints)}个点")
+
     "等待无人机连接"
     def wait_for_connection(self):
         rate = rospy.Rate(1.0) #1 Hz
@@ -119,7 +167,7 @@ class CircleVelController:
             rate.sleep()
         rospy.loginfo(f"{self.node_name}:UAV control_mode set to [{self.uav_setup.control_mode}] successfully!")
 
-
+    "解锁无人机"
     def arm_uav(self):
         for i in range(2, 0, -1): 
             rospy.loginfo(f"{self.node_name}: Arm UAV in {i} sec...")
@@ -144,47 +192,13 @@ class CircleVelController:
         rospy.loginfo(f"{self.node_name}: Takeoff UAV successfully!")
 
     "悬停无人机"
-    def hover(self):
+    def hover(self, time=1):
         rospy.sleep(1.0)
         rospy.loginfo(f"{self.node_name}: Send UAV Hover cmd.")
         self.uav_cmd.cmd = UAVControlCMD.Hover
         self.uav_cmd.header.stamp = rospy.Time.now()
         self.control_cmd_pub.publish(self.uav_cmd)
-        rospy.sleep(1.0)
-
-    "执行圆形轨迹飞行"
-    def fly_cirle(self):
-        rate = rospy.Rate(10.0) #10 Hz
-        rospy.loginfo(f"{self.node_name}: Start circle.")
-        for i in range(self.num_points):
-            theta = i * 2 * math.pi / self.num_points
-            self.pose.pose.position.x = self.center_x + self.radius * math.cos(theta)
-            self.pose.pose.position.y = self.center_y + self.radius * math.sin(theta)
-            self.pose.pose.position.z = self.height
-
-            while not rospy.is_shutdown():
-                dx = self.pose.pose.position.x - self.uav_state.position[0]
-                dy = self.pose.pose.position.y - self.uav_state.position[1]
-                dz = self.pose.pose.position.z - self.uav_state.position[2]
-
-                vx = self.k_p * dx
-                vy = self.k_p * dy
-                vz = self.z_k_p * dz
-
-                vx = min(max(vx, -self.max_vel), self.max_vel)
-                vy = min(max(vy, -self.max_vel), self.max_vel)
-                vz = min(max(vz, -self.max_vel), self.max_vel)
-
-                self.uav_cmd.header.stamp = rospy.Time.now()
-                self.uav_cmd.cmd = UAVControlCMD.XyzVel
-                self.uav_cmd.desired_vel = [vx, vy, vz]
-                self.control_cmd_pub.publish(self.uav_cmd)
-
-                if abs(self.uav_state.position[0] - self.pose.pose.position.x) < 0.15 and \
-                   abs(self.uav_state.position[1] - self.pose.pose.position.y) < 0.15:
-                    break
-
-                rate.sleep()
+        rospy.sleep(time)
 
     "自定义飞行,使用速度控制接口"
     def custom_fly_vel(self):
@@ -240,7 +254,7 @@ class CircleVelController:
 
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
-                    if idx == 2:
+                    if idx == 0:
                         # 设置偏航到 90
                         rospy.sleep(1.0)
                         desired_yaw_deg = 90.0
@@ -249,28 +263,21 @@ class CircleVelController:
                         rospy.loginfo(f"{self.node_name}: Rotating to yaw {desired_yaw_deg} deg")
                         self.uav_cmd.header.stamp = rospy.Time.now()
                         self.control_cmd_pub.publish(self.uav_cmd)
-                        rospy.sleep(1.0)  # 等旋转
+                        rospy.sleep(1.5)  # 等旋转
                         break
                     
-                    if idx == 6:
-                        self.hover()
-                        break
-
-                    if idx == 7:
-                        self.hover()
-                        rospy.sleep(1.0)
-                        self.servo_setangle(self.servo_drop_angle)
-                        rospy.sleep(1.0)
+                    if idx == 4:
+                        self.hover(12)
                         break
 
                     break
 
                 rate.sleep()
 
-        
     "返回原点(速度控制)"
     def return_to_origin_vel(self):
         rate = rospy.Rate(20.0)
+        count = 0
         self.pose.pose.position.x = -2.0
         self.pose.pose.position.y = -2.0
         self.pose.pose.position.z = self.height
@@ -293,17 +300,22 @@ class CircleVelController:
             self.uav_cmd.desired_vel = [vx, vy, vz]
             self.control_cmd_pub.publish(self.uav_cmd)
 
-            if abs(self.uav_state.position[0] - self.pose.pose.position.x) < 0.2 and \
-               abs(self.uav_state.position[1] - self.pose.pose.position.y) < 0.2:
-                rospy.sleep(1.0)
+            if abs(self.uav_state.position[0] - self.pose.pose.position.x) < 0.1 and \
+               abs(self.uav_state.position[1] - self.pose.pose.position.y) < 0.1:
+                count += 1
+            else:
+                count = 0
+
+            if count > 40:
+                rospy.loginfo(f"{self.node_name}: Arrived at origin (velocity control).")
                 break
 
             rate.sleep()
 
-        "返回原点（位置控制）"
+    "返回原点（位置控制）"
     def return_to_origin_pose(self):
         rate = rospy.Rate(20.0)
-
+        count = 0
         target_x = -2.0
         target_y = -2.0
         target_z = self.height
@@ -316,27 +328,29 @@ class CircleVelController:
 
             dx = target_x - self.uav_state.position[0]
             dy = target_y - self.uav_state.position[1]
-            dz = target_z - self.uav_state.position[2]
 
-            if abs(dx) < 0.2 and abs(dy) < 0.2 and abs(dz) < 0.2:
+            if abs(dx) < 0.1 and abs(dy) < 0.1:
+                count += 1
+            else:
+                count = 0
+
+            if count > 40:
                 rospy.loginfo(f"{self.node_name}: Arrived at origin (position control).")
-                rospy.sleep(1.0)
-                break
+                break 
 
             rate.sleep()
 
-
     "降落"
     def land(self):
-        rate = rospy.Rate(0.25)
+        rate = rospy.Rate(2.0)
         while not rospy.is_shutdown() and (self.uav_state.control_mode != UAVSetup.LAND_CONTROL or self.uav_state.landed_state != 1):
-            self.uav_cmd.cmd = UAVControlCMD.Land
             self.uav_cmd.header.stamp = rospy.Time.now()
+            self.uav_cmd.cmd = UAVControlCMD.Land
             self.control_cmd_pub.publish(self.uav_cmd)
             rospy.loginfo(f"{self.node_name}: Land UAV now.")
             rate.sleep()
 
-        rate = rospy.Rate(1.0)  # 1 Hz
+        rate = rospy.Rate(2.0)  # 1 Hz
         while not rospy.is_shutdown() and self.uav_state.landed_state != 1:
             rospy.loginfo(f"{self.node_name}: Landing")
             rate.sleep()
@@ -344,77 +358,75 @@ class CircleVelController:
         rospy.loginfo(f"{self.node_name}: Land UAV successfully!")
         rospy.loginfo(f"{self.node_name}: Demo finished, quit!")
 
-    "舵机控制接口"
-    "舵机使用指南："
-    "使用servo_setangle需要先运行self.servo_setmode(2)把舵机模式改成最大值输出"
-    # CONSTANT_MIN = 1
-    # CONSTANT_MAX = 2
-    # RC_AUX1 = 407
-    def servo_setmode(self, modeID):
-        if modeID == 1 or 2 or 407:
-            self.servo_mode.value.integer = modeID
-            try:
-                if self.servo_ctrl.call(self.servo_mode).success:
-                    rospy.loginfo(f"{self.node_name}: Turn Servo mode {modeID}!")
-                else:
-                    rospy.loginfo(f"{self.node_name}: Turn Servo mode False-->no_success")
-            except rospy.ROSInterruptException:
-                pass
-        else:
-            rospy.loginfo(f"{self.node_name}: Turn Servo mode False-->modeID_unuse")
-
-    # angle :200 - 2450
-    def servo_setangle(self, angle):
-        if 200 <= angle and angle <= 2450:
-            self.servo_angel.value.integer = angle
-            try:
-                if self.servo_ctrl.call(self.servo_angel).success:
-                    rospy.loginfo(f"{self.node_name}: Set Servo angle {angle}!")
-                else:
-                    rospy.loginfo(f"{self.node_name}: Set Servo angle False-->no_success")
-            except rospy.ROSInterruptException:
-                pass
-        else:
-            rospy.loginfo(f"{self.node_name}: Set Servo angle False-->angle_limit")
-
-    "投送测试函数"
-    def drop_test(self):
-        rospy.init_node("drop_test_demo", anonymous=True)
-        self.node_name = rospy.get_name()
-        self.wait_for_connection()
-        self.servo_setmode(2) # 设置舵机输出模式为constmax
-        self.servo_setangle(self.servo_init_angle)
-        self.set_control_mode()
-        self.arm_uav()
-        self.takeoff()
-        self.hover()
-
-        rospy.loginfo(f"{self.node_name}: Flying to point 7: {self.points[7]}")
-        target_x, target_y, target_z = self.points[7]
+    def astar_plan_and_fly(self):
+        # # 等待障碍物和目标点坐标收到
+        # while not (self.obstacle1_received and self.obstacle2_received and self.obstacle3_received and self.target_received):
+        #     rospy.loginfo("等待障碍物和目标点坐标...")
+        #     rospy.sleep(0.5)
+        # A*参数
+        origin = (self.start_x, self.start_y)
+        resolution = 0.05
+        rows, cols = 120, 120
+        inflation_radius = 0.52 # 0.3 + self.uav_radius + 0.05  # 障碍半径 + UAV半径 + 裕度
+        self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
+        self.obstacle_coords = self.obs.get_obstacles()
         
-        rate = rospy.Rate(20.0)  # 20 Hz
-        while not rospy.is_shutdown():
-            self.uav_cmd.header.stamp = rospy.Time.now()
-            self.uav_cmd.cmd = UAVControlCMD.XyzPos  # 位置模式
-            self.uav_cmd.desired_pos = [target_x, target_y, target_z]
-            self.control_cmd_pub.publish(self.uav_cmd)
-
-            dx = target_x - self.uav_state.position[0]
-            dy = target_y - self.uav_state.position[1]
-            dz = target_z - self.uav_state.position[2]
-
-            if abs(dx) < 0.1 and abs(dy) < 0.1 and abs(dz) < 0.2:
-                self.hover()
-                rospy.sleep(1.0)
-                self.servo_setangle(self.servo_drop_angle)
-                rospy.loginfo(f"{self.node_name}: Drop Success!")
-                rospy.sleep(1.0)
-                break
-
-            rate.sleep()
-
-        self.return_to_origin_pose()
-        self.land()
+        # 生成grid（带膨胀）
+        grid = self.astar.create_grid_from_obstacles(
+            self.obstacle_coords, rows, cols, resolution, origin, inflation_radius)
+        
+        # 发布栅格地图到rviz
+        self.publish_occupancy_grid(grid, origin, resolution)
+        # 获取起点和终点的栅格坐标
+        start_grid = self.astar.world_to_grid(self.uav_state.position[0], self.uav_state.position[1], origin, resolution)
+        goal_grid = self.astar.world_to_grid(self.goal_x, self.goal_y, origin, resolution)
+        # 路径规划
+        path = self.astar.search(start_grid, goal_grid, grid)
+        if not path or len(path) < 2:
+            rospy.logwarn("A*未找到有效路径，任务中止！")
+            self.land()
+            return
+        # 路径点还原为世界坐标
+        waypoints = [self.astar.grid_to_world(gy, gx, origin, resolution) for gy, gx in path]
+        
+        # 路径平滑化处理 - 减少路径点数量以提高速度
+        rospy.loginfo(f"原始路径点数: {len(waypoints)}")
+        waypoints = self.astar.smooth_path(waypoints, smoothing_factor=0.3, iterations=3)
+        # 减少插值点数量，或跳过插值直接使用平滑路径
+        # waypoints = self.astar.interpolate_path(waypoints, num_points=2)  # 注释掉减少路径点
+        if not self.astar.is_path_safe(waypoints, grid, origin, resolution):
+            rospy.logwarn("平滑路径不安全，回退到原始A*路径")
+            waypoints = [self.astar.grid_to_world(gy, gx, origin, resolution) for gy, gx in path]
+        
+        # 进一步减少路径点 - 每隔几个点取一个
+        if len(waypoints) > 10:
+            step = max(1, len(waypoints) // 8)  # 最多保留8个关键点
+            key_waypoints = waypoints[::step]
+            if waypoints[-1] not in key_waypoints:
+                key_waypoints.append(waypoints[-1])  # 确保包含终点
+            waypoints = key_waypoints
+        
+        rospy.loginfo(f"优化后路径点数: {len(waypoints)}")
+        
+        # 发布路径到rviz
+        self.publish_path(waypoints)
+        
+        # 控制无人机依次飞向waypoints（位置控制）
+        rate = rospy.Rate(30.0)
+        for idx, (wx, wy) in enumerate(waypoints):
+            rospy.loginfo(f"A*航点 {idx+1}/{len(waypoints)}: ({wx:.2f}, {wy:.2f}, {self.height:.2f})")
+            while not rospy.is_shutdown():
+                self.uav_cmd.header.stamp = rospy.Time.now()
+                self.uav_cmd.cmd = UAVControlCMD.XyzPos
+                self.uav_cmd.desired_pos = [wx, wy, self.height]
+                self.control_cmd_pub.publish(self.uav_cmd)
+                dx = wx - self.uav_state.position[0]
+                dy = wy - self.uav_state.position[1]
+                dz = self.height - self.uav_state.position[2]
+                if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
+                    break
+                rate.sleep()
+        rospy.loginfo("A*路径已完成!")
 
 
     "主程序"
@@ -422,19 +434,11 @@ class CircleVelController:
         rospy.init_node("competiton_demo", anonymous=True)
         self.node_name = rospy.get_name()
         self.wait_for_connection()
-
-        self.servo_setmode(2) # 设置舵机输出模式为constmax
-        self.servo_setangle(self.servo_init_angle)
-
         self.set_control_mode()
         self.arm_uav()
         self.takeoff()
         self.hover()
-
-        # self.fly_cirle()
-        # self.custom_fly_vel()
-        # self.return_to_origin_vel()
-
+        self.astar_plan_and_fly()
         self.custom_fly_pose()
         self.return_to_origin_pose()
         self.land()
@@ -442,7 +446,6 @@ class CircleVelController:
 if __name__ == "__main__":
     try:
         controller = CircleVelController()
-        # controller.run()
-        controller.drop_test()
+        controller.run()
     except rospy.ROSInterruptException:
         pass

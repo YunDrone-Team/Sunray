@@ -4,7 +4,7 @@
   <arg name="uav_name" default="uav"/>
 
   <node pkg="2025_uav_competiton_demo"
-        type="uav_demo.py"
+        type="Astar_demo.py"
         name="competiton_demo"
         output="screen">
     <param name="uav_id" value="$(arg uav_id)"/>

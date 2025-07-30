@@ -8,7 +8,7 @@ roscore_pid=$!
 sleep 5
 
 echo "启动 sim ..."
-roslaunch sunray_simulator sunray_sim_1uav_demo.launch &
+roslaunch sunray_simulator sunray_sim_1uav.launch &
 sim_pid=$!
 sleep 5
 
@@ -28,7 +28,7 @@ control_pid=$!
 sleep 2
 
 echo "运行 demo ..."
-roslaunch 2025_uav_competiton_demo run_demo.launch &
+roslaunch 2025_uav_competiton_demo Astar.launch &
 demo_pid=$!
 
 wait
