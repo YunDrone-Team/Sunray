@@ -28,7 +28,7 @@ control_pid=$!
 sleep 2
 
 echo "运行 demo ..."
-roslaunch 2025_uav_competiton_demo Astar.launch &
+roslaunch 2025_uav_competiton_demo Astar.launch enable_rviz:=true &
 demo_pid=$!
 
 wait

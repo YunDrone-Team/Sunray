@@ -394,7 +394,7 @@ class CircleVelController:
 
     "主程序"
     def run(self):
-        rospy.init_node("competiton_demo", anonymous=True)
+        rospy.init_node("APF_demo", anonymous=True)
         self.node_name = rospy.get_name()
         self.wait_for_connection()
 

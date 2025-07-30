@@ -4,7 +4,7 @@ from mavros_msgs.srv import ParamSet, ParamSetRequest
 
 class Obs:
     def __init__(self, sim = False, auto_turnoff = False):
-        self.obstacles = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+        self.obstacles = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
         self.delivery = [0.0, 0.0]
         self.obstacles_sub = []
 
