@@ -6,7 +6,7 @@
     <arg name="position_topic" default="/Odometry" />
     <arg name="enable_rviz" default="false" />
     <arg name="enable_range_sensor" default="false" />
-    <arg name="server" default="192.168.25.11"/>
+    <arg name="server" default="192.168.25.18"/>
 
     <!-- 启动 external_fusion_node-->
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
