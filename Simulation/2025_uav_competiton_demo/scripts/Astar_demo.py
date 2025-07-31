@@ -10,6 +10,7 @@ from astar import AStar
 import signal 
 import sys 
 import math
+import numpy as np
 from external import Obs, Servo
 
 class CircleVelController:
@@ -40,7 +41,7 @@ class CircleVelController:
         self.obs.open()  # 打开障碍物订阅
         self.servo = Servo(self.uav_name)
 
-        self.start_x, self.start_y = -2.0, -2.0
+        self.start_x, self.start_y = -2.5, -2.5
         self.goal_x, self.goal_y = 0.65, -0.72
         self.obstacle_coords = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]
         self.astar = AStar()
@@ -144,6 +145,24 @@ class CircleVelController:
         
         self.path_pub.publish(msg)
         rospy.loginfo(f"路径已发布到rviz，包含{len(waypoints)}个点")
+    
+    def find_nearest_free_cell(self, grid, center, max_radius=20):
+        """在给定中心点周围寻找最近的可通行栅格"""
+        center_row, center_col = center
+        rows, cols = grid.shape
+        
+        for radius in range(1, max_radius + 1):
+            for dr in range(-radius, radius + 1):
+                for dc in range(-radius, radius + 1):
+                    if abs(dr) == radius or abs(dc) == radius:  # 只检查边界点
+                        new_row = center_row + dr
+                        new_col = center_col + dc
+                        
+                        if (0 <= new_row < rows and 0 <= new_col < cols and 
+                            grid[new_row, new_col] == 0):
+                            rospy.loginfo(f"找到可通行点: ({new_row}, {new_col}), 距离: {radius}")
+                            return (new_row, new_col)
+        return None
 
     "等待无人机连接"
     def wait_for_connection(self):
@@ -377,13 +396,51 @@ class CircleVelController:
         
         # 发布栅格地图到rviz
         self.publish_occupancy_grid(grid, origin, resolution)
+        
         # 获取起点和终点的栅格坐标
-        start_grid = self.astar.world_to_grid(self.uav_state.position[0], self.uav_state.position[1], origin, resolution)
+        start_x, start_y = self.uav_state.position[0], self.uav_state.position[1]
+        start_grid = self.astar.world_to_grid(start_x, start_y, origin, resolution)
         goal_grid = self.astar.world_to_grid(self.goal_x, self.goal_y, origin, resolution)
+        
+        # 调试信息：打印坐标转换结果
+        rospy.loginfo(f"起点世界坐标: ({start_x:.2f}, {start_y:.2f})")
+        rospy.loginfo(f"终点世界坐标: ({self.goal_x:.2f}, {self.goal_y:.2f})")
+        rospy.loginfo(f"起点栅格坐标: {start_grid}")
+        rospy.loginfo(f"终点栅格坐标: {goal_grid}")
+        
+        # 检查起点和终点是否在地图范围内
+        if not (0 <= start_grid[0] < rows and 0 <= start_grid[1] < cols):
+            rospy.logerr(f"起点超出地图范围: {start_grid}, 地图大小: ({rows}, {cols})")
+            self.land()
+            return
+        if not (0 <= goal_grid[0] < rows and 0 <= goal_grid[1] < cols):
+            rospy.logerr(f"终点超出地图范围: {goal_grid}, 地图大小: ({rows}, {cols})")
+            self.land()
+            return
+            
+        # 检查起点和终点是否在障碍物内
+        if grid[start_grid[0], start_grid[1]] == 1:
+            rospy.logwarn(f"起点位于障碍物内: {start_grid}, 尝试寻找附近可通行点")
+            start_grid = self.find_nearest_free_cell(grid, start_grid)
+            if start_grid is None:
+                rospy.logerr("无法找到可通行的起点")
+                self.land()
+                return
+                
+        if grid[goal_grid[0], goal_grid[1]] == 1:
+            rospy.logwarn(f"终点位于障碍物内: {goal_grid}, 尝试寻找附近可通行点")
+            goal_grid = self.find_nearest_free_cell(grid, goal_grid)
+            if goal_grid is None:
+                rospy.logerr("无法找到可通行的终点")
+                self.land()
+                return
+        
         # 路径规划
         path = self.astar.search(start_grid, goal_grid, grid)
         if not path or len(path) < 2:
             rospy.logwarn("A*未找到有效路径，任务中止！")
+            rospy.loginfo(f"栅格地图障碍物数量: {np.sum(grid == 1)}")
+            rospy.loginfo(f"栅格地图自由空间数量: {np.sum(grid == 0)}")
             self.land()
             return
         # 路径点还原为世界坐标
