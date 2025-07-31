@@ -3,6 +3,7 @@
   <arg name="uav_id" default="1"/>
   <arg name="uav_name" default="uav"/>
   <arg name="enable_rviz" default="true" />
+  <arg name="sim" default="true" />
 
   <node pkg="2025_uav_competiton_demo"
         type="Astar_demo.py"
@@ -10,6 +11,7 @@
         output="screen">
     <param name="uav_id" value="$(arg uav_id)"/>
     <param name="uav_name" value="$(arg uav_name)"/>
+    <param name="sim" value="$(arg sim)"/>
   </node>
 
   <group if="$(arg enable_rviz)">

@@ -164,17 +164,16 @@ class AStar:
         return interpolated
     
     def is_path_safe(self, waypoints, grid, origin, resolution):
-        buffer_cells = int(self.uav_radius / resolution)  # e.g., 0.2 / 0.25 = 0, but set min 1
-        buffer_cells = max(1, buffer_cells)
+        # 由于栅格生成时已经考虑了膨胀半径，这里只需要检查路径点本身
         for wx, wy in waypoints:
             gy, gx = self.world_to_grid(wx, wy, origin, resolution)
-            for dy in range(-buffer_cells, buffer_cells + 1):
-                for dx in range(-buffer_cells, buffer_cells + 1):
-                    check_gy, check_gx = gy + dy, gx + dx
-                    if (check_gy < 0 or check_gy >= grid.shape[0] or 
-                        check_gx < 0 or check_gx >= grid.shape[1] or 
-                        grid[check_gy, check_gx] == 1):
-                        return False
+            # 检查是否超出边界
+            if (gy < 0 or gy >= grid.shape[0] or 
+                gx < 0 or gx >= grid.shape[1]):
+                return False
+            # 检查路径点是否在障碍物内
+            if grid[gy, gx] == 1:
+                return False
         return True
     
     

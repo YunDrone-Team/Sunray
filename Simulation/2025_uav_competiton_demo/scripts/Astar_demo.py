@@ -37,7 +37,8 @@ class CircleVelController:
         self.grid_pub = rospy.Publisher('/occupancy_grid', OccupancyGrid, queue_size=1)
         self.path_pub = rospy.Publisher('/planned_path', Path, queue_size=1)
 
-        self.obs = Obs(sim=True)  # 是否为仿真模式
+        self.sim = rospy.get_param("~sim", True)
+        self.obs = Obs(sim=self.sim)  # 是否为仿真模式
         self.obs.open()  # 打开障碍物订阅
         self.servo = Servo(self.uav_name)
 
@@ -386,7 +387,7 @@ class CircleVelController:
         origin = (self.start_x, self.start_y)
         resolution = 0.05
         rows, cols = 120, 120
-        inflation_radius = 0.52 # 0.3 + self.uav_radius + 0.05  # 障碍半径 + UAV半径 + 裕度
+        inflation_radius = 0.53 # 膨胀半径
         self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
         self.obstacle_coords = self.obs.get_obstacles()
         
