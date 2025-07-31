@@ -103,3 +103,12 @@ class Servo:
                 pass
         else:
             rospy.loginfo(f"Set Servo angle False-->angle_limit")
+
+    "舵机初始化"
+    def servo_init(self):
+        self.servo_setmode(2)
+        self.servo_setangle(self.servo_init_angle)
+
+    "舵机投放"
+    def servo_drop(self):
+        self.servo_setangle(self.servo_drop_angle)

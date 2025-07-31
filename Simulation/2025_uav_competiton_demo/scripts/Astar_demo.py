@@ -41,6 +41,7 @@ class CircleVelController:
         self.obs = Obs(sim=self.sim)  # 是否为仿真模式
         self.obs.open()  # 打开障碍物订阅
         self.servo = Servo(self.uav_name)
+        self.servo.servo_init()
 
         self.start_x, self.start_y = -2.5, -2.5
         self.goal_x, self.goal_y = 0.65, -0.72
@@ -262,6 +263,7 @@ class CircleVelController:
             rospy.loginfo(f"{self.node_name}: Flying to point {idx+1}: {point}")
             target_x, target_y, target_z = point
 
+            drop_count = 0  # 投放计数
             while not rospy.is_shutdown():
                 self.uav_cmd.header.stamp = rospy.Time.now()
                 self.uav_cmd.cmd = UAVControlCMD.XyzPos  # 位置模式
@@ -289,6 +291,17 @@ class CircleVelController:
                     if idx == 4:
                         self.hover(12)
                         break
+
+                    if idx == 5:
+                        if abs(dx) < 0.1 and abs(dy) < 0.1:
+                            drop_count += 1
+                        else:
+                            drop_count = 0
+                        if drop_count > 40:
+                            self.hover(2)
+                            self.servo.servo_drop()  # 投放
+                            self.hover(2)
+                            break
 
                     break
 
@@ -501,9 +514,20 @@ class CircleVelController:
         self.return_to_origin_pose()
         self.land()
 
+    def drop_test(self):
+        rospy.init_node("drop_test", anonymous=True)
+        self.wait_for_connection()
+        self.set_control_mode()
+        while not rospy.is_shutdown():
+            self.servo.servo_setangle(self.servo.servo_init_angle)
+            rospy.sleep(1.0)
+            self.servo.servo_drop()
+            rospy.sleep(1.0)
+
 if __name__ == "__main__":
     try:
         controller = CircleVelController()
-        controller.run()
+        # controller.run()
+        controller.drop_test()
     except rospy.ROSInterruptException:
         pass
