@@ -37,7 +37,7 @@ class CircleVelController:
         self.grid_pub = rospy.Publisher('/occupancy_grid', OccupancyGrid, queue_size=1)
         self.path_pub = rospy.Publisher('/planned_path', Path, queue_size=1)
 
-        self.sim = rospy.get_param("~sim", False)
+        self.sim = rospy.get_param("/sim", False)
         self.obs = Obs(sim=self.sim)  # 是否为仿真模式
         self.obs.open()  # 打开障碍物订阅
         self.servo = Servo(self.uav_name)
