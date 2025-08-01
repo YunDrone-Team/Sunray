@@ -69,7 +69,7 @@ std::vector<NetworkInterface> CommunicationUDPSocket::getNetworkInterfaces()
                 iface.ip = inet_ntoa(addr->sin_addr);
 
                 // 检测网卡是否有效（排除回环地址为例）
-                if (iface.ip != "127.0.0.1" &&!iface.name.empty())
+                if (/*iface.ip != "127.0.0.1" &&*/!iface.name.empty())
                     interfaces.push_back(iface);
 
             }
@@ -240,7 +240,11 @@ int CommunicationUDPSocket::BindSingleSocketToNetworkCardAndPort(SOCKET tempSock
     if (SOCKET_ERROR == ret)
     {
         //绑定端口号失败，端口号占用之类的原因
-        std::cout << "Failed to bind the UDP port number! Socket:"<<tempSock<<" port "<<port<<" networkCardIp "<<networkCardIp<<std::endl;
+//        std::cout << "Failed to bind the UDP port number! Socket:"<<tempSock<<" port "<<port<<" networkCardIp "<<networkCardIp<<std::endl;
+        std::cout << "Failed to bind UDP port!" << std::endl
+                  << "  Socket: " << tempSock << std::endl
+                  << "  Port: " << port << std::endl
+                  << "  Network card IP: " << networkCardIp << std::endl;
         fprintf(stderr, "Bind failed: %s\n", strerror(errno));
         perror("bind failed");
 //        sigUDPError(errno);
@@ -251,8 +255,14 @@ int CommunicationUDPSocket::BindSingleSocketToNetworkCardAndPort(SOCKET tempSock
 #endif
     }else {
         //绑定端口号成功
-        std::cout << "The UDP port number is bound successfully! Socket:"<<tempSock<<" port "<<port<<" return: "<<ret<<" networkCardIp "<<networkCardIp<<" "<<bool(inet_addr(networkCardIp.c_str())==INADDR_NONE)<<std::endl;
-
+//        std::cout << "The UDP port number is bound successfully! Socket:"<<tempSock<<" port "<<port<<" return: "<<ret<<" networkCardIp "<<networkCardIp<<" "<<bool(inet_addr(networkCardIp.c_str())==INADDR_NONE)<<std::endl;
+        std::cout << "UDP port bound successfully!" << std::endl
+                  << "  Socket: " << tempSock << std::endl
+                  << "  Port: " << port << std::endl
+                  << "  Return value: " << ret << std::endl
+                  << "  Network card IP: " << networkCardIp << std::endl
+                  << "  IP validity: " << (inet_addr(networkCardIp.c_str()) == INADDR_NONE ? "Invalid" : "Valid")
+                  << std::endl;
     }
 
 
@@ -806,7 +816,7 @@ int CommunicationUDPSocket::sendUDPMulticastData(std::vector<uint8_t> sendData,u
 
 int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort)
 {
-//    std::cout << "SendDataToTarget socket:  "<<tempSock<<" targetIp "<<targetIp<<std::endl;
+//    std::cout << "SendDataToTarget socket:  "<<tempSock<<" targetIp "<<targetIp<<" data.size() "<<sendData.size()<<std::endl;
     int sendResult = 0;
     if ( INVALID_SOCKET != tempSock && sendData.data() != nullptr && sendData.size() >0)
     {
@@ -816,7 +826,6 @@ int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<
 #ifdef _WIN32
     target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp.c_str());
     int addrlen = sizeof(target_addr);
-    // 发送数据，将 unsigned char * 强制转换为 const char *
     sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
                         reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
 #else
@@ -832,6 +841,8 @@ int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<
     }
 
     return sendResult;
+
+
 }
 
 
@@ -840,29 +851,30 @@ int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::strin
 {
     int sendResult = 0;
 //    std::cout << "ipSocketMap size:  "<<ipSocketMap.size()<<std::endl;
-
+    int temp;
     for (const auto& pair : ipSocketMap)
     {
-        sendResult=SendDataToTarget(pair.second,sendData,targetIp,targetPort);
-//        std::cout << "sendResult:  "<<sendResult<<std::endl;
-        if(sendResult<0)
-        {
-            perror("sendUDPData sendto failed");
-            sigUDPError(errno);
-            return sendResult;
-        }
+        temp=SendDataToTarget(pair.second,sendData,targetIp,targetPort);
+        if(temp>0)
+            sendResult=temp;
+//        if(sendResult<0)
+//        {
+//            perror("sendUDPData sendto failed");
+////            std::cout << "WSAGetLastError:  "<<WSAGetLastError()<<std::endl;
+//            sigUDPError(errno);
+//        }
     }
 
     if(ipSocketMap.size()<=0 && defaultSock !=INVALID_SOCKET)
     {
         sendResult=SendDataToTarget(defaultSock,sendData,targetIp,targetPort);
-//        std::cout << "sendResult:  "<<sendResult<<std::endl;
-        if(sendResult<0)
-        {
-            perror("sendUDPData sendto failed");
-            sigUDPError(errno);
-            return sendResult;
-        }
+        if(temp>0)
+            sendResult=temp;
+//        if(sendResult<0)
+//        {
+//            perror("sendUDPData sendto failed");
+//            sigUDPError(errno);
+//        }
     }
 
 
