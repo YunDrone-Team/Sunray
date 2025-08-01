@@ -37,14 +37,14 @@ class CircleVelController:
         self.grid_pub = rospy.Publisher('/occupancy_grid', OccupancyGrid, queue_size=1)
         self.path_pub = rospy.Publisher('/planned_path', Path, queue_size=1)
 
-        self.sim = rospy.get_param("~sim", True)
+        self.sim = rospy.get_param("~sim", False)
         self.obs = Obs(sim=self.sim)  # 是否为仿真模式
         self.obs.open()  # 打开障碍物订阅
         self.servo = Servo(self.uav_name)
-        self.servo.servo_init()
 
         self.start_x, self.start_y = -2.5, -2.5
-        self.goal_x, self.goal_y = 0.65, -0.72
+        self.goal_x, self.goal_y = 2.02, -0.56
+        # self.goal_x, self.goal_y = 0.88, -0.42
         self.obstacle_coords = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]
         self.astar = AStar()
     
@@ -72,7 +72,7 @@ class CircleVelController:
         self.num_points = 50 
         self.k_p, self.z_k_p = 1.5, 0.5 
         self.max_vel = 1.0 
-        self.height = 1.0 
+        self.height = 1.1 
         self.flip_duration = 2.0  
         self.flip_angle = 90.0  
         self.max_roll_speed = 2.0  
@@ -81,11 +81,11 @@ class CircleVelController:
         self.points = [
             # [-0.559, -1.176, self.height],
             # [0.706, -0.761, self.height],
-            [1.22, -0.572, self.height],
-            [1.2678, 0.1259, self.height],
-            [1.46, 1.27, self.height],
-            [1.43, 2.0, self.height],
-            [0.0, 2.0, self.height],
+            [2.02, -0.56, self.height],
+            [2.02, 0.0, self.height],
+            [2.13, 1.14, self.height],
+            [2.17, 1.36, self.height],
+            [0.11, 1.67, self.height],
             [-1.5, 1.5, self.height]
         ] 
 
@@ -276,32 +276,39 @@ class CircleVelController:
 
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
-                    if idx == 0:
-                        # 设置偏航到 90
-                        rospy.sleep(1.0)
-                        desired_yaw_deg = 90.0
-                        self.uav_cmd.desired_yaw = math.radians(desired_yaw_deg)
-                        self.uav_cmd.cmd = UAVControlCMD.XyzPosYaw
-                        rospy.loginfo(f"{self.node_name}: Rotating to yaw {desired_yaw_deg} deg")
-                        self.uav_cmd.header.stamp = rospy.Time.now()
-                        self.control_cmd_pub.publish(self.uav_cmd)
-                        rospy.sleep(1.5)  # 等旋转
-                        break
+                    # if idx == 0:
+                    #     # 设置偏航到 90
+                    #     rospy.sleep(1.0)
+                    #     desired_yaw_deg = 90.0
+                    #     self.uav_cmd.desired_yaw = math.radians(desired_yaw_deg)
+                    #     self.uav_cmd.cmd = UAVControlCMD.XyzPosYaw
+                    #     rospy.loginfo(f"{self.node_name}: Rotating to yaw {desired_yaw_deg} deg")
+                    #     self.uav_cmd.header.stamp = rospy.Time.now()
+                    #     self.control_cmd_pub.publish(self.uav_cmd)
+                    #     rospy.sleep(3)  # 等旋转
+                    #     break
                     
                     if idx == 4:
-                        self.hover(12)
+                        self.hover(2)
                         break
 
                     if idx == 5:
-                        if abs(dx) < 0.1 and abs(dy) < 0.1:
-                            drop_count += 1
-                        else:
-                            drop_count = 0
-                        if drop_count > 40:
-                            self.hover(2)
-                            self.servo.servo_drop()  # 投放
-                            self.hover(2)
-                            break
+                        self.hover()
+                        while True:
+                            self.uav_cmd.header.stamp = rospy.Time.now()
+                            self.uav_cmd.cmd = UAVControlCMD.XyzPos  # 位置模式
+                            self.uav_cmd.desired_pos = [target_x, target_y, target_z - 0.07]
+                            self.control_cmd_pub.publish(self.uav_cmd)
+
+                            dx = target_x - self.uav_state.position[0]
+                            dy = target_y - self.uav_state.position[1]
+                            dz = target_z - 0.1 - self.uav_state.position[2]
+
+                            if abs(dx) < 0.1 and abs(dy) < 0.1 and abs(dz) < 0.1:
+                                self.servo.servo_drop()  # 投放
+                                self.hover()
+                                break
+                            rate.sleep()
 
                     break
 
@@ -349,8 +356,9 @@ class CircleVelController:
     def return_to_origin_pose(self):
         rate = rospy.Rate(20.0)
         count = 0
-        target_x = -2.0
-        target_y = -2.0
+        target_x = self.uav_state.home_pos[0]
+        target_y = self.uav_state.home_pos[1]
+        print(self.uav_state.home_pos)
         target_z = self.height
 
         while not rospy.is_shutdown():
@@ -400,9 +408,10 @@ class CircleVelController:
         origin = (self.start_x, self.start_y)
         resolution = 0.05
         rows, cols = 120, 120
-        inflation_radius = 0.53 # 膨胀半径
+        inflation_radius = 0.54 # 膨胀半径
         self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
         self.obstacle_coords = self.obs.get_obstacles()
+        # print(self.obstacle_coords)
         
         # 生成grid（带膨胀）
         grid = self.astar.create_grid_from_obstacles(
@@ -505,6 +514,7 @@ class CircleVelController:
         rospy.init_node("Astar_demo", anonymous=True)
         self.node_name = rospy.get_name()
         self.wait_for_connection()
+        self.servo.servo_init()
         self.set_control_mode()
         self.arm_uav()
         self.takeoff()
@@ -513,21 +523,24 @@ class CircleVelController:
         self.custom_fly_pose()
         self.return_to_origin_pose()
         self.land()
+        self.servo.servo_init()
 
-    def drop_test(self):
-        rospy.init_node("drop_test", anonymous=True)
-        self.wait_for_connection()
-        self.set_control_mode()
-        while not rospy.is_shutdown():
-            self.servo.servo_setangle(self.servo.servo_init_angle)
-            rospy.sleep(1.0)
-            self.servo.servo_drop()
-            rospy.sleep(1.0)
+    # def drop_test(self):
+    #     rospy.init_node("Astar_demo", anonymous=True)
+    #     self.node_name = rospy.get_name()
+    #     self.wait_for_connection()
+    #     for i in range(10):
+    #         self.servo.servo_init()
+    #         rospy.sleep(1.0)
+    #         self.servo.servo_drop()
+    #         rospy.sleep(1.0)
+    #     self.servo.servo_manual()
+
 
 if __name__ == "__main__":
     try:
-        controller = CircleVelController()
-        # controller.run()
-        controller.drop_test()
+        controller = CircleVelController()        
+        controller.run()
+        # controller.drop_test()
     except rospy.ROSInterruptException:
         pass

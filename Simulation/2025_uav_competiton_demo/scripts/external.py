@@ -82,6 +82,8 @@ class Servo:
             try:
                 if self.servo_ctrl.call(self.servo_mode).success:
                     rospy.loginfo(f"Turn Servo mode {modeID}!")
+                    # return True
+
                 else:
                     rospy.loginfo(f"Turn Servo mode False-->no_success")
             except rospy.ROSInterruptException:
@@ -97,6 +99,7 @@ class Servo:
             try:
                 if self.servo_ctrl.call(self.servo_angel).success:
                     rospy.loginfo(f"Set Servo angle {angle}!")
+                    # return True
                 else:
                     rospy.loginfo(f"Set Servo angle False-->no_success")
             except rospy.ROSInterruptException:
@@ -111,4 +114,8 @@ class Servo:
 
     "舵机投放"
     def servo_drop(self):
+        # self.servo_setmode(2)
         self.servo_setangle(self.servo_drop_angle)
+
+    def servo_manual(self):
+        self.servo_setmode(407)
