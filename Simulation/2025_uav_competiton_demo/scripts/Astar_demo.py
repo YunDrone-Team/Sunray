@@ -79,14 +79,12 @@ class CircleVelController:
         self.max_pitch_speed = 2.0  
         self.pose = PoseStamped()
         self.points = [
-            # [-0.559, -1.176, self.height],
-            # [0.706, -0.761, self.height],
-            [2.02, -0.56, self.height],
-            [2.02, 0.0, self.height],
-            [2.13, 1.14, self.height],
-            [2.17, 1.36, self.height],
-            [0.11, 1.67, self.height],
-            [-1.5, 1.5, self.height]
+            [2.02, -0.56, self.height], # 随机避障区终点
+            [2.02, 0.0, self.height],   # 小框中心位置
+            [2.13, 1.14, self.height],  # 大框中心位置
+            [2.17, 1.36, self.height],  # 穿框后终点
+            [0.11, 1.67, self.height],  # 风扰区
+            [0.0, 0.0, self.height]     # 投放区
         ] 
 
         "退出信号处理"
@@ -424,11 +422,12 @@ class CircleVelController:
         rospy.loginfo(f"{self.node_name}: Land UAV successfully!")
         rospy.loginfo(f"{self.node_name}: Demo finished, quit!")
 
+    "A*规划"
     def astar_plan_and_fly(self):
         # A*参数
         origin = (self.start_x, self.start_y)
-        resolution = 0.05
-        rows, cols = 120, 120
+        resolution = 0.05 # 分辨率
+        rows, cols = 120, 120 # 栅格地图大小
         inflation_radius = 0.54 # 膨胀半径
         self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
         self.obstacle_coords = self.obs.get_obstacles()
@@ -545,21 +544,44 @@ class CircleVelController:
         self.land()
         self.servo.servo_init()
 
-    def drop_test(self):
+    "舵机开闭测试"
+    def drop_test(self, state='close'):
         rospy.init_node("Astar_demo", anonymous=True)
         self.node_name = rospy.get_name()
         self.wait_for_connection()
         self.set_control_mode()
 
-        self.servo.servo_init()     # 闭合
-        # self.servo.servo_drop()   # 开启
+        if state=='close':
+            self.servo.servo_init()     # 闭合
+        else:
+            self.servo.servo_drop()   # 开启
 
-
+    "打印运行点位用于测试是否订阅成功"
+    def points_print(self):
+        rospy.init_node("Astar_demo", anonymous=True)
+        self.node_name = rospy.get_name()
+        self.wait_for_connection()
+        rospy.sleep(3) # 等待数据更新
+        self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
+        self.obstacle_coords = self.obs.get_obstacles()
+        # 打印当前无人机位置
+        print("当前无人机位置:")
+        print(self.uav_state.position) 
+        # 打印所有运行点位
+        print("所有运行点位:")
+        for point in self.points:
+            print(point)
+        # 打印所有障碍物点位
+        print("所有障碍物点位:")
+        for obs in self.obstacle_coords:
+            print(obs)
 
 if __name__ == "__main__":
     try:
         controller = CircleVelController()        
-        controller.run()
-        # controller.drop_test()
+        # controller.run()                # 完整流程
+        controller.points_print()     # 打印运行点位
+        # controller.drop_test('close')   # 闭合抛投器
+        # controller.drop_test('open')    # 开启抛投器
     except rospy.ROSInterruptException:
         pass
