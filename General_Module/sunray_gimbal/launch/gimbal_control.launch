@@ -1,0 +1,21 @@
+<launch>
+
+     <!-- 全局参数配置 -->
+    <arg name="gimbal_ip" default="192.168.144.25" />
+    <arg name="gimbal_port" default="37260" />
+    <arg name="gimbal_fps" default="30" />
+    <arg name="frame_width" default="1280" />
+    <arg name="frame_height" default="720" />
+    <arg name="rtsp_url" default="rtsp://192.168.144.25:8554/main.264" />
+
+    <!-- 控制节点 -->
+    <node name="gimbal_control_node" pkg="sunray_gimbal" type="gimbal_control.py" output="screen">
+        <param name="gimbal_ip" value="$(arg gimbal_ip)" />
+        <param name="gimbal_port" value="$(arg gimbal_port)" />
+        <param name="gimbal_fps" value="$(arg gimbal_fps)" />
+        <param name="rtsp_url" value="$(arg rtsp_url)" />
+        <param name="frame_width" value="$(arg frame_width)" />
+        <param name="frame_height" value="$(arg frame_height)" />
+    </node>
+
+</launch>

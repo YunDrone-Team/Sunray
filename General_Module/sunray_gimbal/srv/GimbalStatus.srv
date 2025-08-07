@@ -1,0 +1,6 @@
+# GimbalStatus.srv
+
+---
+string recording_state
+string motion_mode
+string mounting_direction
