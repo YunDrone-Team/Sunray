@@ -6,9 +6,7 @@
 *.jpg
 *.svj
 .catkin_workspace
-.vsode
 .vscode/
-vscode/
 # Dirs
 build/
 devel/
@@ -45,3 +43,7 @@ devel/
 
 # Python
 **.pyc
+
+*.DS_Store
+*.cache
+*.log

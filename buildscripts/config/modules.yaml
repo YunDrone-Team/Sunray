@@ -1,0 +1,136 @@
+# Sunray 构建模块配置文件 - 简化版本
+# 直接基于 build_deprecated 目录的构建脚本
+
+# ========== 模块定义 ==========
+modules:
+  # 基础通用模块
+  sunray_common:
+    description: "通用工具和库"
+    source_path: "General_Module/sunray_common"
+    build_path: "build/sunray_common"
+    dependencies: []
+    
+  sunray_tutorial:
+    description: "教程和示例代码"
+    source_path: "General_Module/sunray_tutorial"
+    build_path: "build/sunray_tutorial"
+    dependencies: ["sunray_common"]
+    
+  sunray_media:
+    description: "媒体处理工具"
+    source_path: "General_Module/sunray_media"
+    build_path: "build/sunray_media"
+    dependencies: ["sunray_common"]
+
+  # 通信模块
+  sunray_communication_bridge:
+    description: "通信桥接模块"
+    source_path: "Comunication_Module/sunray_communication_bridge"
+    build_path: "build/sunray_communication_bridge"
+    dependencies: ["sunray_common"]
+
+  # UAV 控制模块
+  sunray_uav_control:
+    description: "无人机控制系统"
+    source_path: "General_Module/sunray_uav_control"
+    build_path: "build/sunray_uav_control"
+    dependencies: ["sunray_common"]
+    
+  vrpn_client_ros:
+    description: "VRPN客户端"
+    source_path: "External_Module/vrpn_client_ros"
+    build_path: "build/vrpn_client_ros"
+    dependencies: []
+    
+  sunray_planner_utils:
+    description: "路径规划工具"
+    source_path: "General_Module/sunray_planner_utils"
+    build_path: "build/sunray_planner_utils"
+    dependencies: ["sunray_common"]
+
+  # UGV 控制模块
+  sunray_ugv_control:
+    description: "地面车辆控制系统"
+    source_path: "General_Module/sunray_ugv_control"
+    build_path: "build/sunray_ugv_control"
+    dependencies: ["sunray_common"]
+    
+  turn_on_wheeltec_robot:
+    description: "轮趣机器人启动"
+    source_path: "External_Module/turn_on_wheeltec_robot"
+    build_path: "build/turn_on_wheeltec_robot"
+    dependencies: []
+
+  # 仿真模块
+  sunray_simulator:
+    description: "主仿真框架"
+    source_path: "Simulation/sunray_simulator"
+    build_path: "build/sunray_simulator"
+    dependencies: ["sunray_common"]
+    
+  simulator_utils:
+    description: "仿真工具"
+    source_path: "Simulation/simulator_utils"
+    build_path: "build/simulator_utils"
+    dependencies: ["sunray_common"]
+    
+  gazebo_plugin:
+    description: "Gazebo插件"
+    source_path: "Simulation/gazebo_plugin"
+    build_path: "build/gazebo_plugin"
+    dependencies: []
+
+  # 规划器模块
+  ego_planner:
+    description: "EGO路径规划器"
+    source_path: "External_Module/ego-planner-swarm"
+    build_path: "build/ego-planner"
+    dependencies: ["sunray_planner_utils", "simulator_utils"]
+    conflicts_with: ["fuel_planner"]
+    
+  fuel_planner:
+    description: "FUEL路径规划器"
+    source_path: "External_Module/FUEL"
+    build_path: "build/FUEL"
+    dependencies: ["sunray_planner_utils"]
+    conflicts_with: ["ego_planner"]
+
+  # 编队模块
+  sunray_formation:
+    description: "多机编队控制"
+    source_path: "sunray_formation"
+    build_path: "build/sunray_formation"
+    dependencies: ["sunray_common"]
+
+# ========== 预定义组 ==========
+# 直接基于 build_deprecated 目录的脚本内容
+groups:
+  # 无人机飞行控制系统
+  control:
+    description: "无人机飞行控制系统"
+    modules: ["sunray_common", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial"]
+    
+  # EGO路径规划系统
+  ego:
+    description: "EGO路径规划系统"
+    modules: ["ego_planner", "simulator_utils", "sunray_planner_utils"]
+    
+  # 仿真环境与测试平台
+  sim:
+    description: "仿真环境与测试平台"  
+    modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin"]
+    
+  # 地面机器人控制系统
+  ugv_control:
+    description: "地面机器人控制系统"
+    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
+    
+  # 完整多机系统（不含地面机器人）
+  all:
+    description: "完整多机系统（不含地面机器人）"
+    modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "sunray_planner_utils", "sunray_communication_bridge", "sunray_media", "ego_planner", "simulator_utils", "gazebo_plugin", "sunray_formation"]
+
+# ========== 构建配置 ==========
+build_config:
+  default_jobs: "auto"
+  catkin_command: "catkin_make"
