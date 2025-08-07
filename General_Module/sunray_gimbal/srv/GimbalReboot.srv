@@ -1,0 +1,8 @@
+# 请求部分
+uint8 camera_reboot       # 0: 无动作，1: 重启相机
+uint8 gimbal_reset        # 0: 无动作，1: 重启云台
+---
+# 响应部分
+bool success              # 是否发送成功
+uint8 camera_reboot_sta   # 返回状态（0 无动作，1 已重启）
+uint8 gimbal_reset_sta    # 返回状态（0 无动作，1 已重启）
