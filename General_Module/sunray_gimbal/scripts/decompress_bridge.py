@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+#@描述：图像话题转换
 import rospy
 from sensor_msgs.msg import CompressedImage, Image
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
+
 
 class DecompressBridge:
     def __init__(self):

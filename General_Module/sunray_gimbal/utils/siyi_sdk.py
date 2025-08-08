@@ -1,15 +1,15 @@
 """
 Python implementation of SIYI SDK
-@描述：对云台的初始函数以及功能的定义
+@描述：对云台sdk进行封装，初始化函数以及功能的定义
 
 """
 import socket
-from siyi_message import *
+from utils.siyi_message import *
 from time import sleep, time
 import logging
-from utils import  toInt
+from utils.utils import  toInt
 import threading
-import cameras
+import utils.cameras
 import struct
 
 
@@ -99,6 +99,9 @@ class SIYISDK:
         self._current_zoom_level_msg = CurrentZoomValueMsg()
         self._last_att_seq = -1
 
+        # 新增：记录最近发出的功能性命令（用于分辨 Center / Down 的 ACK）
+        # 可能值： None / 'center' / 'down'
+        self._last_function_cmd = None
         return True
 
     def connect(self, maxWaitTime=3.0, maxRetries=3):
@@ -353,6 +356,16 @@ class SIYISDK:
 
             # Finally decode the packet!
             val = self._in_msg.decodeMsg(packet)
+            # # 在 bufferCallback() 中，val 已解析出 data, data_len, cmd_id, seq
+            # self._logger.info("=== Packet debug ===")
+            # self._logger.info(f"full packet hex: {packet}")
+            # # 打印逐字节索引
+            # bytes_list = [packet[i:i+2] for i in range(0, len(packet), 2)]
+            # for idx, b in enumerate(bytes_list):
+            #     self._logger.info(f"byte[{idx}] = {b}")
+            # self._logger.info(f"data_len={data_len}, seq={seq}, cmd_id={cmd_id}, data={data}")
+            # self._logger.info("====================")
+
             if val is None:
                 continue
             
@@ -667,6 +680,7 @@ class SIYISDK:
         --
         [bool] True: success. False: fail
         """
+        self._last_function_cmd = 'center'
         msg = self._out_msg.centerMsg()
 
         return self.sendMsg(msg)
@@ -679,6 +693,7 @@ class SIYISDK:
         --
         [bool] True: success. False: fail
         """
+        self._last_function_cmd = 'down'
         msg = self._out_msg.downMsg()
 
         return self.sendMsg(msg)
@@ -775,32 +790,32 @@ class SIYISDK:
             
         
         if self._hw_msg.cam_type_str == 'A8 mini':
-            if yaw_deg > cameras.A8MINI.MAX_YAW_DEG:
-                self._logger.warning(f"yaw_deg {yaw_deg} exceeds max {cameras.A8MINI.MAX_YAW_DEG}. Setting it to max")
-                yaw_deg = cameras.A8MINI.MAX_YAW_DEG
-            if yaw_deg < cameras.A8MINI.MIN_YAW_DEG:
-                self._logger.warning(f"yaw_deg {yaw_deg} exceeds min {cameras.A8MINI.MIN_YAW_DEG}. Setting it to min")
-                yaw_deg = cameras.A8MINI.MIN_YAW_DEG
-            if pitch_deg > cameras.A8MINI.MAX_PITCH_DEG:
-                self._logger.warning(f"pitch_deg {pitch_deg} exceeds max {cameras.A8MINI.MAX_PITCH_DEG}. Setting it to max")
-                pitch_deg = cameras.A8MINI.MAX_PITCH_DEG
-            if pitch_deg < cameras.A8MINI.MIN_PITCH_DEG:
-                self._logger.warning(f"pitch_deg {pitch_deg} exceeds min {cameras.A8MINI.MIN_PITCH_DEG}. Setting it to min")
-                pitch_deg = cameras.A8MINI.MIN_PITCH_DEG
+            if yaw_deg > utils.cameras.A8MINI.MAX_YAW_DEG:
+                self._logger.warning(f"yaw_deg {yaw_deg} exceeds max {utils.cameras.A8MINI.MAX_YAW_DEG}. Setting it to max")
+                yaw_deg = utils.cameras.A8MINI.MAX_YAW_DEG
+            if yaw_deg < utils.cameras.A8MINI.MIN_YAW_DEG:
+                self._logger.warning(f"yaw_deg {yaw_deg} exceeds min {utils.cameras.A8MINI.MIN_YAW_DEG}. Setting it to min")
+                yaw_deg = utils.cameras.A8MINI.MIN_YAW_DEG
+            if pitch_deg > utils.cameras.A8MINI.MAX_PITCH_DEG:
+                self._logger.warning(f"pitch_deg {pitch_deg} exceeds max {utils.cameras.A8MINI.MAX_PITCH_DEG}. Setting it to max")
+                pitch_deg = utils.cameras.A8MINI.MAX_PITCH_DEG
+            if pitch_deg < utils.cameras.A8MINI.MIN_PITCH_DEG:
+                self._logger.warning(f"pitch_deg {pitch_deg} exceeds min {utils.cameras.A8MINI.MIN_PITCH_DEG}. Setting it to min")
+                pitch_deg = utils.cameras.A8MINI.MIN_PITCH_DEG
 
         elif self._hw_msg.cam_type_str == 'ZR10':
-            if yaw_deg > cameras.ZR10.MAX_YAW_DEG:
-                self._logger.warning(f"yaw_deg {yaw_deg} exceeds max {cameras.ZR10.MAX_YAW_DEG}. Setting it to max")
-                yaw_deg = cameras.ZR10.MAX_YAW_DEG
-            if yaw_deg < cameras.ZR10.MIN_YAW_DEG:
-                self._logger.warning(f"yaw_deg {yaw_deg} exceeds min {cameras.ZR10.MIN_YAW_DEG}. Setting it to min")
-                yaw_deg = cameras.ZR10.MIN_YAW_DEG
-            if pitch_deg > cameras.ZR10.MAX_PITCH_DEG:
-                self._logger.warning(f"pitch_deg {pitch_deg} exceeds max {cameras.ZR10.MAX_PITCH_DEG}. Setting it to max")
-                pitch_deg = cameras.ZR10.MAX_PITCH_DEG
-            if pitch_deg < cameras.ZR10.MIN_PITCH_DEG:
-                self._logger.warning(f"pitch_deg {pitch_deg} exceeds min {cameras.ZR10.MIN_PITCH_DEG}. Setting it to min")
-                pitch_deg = cameras.A8MINI.MIN_PITCH_DEG
+            if yaw_deg > utils.cameras.ZR10.MAX_YAW_DEG:
+                self._logger.warning(f"yaw_deg {yaw_deg} exceeds max {utils.cameras.ZR10.MAX_YAW_DEG}. Setting it to max")
+                yaw_deg = utils.cameras.ZR10.MAX_YAW_DEG
+            if yaw_deg < utils.cameras.ZR10.MIN_YAW_DEG:
+                self._logger.warning(f"yaw_deg {yaw_deg} exceeds min {utils.cameras.ZR10.MIN_YAW_DEG}. Setting it to min")
+                yaw_deg = utils.cameras.ZR10.MIN_YAW_DEG
+            if pitch_deg > utils.cameras.ZR10.MAX_PITCH_DEG:
+                self._logger.warning(f"pitch_deg {pitch_deg} exceeds max {utils.cameras.ZR10.MAX_PITCH_DEG}. Setting it to max")
+                pitch_deg = utils.cameras.ZR10.MAX_PITCH_DEG
+            if pitch_deg < utils.cameras.ZR10.MIN_PITCH_DEG:
+                self._logger.warning(f"pitch_deg {pitch_deg} exceeds min {utils.cameras.ZR10.MIN_PITCH_DEG}. Setting it to min")
+                pitch_deg = utils.cameras.A8MINI.MIN_PITCH_DEG
         else:
             self._logger.warning(f"Camera not supported. Setting angles to zero")
             return False
@@ -836,9 +851,11 @@ class SIYISDK:
     ####################################################
     def parseFirmwareMsg(self, msg:str, seq:int):
         try:
+            self._fw_msg.code_board_ver = msg[0:8]
             self._fw_msg.gimbal_firmware_ver= msg[8:16]
             self._fw_msg.seq=seq
             
+            self._logger.debug("CamFirmware version: %s",self._fw_msg.code_board_ver)
             self._logger.debug("Firmware version: %s", self._fw_msg.gimbal_firmware_ver)
 
             return True
@@ -894,7 +911,7 @@ class SIYISDK:
             # self._logger.info("Decoding message payload: %s", msg.hex())  # 如果 msg 是 bytes 类型
 
             self._streamType_msg.seq = seq
-            self._streamType_msg.type = int(msg[0:2], 16)
+            self._streamType_msg.type = int(msg[0:1], 16)
 
             self._videoEncType_msg.seq = seq
             self._videoEncType_msg.type = int(msg[2:4], 16)
@@ -1107,15 +1124,44 @@ class SIYISDK:
 
     def parseGimbalCenterMsg(self, msg:str, seq:int):
         
+        """
+        解析 CMD_ID == 0x08（Center/Down）的 ACK。
+        因为 center 和 down 使用同一 CMD_ID，设备的 ACK 只包含成功/失败字节，
+        所以我们使用 self._last_function_cmd 来区分这次 ACK 属于回中还是朝下。
+        """
         try:
-            self._center_msg.seq=seq
-            self._center_msg.success = bool(int('0x'+msg, base=16))
+            # msg 是 data 字串（hex），比如 "01" 或 "02" 或 "04"
+            ack = int(msg[0:2], 16)
+            self._center_msg.seq = seq
 
-            command_type = "Center" if self._out_msg.last_data == "01" else "Down"
-            # self._logger.debug("Gimbal center success: %s", self._center_msg.success)
-            # self._logger.debug("Gimbal down success: %s", self._down_msg.success)
-            self._logger.debug(f"Gimbal {command_type} success: {self._center_msg.success}")
+            last = getattr(self._out_msg, 'last_data', None)
 
+            if last == "01":   # 一键回中
+                self._center_msg.success = (ack == 1)
+                cmd = "Center"
+                success = self._center_msg.success
+            elif last == "02":  # 居中朝下
+                self._down_msg.seq = seq
+                self._down_msg.success = (ack == 1)
+                cmd = "Center+Down"
+                success = self._down_msg.success
+            elif last == "03":  # 居中（如果需要单独区分）
+                self._center_msg.success = (ack == 1)
+                cmd = "Center(alt)"
+                success = self._center_msg.success
+            elif last == "04":  # 纯朝下
+                self._down_msg.seq = seq
+                self._down_msg.success = (ack == 1)
+                cmd = "Down"
+                success = self._down_msg.success
+            else:
+                # 如果无法识别 last_data，就把 ACK 同步到两者（安全策略）
+                self._center_msg.success = (ack == 1)
+                self._down_msg.success = (ack == 1)
+                cmd = "Unknown"
+                success = (ack == 1)
+
+            self._logger.debug(f"Gimbal {cmd} ACK: {success}")
             return True
         except Exception as e:
             self._logger.error("Error %s", e)
@@ -1182,6 +1228,9 @@ class SIYISDK:
 
     def getFirmwareVersion(self):
         return(self._fw_msg.gimbal_firmware_ver)
+    
+    def getCamFirmwareVersion(self):
+        return(self._fw_msg.code_board_ver)
 
     def getHardwareID(self):
         return(self._hw_msg.id)

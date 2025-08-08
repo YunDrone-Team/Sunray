@@ -120,19 +120,19 @@ int main(int argc, char** argv)
             char c = std::tolower(getch());
             switch (c) {
                 case 'w':
-                    publishGimbalSpeed(0, -10);
+                    publishGimbalSpeed(0, -20);
                     ROS_INFO("向上");
                     break;
                 case 's':
-                    publishGimbalSpeed(0, 10);
+                    publishGimbalSpeed(0, 20);
                     ROS_INFO("向下");
                     break;
                 case 'a':
-                    publishGimbalSpeed(-10, 0);
+                    publishGimbalSpeed(-20, 0);
                     ROS_INFO("向左");
                     break;
                 case 'd':
-                    publishGimbalSpeed(10, 0);
+                    publishGimbalSpeed(20, 0);
                     ROS_INFO("向右");
                     break;
                 case ' ':

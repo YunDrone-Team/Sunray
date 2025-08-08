@@ -20,6 +20,10 @@ bool centered = false;
 
 sensor_msgs::CameraInfo camera_info_msg;
 
+// 全局变量
+float filtered_cx = 0.25;  // 初始值设为期望中心
+float filtered_cy = 0.05;
+const float filter_alpha = 0.1;  // 滤波系数 (0.1-0.3)
 void detectionCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr& msg)
 {
     if (msg->targets.empty())
@@ -35,56 +39,58 @@ void detectionCallback(const sunray_msgs::TargetsInFrameMsg::ConstPtr& msg)
     float cx = msg->targets[0].cx;
     float cy = msg->targets[0].cy;
 
+    if(cx < 0 || cx > 1 ) {
+        //ROS_WARN("忽略无效坐标: cx=%.3f, cy=%.3f", cx, cy);
+        return;
+    }
+
+    // 应用低通滤波：抑制突变
+    filtered_cx = filter_alpha * cx + (1 - filter_alpha) * filtered_cx;
+    filtered_cy = filter_alpha * cy + (1 - filter_alpha) * filtered_cy;
+
     ROS_INFO("Target position: cx=%.3f, cy=%.3f", cx, cy);
 
-    if(cx>0||cy>0)
-    {   
-        if(cx>1)
+    // 使用滤波后的值
+    float dx = filtered_cx - image_cx;
+    float dy = filtered_cy - image_cy;
+
+    // 控制系数（根据实际调整）
+    float gain_px = 80.0;
+    float gain_nx = 100.0;
+
+    float gain_py = 200.0;
+    float gain_ny = 150.0;
+
+    // 速度控制
+    geometry_msgs::Vector3 speed_cmd;
+    if(dx>0)
+    {
+        speed_cmd.x = dx * gain_px; // yaw：左右
+        if (speed_cmd.x>30)
         {
-            cx=1;
+            speed_cmd.x = 30;
         }
-
-        float dx = cx - image_cx;
-        float dy = cy - image_cy;
-
-        // 控制系数（根据实际调整）
-        float gain_px = 60.0;
-        float gain_nx = 100.0;
-
-        float gain_py = 200.0;
-        float gain_ny = 150.0;
-
-        // 速度控制
-        geometry_msgs::Vector3 speed_cmd;
-        if(dx>0)
-        {
-            speed_cmd.x = dx * gain_px; // yaw：左右
-            if (speed_cmd.x>30)
-            {
-                speed_cmd.x = 30;
-            }
-        } 
-        else
-        {
-            speed_cmd.x = dx * gain_nx;
-        }
-        
-        if(dy<0)
-        {
-            speed_cmd.y = -dy * gain_py;
-        }
-        else
-        {
-            speed_cmd.y = -dy * gain_ny;
-            if(speed_cmd.y<-25)
-            {
-                speed_cmd.y = -25;
-            }
-        }
-        speed_cmd.z = 0;      // roll不动
-
-        gimbal_speed_pub.publish(speed_cmd);
+    } 
+    else if(dx<-0.05)
+    {
+        speed_cmd.x = dx * gain_nx;
     }
+    
+    if(dy<0)
+    {
+        speed_cmd.y = -dy * gain_py;
+    }
+    else
+    {
+        speed_cmd.y = -dy * gain_ny;
+        if(speed_cmd.y<-25)
+        {
+            speed_cmd.y = -25;
+        }
+    }
+    speed_cmd.z = 0;      // roll不动
+
+    gimbal_speed_pub.publish(speed_cmd);
 }
 
 bool loadCameraInfo(const std::string& yaml_path, sensor_msgs::CameraInfo& cam_info)
@@ -115,16 +121,26 @@ bool loadCameraInfo(const std::string& yaml_path, sensor_msgs::CameraInfo& cam_i
 //定时器回调函数
 void checkTimeoutCallback(const ros::TimerEvent&)
 {
+    geometry_msgs::Vector3 speed_cmd;
     if (centered) return;
 
     ros::Duration since_last = ros::Time::now() - last_detection_time;
+    
+    if (since_last.toSec()>1.0)
+    {
+        speed_cmd.x = 0;
+        speed_cmd.y = 0;
+        speed_cmd.z = 0;
+        gimbal_speed_pub.publish(speed_cmd);
+    }
+    
     if (since_last.toSec() > 10.0)
     {
         ROS_WARN("10 秒未检测到二维码，触发云台回中");
 
         std_msgs::Bool msg;
         msg.data = true;
-        geometry_msgs::Vector3 speed_cmd;
+        
         speed_cmd.x = 0;
         speed_cmd.y = 0;
         speed_cmd.z = 0;

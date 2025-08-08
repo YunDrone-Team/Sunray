@@ -1,7 +1,6 @@
 """
 Some useful functions to manipulate bytes
-Author: Mohamed Abdelkader
-Contact: mohamedashraf123@gmail.com
+
 """
 
 def toHex(intval, nbits):

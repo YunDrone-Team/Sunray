@@ -7,7 +7,8 @@ import os
 import threading
 import rospy
 import ffmpeg
-import time  
+import time
+import signal  
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Bool, UInt8
 from std_msgs.msg import Float32, String
@@ -25,8 +26,8 @@ from time import sleep
 current = os.path.dirname(os.path.realpath(__file__))
 parent_directory = os.path.dirname(current)
 sys.path.append(parent_directory)
-from siyi_sdk import SIYISDK
-from stream import SIYIRTSP
+from utils.siyi_sdk import SIYISDK
+#from stream import SIYIRTSP
 
 #rtsp获取视频流配置器
 class RTSPStreamer:
@@ -52,6 +53,9 @@ class RTSPStreamer:
 class GimbalControlNode:
     def __init__(self):
         rospy.init_node("gimbal_control_node", anonymous=False)
+
+        # 添加关闭节点时的软重启标志
+        self.shutdown_reboot_requested = False
 
         # 读取参数
         ip = rospy.get_param("~gimbal_ip", "192.168.144.25")
@@ -95,7 +99,7 @@ class GimbalControlNode:
         #订阅拍照和录视频话题
         rospy.Subscriber("/sunray/gimbal_take_photo", Bool, self.take_photo_callback)
         rospy.Subscriber("/sunray/gimbal_toggle_record", Bool, self.toggle_record_callback)
-        #订阅设置相机参数话题（暂时使用不了）
+        #订阅设置相机参数话题
         rospy.Subscriber("/sunray/gimbal_set_param",GimbalParams,self.video_param_callback)
 
         #云台状态服务
@@ -121,17 +125,39 @@ class GimbalControlNode:
         sleep(1.0)
         self._publish_device_info()
         self._publish_video_params()
-        # rospy.Timer(rospy.Duration(5), self.auto_set_utc_time, oneshot=True)
-        # if self.cam.requestSystemTime():
-        #     sleep(0.1)  # 等待响应
-                
-        #     # 获取系统时间
-        #     time_data = self.cam.getSystemTime()
-        #     print(f"UNIX时间戳: {time_data['unix_time_us']} μs")
-        #     print(f"系统启动时间: {time_data['boot_time_ms']} ms")
-
         rospy.loginfo("云台主控节点已启动，监听所有控制话题...")
         rospy.loginfo(f"开始拉取 RTSP 流：{rtsp_url}")
+
+        # 注册节点关闭时的回调函数
+        rospy.on_shutdown(self.shutdown_hook)
+
+        #注册信号处理程序
+        signal.signal(signal.SIGINT, self.signal_handler)  # Ctrl+C
+        signal.signal(signal.SIGHUP, self.signal_handler)  # 终端关闭
+
+
+    def signal_handler(self, signum, frame):
+        """处理所有终止信号"""
+        rospy.logwarn(f"收到终止信号 {signum}，正在关闭节点...")
+        # 手动触发关闭流程
+        self.shutdown_hook()
+        # 退出程序
+        rospy.signal_shutdown("收到终止信号")
+
+    # 添加节点关闭时的回调函数
+    def shutdown_hook(self):
+        """节点关闭时触发的回调函数"""
+        if not self.shutdown_reboot_requested:
+            rospy.loginfo("节点关闭，正在发送相机软重启命令...")
+            try:
+                # 发送软重启命令（只重启相机部分）
+                self.cam.requestGimbalReboot(camera_reboot=1, gimbal_reset=1)
+                rospy.loginfo("相机软重启命令已发送")
+                self.shutdown_reboot_requested = True
+            except Exception as e:
+                rospy.logerr(f"发送软重启命令失败: {str(e)}")
+        else:
+            rospy.loginfo("软重启命令已发送过，跳过重复操作")
 
     #重新启动RTSP拉流器
     def restart_rtsp_stream(self):
@@ -194,7 +220,7 @@ class GimbalControlNode:
         payload = header + ctrl + data_len_le + seq + cmd_id + data
         
         # 7. 计算CRC16
-        from crc16_python import crc16_str_swap
+        from utils.crc16_python import crc16_str_swap
         crc = crc16_str_swap(payload)
         
         # 8. 完整消息
@@ -265,16 +291,19 @@ class GimbalControlNode:
             rospy.logwarn("收到 False,未执行回中")
 
     #朝下回调
-    def down_callback(self, msg):
+    def down_callback(self,msg:Bool):
+
         if msg.data:
-            self.cam.requestDownGimbal()
-            sleep(1)
-            self.cam.requestFunctionFeedback()
-            sleep(0.1)
-            status = self.cam.getDowningFeedback()
-            rospy.loginfo(f"朝下反馈: {status}")
+            angle_pub = rospy.Publisher("/sunray/gimbal_set_angles", Vector3, queue_size=1)
+            rospy.sleep(0.1)  # 等待连接
+            down_msg = Vector3()
+            down_msg.x = 0.0   # yaw 保持水平朝前
+            down_msg.y = -90.0 # pitch 朝下
+            down_msg.z = 0.0
+            angle_pub.publish(down_msg)
+            rospy.loginfo("已执行一键朝下")
         else:
-            rospy.logwarn("收到 False,未执行朝下")
+            rospy.loginfo("取消一键朝下指令")
 
     #模式切换回调
     def mode_callback(self, msg):
@@ -337,6 +366,7 @@ class GimbalControlNode:
             else:
                 rospy.loginfo("拍照成功")
 
+    #录像回调
     def toggle_record_callback(self, msg):
         current_state = self.cam.getRecordingState()
         
@@ -352,7 +382,7 @@ class GimbalControlNode:
             self.cam.requestRecording()  # 关闭录像
         
         # 结果检查
-        sleep(0.5)
+        sleep(1)
         new_state = self.cam.getRecordingState()
         
         if msg.data and new_state == self.cam._record_msg.ON:
@@ -400,9 +430,6 @@ class GimbalControlNode:
         else:
             rospy.logwarn(f"[设置失败] 视频参数发送失败")
 
-        # rospy.logwarn("请稍等节点启动(在没有显示云台主控节点已启动，请不要发布任何控制话题)...")
-        # sleep(60.0)
-        # rospy.loginfo("云台主控节点已启动，监听所有控制话题...")
         self._publish_video_params()
         rospy.loginfo("参数更新完成")
 
@@ -573,7 +600,8 @@ class GimbalControlNode:
 
         self.cam.requestFirmwareVersion()
         sleep(0.3)
-        fw_version = self.cam.getFirmwareVersion()
+        fw1_version = self.cam.getFirmwareVersion()
+        fw2_version = self.cam.getCamFirmwareVersion()
 
         self.cam.requestGimbalInfo()
         sleep(0.3)
@@ -587,7 +615,7 @@ class GimbalControlNode:
         else:
             mode_str = "未知"
 
-        info_str = f"\n\033[36m[设备信息] \n硬件ID: {hardware_id} \n相机类型: {cam_type} \n固件版本: {fw_version} \n当前模式: {mode_str}\033[0m"
+        info_str = f"\n\033[36m[设备信息] \n硬件ID: {hardware_id} \n相机类型: {cam_type} \n相机固件版本: {fw2_version}\n云台固件版本: {fw1_version} \n当前模式: {mode_str}\033[0m"
         rospy.logwarn("\n==== 云台信息 ====")
         rospy.loginfo(info_str)
 
@@ -665,8 +693,13 @@ class GimbalControlNode:
 
 
     def run(self):
-        rospy.spin()
-        self.cam.disconnect()
+        try:
+            rospy.spin()
+        finally:
+            # 确保无论如何都断开连接
+            if hasattr(self, 'cam'):
+                self.cam.disconnect()
+                rospy.loginfo("已安全断开云台连接")
 
 if __name__ == "__main__":
     GimbalControlNode().run()
