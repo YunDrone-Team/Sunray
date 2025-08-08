@@ -67,16 +67,14 @@ class CircleVelController:
         self.uav_cmd.desired_yaw_rate = 0.0
 
         "设置参数"
-        self.center_x, self.center_y = 0.0, 0.0
-        self.radius = 1.0 
-        self.num_points = 50 
-        self.k_p, self.z_k_p = 1.5, 0.5 
-        self.max_vel = 1.0 
-        self.height = 1.1 
-        self.flip_duration = 2.0  
-        self.flip_angle = 90.0  
-        self.max_roll_speed = 2.0  
-        self.max_pitch_speed = 2.0  
+        self.center_x, self.center_y = 0.0, 0.0 #圆形轨迹中心点
+        self.radius = 1.0 #圆形轨迹半径
+        self.num_points = 50 #圆形轨迹点数
+        self.k_p, self.z_k_p = 1.5, 0.5 #速度控制p控制器
+        self.k_p_accel = 2.0 #加速度控制p控制器
+        self.max_accel = 1.0 #最大加速度
+        self.max_vel = 1.0 #最大速度
+        self.height = 1.1 #飞行高度
         self.pose = PoseStamped()
         self.points = [
             # [-0.559, -1.176, self.height],
@@ -87,7 +85,7 @@ class CircleVelController:
             [2.17, 1.36, self.height],
             [0.11, 1.67, self.height],
             [-1.5, 1.5, self.height]
-        ] 
+        ] #自定义飞行路径点
 
         "退出信号处理"
         signal.signal(signal.SIGINT, self.my_sigint_handler)
@@ -492,19 +490,91 @@ class CircleVelController:
         self.publish_path(waypoints)
         
         # 控制无人机依次飞向waypoints（位置控制）
+        # rate = rospy.Rate(30.0)
+        # for idx, (wx, wy) in enumerate(waypoints):
+        #     rospy.loginfo(f"A*航点 {idx+1}/{len(waypoints)}: ({wx:.2f}, {wy:.2f}, {self.height:.2f})")
+        #     while not rospy.is_shutdown():
+        #         self.uav_cmd.header.stamp = rospy.Time.now()
+        #         self.uav_cmd.cmd = UAVControlCMD.XyzPos
+        #         self.uav_cmd.desired_pos = [wx, wy, self.height]
+        #         self.control_cmd_pub.publish(self.uav_cmd)
+        #         dx = wx - self.uav_state.position[0]
+        #         dy = wy - self.uav_state.position[1]
+        #         dz = self.height - self.uav_state.position[2]
+        #         if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
+        #             break
+        #         rate.sleep()
+
+        # 控制无人机依次飞向waypoints（速度控制）
+        # rate = rospy.Rate(20.0)
+        # for idx, (wx, wy) in enumerate(waypoints):
+        #     rospy.loginfo(f"A*航点 {idx+1}/{len(waypoints)}: ({wx:.2f}, {wy:.2f}, {self.height:.2f})")
+        #     target_x, target_y, target_z = wx, wy, self.height
+            
+        #     while not rospy.is_shutdown():
+        #         dx = target_x - self.uav_state.position[0]
+        #         dy = target_y - self.uav_state.position[1]
+        #         dz = target_z - self.uav_state.position[2]
+
+        #         if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
+        #             break
+
+        #         vx = self.k_p * dx
+        #         vy = self.k_p * dy
+        #         vz = self.z_k_p * dz
+                
+        #         vx = min(max(vx, -self.max_vel), self.max_vel)
+        #         vy = min(max(vy, -self.max_vel), self.max_vel)
+        #         vz = min(max(vz, -self.max_vel), self.max_vel)
+                
+        #         self.uav_cmd.header.stamp = rospy.Time.now()
+        #         self.uav_cmd.cmd = UAVControlCMD.XyzVel
+        #         self.uav_cmd.desired_vel = [vx, vy, vz]
+        #         self.control_cmd_pub.publish(self.uav_cmd)
+                
+        #         rate.sleep()
+
+        # 控制无人机依次飞向waypoints（加速度控制）
         rate = rospy.Rate(30.0)
         for idx, (wx, wy) in enumerate(waypoints):
             rospy.loginfo(f"A*航点 {idx+1}/{len(waypoints)}: ({wx:.2f}, {wy:.2f}, {self.height:.2f})")
+            target_x, target_y, target_z = wx, wy, self.height
+            
             while not rospy.is_shutdown():
-                self.uav_cmd.header.stamp = rospy.Time.now()
-                self.uav_cmd.cmd = UAVControlCMD.XyzPos
-                self.uav_cmd.desired_pos = [wx, wy, self.height]
-                self.control_cmd_pub.publish(self.uav_cmd)
-                dx = wx - self.uav_state.position[0]
-                dy = wy - self.uav_state.position[1]
-                dz = self.height - self.uav_state.position[2]
+                dx = target_x - self.uav_state.position[0]
+                dy = target_y - self.uav_state.position[1]
+                dz = target_z - self.uav_state.position[2]
+
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     break
+
+                desired_vx = self.k_p * dx
+                desired_vy = self.k_p * dy
+                desired_vz = self.z_k_p * dz
+                
+                desired_vx = min(max(desired_vx, -self.max_vel), self.max_vel)
+                desired_vy = min(max(desired_vy, -self.max_vel), self.max_vel)
+                desired_vz = min(max(desired_vz, -self.max_vel), self.max_vel)
+
+                error_vx = desired_vx - self.uav_state.velocity[0]
+                error_vy = desired_vy - self.uav_state.velocity[1]
+                error_vz = desired_vz - self.uav_state.velocity[2]
+
+                ax = self.k_p_accel * error_vx
+                ay = self.k_p_accel * error_vy
+                az = self.k_p_accel * error_vz
+
+                ax = min(max(ax, -self.max_accel), self.max_accel)
+                ay = min(max(ay, -self.max_accel), self.max_accel)
+                az = min(max(az, -self.max_accel), self.max_accel)
+                
+                self.uav_cmd.header.stamp = rospy.Time.now()
+                self.uav_cmd.cmd = UAVControlCMD.PosVelAccYaw
+                self.uav_cmd.desired_pos = [target_x, target_y, target_z]
+                self.uav_cmd.desired_vel = [desired_vx, desired_vy, desired_vz]
+                self.uav_cmd.desired_acc = [ax, ay, az]
+                self.control_cmd_pub.publish(self.uav_cmd)
+                
                 rate.sleep()
         rospy.loginfo("A*路径已完成!")
 
