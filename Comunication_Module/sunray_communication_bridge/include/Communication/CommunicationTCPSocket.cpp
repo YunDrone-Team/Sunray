@@ -218,13 +218,12 @@ SocketIP CommunicationTCPSocket::Accept(uint16_t* linuxPort,unsigned short* winP
         std::cout << "TCP接收客户端连接成功 "<<cSock<<std::endl;
 
        //接收客户端连接成功
-//        auto it = ipSocketMap.find(AccIp);
-//        if (it != ipSocketMap.end())
-//            ipSocketMap.erase(AccIp);
+        auto it = ipSocketMap.find(AccIp);
+        if (it != ipSocketMap.end())
+            ipSocketMap.erase(AccIp);
 
-//        ipSocketMap[std::string(AccIp)] = cSock;
-        if(!hasDuplicatePair(ipSocketMap,std::string(AccIp), cSock))
-            ipSocketMap.insert({std::string(AccIp), cSock});
+
+        ipSocketMap[std::string(AccIp)] = cSock;
         back.socket=cSock;
         back.IP=std::string(AccIp);
 
@@ -238,25 +237,6 @@ SocketIP CommunicationTCPSocket::Accept(uint16_t* linuxPort,unsigned short* winP
     return back;
 }
 
-bool CommunicationTCPSocket::hasDuplicatePair(std::unordered_multimap<std::string, SOCKET>& multimap,
-                      const std::string& key, SOCKET value) {
-    // 获取键对应的所有值的范围
-    auto range = multimap.equal_range(key);
-    int count = 0;
-
-    // 遍历该键对应的所有值
-    for (auto it = range.first; it != range.second; ++it) {
-        // 找到相同的值
-        if (it->second == value) {
-            count++;
-            // 若出现次数 >= 2，说明存在重复
-            if (count >= 2) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
 
 int CommunicationTCPSocket::writeData(SOCKET Sock,std::vector<uint8_t> data)
 {

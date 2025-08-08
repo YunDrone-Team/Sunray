@@ -55,8 +55,7 @@ public:
     bool TCPClientOnRun();
     std::string getTCPClientTargetIP();
     SOCKET  getTCPClientSocket();
-    bool hasDuplicatePair(std::unordered_multimap<std::string, SOCKET>& multimap,
-                          const std::string& key, SOCKET value);//检查键值对是否重复
+
 
     int findStdVectorComponent(uint8_t a,uint8_t b,std::vector<uint8_t> Data);
     int setSocketNonblocking(SOCKET sockfd);
@@ -67,9 +66,7 @@ public:
 //private:
 //    CommunicationTCPSocket();
 //    static CommunicationTCPSocket* CommunicationPtr;
-//    std::unordered_map<std::string, SOCKET> ipSocketMap;
-    std::unordered_multimap<std::string, SOCKET> ipSocketMap;
-
+    std::unordered_map<std::string, SOCKET> ipSocketMap;
 
     SOCKET _sock;
     std::string connectIP;
