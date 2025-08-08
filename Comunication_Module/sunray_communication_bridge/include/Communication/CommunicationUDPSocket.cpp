@@ -508,6 +508,8 @@ bool CommunicationUDPSocket::HandleUdpSocketReadEvent(SOCKET tempSock,fd_set& fd
         int len=ReadData(tempSock,szRecv,4096,ip,&port);
         if(len<0)
         {
+//            std::cout << "len<0 UDPReadState=false:  "<<len<<std::endl;
+//            std::cerr << "recvfrom failed: " << WSAGetLastError() << std::endl;
             Close(tempSock);
             UDPReadState=false;
             return false;
@@ -685,6 +687,9 @@ int CommunicationUDPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize,std
     int nLen = recvfrom(Sock, buffer, (size_t)bufferSize, 0,(struct sockaddr *)&client_addr,&addrlen);
     if(winPort!=nullptr)
         *winPort=client_addr.sin_port;//这句待测
+    if(nLen<0)
+        std::cerr << "recvfrom failed: " << WSAGetLastError() << std::endl;
+
 #else
     unsigned int addrlen = sizeof(client_addr);
     int nLen = recvfrom(Sock, buffer, (size_t)bufferSize, 0,(struct sockaddr *)&client_addr,&addrlen);
@@ -707,7 +712,7 @@ int CommunicationUDPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize,std
         //std::cout << "udp读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
 //        std::cout << "udp读取到的数据 来源ip "<<souIp<<std::endl;
     }else {
-        std::cout << "udp读取数据失败 "<<" "<<nLen<<std::endl;
+        std::cout << "Failed to read UDP data. "<<" "<<nLen<<std::endl;
         sigUDPError(errno);
     }
 
@@ -850,19 +855,19 @@ int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<
 int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::string targetIp,uint16_t targetPort)              //发送数据接口
 {
     int sendResult = 0;
-//    std::cout << "ipSocketMap size:  "<<ipSocketMap.size()<<std::endl;
+//    std::cout << "ipSocketMap size:  "<<ipSocketMap.size()<<" "<<sendData.size()<<std::endl;
     int temp;
     for (const auto& pair : ipSocketMap)
     {
         temp=SendDataToTarget(pair.second,sendData,targetIp,targetPort);
         if(temp>0)
             sendResult=temp;
-//        if(sendResult<0)
-//        {
-//            perror("sendUDPData sendto failed");
-////            std::cout << "WSAGetLastError:  "<<WSAGetLastError()<<std::endl;
-//            sigUDPError(errno);
-//        }
+        if(temp<0)
+        {
+            perror("sendUDPData sendto failed");
+//            std::cout << "WSAGetLastError:  "<<WSAGetLastError()<<" "<<temp<<std::endl;
+            sigUDPError(errno);
+        }
     }
 
     if(ipSocketMap.size()<=0 && defaultSock !=INVALID_SOCKET)
@@ -870,7 +875,7 @@ int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::strin
         sendResult=SendDataToTarget(defaultSock,sendData,targetIp,targetPort);
         if(temp>0)
             sendResult=temp;
-//        if(sendResult<0)
+//        if(temp<0)
 //        {
 //            perror("sendUDPData sendto failed");
 //            sigUDPError(errno);

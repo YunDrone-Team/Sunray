@@ -31,17 +31,47 @@ void TCPServer::setRunState(bool state)
 
 void TCPServer::allSendData(std::vector<uint8_t> data)
 {
-    for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//    for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//    {
+//        //        writeData(it->second,data);
+//        //        send(it->second, data.data(), data.size(), 0);
+//        // 发送结果没处理
+
+//#ifdef _WIN32
+//        send(it->second, reinterpret_cast<const char *>(data.data()), static_cast<int>(data.size()), 0);
+//#else
+//        send(it->second, data.data(), data.size(), 0);
+//#endif
+//    }
+
+    auto it = ipSocketMap.begin();
+    while (it != ipSocketMap.end())
     {
-        //        writeData(it->second,data);
-        //        send(it->second, data.data(), data.size(), 0);
-        // 发送结果没处理
+        ssize_t sendResult;
+        int errorCode;
 
 #ifdef _WIN32
-        send(it->second, reinterpret_cast<const char *>(data.data()), static_cast<int>(data.size()), 0);
+        // Windows平台发送逻辑和错误处理
+        sendResult = send(it->second,reinterpret_cast<const char*>(data.data()),static_cast<int>(data.size()),0);
+        errorCode = WSAGetLastError();
 #else
-        send(it->second, data.data(), data.size(), 0);
+        // Linux/Unix平台发送逻辑和错误处理
+        sendResult = send(it->second,data.data(),data.size(),0);
+        errorCode = errno;
 #endif
+
+        if (sendResult < 0)
+        {
+            // 打印跨平台错误信息
+            std::cerr << "Send failed - IP: " << it->first << ", Socket: " << it->second
+                                 << ", Error code: " << errorCode << std::endl;
+
+            // 安全删除当前元素
+            it = ipSocketMap.erase(it);
+        } else {
+            // 发送成功，移动到下一个元素
+            ++it;
+        }
     }
 }
 
@@ -248,50 +278,78 @@ bool TCPServer::resetMaxSock()
     }
 #endif
     maxSock = _sock;
-    std::vector<std::string> deleteVector;
-    for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//    std::vector<std::string> deleteVector;
+//    for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//    {
+//#ifdef _WIN32
+//        if (ioctlsocket(it->second, FIONBIO, &mode) == SOCKET_ERROR)
+//        {
+//            deleteVector.push_back(it->first);
+//        }
+//        else
+//        {
+//            if (maxSock < it->second)
+//            {
+//                maxSock = it->second;
+//            }
+//        }
+//#else
+//        if (fcntl(it->second, F_GETFL, 0) == -1)
+//        {
+//            deleteVector.push_back(it->first);
+//        }
+//        else
+//        {
+//            if (maxSock < it->second)
+//            {
+//                maxSock = it->second;
+//            }
+//        }
+//#endif
+//    }
+
+//    for (const auto &str : deleteVector)
+//    {
+//        auto itDelete = ipSocketMap.find(str);
+//        if (itDelete != ipSocketMap.end())
+//        {
+//            bool linkState = false;
+//            std::string clientIP = itDelete->first;
+//            sigLinkState(linkState, clientIP);
+//            ipSocketMap.erase(itDelete);
+
+
+//        }
+//    }
+//    deleteVector.clear();
+    auto it = ipSocketMap.begin();
+    while (it != ipSocketMap.end())
     {
-#ifdef _WIN32
+        bool isInvalid = false;  // 标记当前socket是否无效
+
+    #ifdef _WIN32
+        // Windows平台：检查非阻塞模式设置是否失败（判断socket有效性）
         if (ioctlsocket(it->second, FIONBIO, &mode) == SOCKET_ERROR)
-        {
-            deleteVector.push_back(it->first);
-        }
-        else
-        {
-            if (maxSock < it->second)
-            {
-                maxSock = it->second;
-            }
-        }
-#else
+            isInvalid = true;
+    #else
+        // Linux平台：检查文件描述符状态（判断socket有效性）
         if (fcntl(it->second, F_GETFL, 0) == -1)
+            isInvalid = true;
+    #endif
+
+        if (isInvalid)
         {
-            deleteVector.push_back(it->first);
-        }
-        else
-        {
-            if (maxSock < it->second)
-            {
+            // 无效socket：发送断开信号并删除
+            sigLinkState(false, it->first);  // 直接传false，无需临时变量
+            it = ipSocketMap.erase(it);  // 删除当前元素，迭代器移至下一个
+        } else {
+            // 有效socket：更新maxSock，迭代器正常后移
+            if (it->second > maxSock)
                 maxSock = it->second;
-            }
-        }
-#endif
-    }
-
-    for (const auto &str : deleteVector)
-    {
-        auto itDelete = ipSocketMap.find(str);
-        if (itDelete != ipSocketMap.end())
-        {
-            bool linkState = false;
-            std::string clientIP = itDelete->first;
-            sigLinkState(linkState, clientIP);
-            ipSocketMap.erase(itDelete);
-
-
+            ++it;
         }
     }
-    deleteVector.clear();
+
     FD_ZERO(&fdRead);
     FD_ZERO(&fdTemp);
     FD_SET(maxSock, &fdTemp);
@@ -346,59 +404,104 @@ bool TCPServer::TCPServerOnRun()
                         maxSock = backSock.socket;
                 }
             }
-
-            //            std::cout << "准备遍历socket连接，有无数据可读 "<<std::endl;
-            // 遍历socket连接，有无数据可读
-            for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+            auto it = ipSocketMap.begin();
+            while (it != ipSocketMap.end())
             {
-                // std::cout << "遍历socket连接，有无数据可读 "<<FD_ISSET(it->second, &fdRead)<<" "<<std::endl;
+                SOCKET currentSock = it->second;
+                std::string currentIP = it->first;
 
-                if (FD_ISSET(it->second, &fdRead))
+
+                // 检查当前socket是否有数据可读
+                if (FD_ISSET(currentSock, &fdRead))
                 {
-                    //                    std::cout << "遍历socket连接，有数据可读 "<<FD_ISSET(it->second, &fdRead)<<" "<<it->second<<std::endl;
-
                     char szRecv[4096] = {};
-                    int len = ReadData(it->second, szRecv, 4096);
+                    int len = ReadData(currentSock, szRecv, 4096);
 
-                    readResultDisposal(len, szRecv, it->second, fdTemp, it->first);
+                    // 处理读取结果
+                    readResultDisposal(len, szRecv, currentSock, fdTemp, currentIP);
 
+                    // 判断是否需要关闭连接
+                    bool needClose = false;
                     if (len < 0)
-                    {
-                        waitClearIP.push_back(it->first);
-                        bool linkState = false;
-                        std::string clientIP = it->first;
-                        sigLinkState(linkState, clientIP);
-                    }else if (len == 0){
-#ifdef _WIN32
+                        needClose = true;
 
+#ifdef _WIN32
+                    // Windows平台下len==0的处理逻辑（如果需要）
+                    // if (len == 0)
+                    //    // Windows下的特殊处理（如果有）
+                    //    // needClose = ...;  // 根据实际需求设置
 #else
-                        waitClearIP.push_back(it->first);
-                        bool linkState = false;
-                        std::string clientIP = it->first;
-                        sigLinkState(linkState, clientIP);
+                    if (len == 0)
+                        needClose = true;
 #endif
+                    // 关闭并清理连接
+                    if (needClose)
+                    {
+                        // 发送连接断开信号
+                        sigLinkState(false, currentIP);
+                        // 从fd集合中移除
+                        FD_CLR(currentSock, &fdTemp);
+                        // 安全删除当前元素，迭代器移至下一个
+                        it = ipSocketMap.erase(it);
+                        continue;  // 跳过后续迭代器递增
                     }
                 }
-            }
-            for (const auto &str : waitClearIP)
-            {
-                //                std::cout << str << std::endl;
-                auto itDelete = ipSocketMap.find(str);
-                if (itDelete != ipSocketMap.end())
-                    ipSocketMap.erase(itDelete->first);
-                FD_ZERO(&fdRead);
-                FD_ZERO(&fdTemp);
-                maxSock = _sock;
-                FD_SET(maxSock, &fdTemp);
 
-                for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
-                {
-                    if (it->second > maxSock)
-                        maxSock = it->second;
-                    FD_SET(maxSock, &fdTemp);
-                }
+                // 无需关闭时，迭代器正常递增
+                ++it;
             }
-            waitClearIP.clear();
+            //            std::cout << "准备遍历socket连接，有无数据可读 "<<std::endl;
+            // 遍历socket连接，有无数据可读
+//            for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//            {
+//                // std::cout << "遍历socket连接，有无数据可读 "<<FD_ISSET(it->second, &fdRead)<<" "<<std::endl;
+
+//                if (FD_ISSET(it->second, &fdRead))
+//                {
+//                    //                    std::cout << "遍历socket连接，有数据可读 "<<FD_ISSET(it->second, &fdRead)<<" "<<it->second<<std::endl;
+
+//                    char szRecv[4096] = {};
+//                    int len = ReadData(it->second, szRecv, 4096);
+
+//                    readResultDisposal(len, szRecv, it->second, fdTemp, it->first);
+
+//                    if (len < 0)
+//                    {
+//                        waitClearIP.push_back(it->first);
+//                        bool linkState = false;
+//                        std::string clientIP = it->first;
+//                        sigLinkState(linkState, clientIP);
+//                    }else if (len == 0){
+//#ifdef _WIN32
+
+//#else
+//                        waitClearIP.push_back(it->first);
+//                        bool linkState = false;
+//                        std::string clientIP = it->first;
+//                        sigLinkState(linkState, clientIP);
+//#endif
+//                    }
+//                }
+//            }
+//            for (const auto &str : waitClearIP)
+//            {
+//                //                std::cout << str << std::endl;
+//                auto itDelete = ipSocketMap.find(str);
+//                if (itDelete != ipSocketMap.end())
+//                    ipSocketMap.erase(itDelete->first);
+//                FD_ZERO(&fdRead);
+//                FD_ZERO(&fdTemp);
+//                maxSock = _sock;
+//                FD_SET(maxSock, &fdTemp);
+
+//                for (auto it = ipSocketMap.begin(); it != ipSocketMap.end(); ++it)
+//                {
+//                    if (it->second > maxSock)
+//                        maxSock = it->second;
+//                    FD_SET(maxSock, &fdTemp);
+//                }
+//            }
+//            waitClearIP.clear();
         }
     }
 
