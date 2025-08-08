@@ -84,6 +84,9 @@ private:
     pid_t demoPID = -1;
     bool station_connected; // 心跳包状态
 
+    bool multiClientSwitch; // 多客户端开关
+
+
     std::vector<ros::Subscriber> uav_state_sub;
     std::vector<ros::Subscriber> ugv_state_sub;
 
@@ -124,6 +127,7 @@ private:
 
     std::map<string, pid_t> nodeMap;
     std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
+
 
     std::string getUserDirectoryPath();
     std::string getCurrentProgramPath();
