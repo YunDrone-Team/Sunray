@@ -77,15 +77,13 @@ class CircleVelController:
         self.height = 1.1 #飞行高度
         self.pose = PoseStamped()
         self.points = [
-            # [-0.559, -1.176, self.height],
-            # [0.706, -0.761, self.height],
-            [2.02, -0.56, self.height],
-            [2.02, 0.0, self.height],
-            [2.13, 1.14, self.height],
-            [2.17, 1.36, self.height],
-            [0.11, 1.67, self.height],
-            [-1.5, 1.5, self.height]
-        ] #自定义飞行路径点
+            [2.02, -0.56, self.height], # 随机避障区终点
+            [2.02, 0.0, self.height],   # 小框中心位置
+            [2.13, 1.14, self.height],  # 大框中心位置
+            [2.17, 1.36, self.height],  # 穿框后终点
+            [0.11, 1.67, self.height],  # 风扰区
+            [0.0, 0.0, self.height]     # 投放区
+        ] 
 
         "退出信号处理"
         signal.signal(signal.SIGINT, self.my_sigint_handler)
@@ -219,6 +217,35 @@ class CircleVelController:
         self.control_cmd_pub.publish(self.uav_cmd)
         rospy.sleep(time)
 
+    "单点位置控制接口"
+    def pose_ctrl(self, x, y, z):
+        rate = rospy.Rate(20.0)  # 20 Hz
+        count = 0
+        while not rospy.is_shutdown():
+            self.uav_cmd.header.stamp = rospy.Time.now()
+            self.uav_cmd.cmd = UAVControlCMD.XyzPos  # 位置模式
+            self.uav_cmd.desired_pos = [x, y, z]
+            self.control_cmd_pub.publish(self.uav_cmd)
+            dx = x - self.uav_state.position[0]
+            dy = y - self.uav_state.position[1]
+            dz = z - self.uav_state.position[2]
+            if abs(dx) < 0.1 and abs(dy) < 0.1 and abs(dz) < 0.2:
+                count += 1
+            else:
+                count = 0
+
+            if count > 40:
+                rospy.loginfo(f"{self.node_name}: Reached target position ({x}, {y}, {z})")
+                break
+            rate.sleep()
+
+    "单点速度控制接口"
+    def vel_ctrl(self, vx, vy, vz):
+        self.uav_cmd.header.stamp = rospy.Time.now()
+        self.uav_cmd.cmd = UAVControlCMD.XyzVel
+        self.uav_cmd.desired_vel = [vx, vy, vz]
+        self.control_cmd_pub.publish(self.uav_cmd)
+
     "自定义飞行,使用速度控制接口"
     def custom_fly_vel(self):
         rate = rospy.Rate(20.0)  # 20 Hz
@@ -274,17 +301,6 @@ class CircleVelController:
 
                 if abs(dx) < 0.15 and abs(dy) < 0.15 and abs(dz) < 0.2:
                     rospy.loginfo(f"{self.node_name}: Reached point {idx+1}")
-                    # if idx == 0:
-                    #     # 设置偏航到 90
-                    #     rospy.sleep(1.0)
-                    #     desired_yaw_deg = 90.0
-                    #     self.uav_cmd.desired_yaw = math.radians(desired_yaw_deg)
-                    #     self.uav_cmd.cmd = UAVControlCMD.XyzPosYaw
-                    #     rospy.loginfo(f"{self.node_name}: Rotating to yaw {desired_yaw_deg} deg")
-                    #     self.uav_cmd.header.stamp = rospy.Time.now()
-                    #     self.control_cmd_pub.publish(self.uav_cmd)
-                    #     rospy.sleep(3)  # 等旋转
-                    #     break
                     
                     if idx == 4:
                         self.hover(2)
@@ -295,17 +311,24 @@ class CircleVelController:
                         while True:
                             self.uav_cmd.header.stamp = rospy.Time.now()
                             self.uav_cmd.cmd = UAVControlCMD.XyzPos  # 位置模式
-                            self.uav_cmd.desired_pos = [target_x, target_y, target_z - 0.07]
+                            self.uav_cmd.desired_pos = [target_x, target_y, target_z]
                             self.control_cmd_pub.publish(self.uav_cmd)
 
                             dx = target_x - self.uav_state.position[0]
                             dy = target_y - self.uav_state.position[1]
-                            dz = target_z - 0.1 - self.uav_state.position[2]
+                            # dz = target_z - 0.07 - self.uav_state.position[2]
+                            dz = target_z - self.uav_state.position[2]
 
                             if abs(dx) < 0.1 and abs(dy) < 0.1 and abs(dz) < 0.1:
+                                drop_count += 1
+                            else:
+                                drop_count = 0
+                            
+                            if drop_count > 20:
                                 self.servo.servo_drop()  # 投放
                                 self.hover()
                                 break
+
                             rate.sleep()
 
                     break
@@ -373,7 +396,7 @@ class CircleVelController:
             else:
                 count = 0
 
-            if count > 40:
+            if count > 20:
                 rospy.loginfo(f"{self.node_name}: Arrived at origin (position control).")
                 break 
 
@@ -397,15 +420,12 @@ class CircleVelController:
         rospy.loginfo(f"{self.node_name}: Land UAV successfully!")
         rospy.loginfo(f"{self.node_name}: Demo finished, quit!")
 
+    "A*规划"
     def astar_plan_and_fly(self):
-        # # 等待障碍物和目标点坐标收到
-        # while not (self.obstacle1_received and self.obstacle2_received and self.obstacle3_received and self.target_received):
-        #     rospy.loginfo("等待障碍物和目标点坐标...")
-        #     rospy.sleep(0.5)
         # A*参数
         origin = (self.start_x, self.start_y)
-        resolution = 0.05
-        rows, cols = 120, 120
+        resolution = 0.05 # 分辨率
+        rows, cols = 120, 120 # 栅格地图大小
         inflation_radius = 0.54 # 膨胀半径
         self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
         self.obstacle_coords = self.obs.get_obstacles()
@@ -584,7 +604,6 @@ class CircleVelController:
         rospy.init_node("Astar_demo", anonymous=True)
         self.node_name = rospy.get_name()
         self.wait_for_connection()
-        self.servo.servo_init()
         self.set_control_mode()
         self.arm_uav()
         self.takeoff()
@@ -595,22 +614,44 @@ class CircleVelController:
         self.land()
         self.servo.servo_init()
 
-    # def drop_test(self):
-    #     rospy.init_node("Astar_demo", anonymous=True)
-    #     self.node_name = rospy.get_name()
-    #     self.wait_for_connection()
-    #     for i in range(10):
-    #         self.servo.servo_init()
-    #         rospy.sleep(1.0)
-    #         self.servo.servo_drop()
-    #         rospy.sleep(1.0)
-    #     self.servo.servo_manual()
+    "舵机开闭测试"
+    def drop_test(self, state='close'):
+        rospy.init_node("Astar_demo", anonymous=True)
+        self.node_name = rospy.get_name()
+        self.wait_for_connection()
+        self.set_control_mode()
 
+        if state=='close':
+            self.servo.servo_init()     # 闭合
+        else:
+            self.servo.servo_drop()   # 开启
+
+    "打印运行点位用于测试是否订阅成功"
+    def points_print(self):
+        rospy.init_node("Astar_demo", anonymous=True)
+        self.node_name = rospy.get_name()
+        self.wait_for_connection()
+        rospy.sleep(3) # 等待数据更新
+        self.points[-1] = [self.obs.get_delivery()[0], self.obs.get_delivery()[1], self.height]  # 更新投放点位置
+        self.obstacle_coords = self.obs.get_obstacles()
+        # 打印当前无人机位置
+        print("当前无人机位置:")
+        print(self.uav_state.position) 
+        # 打印所有运行点位
+        print("所有运行点位:")
+        for point in self.points:
+            print(point)
+        # 打印所有障碍物点位
+        print("所有障碍物点位:")
+        for obs in self.obstacle_coords:
+            print(obs)
 
 if __name__ == "__main__":
     try:
         controller = CircleVelController()        
-        controller.run()
-        # controller.drop_test()
+        # controller.run()                # 完整流程
+        controller.points_print()     # 打印运行点位
+        # controller.drop_test('close')   # 闭合抛投器
+        # controller.drop_test('open')    # 开启抛投器
     except rospy.ROSInterruptException:
         pass
