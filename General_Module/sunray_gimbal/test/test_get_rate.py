@@ -15,7 +15,7 @@ parent_directory = os.path.dirname(current)
   
 sys.path.append(parent_directory)
 
-from siyi_sdk import SIYISDK
+from utils.siyi_sdk import SIYISDK
 
 def test():
     cam = SIYISDK(server_ip="192.168.144.25", port=37260)

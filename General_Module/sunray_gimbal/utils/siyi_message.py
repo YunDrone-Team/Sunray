@@ -4,9 +4,9 @@ Python implementation of A8 Mini SDK by SIYI
 
 """
 from os import stat
-from crc16_python import crc16_str_swap
+from utils.crc16_python import crc16_str_swap
 import logging
-from utils import toHex
+from utils.utils import toHex
 
 class FirmwareMsg:
     seq=0
@@ -391,6 +391,7 @@ class SIYIMESSAGE:
         data_len = self.computeDataLen(data)
         # msg_front = self.HEADER+self._ctr+data_len+seq+cmd_id+data
         msg_front = self.HEADER+self._ctr+data_len+'0000'+cmd_id+data
+        self.last_data = data  # <-- 新增
         crc = crc16_str_swap(msg_front)
         if crc is not None:
             msg = msg_front+crc
@@ -480,7 +481,7 @@ class SIYIMESSAGE:
         """
         down gimbal msg
         """
-        data="02"
+        data="04"
         cmd_id = COMMAND.CENTER
         return self.encodeMsg(data, cmd_id)
 
