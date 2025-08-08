@@ -1,5 +1,6 @@
 <launch>
-    <arg name="is_simulation" default="false" />     <!-- 是否处于仿真状态 -->
+    <arg name="is_simulation" default="false" />        <!-- 是否处于仿真状态 -->
+    <arg name="multiClientSwitch" default="false" />    <!-- 是否处于多客户端状态 -->
 
     <arg name="uav_name" default="uav" />
     <arg name="uav_id" default="-1" />              <!-- 当前无人机id，默认值为-1 -->
@@ -28,5 +29,6 @@
         <param name="ugv_id" value="$(arg ugv_id)" />  
         <param name="ugv_name" value="$(arg ugv_name)" />
         <param name="is_simulation" value="$(arg is_simulation)" />
+        <param name="multiClientSwitch" value="$(arg multiClientSwitch)" />
     </node>
 </launch>
