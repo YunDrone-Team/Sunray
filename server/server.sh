@@ -67,8 +67,14 @@ fi
 
 # 启动地面站后台节点
 start_ground_station() {
-    gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
-     roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${UAV_NUM:=1} ugv_experiment_num:=${UGV_NUM:=1}; exec bash"
+    # 如果name==uav或者空，则启动uav的通信节点，否则启动ugv的通信节点
+    if [[ "${NAME,,}" == "uav" || -z "${NAME}" ]]; then
+        gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
+         roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${ID:=1} uav_experiment_num:=${UAV_NUM:=1} ugv_experiment_num:=${UGV_NUM:=1}; exec bash"
+    else
+        gnome-terminal --title="sunray_communication_bridge" -- bash -c "sleep 5; \
+         roslaunch sunray_communication_bridge sunray_communication_bridge.launch ugv_id:=${ID:=1} uav_experiment_num:=${UAV_NUM:=1} ugv_experiment_num:=${UGV_NUM:=1}; exec bash"
+    fi
 }
 
 # 启动mavros节点

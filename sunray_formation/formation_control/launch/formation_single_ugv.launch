@@ -7,8 +7,12 @@
     <arg name="agent_name" default="ugv" />
     <!-- 集群数量 -->
     <arg name="agent_num" default="3" />
+    <!-- leader_id -->
+    <arg name="leader_id" default="1" />
     <!-- agent类型 0：uav 1: ugv -->
     <arg name="agent_type" default="1" />
+    <!-- 是否启用yaw控制 -->
+    <arg name="enable_yaw" default="false" />
     <arg name="file_path" default="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
     <arg name="circle/lissa_a" default="1" />
     <arg name="circle/lissa_b" default="1" />
@@ -31,6 +35,7 @@
         <param name="agent_id" type="int" value="$(arg agent_id)" />
         <param name="agent_name" type="string" value="$(arg agent_name)" />
         <param name="agent_num" type="int" value="$(arg agent_num)" />
+        <param name="leader_id" type="int" value="$(arg leader_id)" />--
         <param name="agent_type" type="int" value="$(arg agent_type)" />
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
         <param name="dynamic_type" type="int" value="$(arg dynamic_type)" />
@@ -50,6 +55,7 @@
         <param name="figure_eight/center_x" type="double" value="$(arg figure_eight/center_x)" />
         <param name="figure_eight/center_y" type="double" value="$(arg figure_eight/center_y)" />
         <param name="figure_eight/linear_speed" type="double" value="$(arg figure_eight/linear_speed)" />
+        <param name="enable_yaw" type="bool" value="$(arg enable_yaw)" />
     </node>
 
     <group if="$(arg enable_rviz)">

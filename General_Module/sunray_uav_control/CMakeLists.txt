@@ -97,6 +97,9 @@ target_link_libraries(positioning_accuracy ${catkin_LIBRARIES})
 add_executable(joy_node utils/joy_node.cpp)
 target_link_libraries(joy_node ${catkin_LIBRARIES})
 
+add_executable(flip_stop_node utils/flip_stop.cpp)
+target_link_libraries(flip_stop_node ${catkin_LIBRARIES})
+
 # add_executable(logTest test/logTest.cpp)
 # target_link_libraries(logTest ${catkin_LIBRARIES})
 

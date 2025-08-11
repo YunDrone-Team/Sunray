@@ -26,6 +26,7 @@ void SunrayFormation::init(ros::NodeHandle &nh_)
     nh.param<float>("figure_eight/center_x", figure_eight_params.center_x, 0);
     nh.param<float>("figure_eight/center_y", figure_eight_params.center_y, 0);
     nh.param<float>("figure_eight/linear_speed", figure_eight_params.linear_speed, 0);
+    nh.param<bool>("enable_yaw", enable_yaw, false); // 是否启用偏航角旋转
     // leader_id 1~100为无人机，101~200为无人车
     nh.param<int>("leader_id", leader_id, 1);
 
@@ -185,13 +186,19 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
     // 如果是运行状态，则发送速度指令
     else if (msg->state == sunray_msgs::OrcaCmd::RUN)
     {
-        double yaw = calculateTargetYaw(msg->goal_pos[0], msg->goal_pos[1]);
+        double yaw =0;
+        if(enable_yaw)
+        {
+            yaw  = calculateTargetYaw(msg->goal_pos[0], msg->goal_pos[1]);
+        }
         uav_cmd.header.stamp = ros::Time::now();
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYaw;
-        if(abs(msg->goal_pos[0] - agent_state[agent_id].pose.pose.position.x) < 0.3 && abs(msg->goal_pos[1] - agent_state[agent_id].pose.pose.position.y) < 0.3)
+        // 接近目标点的时候不再旋转
+        if (abs(msg->goal_pos[0] - agent_state[agent_id].pose.pose.position.x) < 0.3 && abs(msg->goal_pos[1] - agent_state[agent_id].pose.pose.position.y) < 0.3)
         {
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
         }
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
         uav_cmd.desired_vel[0] = msg->linear[0];
         uav_cmd.desired_vel[1] = msg->linear[1];
         uav_cmd.desired_pos[0] = msg->goal_pos[0];
@@ -213,10 +220,14 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
     // 如果是到达状态，则发送位置指令
     else if (msg->state == sunray_msgs::OrcaCmd::ARRIVED)
     {
-        double yaw = calculateTargetYaw(msg->goal_pos[0] + 1, msg->goal_pos[1]);
+        double yaw =0;
+        if(enable_yaw)
+        {
+            yaw  = calculateTargetYaw(msg->goal_pos[0] + 1, msg->goal_pos[1]);
+        }
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
-        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
         uav_cmd.desired_pos[0] = msg->goal_pos[0];
         uav_cmd.desired_pos[1] = msg->goal_pos[1];
         // uav_cmd.desired_vel[0] = msg->linear[0];
@@ -227,7 +238,7 @@ void SunrayFormation::orca_cmd_callback(const sunray_msgs::OrcaCmd::ConstPtr &ms
         ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
         ugv_cmd.desired_pos[0] = msg->goal_pos[0];
         ugv_cmd.desired_pos[1] = msg->goal_pos[1];
-        // ugv_cmd.desired_yaw = yaw;
+        ugv_cmd.desired_yaw = yaw;
     }
     else
     {

@@ -11,6 +11,8 @@
     <arg name="leader_id" default="1" />
     <!-- agent类型 0：uav 1: uav -->
     <arg name="agent_type" default="0" />
+    <!-- 是否启用yaw控制 -->
+    <arg name="enable_yaw" default="false" />
     <arg name="file_path" default="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
     <arg name="circle/lissa_a" default="1" />
     <arg name="circle/lissa_b" default="1" />
@@ -53,6 +55,7 @@
         <param name="figure_eight/center_x" type="double" value="$(arg figure_eight/center_x)" />
         <param name="figure_eight/center_y" type="double" value="$(arg figure_eight/center_y)" />
         <param name="figure_eight/linear_speed" type="double" value="$(arg figure_eight/linear_speed)" />
+        <param name="enable_yaw" type="bool" value="$(arg enable_yaw)" />
     </node>
 
     <include file="$(find sunray_formation)/launch/formation_uav_sim.launch" if="$(eval (arg('agent_num') > arg('agent_id')))">

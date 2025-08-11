@@ -43,6 +43,7 @@ private:
     ros::NodeHandle nh;
     bool first_dynamic;                                                      // 重新进入动态编队模式
     bool home_set;                                                           // 是否设置home点
+    bool enable_yaw;                                                           // 是否启用偏航角旋转
     int agent_id;                                                            // 编号
     int state;                                                               // 状态机
     int formation_type;                                                      // 阵型类型 1:静态阵型 2:动态阵型
