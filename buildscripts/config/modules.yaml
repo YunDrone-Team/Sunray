@@ -35,6 +35,13 @@ modules:
     source_path: "General_Module/sunray_uav_control"
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
+
+  #云台控制模块
+  sunray_gimbal:
+    description: "云台控制系统"
+    source_path: "General_Module/sunray_gimbal"
+    build_path: "build/sunray_gimbal"
+    dependencies: ["sunray_common", "sunray_tutorial"]
     
   vrpn_client_ros:
     description: "VRPN客户端"
@@ -123,12 +130,12 @@ groups:
   # 地面机器人控制系统
   ugv_control:
     description: "地面机器人控制系统"
-    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
+    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot","sunray_gimbal"]
     
   # 完整多机系统（不含地面机器人）
   all:
     description: "完整多机系统（不含地面机器人）"
-    modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "sunray_planner_utils", "sunray_communication_bridge", "sunray_media", "ego_planner", "simulator_utils", "gazebo_plugin", "sunray_formation"]
+    modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "sunray_planner_utils", "sunray_communication_bridge", "sunray_media", "ego_planner", "simulator_utils", "gazebo_plugin", "sunray_formation","sunray_gimbal"]
 
 # ========== 构建配置 ==========
 build_config:
