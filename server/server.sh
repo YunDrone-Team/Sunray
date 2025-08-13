@@ -4,7 +4,7 @@
 check_network() {
     echo "正在检查本地网络连接..."
     
-    local max_attempts=60  # 最大尝试次数
+    local max_attempts=180  # 最大尝试次数
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
