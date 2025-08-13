@@ -126,7 +126,8 @@ private:
 
 
     std::map<string, pid_t> nodeMap;
-    std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
+    // std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
+    std::unordered_map<std::string, int> GSIPHash; // 存储所有已连接的IP地址
 
 
     std::string getUserDirectoryPath();

@@ -1,4 +1,42 @@
 #! /bin/bash
+
+# 网络就绪检查函数（不依赖公网）
+check_network() {
+    echo "正在检查本地网络连接..."
+    
+    local max_attempts=60  # 最大尝试次数
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        # 检查是否有至少一个非环回网络接口处于运行状态
+        local active_interfaces=$(ip link show | grep -v LOOPBACK | grep -c "state UP")
+        
+        # 检查是否有默认网关
+        local default_gateway=$(ip route show default | wc -l)
+        
+        # 检查是否获取到IP地址（非环回）
+        local ip_address=$(ip -4 addr show | grep -v LOOPBACK | grep -oP '(?<=inet\s)\d+(\.\d+){3}/\d+' | wc -l)
+        
+        # 如果有活动接口、默认网关和IP地址，则认为网络就绪
+        if [ $active_interfaces -gt 0 ] && [ $default_gateway -gt 0 ] && [ $ip_address -gt 0 ]; then
+            echo "本地网络连接已就绪！"
+            return 0
+        fi
+        
+        echo "本地网络未就绪，等待中... ($attempt/$max_attempts)"
+        attempt=$((attempt + 1))
+        sleep 1  # 改为每次间隔1秒
+    done
+    
+    echo "错误：等待本地网络超时！"
+    return 1
+}
+
+# 执行网络检查，如果失败则退出
+if ! check_network; then
+    exit 1
+fi
+
 # /bin/bash -c "sleep 5 && gnome-terminal --title="sunray_server" -- bash -c "/home/yundrone/Sunray/server/server.sh; exec bash""
 env_file=/home/yundrone/Sunray/server/server.env
 ## 虽然环境变量里面已经做了如下设置，但是设置为开机自启动脚本的时候，系统还没有完全启动，所以需要手动source
@@ -113,12 +151,12 @@ main() {
     if [[ "${START_MAVROS,,}" == "true" ]]; then
         start_mavros_station
     else
-        echo "跳过来MAVROS节点启动"
+        echo "跳过MAVROS节点启动"
     fi
     if [[ "${START_EXTERNAL_POSITION,,}" == "true" ]]; then
         start_external_position
     else
-        echo "跳过来外部定位节点启动"
+        echo "跳过外部定位节点启动"
     fi
 
     if [[ "${START_CONTROL,,}" == "true" ]]; then

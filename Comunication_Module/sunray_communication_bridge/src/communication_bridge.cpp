@@ -171,10 +171,23 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
     // 地面站连接后，则开启心跳包；地面站断开后，则关闭心跳包
     if (state)
     {
-        GSIPHash.insert(IP);
+        auto it = GSIPHash.find(IP);
+        if (it != GSIPHash.end())
+        {
+            it->second = it->second+1;
+        }else
+            GSIPHash[IP] = 1;
         station_connected = true;
     }else{
-         GSIPHash.erase(IP);
+        auto it = GSIPHash.find(IP);
+        if (it != GSIPHash.end())
+        {
+            if(it->second==1)
+                GSIPHash.erase(IP);
+            else    
+                it->second = it->second-1;
+        }
+
         if (GSIPHash.empty())
             station_connected = false;
     }
@@ -964,17 +977,17 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(DataFrame data)
         {
             if(data.seq == MessageID::UAVStateMessageID)
             {
-                int multiSendBack = udpSocket->sendUDPData(codec.coder(data), ip, 12310+(data.robot_ID-1));
+                int multiSendBack = udpSocket->sendUDPData(codec.coder(data), ip.first, 12310+(data.robot_ID-1));
                 if (multiSendBack < 0)
-                    tempVec.push_back(ip);
+                    tempVec.push_back(ip.first);
                 // std::cout <<"multiSendBack:"<<multiSendBack<<data.robot_ID-1<< std::endl;
 
             }
         }
 
-        int sendBack = udpSocket->sendUDPData(codec.coder(data), ip, udp_ground_port);
+        int sendBack = udpSocket->sendUDPData(codec.coder(data), ip.first, udp_ground_port);
         if (sendBack < 0)
-            tempVec.push_back(ip);
+            tempVec.push_back(ip.first);
         
     }
 
