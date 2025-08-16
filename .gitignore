@@ -7,9 +7,31 @@
 *.svj
 .catkin_workspace
 .vscode/
-# Dirs
+
+# Build directories
 build/
 devel/
+
+# CMake build artifacts - prevent future pollution
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+Testing/
+*.cmake
+!CMakeLists.txt
+compile_commands.json
+Makefile
+*.make
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Compiled Object files
 *.slo
@@ -44,6 +66,24 @@ devel/
 # Python
 **.pyc
 
+# System files
 *.DS_Store
 *.cache
 *.log
+
+# TUI build directories - Linus-style clean structure
+buildscripts/bin/
+buildscripts/tui/build/
+buildscripts/tui/third_party/*/build/
+buildscripts/tui/third_party/*/CMakeFiles/
+buildscripts/tui/third_party/*/cmake_install.cmake
+buildscripts/tui/third_party/*/Makefile
+buildscripts/tui/third_party/*/*.a
+buildscripts/tui/third_party/*/*.pc
+
+# Test files and temporary directories
+test_*.sh
+*_test/
+temp/
+tmp/
+*.tmp

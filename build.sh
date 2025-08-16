@@ -9,22 +9,234 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly WORKSPACE_ROOT="$SCRIPT_DIR"
 readonly BUILDSCRIPTS_DIR="$SCRIPT_DIR/buildscripts"
 
+# 界面模式设置
+INTERFACE_MODE="cli"  # 默认使用CLI模式
+
 [[ ! -d "$BUILDSCRIPTS_DIR" ]] && {
     echo "❌ 模块化构建系统未找到: $BUILDSCRIPTS_DIR"
     echo "请确保运行了构建系统初始化"
     exit 1
 }
 
+# Linus-style: Robust terminal reset - no queries, no pollution
+reset_terminal() {
+    # Option 1: Use tput reset (most reliable, portable)
+    if command -v tput >/dev/null 2>&1; then
+        tput reset
+        return
+    fi
+    
+    # Option 2: Manual ANSI sequences (fallback, no queries)
+    printf '\033[?25h'      # Show cursor
+    printf '\033[0m'        # Reset all attributes (colors, styles)
+    printf '\033[?1000l'    # Disable X10 mouse reporting
+    printf '\033[?1001l'    # Disable highlight mouse tracking
+    printf '\033[?1002l'    # Disable button event tracking
+    printf '\033[?1003l'    # Disable any event tracking
+    printf '\033[?1004l'    # Disable focus events
+    printf '\033[?1005l'    # Disable UTF-8 mouse mode
+    printf '\033[?1006l'    # Disable SGR mouse mode
+    printf '\033[?1007l'    # Disable alternate scroll mode
+    printf '\033[?1015l'    # Disable Urxvt mouse mode
+    printf '\033[?1016l'    # Disable SGR-Pixels mode
+    printf '\033[?2004l'    # Disable bracketed paste mode
+    printf '\033[?47l'      # Exit alternate screen mode
+    printf '\033[?1049l'    # Exit alternate screen + cursor save
+    # 注意：移除 '\033[c' 因为它会触发终端查询响应 ^[[?1;2c
+    
+    # Flush terminal input buffer to clear any pending control sequences
+    if [[ -t 0 ]]; then
+        read -t 0.1 -N 1000 >/dev/null 2>&1 || true
+    fi
+}
+
+# Gemini建议：无论脚本如何退出都执行终端清理的安全网
+cleanup() {
+    reset_terminal
+}
+
+# 关键：注册trap确保任何退出情况都会清理终端状态
+trap cleanup EXIT INT TERM
+
+# 检查是否指定了界面模式参数
+for arg in "$@"; do
+    case "$arg" in
+        --cli)
+            INTERFACE_MODE="cli"
+            ;;
+        --tui)
+            INTERFACE_MODE="tui"
+            ;;
+    esac
+done
+
 # 模块加载
-source "$BUILDSCRIPTS_DIR/lib/utils.sh"
-source "$BUILDSCRIPTS_DIR/lib/config.sh"
-source "$BUILDSCRIPTS_DIR/lib/ui.sh"
-source "$BUILDSCRIPTS_DIR/lib/builder.sh"
+source "$BUILDSCRIPTS_DIR/common/utils.sh"
+source "$BUILDSCRIPTS_DIR/common/config.sh" 
+source "$BUILDSCRIPTS_DIR/common/builder.sh"
+
+# Linus-style: Robust terminal reset - no queries, no pollution
+reset_terminal() {
+    # Option 1: Use tput reset (most reliable, portable)
+    if command -v tput >/dev/null 2>&1; then
+        tput reset
+        return
+    fi
+    
+    # Option 2: Manual ANSI sequences (fallback, no queries)
+    printf '\033[?25h'      # Show cursor
+    printf '\033[0m'        # Reset all attributes (colors, styles)
+    printf '\033[?1000l'    # Disable X10 mouse reporting
+    printf '\033[?1001l'    # Disable highlight mouse tracking
+    printf '\033[?1002l'    # Disable button event tracking
+    printf '\033[?1003l'    # Disable any event tracking
+    printf '\033[?1004l'    # Disable focus events
+    printf '\033[?1005l'    # Disable UTF-8 mouse mode
+    printf '\033[?1006l'    # Disable SGR mouse mode
+    printf '\033[?1007l'    # Disable alternate scroll mode
+    printf '\033[?1015l'    # Disable Urxvt mouse mode
+    printf '\033[?1016l'    # Disable SGR-Pixels mode
+    printf '\033[?2004l'    # Disable bracketed paste mode
+    printf '\033[?47l'      # Exit alternate screen mode
+    printf '\033[?1049l'    # Exit alternate screen + cursor save
+    # 注意：移除 '\033[c' 因为它会触发终端查询响应 ^[[?1;2c
+    
+    # Flush terminal input buffer to clear any pending control sequences
+    if [[ -t 0 ]]; then
+        read -t 0.1 -N 1000 >/dev/null 2>&1 || true
+    fi
+}
+
+cleanup_on_error() {
+    reset_terminal
+    echo "❌ Build failed - terminal state reset"
+}
+
+cleanup_on_exit() {
+    reset_terminal
+    echo "🔧 Terminal state reset"
+}
+
+# TUI智能编译函数 - Linus式简单解决方案
+build_tui_if_needed() {
+    local tui_binary="$BUILDSCRIPTS_DIR/bin/sunray_tui"
+    local tui_src_dir="$BUILDSCRIPTS_DIR/tui"
+    local build_dir="$tui_src_dir/build"
+    
+    # 检查DEBUG环境变量，决定构建模式
+    local debug_mode="OFF"
+    if [[ "${DEBUG:-0}" == "1" ]]; then
+        debug_mode="ON"
+        print_status "🐛 DEBUG模式已启用 - 将编译带有调试面板的TUI"
+        tui_binary="${tui_binary}_debug"  # 使用不同的二进制名称
+    fi
+    
+    # 检查是否需要编译
+    local need_build=false
+    
+    # 1. 二进制不存在 - 必须编译
+    if [[ ! -f "$tui_binary" ]]; then
+        print_status "TUI程序不存在，开始编译..."
+        need_build=true
+    else
+        # 2. 检查源码是否更新 - Linus式：只检查我们的源码，不包含第三方库
+        local newest_src=$(find "$tui_src_dir" -path "*/third_party" -prune -o \( -name "*.cpp" -o -name "*.hpp" -o -name "CMakeLists.txt" \) -newer "$tui_binary" -print | head -1)
+        if [[ -n "$newest_src" ]]; then
+            print_status "检测到源码更新: $(basename "$newest_src")，重新编译TUI程序..."
+            need_build=true
+        fi
+        
+        # 3. 检查DEBUG模式变化 - 如果之前是release现在要debug，或相反
+        if [[ "$debug_mode" == "ON" && -f "$BUILDSCRIPTS_DIR/bin/sunray_tui" && ! -f "$tui_binary" ]]; then
+            print_status "检测到DEBUG模式变化，重新编译..."
+            need_build=true
+        elif [[ "$debug_mode" == "OFF" && -f "${BUILDSCRIPTS_DIR}/bin/sunray_tui_debug" && ! -f "$tui_binary" ]]; then
+            print_status "检测到RELEASE模式变化，重新编译..."
+            need_build=true
+        fi
+    fi
+    
+    # 执行编译
+    if [[ "$need_build" == true ]]; then
+        # 创建构建目录
+        mkdir -p "$build_dir" || {
+            print_error "无法创建构建目录: $build_dir"
+            exit 1
+        }
+        
+        # CMake配置 - 根据DEBUG环境变量设置
+        print_status "配置CMake... (DEBUG模式: $debug_mode)"
+        (cd "$build_dir" && cmake .. -DSUNRAY_DEBUG_ENABLED="$debug_mode") || {
+            print_error "CMake配置失败"
+            exit 1
+        }
+        
+        # Make编译
+        if [[ "$debug_mode" == "ON" ]]; then
+            print_status "🔨 编译TUI程序 (包含调试面板和事件追踪)..."
+        else
+            print_status "🔨 编译TUI程序 (发布版本)..."
+        fi
+        (cd "$build_dir" && make -j"$(nproc 2>/dev/null || echo 4)") || {
+            print_error "编译失败"
+            print_error "请检查源码或依赖项"
+            exit 1
+        }
+        
+        # 重命名二进制文件以区分debug和release版本
+        if [[ "$debug_mode" == "ON" ]]; then
+            local source_binary="$BUILDSCRIPTS_DIR/bin/sunray_tui"
+            local debug_binary="$BUILDSCRIPTS_DIR/bin/sunray_tui_debug"
+            if [[ -f "$source_binary" ]]; then
+                mv "$source_binary" "$debug_binary"
+                print_status "✅ DEBUG版本TUI程序编译完成 (包含调试面板)"
+                print_status "💡 运行时调试面板默认开启，按 'D' 键切换显示"
+            else
+                print_error "找不到编译生成的二进制文件: $source_binary"
+                exit 1
+            fi
+        else
+            print_status "✅ TUI程序编译完成"
+        fi
+    else
+        if [[ "$debug_mode" == "ON" ]]; then
+            print_status "🐛 DEBUG版本TUI程序已是最新版本，直接启动"
+        else
+            print_status "TUI程序已是最新版本，直接启动"
+        fi
+    fi
+    
+    # 最终检查
+    if [[ ! -f "$tui_binary" ]]; then
+        print_error "编译完成但找不到可执行文件: $tui_binary"
+        exit 1
+    fi
+}
+
+# 根据界面模式加载对应的UI
+case "$INTERFACE_MODE" in
+    "cli")
+        source "$BUILDSCRIPTS_DIR/cli/ui.sh"
+        ;;
+    "tui")
+        # TUI模式：智能编译和启动
+        build_tui_if_needed
+        
+        # 根据DEBUG环境变量选择正确的二进制文件
+        TUI_BINARY="$BUILDSCRIPTS_DIR/bin/sunray_tui"
+        if [[ "${DEBUG:-0}" == "1" ]]; then
+            TUI_BINARY="${TUI_BINARY}_debug"
+        fi
+        
+        exec "$TUI_BINARY" "$@"
+        ;;
+esac
 
 # 主函数
 main() {
     local start_time=$(date +%s)
     
+    # 检查是否指定了界面模式参数
     init_config && parse_arguments "$@" || exit 1
     
     local ui_result
@@ -42,7 +254,7 @@ main() {
     local resolved_modules=($(resolve_dependencies "${SELECTED_MODULES[@]}"))
     [[ ${#resolved_modules[@]} -eq 0 ]] && { print_error "没有找到要构建的模块"; exit 1; }
     
-    echo
+    echo    
     echo "${CYAN}=== 开始构建 ===${NC}"
     echo "构建模块: ${resolved_modules[*]}"
     echo "并行任务: $BUILD_JOBS"
@@ -60,6 +272,15 @@ main() {
     else
         echo
         echo "${RED}❌ 构建失败！${NC}"
+        
+        # Linus风格：构建失败时清理终端状态，解决控制字符污染
+        if declare -f cleanup_on_error >/dev/null 2>&1; then
+            cleanup_on_error
+        elif declare -f reset_terminal >/dev/null 2>&1; then
+            reset_terminal
+            echo "🔧 终端状态已重置"
+        fi
+        
         return 1
     fi
 }
@@ -194,7 +415,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         --version|-V) show_version; exit 0 ;;
         --migration|--migrate) show_migration_help; exit 0 ;;
         --help|-h) show_help; exit 0 ;;
+        --cli) shift; main "$@" ;;
+        --tui) shift; main "$@" ;;
+        *) main "$@" ;;
     esac
-    
-    main $(handle_legacy_arguments "$@")
 fi

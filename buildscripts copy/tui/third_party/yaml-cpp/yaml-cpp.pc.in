@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: yaml-cpp
+Description: A YAML parser and emitter for C++
+Version: @PROJECT_VERSION@
+URL: https://github.com/jbeder/yaml-cpp
+Libs: -L${libdir} -lyaml-cpp
+Cflags: -I${includedir}
