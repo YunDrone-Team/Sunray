@@ -151,35 +151,11 @@ void ExternalFusion::timer_pub_ext_odom_cb(const ros::TimerEvent &event)
     }
 
     // 将外部定位数据赋值到vision_pose，并发布至PX4（PX4接收并处理该消息需要修改EKF2参数，从而使能EKF2模块融合VISION数据）
-    // 发布的ROS话题为~/mavros/vision_pose/pose，对应的MAVLINK消息为VISION_POSITION_ESTIMATE(#102)
+    // 发布的ROS话题为~/mavros/odometry/out，对应的MAVLINK消息为ODOMETRY (#331)
+    ext_odom = ext_pos.msg_odom;
     ext_odom.header.stamp = ros::Time::now();
     ext_odom.header.frame_id = "odom";
     ext_odom.child_frame_id = "base_link";
-    ext_odom.pose.pose.position.x = ext_pos.external_odom.position[0];
-    ext_odom.pose.pose.position.y = ext_pos.external_odom.position[1];
-    ext_odom.pose.pose.position.z = ext_pos.external_odom.position[2];
-
-    // ext_odom.pose.pose.position.x = NAN;
-    // ext_odom.pose.pose.position.y = NAN;
-    // ext_odom.pose.pose.position.z = NAN;
-
-    ext_odom.twist.twist.linear.x = ext_pos.external_odom.velocity[0];
-    ext_odom.twist.twist.linear.y = ext_pos.external_odom.velocity[1];
-    ext_odom.twist.twist.linear.z = ext_pos.external_odom.velocity[2];
-
-    // ext_odom.twist.twist.linear.x = NAN;
-    // ext_odom.twist.twist.linear.y = NAN;
-    // ext_odom.twist.twist.linear.z = NAN;
-
-    ext_odom.pose.pose.orientation.x = ext_pos.external_odom.attitude_q.x;
-    ext_odom.pose.pose.orientation.y = ext_pos.external_odom.attitude_q.y;
-    ext_odom.pose.pose.orientation.z = ext_pos.external_odom.attitude_q.z;
-    ext_odom.pose.pose.orientation.w = ext_pos.external_odom.attitude_q.w;
-
-
-    ext_odom.twist.twist.angular.x = NAN;
-    ext_odom.twist.twist.angular.y = NAN;
-    ext_odom.twist.twist.angular.z = NAN;
 
     for(int i=0;i<36;i++)
     {

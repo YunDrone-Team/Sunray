@@ -26,12 +26,12 @@ private:
     int uav_id;                                             // 无人机编号
     int external_source;                                    // 外部定位数据来源
     bool enable_vision_pose{true};
-    geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
+    geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息 使用#102
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     std::set<int> err_msg;                                  // 错误信息集合
     ros::Time px4_state_time;                               // 无人机状态时间戳
     bool enable_range_sensor;                               // 是否使用距离传感器数据
-    nav_msgs::Odometry ext_odom;                 // vision_pose消息
+    nav_msgs::Odometry ext_odom;                            // 新增的外部定位数据 使用#331
 
     Eigen::Vector3d pos_control_error; // 控制误差（位置）
 
