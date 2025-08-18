@@ -83,6 +83,7 @@ public:
     
     sunray_msgs::ExternalOdom external_odom;                // 声明一个自定义话题 - sunray_msgs::ExternalOdom
     sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
+    nav_msgs::Odometry msg_odom;                           // 声明一个自定义话题 - nav_msgs::Odometry
 
     void init(ros::NodeHandle &nh, int external_source = 0, std::string source_topic_name = "Odometry", bool range_sensor = false)
     {
@@ -133,8 +134,8 @@ public:
             vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/twist", 1, &ExternalPosition::VelCallback, this);
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
-            moving_average_filter.setSize(1);
-            //source_topic_name = "/baton/stereo3/odometry";
+            // moving_average_filter.setSize(1);
+            source_topic_name = "/baton/stereo3/odometry";
             odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
             break;
         default:
@@ -283,6 +284,20 @@ public:
             external_odom.position[2] = distance_sensor.range;
         }
 
+        msg_odom.pose.pose.position.x = msg->pose.pose.position.x;
+        msg_odom.pose.pose.position.y = msg->pose.pose.position.y;
+        msg_odom.pose.pose.position.z = msg->pose.pose.position.z;
+        msg_odom.pose.pose.orientation.x = q.getX();
+        msg_odom.pose.pose.orientation.y = q.getY();
+        msg_odom.pose.pose.orientation.z = q.getZ();
+        msg_odom.pose.pose.orientation.w = q.getW();
+        msg_odom.twist.twist.linear.x = msg->twist.twist.linear.z;
+        msg_odom.twist.twist.linear.y = -msg->twist.twist.linear.x;
+        msg_odom.twist.twist.linear.z = -msg->twist.twist.linear.y;
+        msg_odom.twist.twist.angular.x = msg->twist.twist.angular.z;
+        msg_odom.twist.twist.angular.y = -msg->twist.twist.angular.x;
+        msg_odom.twist.twist.angular.z = -msg->twist.twist.angular.y;
+        msg_odom.header.stamp = ros::Time::now();
     }
 
     void VelCallback(const geometry_msgs::TwistStamped::ConstPtr &msg)
@@ -319,7 +334,7 @@ private:
     bool enable_range_sensor;
     int uav_id;
     std::string uav_name;
-    MovingAverageFilter moving_average_filter;
+    // MovingAverageFilter moving_average_filter;
 };
 
 #endif // EXTERNALPOSITION_H// 实现外部定位源话题回调函数
