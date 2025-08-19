@@ -28,6 +28,9 @@ catkin_make --source Simulation/gazebo_plugin --build build/gazebo_plugin
 # 编译sunray_formation模块
 catkin_make --source sunray_formation --build build/sunray_formation
 
+# 编译sunray_viobot_unit模块
+catkin_make --source General_Module/sunray_viobot_unit --build build/sunray_viobot_unit
+
 # ugv需要octomap、serial相关以依赖
 # 编译sunray_ugv_control模块
 # catkin_make --source General_Module/sunray_ugv_control --build build/sunray_ugv_control

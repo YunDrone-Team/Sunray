@@ -33,10 +33,10 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     nh.param<string>("uav_name", uav_name, "uav");                                      // 【参数】无人机名称
     // 无人机名字 = 无人机名字前缀 + 无人机ID
     uav_name = "/" + uav_name + std::to_string(uav_id);
-    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
-    nh.param<bool>("enable_range_sensor", enable_range_sensor, false);                  // 【参数】是否使用距离传感器数据
+    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose"); // 【参数】外部定位数据来源
+    nh.param<bool>("enable_range_sensor", enable_range_sensor, false);            // 【参数】是否使用距离传感器数据
 
-    // GPS或RTK定位时，不需要发布vision_pose
+    // GPS或RTK或VIOBOT定位时，不需要发布vision_pose
     if (external_source == sunray_msgs::ExternalOdom::GPS || external_source == sunray_msgs::ExternalOdom::RTK)
     {
         enable_vision_pose = false;
@@ -77,15 +77,14 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_name + "/mavros/vision_pose/pose", 10);
     // 【发布】PX4无人机综合状态 - 本节点 -> uav_control_node
     px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10);
-    // 【发布】mavros/odometry/out - 本节点 -> mavros
-    ext_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/mavros/odometry/out", 10);
 
     if (enable_vision_pose)
     {
-        // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
-        // timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_vision_pose_cb, this);
-        // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/odometry/out
-        timer_pub_ext_odom = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_ext_odom_cb, this);
+        if (external_source != sunray_msgs::ExternalOdom::VIOBOT) // viobot不需要走mavros
+        {
+            // 【定时器】当PX4需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
+            timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_vision_pose_cb, this);
+        }
     }
     // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
     timer_pub_px4_state = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_px4_state_cb, this);
@@ -138,55 +137,6 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_state.thrust_setpoint = 0.0;
 
     Logger::info("external fusion node init");
-}
-
-// 定时器回调函数
-void ExternalFusion::timer_pub_ext_odom_cb(const ros::TimerEvent &event)
-{
-    // 外部定位失效时，停止发布vision_pose（因为发了也是错的，还不如不发让飞控端了解到已经丢失数据了）
-    if (!ext_pos.external_odom.odom_valid)
-    {
-        // TODO: 加一个打印
-        return;
-    }
-
-    // 将外部定位数据赋值到vision_pose，并发布至PX4（PX4接收并处理该消息需要修改EKF2参数，从而使能EKF2模块融合VISION数据）
-    // 发布的ROS话题为~/mavros/odometry/out，对应的MAVLINK消息为ODOMETRY (#331)
-    ext_odom.header.stamp = ros::Time::now();
-    ext_odom.header.frame_id = "odom";
-    ext_odom.child_frame_id = "base_link";
-    ext_odom.pose.pose.position.x = ext_pos.external_odom.position[0];
-    ext_odom.pose.pose.position.y = ext_pos.external_odom.position[1];
-    ext_odom.pose.pose.position.z = ext_pos.external_odom.position[2];
-
-    // ext_odom.pose.pose.position.x = NAN;
-    // ext_odom.pose.pose.position.y = NAN;
-    // ext_odom.pose.pose.position.z = NAN;
-
-    // ext_odom.twist.twist.linear.x = ext_pos.external_odom.velocity[0];
-    // ext_odom.twist.twist.linear.y = ext_pos.external_odom.velocity[1];
-    // ext_odom.twist.twist.linear.z = ext_pos.external_odom.velocity[2];
-
-    ext_odom.twist.twist.linear.x = NAN;
-    ext_odom.twist.twist.linear.y = NAN;
-    ext_odom.twist.twist.linear.z = NAN;
-
-    ext_odom.pose.pose.orientation.x = ext_pos.external_odom.attitude_q.x;
-    ext_odom.pose.pose.orientation.y = ext_pos.external_odom.attitude_q.y;
-    ext_odom.pose.pose.orientation.z = ext_pos.external_odom.attitude_q.z;
-    ext_odom.pose.pose.orientation.w = ext_pos.external_odom.attitude_q.w;
-
-    ext_odom.twist.twist.angular.x = NAN;
-    ext_odom.twist.twist.angular.y = NAN;
-    ext_odom.twist.twist.angular.z = NAN;
-
-    for(int i=0;i<36;i++)
-    {
-        ext_odom.pose.covariance[i] = NAN;
-        ext_odom.twist.covariance[i] = NAN;
-    }
-    
-    ext_odom_pub.publish(ext_odom);
 }
 
 // 定时器回调函数
@@ -333,10 +283,10 @@ void ExternalFusion::timer_rviz(const ros::TimerEvent &e)
     static tf2_ros::TransformBroadcaster broadcaster;
     geometry_msgs::TransformStamped tfs;
     //  世界坐标系
-    tfs.header.frame_id = "world";    
+    tfs.header.frame_id = "world";
     tfs.header.stamp = ros::Time::now();
     //  局部坐标系（如传感器坐标系）
-    tfs.child_frame_id = uav_name + "/base_link"; 
+    tfs.child_frame_id = uav_name + "/base_link";
     //  坐标系相对信息设置，局部坐标系相对于世界坐标系的坐标（偏移量）
     tfs.transform.translation.x = px4_state.position[0];
     tfs.transform.translation.y = px4_state.position[1];
@@ -484,7 +434,7 @@ void ExternalFusion::show_px4_state()
 {
     Logger::print_color(int(LogColor::white_bg_blue), ">>>>>>>>>>>>>>>> external_fusion_node - [", uav_name, "] <<<<<<<<<<<<<<<<<");
 
-    if(!px4_state.connected)
+    if (!px4_state.connected)
     {
         Logger::print_color(int(LogColor::red), "PX4 FCU:", "[ UNCONNECTED ]");
         Logger::print_color(int(LogColor::red), "Wait for PX4 FCU connection...");
@@ -497,22 +447,24 @@ void ExternalFusion::show_px4_state()
 
     if (px4_state.armed)
     {
-        if(px4_state.landed_state == 1)
+        if (px4_state.landed_state == 1)
         {
-            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ ON_GROUND ]");   
-        }else
+            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ ON_GROUND ]");
+        }
+        else
         {
-            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ IN_AIR ]");   
+            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ IN_AIR ]");
         }
     }
     else
     {
-        if(px4_state.landed_state == 1)
+        if (px4_state.landed_state == 1)
         {
-            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ ON_GROUND ]");   
-        }else
+            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ ON_GROUND ]");
+        }
+        else
         {
-            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ IN_AIR ]");   
+            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ IN_AIR ]");
         }
     }
 
@@ -546,14 +498,15 @@ void ExternalFusion::show_px4_state()
                             px4_state.vel_setpoint[0],
                             px4_state.vel_setpoint[1],
                             px4_state.vel_setpoint[2],
-                            "[m/s]");   
+                            "[m/s]");
         Logger::print_color(int(LogColor::green), "ATT_SP [X Y Z]:",
                             px4_state.att_setpoint[0] / M_PI * 180,
                             px4_state.att_setpoint[1] / M_PI * 180,
                             px4_state.att_setpoint[2] / M_PI * 180,
-                            "[deg]");       
-        Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint*100, "[ % ]");
-    }else
+                            "[deg]");
+        Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint * 100, "[ % ]");
+    }
+    else
     {
         Logger::print_color(int(LogColor::blue), "GPS Status");
         Logger::print_color(int(LogColor::green), "GPS STATUS:", px4_state.gps_status, "SERVICE:", px4_state.gps_service);
@@ -567,30 +520,32 @@ void ExternalFusion::show_px4_state()
 
     switch (px4_state.external_odom.external_source)
     {
-        case sunray_msgs::ExternalOdom::ODOM:
-            Logger::print_color(int(LogColor::green), "external_source: [ ODOM ]");
-            break;
-        case sunray_msgs::ExternalOdom::POSE:
-            Logger::print_color(int(LogColor::green), "external_source: [ POSE ]");
-            break;
-        case sunray_msgs::ExternalOdom::GAZEBO:
-            Logger::print_color(int(LogColor::green), "external_source: [ GAZEBO ]");
-            break;
-        case sunray_msgs::ExternalOdom::MOCAP:
-            Logger::print_color(int(LogColor::green), "external_source: [ MOCAP ]");
-            break;
-        case sunray_msgs::ExternalOdom::VIOBOT:
-            Logger::print_color(int(LogColor::green), "external_source: [ VIOBOT ]");
-            break;
-        case sunray_msgs::ExternalOdom::GPS:
-            Logger::print_color(int(LogColor::green), "external_source: [ GPS ]");
-            break;
-        default:
-            Logger::print_color(int(LogColor::red), "external_source: [ UNKNOWN ]");
-            break;
+    case sunray_msgs::ExternalOdom::ODOM:
+        Logger::print_color(int(LogColor::green), "external_source: [ ODOM ]");
+        break;
+    case sunray_msgs::ExternalOdom::POSE:
+        Logger::print_color(int(LogColor::green), "external_source: [ POSE ]");
+        break;
+    case sunray_msgs::ExternalOdom::GAZEBO:
+        Logger::print_color(int(LogColor::green), "external_source: [ GAZEBO ]");
+        break;
+    case sunray_msgs::ExternalOdom::MOCAP:
+        Logger::print_color(int(LogColor::green), "external_source: [ MOCAP ]");
+        break;
+    case sunray_msgs::ExternalOdom::VIOBOT:
+        Logger::print_color(int(LogColor::green), "external_source: [ VIOBOT ]");
+        Logger::print_color(int(LogColor::green), "is_viobot_start: ", ext_pos.is_viobot_start == true ? "[ True ]" : "[ False ]");
+        Logger::print_color(int(LogColor::green), "algo_status: [ ", ext_pos.algo_status, " ]");
+        break;
+    case sunray_msgs::ExternalOdom::GPS:
+        Logger::print_color(int(LogColor::green), "external_source: [ GPS ]");
+        break;
+    default:
+        Logger::print_color(int(LogColor::red), "external_source: [ UNKNOWN ]");
+        break;
     }
 
-    if(enable_vision_pose)
+    if (enable_vision_pose)
     {
         if (ext_pos.external_odom.odom_valid)
         {
@@ -619,7 +574,6 @@ void ExternalFusion::show_px4_state()
                             ext_pos.external_odom.attitude[2] / M_PI * 180,
                             "[deg]");
 
-
         Logger::print_color(int(LogColor::blue), "Error between Vision Pose & PX4 State: ");
         Logger::print_color(int(LogColor::green), "POS_ERR [X Y Z]:",
                             ext_pos.external_odom.position[0] - px4_state.position[0],
@@ -640,10 +594,8 @@ void ExternalFusion::show_px4_state()
         Logger::print_color(int(LogColor::green), "enable_vision_pose: [DISABLED]");
     }
 
-
     // 控制误差打印
     Logger::print_color(int(LogColor::white_bg_green), ">>>>> CONTROL ERROR");
-
 
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
@@ -669,7 +621,6 @@ void ExternalFusion::show_px4_state()
                             px4_state.att_setpoint[2] / M_PI * 180 - px4_state.attitude[2] / M_PI * 180,
                             "[deg]");
     }
-
 
     // 打印报错信息
     for (int msg : err_msg)

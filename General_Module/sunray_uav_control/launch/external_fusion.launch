@@ -21,9 +21,13 @@
     <node name="mocap_odom_node" pkg="sunray_uav_control" type="mocap_odom_node" output="screen" />
 
     <!-- 启动 vrpn_client_ros -->
-    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 4)">
+    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 3)">
         <arg name="server" value="$(arg server)"/>
         <arg name="uav_id" value="$(arg uav_id)"/>
+    </include>
+
+    <!-- 启动 vrpn_client_ros -->
+    <include file="$(find sunray_viobot_unit)/launch/mavlink.launch" if="$(eval external_source == 4)">
     </include>
 
     <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>

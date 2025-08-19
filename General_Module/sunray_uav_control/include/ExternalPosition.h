@@ -3,6 +3,9 @@
 
 #include "ros_msg_utils.h"
 #include "printf_format.h"
+#include <sunray_msgs/ViobotState.h>
+#include <sunray_viobot_unit/algo_ctrl.h>
+#include <sunray_viobot_unit/algo_status.h>
 
 using namespace sunray_logger;
 
@@ -70,7 +73,6 @@ private:
     int index;
 };
 
-
 #define ODOM_TIMEOUT 0.3
 #define DISTANCE_SENSOR_TIMEOUT 0.3
 
@@ -80,9 +82,12 @@ public:
     ExternalPosition()
     {
     }
-    
-    sunray_msgs::ExternalOdom external_odom;                // 声明一个自定义话题 - sunray_msgs::ExternalOdom
-    sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
+
+    sunray_msgs::ExternalOdom external_odom; // 声明一个自定义话题 - sunray_msgs::ExternalOdom
+    sensor_msgs::Range distance_sensor;      // 距离传感器原始数据
+
+    std::string algo_status;
+    bool is_viobot_start;
 
     void init(ros::NodeHandle &nh, int external_source = 0, std::string source_topic_name = "Odometry", bool range_sensor = false)
     {
@@ -114,6 +119,12 @@ public:
         external_odom.attitude[1] = 0.0;
         external_odom.attitude[2] = 0.0;
 
+        // 初始化viobot相关状态
+        is_viobot_start = false;
+        algo_set.algo_enable = false;
+        algo_set.algo_reboot = false;
+        algo_set.algo_reset = false;
+
         switch (external_source)
         {
         case sunray_msgs::ExternalOdom::ODOM:
@@ -133,16 +144,20 @@ public:
             vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/twist", 1, &ExternalPosition::VelCallback, this);
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
-            // moving_average_filter.setSize(1);
-            source_topic_name = "/baton/stereo3/odometry";
-            odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
+            // 【订阅】viobot的mavlink直通程序 -> 本节点
+            source_topic_name = "/sunray_viobot/ViobotState";
+            odom_sub = nh.subscribe<sunray_msgs::ViobotState>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
+            // 【订阅】viobot/ROS_interfaces -> 本节点
+            algo_status_sub = nh.subscribe<sunray_viobot_unit::algo_status>("/baton/algo_status", 2, &ExternalPosition::status_callback, this);
+            // 【发布】发布算法启动话题
+            pub_stereo3_ctrl = nh.advertise<sunray_viobot_unit::algo_ctrl>("/baton/stereo3_ctrl", 2);
             break;
         default:
             Logger::print_color(int(LogColor::red), LOG_BOLD, "Unknown external position source type - [", external_source, "]");
             break;
         }
 
-        if(enable_range_sensor)
+        if (enable_range_sensor)
         {
             // 【订阅】无人机上的激光定高原始数据
             range_sub = nh.subscribe<sensor_msgs::Range>(uav_name + "/mavros/distance_sensor/hrlv_ez4_pub", 1, &ExternalPosition::px4_distance_callback, this);
@@ -224,63 +239,46 @@ public:
         external_odom.attitude[2] = yaw;
     }
 
-    void viobotCallback(const nav_msgs::Odometry::ConstPtr &msg)
+    void viobotCallback(const sunray_msgs::ViobotState::ConstPtr &msg)
     {
         // 四元素转rpy
         tf2::Quaternion quaternion;
-        tf2::fromMsg(msg->pose.pose.orientation, quaternion);
+        tf2::fromMsg(msg->attitude_q, quaternion);
         double roll, pitch, yaw;
+        tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
         external_odom.header.stamp = ros::Time::now();
-        external_odom.position[0] = msg->pose.pose.position.x;
-        external_odom.position[1] = msg->pose.pose.position.y;
-        external_odom.position[2] = msg->pose.pose.position.z;
-        // external_odom.position[0] = moving_average_filter.filter(msg->pose.pose.position.x);
-        // external_odom.position[1] = moving_average_filter.filter(msg->pose.pose.position.y);
-        // external_odom.position[2] = moving_average_filter.filter(msg->pose.pose.position.z);
-        external_odom.velocity[0] = msg->twist.twist.linear.x;
-        external_odom.velocity[1] = msg->twist.twist.linear.y;
-        external_odom.velocity[2] = msg->twist.twist.linear.z;
-
-        tf2::Quaternion q;
-        q.setW(msg->pose.pose.orientation.w);
-        q.setX(msg->pose.pose.orientation.x);
-        q.setY(msg->pose.pose.orientation.y);
-        q.setZ(msg->pose.pose.orientation.z);
-        // 绕 Z 轴旋转 90°
-        tf2::Quaternion q_z;
-        q_z.setRPY(0, 0, 0);
-        //q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90°
-
-        // 绕 Y 轴旋转 -90°
-        tf2::Quaternion q_y;
-        q_y.setRPY(0, 0, 0);
-        //q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90°
-
-        // 组合旋转（顺序：先 q_z，再 q_y）
-        q = q * q_z * q_y;
-
-        // 转欧拉角
-        tf2::Matrix3x3 m(q);
-        m.getRPY(roll, pitch, yaw);
-        // std::cout << "roll: " << roll * 180 / M_PI << " pitch: " << pitch * 180 / M_PI << " yaw: " << yaw * 180 / M_PI << std::endl;
-
-        // external_odom.attitude_q.x = msg->pose.pose.orientation.x;
-        // external_odom.attitude_q.y = msg->pose.pose.orientation.y;
-        // external_odom.attitude_q.z = msg->pose.pose.orientation.z;
-        // external_odom.attitude_q.w = msg->pose.pose.orientation.w;
-
-        external_odom.attitude_q.x = q.getX();
-        external_odom.attitude_q.y = q.getY();
-        external_odom.attitude_q.z = q.getZ();
-        external_odom.attitude_q.w = q.getW();
+        external_odom.position[0] = msg->position[0];
+        external_odom.position[1] = msg->position[1];
+        external_odom.position[2] = msg->position[2];
+        external_odom.velocity[0] = msg->velocity[0];
+        external_odom.velocity[1] = msg->velocity[0];
+        external_odom.velocity[2] = msg->velocity[0];
+        external_odom.attitude_q.x = msg->attitude_q.x;
+        external_odom.attitude_q.y = msg->attitude_q.y;
+        external_odom.attitude_q.z = msg->attitude_q.z;
+        external_odom.attitude_q.w = msg->attitude_q.w;
         external_odom.attitude[0] = roll;
         external_odom.attitude[1] = pitch;
         external_odom.attitude[2] = yaw;
+    }
 
-        // 如果使能了距离传感器（且没有超时），则使用距离传感器的高度
-        if (enable_range_sensor && !distance_timeout)
+    void status_callback(const sunray_viobot_unit::algo_status::ConstPtr &msg)
+    {
+        algo_status = msg->algo_status;
+        if (msg->algo_status == "ready")
         {
-            external_odom.position[2] = distance_sensor.range;
+            is_viobot_start = false;
+        }
+        else if (msg->algo_status == "stereo3_initializing" || msg->algo_status == "stereo3_running")
+        {
+            // 算法初始化
+            is_viobot_start = true;
+        }
+
+        if (is_viobot_start == false) // 如果没有开启算法，自动开启
+        {
+            algo_set.algo_enable = true;
+            pub_stereo3_ctrl.publish(algo_set);
         }
     }
 
@@ -318,6 +316,10 @@ private:
     bool enable_range_sensor;
     int uav_id;
     std::string uav_name;
+
+    ros::Subscriber algo_status_sub;
+    ros::Publisher pub_stereo3_ctrl;
+    sunray_viobot_unit::algo_ctrl algo_set;
     // MovingAverageFilter moving_average_filter;
 };
 

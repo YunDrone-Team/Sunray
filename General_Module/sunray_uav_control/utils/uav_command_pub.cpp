@@ -150,7 +150,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[0] = state_desired[0];
             uav_cmd.desired_pos[1] = state_desired[1];
             uav_cmd.desired_pos[2] = state_desired[2];
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
             cout << BLUE << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;
             break;
         case 2:
@@ -166,7 +170,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_vel[0] = state_desired[0];
             uav_cmd.desired_vel[1] = state_desired[1];
             uav_cmd.desired_vel[2] = state_desired[2];
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
             cout << BLUE << "vel_des [X Y] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << " pos_des [Z] : " << state_desired[2] << " [ m ] " << endl;
             break;
         case 3:
@@ -181,7 +189,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_vel[0] = state_desired[0];
             uav_cmd.desired_vel[1] = state_desired[1];
             uav_cmd.desired_pos[2] = state_desired[2];
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
             cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
             break;
         case 4:
@@ -203,7 +215,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[1] = state_desired[1];
             uav_cmd.desired_pos[2] = state_desired[2];
             uav_cmd.desired_yaw = state_desired[3]; // 固定 yaw
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
 
             cout << BLUE << "vel_des [Vx Vy Vz] : "
                  << state_desired[0] << " [ m/s ] "
@@ -235,7 +251,10 @@ int main(int argc, char **argv)
         //     uav_cmd.desired_pos[2] = 0.0;
         //     uav_cmd.desired_yaw = state_desired[3];
         //     uav_cmd.desired_yaw_rate = state_desired[3];
-        //
+        //     for (int i = 0; i < uav_num; i++)
+        //     {
+        //         uav_command_pub[i].publish(uav_cmd);
+        //     }
         //     uav_command_pub[0].publish(uav_cmd);
         //     cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
         //     cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -261,7 +280,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_yaw = state_desired[3];
             uav_cmd.desired_yaw_rate = state_desired[3];
 
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
             cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
             cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
             break;
@@ -285,7 +308,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_vel[2] = 0;                // Z轴速度设为 0，因为我们要指定高度
             uav_cmd.desired_pos[2] = state_desired[2]; // 固定高度
             uav_cmd.desired_yaw = state_desired[3];    // 固定 yaw
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
 
             cout << BLUE << "vel_des [Vx Vy] : "
                  << state_desired[0] << " [ m/s ] "
@@ -316,7 +343,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[2] = state_desired[2];
             uav_cmd.desired_yaw = state_desired[3];
             uav_cmd.desired_yaw_rate = 0.0;
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
 
             cout << BLUE << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;
             cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -345,7 +376,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[2] = state_desired[2];
             uav_cmd.desired_yaw = state_desired[3];
             uav_cmd.desired_yaw_rate = 0.0;
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
 
             cout << BLUE << "vel_des [X Y Z] : " << state_desired[0] << " [ m/s ] " << state_desired[1] << " [ m/s ] " << state_desired[2] << " [ m/s ] " << endl;
             cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -358,6 +393,10 @@ int main(int argc, char **argv)
         //     cout << BLUE << "waypoint" << endl;
         //     uav_cmd.header.stamp = ros::Time::now();
         //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Waypoint;
+        // for (int i = 0; i < uav_num; i++)
+        //     {
+        //         uav_command_pub[i].publish(uav_cmd);
+        //     }
         //     uav_command_pub[0].publish(uav_cmd);
 
         //     break;
@@ -385,6 +424,10 @@ int main(int argc, char **argv)
         //     uav_cmd.altitude = state_desired[2];
         //     uav_cmd.desired_yaw = state_desired[3];
         //     uav_cmd.desired_yaw_rate = 0.0;
+        // for (int i = 0; i < uav_num; i++)
+        //     {
+        //         uav_command_pub[i].publish(uav_cmd);
+        //     }
         //     uav_command_pub[0].publish(uav_cmd);
 
         //     cout << BLUE << "latitude longitude altitude: " << state_desired[0] << " " << state_desired[1] << " " << state_desired[2] << " " << endl;
@@ -414,7 +457,11 @@ int main(int argc, char **argv)
             uav_cmd.desired_pos[2] = state_desired[2];
             uav_cmd.desired_yaw = state_desired[3];
             uav_cmd.desired_yaw_rate = 0.0;
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
 
             cout << BLUE << "pos_des [X Y Z] : " << state_desired[0] << " [ m ] " << state_desired[1] << " [ m ] " << state_desired[2] << " [ m ] " << endl;
             cout << BLUE << "yaw_des : " << state_desired[3] / M_PI * 180.0 << " [ deg ] " << endl;
@@ -528,7 +575,11 @@ int main(int argc, char **argv)
         case 107:
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = 103;
-            uav_command_pub[0].publish(uav_cmd);
+            for (int i = 0; i < uav_num; i++)
+            {
+                uav_command_pub[i].publish(uav_cmd);
+            }
+            // uav_command_pub[0].publish(uav_cmd);
             break;
         }
 
