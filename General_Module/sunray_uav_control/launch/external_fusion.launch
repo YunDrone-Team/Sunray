@@ -26,7 +26,7 @@
         <arg name="uav_id" value="$(arg uav_id)"/>
     </include>
 
-    <!-- 启动 vrpn_client_ros -->
+    <!-- 启动 viobot -->
     <include file="$(find sunray_viobot_unit)/launch/mavlink.launch" if="$(eval external_source == 4)">
     </include>
 
