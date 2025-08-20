@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Add third-party libraries
 add_subdirectory(third_party/yaml-cpp)
-add_subdirectory(third_party/FTXUI)
+add_subdirectory(third_party/ftxui)
 
 # Add include directories
 include_directories(include)
