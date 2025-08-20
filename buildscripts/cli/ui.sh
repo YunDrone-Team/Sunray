@@ -169,6 +169,10 @@ parse_arguments() {
                 clean_build_dirs
                 exit 0
                 ;;
+            --clean-bs)
+                clean_buildscripts_dirs
+                exit 0
+                ;;
             --dry-run)
                 DRY_RUN=true
                 shift
@@ -556,6 +560,43 @@ clean_build_dirs() {
     done
     
     echo -e "\\n${GREEN}Cleanup completed, processed $total_cleaned items${NC}"
+    if command -v df >/dev/null 2>&1; then
+        local available_space=$(df -h . | awk 'NR==2 {print $4}')
+        echo "Available space: $available_space"
+    fi
+}
+
+clean_buildscripts_dirs() {
+    echo "${CYAN}=== Buildscripts Cleanup Tool ===${NC}"
+    echo
+    
+    local bs_dirs=("buildscripts/tui/build" "buildscripts/bin" "buildscripts/tui/.cache" "buildscripts/tui/third_party")
+    local total_cleaned=0
+    
+    for dir in "${bs_dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            local size=$(du -sh "$dir" 2>/dev/null | cut -f1 || echo "unknown")
+            echo "Found buildscripts directory: $dir (size: $size)"
+            rm -rf "$dir" && { 
+                print_success "✓ Removed $dir"; 
+                ((total_cleaned++)); 
+            } || print_error "✗ Failed to remove $dir"
+        fi
+    done
+    
+    # Clean buildscripts compilation artifacts
+    local patterns=("buildscripts/**/*.o" "buildscripts/**/CMakeCache.txt" "buildscripts/**/cmake_install.cmake" "buildscripts/**/Makefile")
+    for pattern in "${patterns[@]}"; do
+        local files=$(find buildscripts -name "$(basename "$pattern")" -type f 2>/dev/null | head -10)
+        if [[ -n "$files" ]]; then
+            echo "Found $(basename "$pattern") files in buildscripts"
+            find buildscripts -name "$(basename "$pattern")" -type f -delete 2>/dev/null
+            print_success "✓ Removed $(basename "$pattern") files from buildscripts"
+            ((total_cleaned++))
+        fi
+    done
+    
+    echo -e "\\n${GREEN}Buildscripts cleanup completed, processed $total_cleaned items${NC}"
     if command -v df >/dev/null 2>&1; then
         local available_space=$(df -h . | awk 'NR==2 {print $4}')
         echo "Available space: $available_space"

@@ -42,6 +42,13 @@ build_tui_if_needed() {
     local tui_src_dir="$BUILDSCRIPTS_DIR/tui"
     local build_dir="$tui_src_dir/build"
     
+    # Check dependencies first
+    print_status "Checking TUI dependencies..."
+    if ! "$tui_src_dir/check_dependencies.sh"; then
+        print_error "TUI dependencies check failed"
+        exit 1
+    fi
+    
     local need_build=false
     
     if [[ ! -f "$tui_binary" ]]; then
