@@ -1,0 +1,9 @@
+#include "tui_terminal.hpp"
+
+namespace sunray_tui {
+
+// 静态成员定义
+std::atomic<bool> TerminalGuard::initialized_{false};
+std::atomic<bool> TerminalGuard::cleanup_in_progress_{false};
+
+} // namespace sunray_tui

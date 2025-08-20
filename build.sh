@@ -1,6 +1,5 @@
 #!/bin/bash
 # Sunray 模块化构建系统
-# ./build.sh --help # 运行构建脚本
 
 set -e
 
@@ -9,28 +8,111 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly WORKSPACE_ROOT="$SCRIPT_DIR"
 readonly BUILDSCRIPTS_DIR="$SCRIPT_DIR/buildscripts"
 
+# 预处理命令行参数，决定界面模式
+# 规则：只有无参数或明确指定--tui时才使用TUI界面
+# 任何其他参数（包括-s/--same）都直接进入CLI模式
+if [[ $# -eq 0 ]]; then
+    INTERFACE_MODE="tui"
+elif [[ $# -eq 1 && "$1" == "--tui" ]]; then
+    INTERFACE_MODE="tui"
+    shift  # 移除--tui参数
+else
+    INTERFACE_MODE="cli"
+fi
+
 [[ ! -d "$BUILDSCRIPTS_DIR" ]] && {
     echo "❌ 模块化构建系统未找到: $BUILDSCRIPTS_DIR"
     echo "请确保运行了构建系统初始化"
     exit 1
 }
+source "$BUILDSCRIPTS_DIR/common/utils.sh"
+source "$BUILDSCRIPTS_DIR/common/config.sh" 
+source "$BUILDSCRIPTS_DIR/common/builder.sh"
 
-# 模块加载
-source "$BUILDSCRIPTS_DIR/lib/utils.sh"
-source "$BUILDSCRIPTS_DIR/lib/config.sh"
-source "$BUILDSCRIPTS_DIR/lib/ui.sh"
-source "$BUILDSCRIPTS_DIR/lib/builder.sh"
+cleanup_on_error() {
+    echo "❌ Build failed"
+}
 
-# 主函数
+cleanup_on_exit() {
+    echo "🔧 Build completed"
+}
+
+build_tui_if_needed() {
+    local tui_binary="$BUILDSCRIPTS_DIR/bin/sunray_tui"
+    local tui_src_dir="$BUILDSCRIPTS_DIR/tui"
+    local build_dir="$tui_src_dir/build"
+    
+    # Check dependencies first
+    print_status "Checking TUI dependencies..."
+    if ! "$tui_src_dir/check_dependencies.sh"; then
+        print_error "TUI dependencies check failed"
+        exit 1
+    fi
+    
+    local need_build=false
+    
+    if [[ ! -f "$tui_binary" ]]; then
+        print_status "TUI程序不存在，开始编译..."
+        need_build=true
+    else
+        local newest_src=$(find "$tui_src_dir" -path "*/third_party" -prune -o \( -name "*.cpp" -o -name "*.hpp" -o -name "CMakeLists.txt" \) -newer "$tui_binary" -print | head -1)
+        if [[ -n "$newest_src" ]]; then
+            print_status "检测到源码更新: $(basename "$newest_src")，重新编译TUI程序..."
+            need_build=true
+        fi
+    fi
+    
+    if [[ "$need_build" == true ]]; then
+        mkdir -p "$build_dir" || { print_error "无法创建构建目录: $build_dir"; exit 1; }
+        
+        print_status "配置CMake..."
+        (cd "$build_dir" && cmake ..) || { print_error "CMake配置失败"; exit 1; }
+        
+        print_status "编译TUI程序..."
+        (cd "$build_dir" && make -j10) || { print_error "编译失败\n请检查源码或依赖项"; exit 1; }
+        
+        print_status "TUI程序编译完成"
+    else
+        print_status "TUI程序已是最新版本，直接启动"
+    fi
+    
+    if [[ ! -f "$tui_binary" ]]; then
+        print_error "编译完成但找不到可执行文件: $tui_binary"; exit 1
+    fi
+}
+
+case "$INTERFACE_MODE" in
+    "cli")
+        source "$BUILDSCRIPTS_DIR/cli/ui.sh"
+        ;;
+    "tui")
+        build_tui_if_needed
+        exec "$BUILDSCRIPTS_DIR/bin/sunray_tui"
+        ;;
+esac
+
 main() {
     local start_time=$(date +%s)
     
     init_config && parse_arguments "$@" || exit 1
     
-    local ui_result
-    run_ui_flow; ui_result=$?
-    
+    local ui_result; run_ui_flow; ui_result=$?
     case $ui_result in
+        0) 
+            # CLI流程成功，继续构建
+            ;;
+        1) 
+            print_error "UI流程失败"
+            exit 1
+            ;;
+        2) 
+            print_status "用户取消构建"
+            exit 0
+            ;;
+        *) 
+            print_error "未知的UI流程返回值: $ui_result"
+            exit 1
+            ;;
     esac
     
     [[ "$DRY_RUN" == true ]] && exit 0
@@ -42,40 +124,30 @@ main() {
     local resolved_modules=($(resolve_dependencies "${SELECTED_MODULES[@]}"))
     [[ ${#resolved_modules[@]} -eq 0 ]] && { print_error "没有找到要构建的模块"; exit 1; }
     
-    echo
-    echo "${CYAN}=== 开始构建 ===${NC}"
-    echo "构建模块: ${resolved_modules[*]}"
-    echo "并行任务: $BUILD_JOBS"
-    echo
+    echo -e "\n${CYAN}=== 开始构建 ===${NC}\n构建模块: ${resolved_modules[*]}\n并行任务: $BUILD_JOBS\n"
     
     trap cleanup_build_environment EXIT
     
     if build_modules_parallel "${resolved_modules[@]}"; then
         local total_time=$(($(date +%s) - start_time))
-        echo
-        echo "${GREEN}🎉 构建完成！${NC}"
-        echo "总用时: $(format_duration $total_time)"
-        post_build_actions
-        return 0
+        echo -e "\n${GREEN}🎉 构建完成！${NC}\n总用时: $(format_duration $total_time)"
+        show_build_results_table
+        post_build_actions; return 0
     else
-        echo
-        echo "${RED}❌ 构建失败！${NC}"
+        echo -e "\n${RED}❌ 构建失败！${NC}"
+        show_build_results_table
         return 1
     fi
 }
 
-# 构建后处理
 post_build_actions() {
     print_status "执行构建后处理..."
     
-    # ROS工作空间检查
     [[ -f "devel/setup.bash" ]] && {
         print_status "ROS工作空间设置文件已生成: devel/setup.bash"
-        echo "使用以下命令设置环境:"
-        echo "  ${CYAN}source devel/setup.bash${NC}"
+        echo "使用以下命令设置环境: ${CYAN}source devel/setup.bash${NC}"
     }
     
-    # 快速磁盘空间检查
     local available_gb=$(($(df "$WORKSPACE_ROOT" | awk 'NR==2 {print $4}') / 1024 / 1024))
     [[ $available_gb -lt 1 ]] && {
         print_warning "磁盘空间不足 (剩余 ${available_gb}GB)，建议清理构建缓存"
@@ -83,118 +155,53 @@ post_build_actions() {
     }
 }
 
-# 兼容性函数
-handle_legacy_arguments() {
-    local legacy_args=()
-    
-    # 检查是否使用了旧的参数格式
-    for arg in "$@"; do
-        case "$arg" in
-            # 旧的模块组名称映射
-            "uav_modules"|"UAV"|"uav")
-                legacy_args+=("uav")
-                ;;
-            "ugv_modules"|"UGV"|"ugv")
-                legacy_args+=("ugv")
-                ;;
-            "simulation_modules"|"SIM"|"sim")
-                legacy_args+=("sim")
-                ;;
-            "common_modules"|"common")
-                legacy_args+=("common")
-                ;;
-            "all_modules"|"ALL")
-                legacy_args+=("all")
-                ;;
-            # 保持其他参数不变
-            *)
-                legacy_args+=("$arg")
-                ;;
-        esac
-    done
-    
-    # 如果参数发生了变化，显示提示信息
-    if [[ "${legacy_args[*]}" != "$*" ]]; then
-        print_warning "检测到旧式参数格式，已自动转换"
-        print_status "新的参数格式: ${legacy_args[*]}"
-    fi
-    
-    echo "${legacy_args[@]}"
+# 显示版本信息
+show_version() {
+    echo "Sunray 构建系统 v2.0"
 }
 
-# 显示迁移帮助
-show_migration_help() {
+# 显示帮助信息
+show_help() {
     cat << EOF
-${YELLOW}=== 构建系统迁移指南 ===${NC}
+${CYAN}Sunray 构建系统${NC}
 
-${CYAN}新的构建系统特性:${NC}
-• 🔧 模块化配置文件管理
-• 🚀 智能依赖解析
-• 🎯 交互式模块选择
-• 📊 详细的构建报告
-• 🔄 并行构建优化
+${YELLOW}用法:${NC}
+  $0                  启动TUI交互式选择
+  $0 --tui            同上
+  $0 [选项] [组/模块...] CLI模式构建
 
-${CYAN}主要变化:${NC}
-• 配置文件驱动的构建定义
-• 分离的UI交互逻辑
-• 改进的错误处理和日志
-• 更好的用户体验
+${YELLOW}选项:${NC}
+  -h, --help          显示帮助
+  -y, --yes           自动确认
+  -j, --jobs N        并行任务数
+  -l, --list          列出可用模块
+  -g, --groups        列出模块组
+  -s, --same          使用上次选择
+  --clean             清理构建目录
+  --dry-run           预览构建
 
-${CYAN}旧命令对应关系:${NC}
-  旧: ./build.sh uav_modules
-  新: ./build.sh uav
+${YELLOW}示例:${NC}
+  $0 all              构建所有模块
+  $0 groupA groupB    构建指定组
+  $0 moduleA moduleB  构建指定模块
+  $0 -s               重复上次构建
+  $0 --list           查看所有选项
 
-  旧: ./build.sh --clean --verbose
-  新: ./build.sh --clean -v
-
-${CYAN}交互模式:${NC}
-  ./build.sh -i    # 启动交互式界面
-  ./build.sh       # 默认也会进入交互模式
-
-${CYAN}获取帮助:${NC}
-  ./build.sh --help        # 查看完整帮助
-  ./build.sh --list        # 列出所有可用模块
-  ./build.sh --profiles    # 列出构建配置文件
+${YELLOW}说明:${NC}
+  • TUI模式不接受参数，提供交互选择
+  • 所有参数功能仅对CLI模式生效
+  • TUI自动保存选择，CLI可用-s重用
 
 EOF
 }
 
-# 错误处理
-handle_error() {
-    local exit_code=$? line_number=$1
-    
-    echo
-    print_error "构建脚本在第 $line_number 行发生错误 (退出码: $exit_code)"
-    
-    case $exit_code in
-        127) 
-            print_error "可能是缺少必要的依赖或模块未找到" 
-            ;;
-        130) 
-            print_warning "构建被用户中断" 
-            ;;
-        *) 
-            print_error "构建失败，请查看上方错误信息" 
-            ;;
-    esac
-    
-    cleanup_build_environment
-    exit $exit_code
-}
-
-trap 'handle_error $LINENO' ERR
-
-# 版本信息显示
-show_version() {
-    echo "Sunray 构建系统"
-}
-
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # 直接处理特殊参数
     case "${1:-}" in
         --version|-V) show_version; exit 0 ;;
-        --migration|--migrate) show_migration_help; exit 0 ;;
         --help|-h) show_help; exit 0 ;;
     esac
     
-    main $(handle_legacy_arguments "$@")
+    # 执行主函数
+    main "$@"
 fi
