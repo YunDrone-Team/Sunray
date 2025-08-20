@@ -1,18 +1,25 @@
-# Prerequisites
-*.d
-*.mp4
-*.avi
-#.png
-*.jpg
-*.svj
-.catkin_workspace
-.vscode/
+# ==============================================================================
+# Sunray Project .gitignore - Clean build environment management
+# ==============================================================================
 
-# Build directories
+# Core ROS/Catkin workspace files
+.catkin_workspace
 build/
 devel/
+logs/
 
-# CMake build artifacts - prevent future pollution
+# Media files
+*.mp4
+*.avi
+*.jpg
+*.png
+*.svj
+
+# ==============================================================================
+# Build System Artifacts
+# ==============================================================================
+
+# CMake generated files
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts/
@@ -23,67 +30,87 @@ Testing/
 *.cmake
 !CMakeLists.txt
 compile_commands.json
+
+# Make system files
 Makefile
 *.make
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Compiled Object files
+# Compiled object files
 *.slo
 *.lo
 *.o
 *.obj
+*.d
 
-# Precompiled Headers
+# Precompiled headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
+# Static libraries
 *.lai
 *.la
 *.a
 *.lib
+
+# Dynamic libraries
+*.so
+*.dylib
+*.dll
 
 # Executables
 *.exe
 *.out
 *.app
 
-# Python
-**.pyc
+# Fortran modules
+*.mod
+*.smod
+
+# ==============================================================================
+# Development Environment
+# ==============================================================================
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python bytecode
+*.pyc
+__pycache__/
 
 # System files
-*.DS_Store
+.DS_Store
 *.cache
 *.log
 
-# TUI build directories - Linus-style clean structure
+# ==============================================================================
+# TUI Build System
+# ==============================================================================
+
+# TUI build artifacts
 buildscripts/bin/
 buildscripts/tui/build/
-buildscripts/tui/third_party/*/build/
-buildscripts/tui/third_party/*/CMakeFiles/
-buildscripts/tui/third_party/*/cmake_install.cmake
-buildscripts/tui/third_party/*/Makefile
-buildscripts/tui/third_party/*/*.a
-buildscripts/tui/third_party/*/*.pc
 
-# Test files and temporary directories
+# Third-party dependencies (auto-downloaded)
+buildscripts/tui/third_party/
+
+# ==============================================================================
+# Testing and Temporary Files
+# ==============================================================================
+
+# Test scripts and directories
 test_*.sh
 *_test/
+testing/
+
+# Temporary files and directories
 temp/
 tmp/
 *.tmp
+
+# Configuration and state files
+.sunray_last_build_selection
+.claude
