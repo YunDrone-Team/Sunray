@@ -47,6 +47,13 @@ modules:
     source_path: "General_Module/sunray_planner_utils"
     build_path: "build/sunray_planner_utils"
     dependencies: ["sunray_common"]
+      
+  #云台控制模块
+  sunray_gimbal:
+    description: "云台控制系统"
+    source_path: "General_Module/sunray_gimbal"
+    build_path: "build/sunray_gimbal"
+    dependencies: ["sunray_common", "sunray_tutorial"]
 
   # UGV 控制模块
   sunray_ugv_control:
@@ -108,7 +115,7 @@ groups:
   # 无人机飞行控制系统
   uav:
     description: "默认使用这个组，包含无人机飞行控制，仿真环境，仿真工具，仿真插件，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流，编队控制"
-    modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_media", "ego_planner", "sunray_formation"]
+    modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_gimbal", "sunray_media", "ego_planner", "sunray_formation"]
     
   # # EGO路径规划系统
   # ego:
