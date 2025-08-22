@@ -55,13 +55,13 @@ static void odometry_msg_convert(const nav_msgs::OdometryPtr &msg, mavlink_odome
     mavlink_odom.q[2] = q.y();
     mavlink_odom.q[3] = q.z();
 
-    mavlink_odom.vx = msg->twist.twist.linear.z;
-    mavlink_odom.vy = -msg->twist.twist.linear.x;
-    mavlink_odom.vz = -msg->twist.twist.linear.y;
+    // mavlink_odom.vx = msg->twist.twist.linear.z;
+    // mavlink_odom.vy = -msg->twist.twist.linear.x;
+    // mavlink_odom.vz = -msg->twist.twist.linear.y;
 
-    // mavlink_odom.vx = NAN;
-    // mavlink_odom.vy = NAN;
-    // mavlink_odom.vz = NAN;
+    mavlink_odom.vx = NAN;
+    mavlink_odom.vy = NAN;
+    mavlink_odom.vz = NAN;
 
     mavlink_odom.rollspeed = NAN;
     mavlink_odom.pitchspeed = NAN;

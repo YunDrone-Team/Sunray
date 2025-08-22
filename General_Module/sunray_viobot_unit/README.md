@@ -66,6 +66,18 @@ lines 1-22/22 (END)
 
 ## 问题解答
 
-如果出现服务无法正常开启：
+### 如果出现服务无法正常开启：
 
 检查SunrayTask.sh这个文件的绝对路径是不是：/home/PRR/Sunray/General_Module/sunray_viobot_unit/SunrayTask.sh，如果不是，修改/etc/systemd/system/sunray.service文件里 ExecStart 这个键的值，使他指向SunrayTask.sh的绝对路径
+
+### 停止并禁用自启动：
+
+```bash
+sudo systemctl stop sunray.service
+sudo systemctl disable sunray.service
+```
+
+### 查看输出日志：
+```bash
+sudo journalctl -u sunray.service
+```

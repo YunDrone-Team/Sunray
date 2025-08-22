@@ -4,8 +4,6 @@
 #include "ros_msg_utils.h"
 #include "printf_format.h"
 #include <sunray_msgs/ViobotState.h>
-#include <sunray_viobot_unit/algo_ctrl.h>
-#include <sunray_viobot_unit/algo_status.h>
 
 using namespace sunray_logger;
 
@@ -121,9 +119,7 @@ public:
 
         // 初始化viobot相关状态
         is_viobot_start = false;
-        algo_set.algo_enable = false;
-        algo_set.algo_reboot = false;
-        algo_set.algo_reset = false;
+        algo_status = "disable";
 
         switch (external_source)
         {
@@ -147,10 +143,6 @@ public:
             // 【订阅】viobot的mavlink直通程序 -> 本节点
             source_topic_name = "/sunray_viobot/ViobotState";
             odom_sub = nh.subscribe<sunray_msgs::ViobotState>(source_topic_name, 10, &ExternalPosition::viobotCallback, this);
-            // 【订阅】viobot/ROS_interfaces -> 本节点
-            algo_status_sub = nh.subscribe<sunray_viobot_unit::algo_status>("/baton/algo_status", 2, &ExternalPosition::status_callback, this);
-            // 【发布】发布算法启动话题
-            pub_stereo3_ctrl = nh.advertise<sunray_viobot_unit::algo_ctrl>("/baton/stereo3_ctrl", 2);
             break;
         default:
             Logger::print_color(int(LogColor::red), LOG_BOLD, "Unknown external position source type - [", external_source, "]");
@@ -246,7 +238,7 @@ public:
         tf2::fromMsg(msg->attitude_q, quaternion);
         double roll, pitch, yaw;
         tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-        external_odom.header.stamp = ros::Time::now();
+        external_odom.header.stamp = msg->header.stamp;
         external_odom.position[0] = msg->position[0];
         external_odom.position[1] = msg->position[1];
         external_odom.position[2] = msg->position[2];
@@ -260,26 +252,9 @@ public:
         external_odom.attitude[0] = roll;
         external_odom.attitude[1] = pitch;
         external_odom.attitude[2] = yaw;
-    }
 
-    void status_callback(const sunray_viobot_unit::algo_status::ConstPtr &msg)
-    {
         algo_status = msg->algo_status;
-        if (msg->algo_status == "ready")
-        {
-            is_viobot_start = false;
-        }
-        else if (msg->algo_status == "stereo3_initializing" || msg->algo_status == "stereo3_running")
-        {
-            // 算法初始化
-            is_viobot_start = true;
-        }
-
-        if (is_viobot_start == false) // 如果没有开启算法，自动开启
-        {
-            algo_set.algo_enable = true;
-            pub_stereo3_ctrl.publish(algo_set);
-        }
+        is_viobot_start = msg->vio_start;
     }
 
     void VelCallback(const geometry_msgs::TwistStamped::ConstPtr &msg)
@@ -316,10 +291,6 @@ private:
     bool enable_range_sensor;
     int uav_id;
     std::string uav_name;
-
-    ros::Subscriber algo_status_sub;
-    ros::Publisher pub_stereo3_ctrl;
-    sunray_viobot_unit::algo_ctrl algo_set;
     // MovingAverageFilter moving_average_filter;
 };
 

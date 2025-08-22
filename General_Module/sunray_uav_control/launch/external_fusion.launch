@@ -26,10 +26,6 @@
         <arg name="uav_id" value="$(arg uav_id)"/>
     </include>
 
-    <!-- 启动 viobot -->
-    <include file="$(find sunray_viobot_unit)/launch/mavlink.launch" if="$(eval external_source == 4)">
-    </include>
-
     <arg name="rivz_config" default="$(find sunray_uav_control)/rviz/uav.rviz"/>
 	<!-- 启动Rviz-->
 	<group if="$(arg enable_rviz)">
