@@ -14,12 +14,14 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   tf2_eigen
   sunray_msgs
+  detection_msgs
   tf2_geometry_msgs
   mavros_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(Eigen3 REQUIRED)
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -32,6 +34,7 @@ generate_messages(
   nav_msgs
   sensor_msgs
   std_msgs
+  detection_msgs
 
 )
 
@@ -45,6 +48,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
+  ${EIGEN3_INCLUDE_DIR}
 )
 
 
@@ -101,8 +105,8 @@ add_dependencies(ugv_circle_vel_body sunray_tutorial_gencpp)
 target_link_libraries(ugv_circle_vel_body ${catkin_LIBRARIES})
 
 add_executable(land_on_a_moving_car advanced/land_on_a_moving_car.cpp)
-add_dependencies(land_on_a_moving_car sunray_tutorial_gencpp)
-target_link_libraries(land_on_a_moving_car ${catkin_LIBRARIES})
+add_dependencies(land_on_a_moving_car sunray_tutorial_gencpp detection_msgs_gencpp)
+target_link_libraries(land_on_a_moving_car ${catkin_LIBRARIES} Eigen3::Eigen)
 
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
