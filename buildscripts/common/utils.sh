@@ -20,6 +20,9 @@ if [[ -z "${COLORS_INITIALIZED:-}" ]]; then
         BRIGHT_CYAN=$(tput bold; tput setaf 6)
         BRIGHT_WHITE=$(tput bold; tput setaf 7)
         
+        # 添加暗灰色用于描述文本
+        DARK_GRAY=$(tput setaf 8)
+        
         BOLD=$(tput bold)
         DIM=$(tput dim)
         UNDERLINE=$(tput smul)
@@ -27,7 +30,7 @@ if [[ -z "${COLORS_INITIALIZED:-}" ]]; then
     else
         RED='' GREEN='' YELLOW='' BLUE='' PURPLE='' CYAN='' WHITE=''
         BRIGHT_RED='' BRIGHT_GREEN='' BRIGHT_YELLOW='' BRIGHT_BLUE=''
-        BRIGHT_PURPLE='' BRIGHT_CYAN='' BRIGHT_WHITE=''
+        BRIGHT_PURPLE='' BRIGHT_CYAN='' BRIGHT_WHITE='' DARK_GRAY=''
         BOLD='' DIM='' UNDERLINE='' NC=''
     fi
     COLORS_INITIALIZED=1

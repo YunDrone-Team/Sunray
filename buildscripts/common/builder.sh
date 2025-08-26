@@ -3,6 +3,7 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/utils.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/config.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/build_results.sh"
 
 # 构建状态变量
 TOTAL_MODULES=0
@@ -11,11 +12,18 @@ FAILED_MODULES=0
 BUILD_START_TIME=0
 BUILD_JOBS=0
 
+# 构建结果记录 - 这些变量现在在build_results.sh中管理
+BUILD_RESULTS_MODULES=()
+BUILD_RESULTS_STATUS=()
+BUILD_RESULTS_TIMES=()
+BUILD_RESULTS_START_TIMES=()
+BUILD_ORDER=()
+
 # 构建环境初始化
 init_build_environment() {
     local workspace_root="$1"
     
-    print_debug "初始化构建环境: $workspace_root"
+    echo "初始化构建环境: $workspace_root"
     
     cd "$workspace_root" || { print_error "无法进入工作目录: $workspace_root"; return 1; }
     
@@ -27,8 +35,19 @@ init_build_environment() {
     export BUILD_JOBS ROS_WORKSPACE="$workspace_root"
     BUILD_START_TIME=$(date +%s)
     
-    print_debug "构建环境初始化完成 (并行任务: $BUILD_JOBS)"
+    echo "构建环境初始化完成 (并行任务: $BUILD_JOBS)"
     return 0
+}
+
+# 记录构建结果
+record_build_result() {
+    # 这个函数保留用于向后兼容，但实际功能已移至build_results.sh
+    local module="$1"
+    local status="$2"
+    local time="$3"
+    
+    # 调用新的结果记录函数
+    update_build_result "$module" "$status"
 }
 
 # 单模块构建
@@ -37,21 +56,31 @@ build_module() {
     local build_jobs="${2:-$BUILD_JOBS}"
     local start_time=$(date +%s)
     
+    # 记录构建顺序和开始时间
+    BUILD_ORDER+=("$module")
+    record_build_start "$module"
+    
     print_status "构建模块: $module"
     
     local source_path=$(get_module_config "$module" "source_path")
     local build_path=$(get_module_config "$module" "build_path")
     
-    [[ ! -d "$source_path" ]] && { print_error "模块源代码路径不存在: $source_path"; return 1; }
+    [[ ! -d "$source_path" ]] && { 
+        print_error "模块源代码路径不存在: $source_path"
+        update_build_result "$module" "FAILED" "$(date +%s)"
+        ((FAILED_MODULES++))
+        return 1
+    }
     
-    print_debug "源代码路径: $source_path"
+    echo "源代码路径: $source_path"
     
     if build_catkin_module "$module" "$build_jobs"; then
-        local duration=$(($(date +%s) - start_time))
+        update_build_result "$module" "SUCCESS" "$(date +%s)"
         ((COMPLETED_MODULES++))
-        print_success "模块构建成功: $module (用时: $(format_duration $duration))"
+        print_success "模块构建成功: $module"
         return 0
     else
+        update_build_result "$module" "FAILED" "$(date +%s)"
         ((FAILED_MODULES++))
         print_error "模块构建失败: $module"
         return 1
@@ -63,21 +92,25 @@ build_catkin_module() {
     local module="$1"
     local build_jobs="$2"
     
-    print_debug "使用catkin构建模块: $module"
+    echo "使用catkin构建模块: $module"
     
     local source_path=$(get_module_config "$module" "source_path")
     local build_path=$(get_module_config "$module" "build_path")
     
     local build_cmd="catkin_make -j$build_jobs --source $source_path --build $build_path"
-    print_debug "执行构建命令: $build_cmd"
+    echo "执行构建命令: $build_cmd"
+    echo "================================"
     
-    eval "$build_cmd" && {
-        print_debug "catkin构建成功: $module"
+    # 直接执行命令，显示所有输出
+    if eval "$build_cmd"; then
+        echo "================================"
+        echo "catkin构建成功: $module"
         return 0
-    } || {
-        print_debug "catkin构建失败: $module"
+    else
+        echo "================================"
+        echo "catkin构建失败: $module"
         return 1
-    }
+    fi
 }
 
 # 串行构建模块
@@ -134,5 +167,11 @@ cleanup_build_environment() {
     print_debug "清理构建环境..."
     unset BUILD_JOBS ROS_WORKSPACE BUILD_START_TIME
     print_debug "构建环境清理完成"
+}
+
+# 显示构建结果表格 - 重定向到新模块
+show_build_results_table() {
+    # 调用build_results.sh中的函数
+    display_build_results_table
 }
 

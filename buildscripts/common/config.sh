@@ -47,7 +47,7 @@ parse_yaml() {
 load_modules_config() {
     [[ $CONFIG_LOADED -eq 1 ]] && return 0
     
-    local config_file="${SCRIPT_DIR}/buildscripts/config/modules.yaml"
+    local config_file="${SCRIPT_DIR}/buildscripts/modules.yaml"
     print_debug "加载模块配置: $config_file"
     
     [[ ! -f "$config_file" ]] && { print_error "配置文件未找到: $config_file"; return 1; }
@@ -59,10 +59,11 @@ load_modules_config() {
     return 0
 }
 
-# 获取模块配置值
+# 获取模块配置值 - bash/zsh兼容版本
 get_module_config() {
     local var_name="CONFIG_modules_${1}_${2}"
-    echo "${!var_name}"
+    eval "local value=\"\$${var_name}\""
+    echo "$value"
 }
 
 # 获取用户配置值
@@ -102,7 +103,7 @@ check_module_conflicts() {
     
     for module in "${modules[@]}"; do
         local conflicts_var="CONFIG_modules_${module}_conflicts_with"
-        local conflicts_str="${!conflicts_var}"
+        eval "local conflicts_str=\"\$${conflicts_var}\""
         
         [[ -z "$conflicts_str" ]] && continue
         
@@ -238,18 +239,21 @@ get_group_description() {
     fi
 }
 
-# 获取模块描述
+# 获取模块描述 - bash/zsh兼容版本
 get_module_description() {
     local module="$1"
     local var_name="CONFIG_modules_${module}_description"
-    echo "${!var_name}"
+    # bash/zsh兼容的间接变量引用
+    eval "local value=\"\$${var_name}\""
+    echo "$value"
 }
 
-# 检查模块是否存在
+# 检查模块是否存在 - bash/zsh兼容版本
 module_exists() {
     local module="$1"
     local var_name="CONFIG_modules_${module}_description"
-    [[ -n "${!var_name}" ]]
+    eval "local value=\"\$${var_name}\""
+    [[ -n "$value" ]]
 }
 
 # 获取构建顺序
