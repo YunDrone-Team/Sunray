@@ -38,7 +38,7 @@ public:
     void createClient(unsigned short listeningPort,DecoderInterfaceBase* ptr,std::string ip=nullptr,unsigned short targetPort=9696);
     void setRunState(int state);
 
-    int  clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp);      //服务端发送数据接口,目的ip
+    int  clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp);      //客户端端发送数据接口,目的ip
     void closeLine(std::string ip);
     void createThread();
     void onRun();

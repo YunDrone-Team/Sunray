@@ -9,6 +9,7 @@ enum MessageID
     UGVStateMessageID               = 20,
     NodeMessageID                   = 30,
     AgentComputerStatusMessageID    = 31,
+    FACMapDataMessageID             = 32,
     FormationMessageID              = 40,
     GroundFormationMessageID        = 41,
 //    TakeoffMessageID    = 101,
