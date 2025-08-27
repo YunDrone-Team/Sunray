@@ -11,7 +11,7 @@
 
 void UAVControl::init(ros::NodeHandle &nh)
 {
-    uav_ns = ros::this_node::getName();
+    node_name = ros::this_node::getName();
     nh.param<int>("uav_id", uav_id, 1);                 // 【参数】无人机编号
     nh.param<std::string>("uav_name", uav_name, "uav"); // 【参数】无人机名字前缀
     // 无人机名字 = 无人机名字前缀 + 无人机ID

@@ -7,10 +7,10 @@ std_msgs/Header header
 uint8 external_source
 
 ## 外部定位数据来源枚举
-uint8 ODOM=0
-uint8 POSE=1
-uint8 GAZEBO=2
-uint8 MOCAP=3
+uint8 ODOM = 0
+uint8 POSE = 1
+uint8 GAZEBO = 2
+uint8 MOCAP = 3
 uint8 VIOBOT = 4
 uint8 GPS = 5
 uint8 RTK = 6

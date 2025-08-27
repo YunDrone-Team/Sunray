@@ -1,16 +1,13 @@
 #include "ros_msg_utils.h"
 #include "type_mask.h"
-#include "printf_format.h"
 #include "pos_controller_pid.h"
-#include "geometry_utils.h"
-#include "math_utils.h"
 
 using namespace sunray_logger;
 
 class UAVControl
 {
 private:
-    std::string uav_ns;   // 节点名称
+    std::string node_name;   // 节点名称
     int uav_id;           // 无人机ID
     std::string uav_name; // 无人机名称
 
@@ -175,22 +172,21 @@ private:
     // 绑定高级模式对应的实现函数
     std::map<int, std::function<void()>> advancedModeFuncMap;
 
-    // 订阅节点句柄
-    ros::Subscriber setup_sub;        // 【订阅】无人机模式设置
-    ros::Subscriber control_cmd_sub;  // 【订阅】控制指令订阅
-    ros::Subscriber odom_state_sub;   // 【订阅】无人机位置状态订阅
-    ros::Subscriber rc_state_sub;     // 【订阅】rc_control状态订阅
+    // 订阅句柄
     ros::Subscriber px4_state_sub;    // 【订阅】无人机状态订阅 来自externalFusion节点
+    ros::Subscriber control_cmd_sub;  // 【订阅】控制指令订阅
+    ros::Subscriber setup_sub;        // 【订阅】无人机模式设置
+    ros::Subscriber rc_state_sub;     // 【订阅】rc_control状态订阅
     ros::Subscriber uav_waypoint_sub; // 【订阅】无人机航点订阅
 
-    // 发布节点
-    ros::Publisher uav_control_pub;           // 【发布】控制指令发布
+    // 发布句柄
     ros::Publisher uav_state_pub;             // 【发布】无人机状态发布
     ros::Publisher px4_setpoint_local_pub;    // 【发布】无人机指令发布 NED
     ros::Publisher px4_setpoint_global_pub;   // 【发布】无人机指令发布 经纬度+海拔
     ros::Publisher px4_setpoint_attitude_pub; // 【发布】无人机指令发布 姿态+推力
     ros::Publisher goal_pub;                  // 【发布】发布一个目标点 来自外部控制指令
-    // 服务节点
+    
+    // 服务句柄
     ros::ServiceClient px4_arming_client;    // 【服务】px4解锁
     ros::ServiceClient px4_set_mode_client;  // 【服务】px4模式设置
     ros::ServiceClient px4_reboot_client;    // 【服务】px4重启

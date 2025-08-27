@@ -1,7 +1,18 @@
-//
+// common
 #include <iostream>
 #include <bitset>
 #include <signal.h>
+#include <math.h>
+#include <map>
+#include <signal.h>
+
+// 自定义头文件库
+#include "printf_format.h"
+#include "geometry_utils.h"
+#include "math_utils.h"
+
+using namespace std;
+using namespace sunray_logger;
 
 // Eigen
 #include <Eigen/Eigen>
@@ -33,8 +44,8 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/UInt32.h>
 #include <std_msgs/Empty.h>
-#include "std_msgs/Int32.h"
-#include "std_msgs/Bool.h"
+#include <std_msgs/Int32.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/String.h>
 
@@ -71,6 +82,6 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_datatypes.h>
-#include "tf2_ros/transform_broadcaster.h"  //发布动态坐标关系
+#include <tf2_ros/transform_broadcaster.h>  //发布动态坐标关系
 #include <tf2_ros/transform_listener.h>
 #include <gazebo_msgs/ModelState.h>

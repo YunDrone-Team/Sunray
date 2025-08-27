@@ -2,9 +2,6 @@
 #define EXTERNALPOSITION_H
 
 #include "ros_msg_utils.h"
-#include "printf_format.h"
-
-using namespace sunray_logger;
 
 // 滑动平均滤波器
 class MovingAverageFilter

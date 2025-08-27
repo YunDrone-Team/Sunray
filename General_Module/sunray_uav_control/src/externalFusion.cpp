@@ -8,22 +8,9 @@
 
 添加自定义外部定位数据：
     1.参考相关程序在 【include/ExternalPosition.h】 中实现自己的解析类
-    2.在source_map中添加对应的定位名称
 */
 
 #include "externalFusion.h"
-
-ExternalFusion::ExternalFusion()
-{
-    source_map[sunray_msgs::ExternalOdom::ODOM] = "ODOM";
-    source_map[sunray_msgs::ExternalOdom::POSE] = "POSE";
-    source_map[sunray_msgs::ExternalOdom::GAZEBO] = "GAZEBO";
-    source_map[sunray_msgs::ExternalOdom::MOCAP] = "MOCAP";
-    source_map[sunray_msgs::ExternalOdom::VIOBOT] = "VIOBOT";
-    source_map[sunray_msgs::ExternalOdom::GPS] = "GPS";
-    source_map[sunray_msgs::ExternalOdom::RTK] = "RTK";
-    source_map[sunray_msgs::ExternalOdom::VINS] = "VINS";
-}
 
 void ExternalFusion::init(ros::NodeHandle &nh)
 {
@@ -35,12 +22,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     uav_name = "/" + uav_name + std::to_string(uav_id);
     nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
     nh.param<bool>("enable_range_sensor", enable_range_sensor, false);                  // 【参数】是否使用距离传感器数据
-
-    // GPS或RTK定位时，不需要发布vision_pose
-    if (external_source == sunray_msgs::ExternalOdom::GPS || external_source == sunray_msgs::ExternalOdom::RTK)
-    {
-        enable_vision_pose = false;
-    }
+    nh.param<bool>("enable_vision_pose", enable_vision_pose, true);                     // 【参数】是否发布vision_pose至PX4，注：GPS或RTK定位时，不需要发布vision_pose至PX4（此时PX4使用自身的GPS作为定位来源） 
 
     // 初始化外部定位数据解析类(输入：外部定位话题名称、外部定位数据来源类型)
     ext_pos.init(nh, external_source, source_topic, enable_range_sensor);
@@ -142,12 +124,12 @@ void ExternalFusion::timer_pub_vision_pose_cb(const ros::TimerEvent &event)
     // 外部定位失效时，停止发布vision_pose（因为发了也是错的，还不如不发让飞控端了解到已经丢失数据了）
     if (!ext_pos.external_odom.odom_valid)
     {
-        // TODO: 加一个打印
         return;
     }
 
     // 将外部定位数据赋值到vision_pose，并发布至PX4（PX4接收并处理该消息需要修改EKF2参数，从而使能EKF2模块融合VISION数据）
     // 发布的ROS话题为~/mavros/vision_pose/pose，对应的MAVLINK消息为VISION_POSITION_ESTIMATE(#102)
+    geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
     vision_pose.header.stamp = ros::Time::now();
     vision_pose.pose.position.x = ext_pos.external_odom.position[0];
     vision_pose.pose.position.y = ext_pos.external_odom.position[1];
@@ -168,6 +150,7 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
         px4_state.connected = false;
     }
 
+    // 更新无人机时间戳
     px4_state.header.stamp = ros::Time::now();
     // external_odom来自external_position类
     px4_state.external_odom = ext_pos.external_odom;
@@ -199,7 +182,6 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
         // 检查超时
         if (!ext_pos.external_odom.odom_valid)
         {
-            // Logger::warning("Warning: The external position is timeout!", ext_pos->position_state.timeout_count);
             err_msg.insert(2);
         }
         Eigen::Vector3d err_external_px4;
@@ -214,7 +196,6 @@ void ExternalFusion::timer_pub_px4_state_cb(const ros::TimerEvent &event)
             abs(err_external_px4[2]) > 0.1)
         // abs(err_state.yaw) > 10) // deg
         {
-            // Logger::warning("Warning: The error between external state and px4 state is too large!");
             err_msg.insert(1);
         }
     }

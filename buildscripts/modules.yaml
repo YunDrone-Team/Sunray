@@ -5,13 +5,13 @@
 modules:
   # 基础通用模块
   sunray_common:
-    description: "自定义消息模块"
+    description: "通用库模块，包括通用头文件、自定义ROS消息"
     source_path: "General_Module/sunray_common"
     build_path: "build/sunray_common"
     dependencies: []
     
   sunray_tutorial:
-    description: "示例代码模块"
+    description: "无人机控制接口示例代码模块，包括起飞降落、航点追踪、方形轨迹、圆形轨迹、六边形轨迹等示例代码"
     source_path: "General_Module/sunray_tutorial"
     build_path: "build/sunray_tutorial"
     dependencies: ["sunray_common"]
@@ -24,20 +24,20 @@ modules:
 
   # 通信模块
   sunray_communication_bridge:
-    description: "通信桥接模块"
+    description: "通信桥接模块，包括机载电脑与Sunray地面站通信、无人机/车间通信"
     source_path: "Comunication_Module/sunray_communication_bridge"
     build_path: "build/sunray_communication_bridge"
     dependencies: ["sunray_common"]
 
   # UAV 控制模块
   sunray_uav_control:
-    description: "无人机控制模块，包含mavros通信，外部定位，无人机控制节点"
+    description: "无人机控制模块，包含外部定位、无人机控制等"
     source_path: "General_Module/sunray_uav_control"
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
     
   vrpn_client_ros:
-    description: "VRPN客户端"
+    description: "VRPN客户端，获取动捕数据"
     source_path: "External_Module/vrpn_client_ros"
     build_path: "build/vrpn_client_ros"
     dependencies: []
@@ -50,7 +50,7 @@ modules:
       
   #云台控制模块
   sunray_gimbal:
-    description: "云台控制系统"
+    description: "云台控制模块"
     source_path: "General_Module/sunray_gimbal"
     build_path: "build/sunray_gimbal"
     dependencies: ["sunray_common", "sunray_tutorial"]
@@ -63,14 +63,14 @@ modules:
     dependencies: ["sunray_common"]
     
   turn_on_wheeltec_robot:
-    description: "轮趣机器人启动"
+    description: "轮趣无人车驱动包"
     source_path: "External_Module/turn_on_wheeltec_robot"
     build_path: "build/turn_on_wheeltec_robot"
     dependencies: []
 
   # 仿真模块
   sunray_simulator:
-    description: "主仿真框架，包含仿真环境，仿真工具，仿真插件"
+    description: "Gazebo仿真模块，包含仿真环境、仿真工具、仿真插件、仿真启动文件等"
     source_path: "Simulation/sunray_simulator"
     build_path: "build/sunray_simulator"
     dependencies: ["sunray_common"]
@@ -82,21 +82,21 @@ modules:
     dependencies: ["sunray_common"]
     
   gazebo_plugin:
-    description: "Gazebo插件"
+    description: "Gazebo仿真插件"
     source_path: "Simulation/gazebo_plugin"
     build_path: "build/gazebo_plugin"
     dependencies: []
 
   # 规划器模块
   ego_planner:
-    description: "EGO路径规划器"
+    description: "EGO-planner路径规划算法"
     source_path: "External_Module/ego-planner-swarm"
     build_path: "build/ego-planner"
     dependencies: ["sunray_planner_utils", "simulator_utils"]
     conflicts_with: ["fuel_planner"]
     
   fuel_planner:
-    description: "FUEL路径规划器"
+    description: "FUEL路径规划算法"
     source_path: "External_Module/FUEL"
     build_path: "build/FUEL"
     dependencies: ["sunray_planner_utils"]
@@ -104,7 +104,7 @@ modules:
 
   # 编队模块
   sunray_formation:
-    description: "多机编队控制"
+    description: "多机编队控制模块"
     source_path: "sunray_formation"
     build_path: "build/sunray_formation"
     dependencies: ["sunray_common"]
