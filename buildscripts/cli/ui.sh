@@ -570,7 +570,7 @@ clean_buildscripts_dirs() {
     echo "${CYAN}=== Buildscripts Cleanup Tool ===${NC}"
     echo
     
-    local bs_dirs=("buildscripts/tui/build" "buildscripts/bin" "buildscripts/tui/.cache" "buildscripts/tui/third_party")
+    local bs_dirs=("buildscripts/tui/build" "buildscripts/bin" "buildscripts/tui/.cache")
     local total_cleaned=0
     
     for dir in "${bs_dirs[@]}"; do
