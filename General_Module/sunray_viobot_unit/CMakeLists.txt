@@ -153,6 +153,7 @@ add_executable(${PROJECT_NAME}_node
   src/mavlink_control.cpp
   src/serial_port.cpp
   src/sunray_viobot_unit_node.cpp
+  src/VioBot.cpp
 )
 
 ## Rename C++ executable without prefix

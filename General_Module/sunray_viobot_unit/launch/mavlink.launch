@@ -2,5 +2,6 @@
     <node name="mav_link" pkg="sunray_viobot_unit" type="sunray_viobot_unit_node" output="screen">
         <param name='uart_name' value="/dev/ttyS0"/>
         <param name='baudrate' value="115200"/>
+        <param name='viobot_tilted' value="true"/>
     </node>
 </launch>
