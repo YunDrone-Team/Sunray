@@ -112,64 +112,68 @@ private:
     };
     Waypoint_Params wp_params;
 
-    // 添加每个基础移动模式对应的 typemask的映射
-    std::map<int, uint16_t> moveModeMap =
-        {
-            {sunray_msgs::UAVControlCMD::XyzPos, TypeMask::XYZ_POS},
-            {sunray_msgs::UAVControlCMD::XyzVel, TypeMask::XYZ_VEL},
-            {sunray_msgs::UAVControlCMD::XyVelZPos, TypeMask::XY_VEL_Z_POS},
-            {sunray_msgs::UAVControlCMD::XyzPosYaw, TypeMask::XYZ_POS_YAW},
-            {sunray_msgs::UAVControlCMD::XyzPosYawrate, TypeMask::XYZ_POS_YAWRATE},
-            {sunray_msgs::UAVControlCMD::XyzVelYaw, TypeMask::XYZ_VEL_YAW},
-            {sunray_msgs::UAVControlCMD::XyzVelYawrate, TypeMask::XYZ_VEL_YAWRATE},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYaw, TypeMask::XY_VEL_Z_POS_YAW},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYawrate, TypeMask::XY_VEL_Z_POS_YAWRATE},
-            {sunray_msgs::UAVControlCMD::XyzPosVelYaw, TypeMask::XYZ_POS_VEL_YAW},
-            {sunray_msgs::UAVControlCMD::XyzPosVelYawrate, TypeMask::XYZ_POS_VEL_YAWRATE},
-            {sunray_msgs::UAVControlCMD::PosVelAccYaw, TypeMask::POS_VEL_ACC_YAW},
-            {sunray_msgs::UAVControlCMD::PosVelAccYawrate, TypeMask::POS_VEL_ACC_YAWRATE},
-            {sunray_msgs::UAVControlCMD::XyzPosYawBody, TypeMask::XYZ_POS_YAW},
-            {sunray_msgs::UAVControlCMD::XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW}};
-
-    // 添加string的映射
-    std::map<int, std::string> moveModeMapStr =
-        {
-            {sunray_msgs::UAVControlCMD::XyzPos, "XyzPos"},
-            {sunray_msgs::UAVControlCMD::XyzVel, "XyzVel"},
-            {sunray_msgs::UAVControlCMD::XyVelZPos, "XyVelZPos"},
-            {sunray_msgs::UAVControlCMD::XyzPosYaw, "XyzPosYaw"},
-            {sunray_msgs::UAVControlCMD::XyzPosYawrate, "XyzPosYawrate"},
-            {sunray_msgs::UAVControlCMD::XyzVelYaw, "XyzVelYaw"},
-            {sunray_msgs::UAVControlCMD::XyzVelYawrate, "XyzVelYawrate"},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYaw, "XyVelZPosYaw"},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYawrate, "XyVelZPosYawrate"},
-            {sunray_msgs::UAVControlCMD::XyzPosVelYaw, "XyzPosVelYaw"},
-            {sunray_msgs::UAVControlCMD::XyzPosVelYawrate, "XyzPosVelYawrate"},
-            {sunray_msgs::UAVControlCMD::PosVelAccYaw, "PosVelAccYaw"},
-            {sunray_msgs::UAVControlCMD::PosVelAccYawrate, "PosVelAccYawrate"},
-            {sunray_msgs::UAVControlCMD::XyzPosYawBody, "XyzPosYawBody"},
-            {sunray_msgs::UAVControlCMD::XyzVelYawBody, "XyzVelYawBody"},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, "XyVelZPosYawBody"},
-            {sunray_msgs::UAVControlCMD::GlobalPos, "GlobalPos"},
-            {sunray_msgs::UAVControlCMD::CTRL_XyzPos, "CTRL_XyzPos"},
-            {sunray_msgs::UAVControlCMD::CTRL_Traj, "CTRL_Traj"},
-            {sunray_msgs::UAVControlCMD::Takeoff, "Takeoff"},
-            {sunray_msgs::UAVControlCMD::Land, "Land"},
-            {sunray_msgs::UAVControlCMD::Hover, "Hover"},
-            {sunray_msgs::UAVControlCMD::Waypoint, "Waypoint"},
-            {sunray_msgs::UAVControlCMD::Return, "Return"}};
-
-    // 添加string的映射
+    // 添加无人机控制模式的string的映射（用于打印）
     std::map<int, std::string> modeMap =
-        {
-            {int(Control_Mode::INIT), "INIT"},
-            {int(Control_Mode::RC_CONTROL), "RC_CONTROL"},
-            {int(Control_Mode::CMD_CONTROL), "CMD_CONTROL"},
-            {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
-            {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}};
+    {
+        {int(Control_Mode::INIT), "INIT"},
+        {int(Control_Mode::RC_CONTROL), "RC_CONTROL"},
+        {int(Control_Mode::CMD_CONTROL), "CMD_CONTROL"},
+        {int(Control_Mode::LAND_CONTROL), "LAND_CONTROL"},
+        {int(Control_Mode::WITHOUT_CONTROL), "WITHOUT_CONTROL"}
+    };
 
-    // 绑定高级模式对应的实现函数
+    // 添加每个移动模式对应的string的映射（用于打印）
+    std::map<int, std::string> moveModeMapStr =
+    {
+        {sunray_msgs::UAVControlCMD::XyzPos, "XyzPos"},
+        {sunray_msgs::UAVControlCMD::XyzVel, "XyzVel"},
+        {sunray_msgs::UAVControlCMD::XyVelZPos, "XyVelZPos"},
+        {sunray_msgs::UAVControlCMD::XyzPosYaw, "XyzPosYaw"},
+        {sunray_msgs::UAVControlCMD::XyzPosYawrate, "XyzPosYawrate"},
+        {sunray_msgs::UAVControlCMD::XyzVelYaw, "XyzVelYaw"},
+        {sunray_msgs::UAVControlCMD::XyzVelYawrate, "XyzVelYawrate"},
+        {sunray_msgs::UAVControlCMD::XyVelZPosYaw, "XyVelZPosYaw"},
+        {sunray_msgs::UAVControlCMD::XyVelZPosYawrate, "XyVelZPosYawrate"},
+        {sunray_msgs::UAVControlCMD::XyzPosVelYaw, "XyzPosVelYaw"},
+        {sunray_msgs::UAVControlCMD::XyzPosVelYawrate, "XyzPosVelYawrate"},
+        {sunray_msgs::UAVControlCMD::PosVelAccYaw, "PosVelAccYaw"},
+        {sunray_msgs::UAVControlCMD::PosVelAccYawrate, "PosVelAccYawrate"},
+        {sunray_msgs::UAVControlCMD::XyzPosYawBody, "XyzPosYawBody"},
+        {sunray_msgs::UAVControlCMD::XyzVelYawBody, "XyzVelYawBody"},
+        {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, "XyVelZPosYawBody"},
+        {sunray_msgs::UAVControlCMD::GlobalPos, "GlobalPos"},
+        {sunray_msgs::UAVControlCMD::Point, "Point"},
+        {sunray_msgs::UAVControlCMD::CTRL_XyzPos, "CTRL_XyzPos"},
+        {sunray_msgs::UAVControlCMD::CTRL_Traj, "CTRL_Traj"},
+        {sunray_msgs::UAVControlCMD::Takeoff, "Takeoff"},
+        {sunray_msgs::UAVControlCMD::Land, "Land"},
+        {sunray_msgs::UAVControlCMD::Hover, "Hover"},
+        {sunray_msgs::UAVControlCMD::Waypoint, "Waypoint"},
+        {sunray_msgs::UAVControlCMD::Return, "Return"}
+    };
+    
+    // 添加每个基础移动模式对应的typemask的映射（用于发布mavros控制话题）
+    std::map<int, uint16_t> moveModeMap =
+    {
+        {sunray_msgs::UAVControlCMD::XyzPos, TypeMask::XYZ_POS},
+        {sunray_msgs::UAVControlCMD::XyzVel, TypeMask::XYZ_VEL},
+        {sunray_msgs::UAVControlCMD::XyVelZPos, TypeMask::XY_VEL_Z_POS},
+        {sunray_msgs::UAVControlCMD::XyzPosYaw, TypeMask::XYZ_POS_YAW},
+        {sunray_msgs::UAVControlCMD::XyzPosYawrate, TypeMask::XYZ_POS_YAWRATE},
+        {sunray_msgs::UAVControlCMD::XyzVelYaw, TypeMask::XYZ_VEL_YAW},
+        {sunray_msgs::UAVControlCMD::XyzVelYawrate, TypeMask::XYZ_VEL_YAWRATE},
+        {sunray_msgs::UAVControlCMD::XyVelZPosYaw, TypeMask::XY_VEL_Z_POS_YAW},
+        {sunray_msgs::UAVControlCMD::XyVelZPosYawrate, TypeMask::XY_VEL_Z_POS_YAWRATE},
+        {sunray_msgs::UAVControlCMD::XyzPosVelYaw, TypeMask::XYZ_POS_VEL_YAW},
+        {sunray_msgs::UAVControlCMD::XyzPosVelYawrate, TypeMask::XYZ_POS_VEL_YAWRATE},
+        {sunray_msgs::UAVControlCMD::PosVelAccYaw, TypeMask::POS_VEL_ACC_YAW},
+        {sunray_msgs::UAVControlCMD::PosVelAccYawrate, TypeMask::POS_VEL_ACC_YAWRATE},
+        {sunray_msgs::UAVControlCMD::XyzPosYawBody, TypeMask::XYZ_POS_YAW},
+        {sunray_msgs::UAVControlCMD::XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
+        {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW}
+    };
+
+    // 绑定特殊指令对应的实现函数（用于执行不同的特殊指令）
     std::map<int, std::function<void()>> advancedModeFuncMap;
 
     // 订阅句柄
@@ -201,7 +205,7 @@ private:
     void set_px4_flight_mode(std::string mode);
     void send_attitude_setpoint(Eigen::Vector4d &u_att);                                      // 设置模式
     void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);        // 【发布】发送控制指令
-    void setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint); // 【发布】发送控制指令
+    void pub_setpoint_raw_global(mavros_msgs::GlobalPositionTarget setpoint); // 【发布】发送控制指令
     void handle_cmd_control();                                                                // CMD_CONTROL模式下获取期望值
     void handle_rc_control();                                                                 // RC_CONTROL模式下获取期望值
     void handle_land_control();                                                               // LAND_CONTROL模式下获取期望值
@@ -227,6 +231,7 @@ private:
     void uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
     void px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg);
     void waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg);
+    void pub_setpoint_raw_local(mavros_msgs::PositionTarget setpoint);
 
 public:
     UAVControl() {};

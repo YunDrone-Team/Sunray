@@ -41,7 +41,7 @@ void UAVControl::init(ros::NodeHandle &nh)
 
     printf_params();
 
-    // 【订阅】PX4无人机综合状态 - 飞控 -> mavros ->  external_fusion_node -> 本节点
+    // 【订阅】PX4无人机综合状态 - 飞控 -> mavros -> external_fusion_node -> 本节点
     px4_state_sub = nh.subscribe<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 10, &UAVControl::px4_state_callback, this);
     // 【订阅】无人机控制指令 - 外部节点 -> 本节点
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 10, &UAVControl::control_cmd_callback, this);
@@ -49,7 +49,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 10, &UAVControl::uav_setup_callback, this);
     // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_control_node -> 本节点
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(uav_name + "/sunray/rc_state", 10, &UAVControl::rc_state_callback, this);
-    // 【订阅】无人机航点数据 -- 外部节点 -> 本节点
+    // 【订阅】无人机航点数据（配合sunray_msgs::UAVControlCMD::Waypoint子模式共同使用） -- 外部节点 -> 本节点
     uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_name + "/sunray/uav_waypoint", 10, &UAVControl::waypoint_callback, this);
 
     // 【发布】无人机状态（接收到vision_pose节点的无人机状态，加上无人机控制模式，重新发布出去）- 本节点 -> 其他控制&任务节点/地面站
@@ -86,11 +86,16 @@ void UAVControl::init(ros::NodeHandle &nh)
     // 【控制器】PID控制器初始化
     pos_controller_pid.init(nh);
 
-    // 绑定高级模式对应的实现函数
+    // 绑定特殊指令对应的实现函数
+    // 起飞：将期望目标位置local_setpoint设置为home_pos上方（起飞高度参数：takeoff_height）,未发布local_setpoint
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Takeoff] = std::bind(&UAVControl::set_takeoff, this);
+    // 降落：将system_params.control_mode修改为LAND_CONTROL
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Land] = std::bind(&UAVControl::set_land, this);
+    // 悬停：将期望目标位置local_setpoint设置为当前点,未发布local_setpoint
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Hover] = std::bind(&UAVControl::set_desired_from_hover, this);
+    // 航点：TODO，未发布local_setpoint
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Waypoint] = std::bind(&UAVControl::waypoint_mission, this);
+    // 返航：将期望目标位置local_setpoint设置为home点上方（高度为当前高度），返航后降落，未发布local_setpoint
     advancedModeFuncMap[sunray_msgs::UAVControlCMD::Return] = std::bind(&UAVControl::return_to_home, this);
 }
 
@@ -126,7 +131,7 @@ void UAVControl::mainLoop()
         handle_cmd_control();
         break;
 
-    // 降落控制模式（LAND_CONTROL）：当前位置原地降落，降落后会自动上锁
+    // 原地降落控制模式（LAND_CONTROL）：当前位置原地降落，降落后会自动上锁
     case Control_Mode::LAND_CONTROL:
         handle_land_control();
         break;
@@ -238,8 +243,8 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     // 状态机模式通道判断 1 - INIT 2 - RC_CONTROL 3 - CMD_CONTROL
     if (rc_state.mode_state == sunray_msgs::RcState::INIT)
     {
-        system_params.control_mode = Control_Mode::INIT;
         Logger::warning("Switch to INIT mode with rc");
+        system_params.control_mode = Control_Mode::INIT;
     }
     else if (rc_state.mode_state == sunray_msgs::RcState::RC_CONTROL)
     {
@@ -387,41 +392,46 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
     // 设置指令：解锁无人机
     case sunray_msgs::UAVSetup::ARM:
         setArm(true);
+        Logger::warning("Arm UAV with UAVsetup cmd.");
         break;
     // 设置指令：无人机上锁
     case sunray_msgs::UAVSetup::DISARM:
         setArm(false);
+        Logger::warning("Disrm UAV with UAVsetup cmd.");
         break;
     // 设置指令：设置PX4模式，需要配合px4_mode进行设置
     case sunray_msgs::UAVSetup::SET_PX4_MODE:
         set_px4_flight_mode(msg->px4_mode);
+        Logger::warning("Switch PX4 mode with UAVsetup cmd : ", msg->px4_mode);
         break;
     // 设置指令：重启PX4飞控
     case sunray_msgs::UAVSetup::REBOOT_PX4:
         reboot_px4();
+        Logger::warning("Reboot PX4 with UAVsetup cmd.");
         break;
     // 设置指令： 无人机紧急上锁
     case sunray_msgs::UAVSetup::EMERGENCY_KILL:
         emergencyStop();
         system_params.control_mode = Control_Mode::INIT;
+        Logger::warning("Kill UAV with UAVsetup cmd.");
         break;
     // 设置指令：设置无人机控制模式，需要配合control_mode进行设置
     case sunray_msgs::UAVSetup::SET_CONTROL_MODE:
         if (msg->control_mode == "INIT")
         {
             system_params.control_mode = Control_Mode::INIT;
-            Logger::warning("Switch to INIT mode with cmd");
+            Logger::warning("Switch to INIT mode with UAVsetup cmd.");
         }
         else if (msg->control_mode == "RC_CONTROL")
         {
             if (system_params.safety_state == 0)
             {
-                Logger::warning("Switch to RC_CONTROL mode with cmd");
+                Logger::warning("Switch to RC_CONTROL mode with UAVsetup cmd.");
                 set_offboard_control(Control_Mode::RC_CONTROL);
             }
             else if (system_params.safety_state != 0)
             {
-                Logger::error("Safety state error, cannot switch to RC_CONTROL mode!");
+                Logger::error("Safety state error, cannot switch to RC_CONTROL mode with UAVsetup cmd!");
             }
         }
         else if (msg->control_mode == "CMD_CONTROL")
@@ -429,93 +439,31 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
             if (system_params.safety_state == 0)
             {
                 set_offboard_control(Control_Mode::CMD_CONTROL);
-                Logger::warning("Switch to CMD_CONTROL mode with cmd");
+                Logger::warning("Switch to CMD_CONTROL mode with UAVsetup cmd.");
             }
             else if (system_params.safety_state != 0)
             {
-                Logger::error("Safety state error, cannot switch to CMD_CONTROL mode");
+                Logger::error("Safety state error, cannot switch to CMD_CONTROL mode with UAVsetup cmd!");
             }
         }
         else if (msg->control_mode == "LAND_CONTROL")
         {
             set_land();
+            Logger::warning("Switch to LAND_CONTROL mode with UAVsetup cmd.");
         }
         else if (msg->control_mode == "WITHOUT_CONTROL")
         {
             system_params.control_mode = Control_Mode::WITHOUT_CONTROL;
+            Logger::warning("Switch to WITHOUT_CONTROL mode with UAVsetup cmd.");
         }
         else
         {
-            Logger::error("Unknown control state!");
+            Logger::error("Unknown control_mode (UAVsetup)!");
         }
         break;
     default:
         break;
     }
-}
-
-void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg)
-{
-    // 如果当前模式处于航点模式则不允许赋值
-    if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Waypoint && system_params.control_mode == Control_Mode::CMD_CONTROL)
-    {
-        Logger::error("Waypoint mode is not allowed to be set when the current mode is waypoint mode!");
-        return;
-    }
-    wp_params.wp_takeoff = msg->wp_takeoff;
-    wp_params.wp_move_vel = msg->wp_move_vel;
-    wp_params.wp_vel_p = msg->wp_vel_p;
-    wp_params.z_height = msg->z_height;
-    wp_params.wp_type = msg->wp_type;
-    wp_params.wp_end_type = msg->wp_end_type;
-    wp_params.wp_yaw_type = msg->wp_yaw_type;
-    wp_params.wp_num = msg->wp_num;
-    wp_params.wp_points[0][0] = msg->wp_point_1[0];
-    wp_params.wp_points[0][1] = msg->wp_point_1[1];
-    wp_params.wp_points[0][2] = msg->wp_point_1[2];
-    wp_params.wp_points[0][3] = msg->wp_point_1[3];
-    wp_params.wp_points[1][0] = msg->wp_point_2[0];
-    wp_params.wp_points[1][1] = msg->wp_point_2[1];
-    wp_params.wp_points[1][2] = msg->wp_point_2[2];
-    wp_params.wp_points[1][3] = msg->wp_point_2[3];
-    wp_params.wp_points[2][0] = msg->wp_point_3[0];
-    wp_params.wp_points[2][1] = msg->wp_point_3[1];
-    wp_params.wp_points[2][2] = msg->wp_point_3[2];
-    wp_params.wp_points[2][3] = msg->wp_point_3[3];
-    wp_params.wp_points[3][0] = msg->wp_point_4[0];
-    wp_params.wp_points[3][1] = msg->wp_point_4[1];
-    wp_params.wp_points[3][2] = msg->wp_point_4[2];
-    wp_params.wp_points[3][3] = msg->wp_point_4[3];
-    wp_params.wp_points[4][0] = msg->wp_point_5[0];
-    wp_params.wp_points[4][1] = msg->wp_point_5[1];
-    wp_params.wp_points[4][2] = msg->wp_point_5[2];
-    wp_params.wp_points[4][3] = msg->wp_point_5[3];
-    wp_params.wp_points[5][0] = msg->wp_point_6[0];
-    wp_params.wp_points[5][1] = msg->wp_point_6[1];
-    wp_params.wp_points[5][2] = msg->wp_point_6[2];
-    wp_params.wp_points[5][3] = msg->wp_point_6[3];
-    wp_params.wp_points[6][0] = msg->wp_point_7[0];
-    wp_params.wp_points[6][1] = msg->wp_point_7[1];
-    wp_params.wp_points[6][2] = msg->wp_point_7[2];
-    wp_params.wp_points[6][3] = msg->wp_point_7[3];
-    wp_params.wp_points[7][0] = msg->wp_point_8[0];
-    wp_params.wp_points[7][1] = msg->wp_point_8[1];
-    wp_params.wp_points[7][2] = msg->wp_point_8[2];
-    wp_params.wp_points[7][3] = msg->wp_point_8[3];
-    wp_params.wp_points[8][0] = msg->wp_point_9[0];
-    wp_params.wp_points[8][1] = msg->wp_point_9[1];
-    wp_params.wp_points[8][2] = msg->wp_point_9[2];
-    wp_params.wp_points[8][3] = msg->wp_point_9[3];
-    wp_params.wp_points[9][0] = msg->wp_point_10[0];
-    wp_params.wp_points[9][1] = msg->wp_point_10[1];
-    wp_params.wp_points[9][2] = msg->wp_point_10[2];
-    wp_params.wp_points[9][3] = msg->wp_point_10[3];
-    // 环绕点的值在最后一位获取
-    wp_params.wp_points[10][0] = msg->wp_circle_point[0];
-    wp_params.wp_points[10][1] = msg->wp_circle_point[1];
-
-    wp_params.wp_init = true;
-    Logger::warning("Waypoint setup success!");
 }
 
 // 设置悬停位置
@@ -550,21 +498,25 @@ void UAVControl::send_attitude_setpoint(Eigen::Vector4d &u_att)
     px4_setpoint_attitude_pub.publish(att_setpoint);
 }
 
+// 发布PX4位置环控制指令（/mavros/setpoint_raw/local，包括期望位置、速度、加速度等接口，坐标系:ENU系） - 本节点 -> mavros -> 飞控
+void UAVControl::pub_setpoint_raw_local(mavros_msgs::PositionTarget setpoint)
+{
+    setpoint.header.stamp = ros::Time::now();
+    px4_setpoint_local_pub.publish(setpoint);
+}
+
 // 发布惯性系下的目标点
 void UAVControl::setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
-    setpoint.header.frame_id = "map";
     setpoint.type_mask = type_mask;
     px4_setpoint_local_pub.publish(setpoint);
 }
 
 // 发送经纬度以及高度期望值至飞控(输入,期望lat/lon/alt,期望yaw)
-void UAVControl::setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPositionTarget setpoint)
+void UAVControl::pub_setpoint_raw_global(mavros_msgs::GlobalPositionTarget setpoint)
 {
     setpoint.header.stamp = ros::Time::now();
-    setpoint.header.frame_id = "map";
-    setpoint.type_mask = type_mask;
     px4_setpoint_global_pub.publish(setpoint);
 }
 
@@ -572,6 +524,7 @@ void UAVControl::setpoint_global_pub(uint16_t type_mask, mavros_msgs::GlobalPosi
 void UAVControl::set_default_local_setpoint()
 {
     local_setpoint.header.stamp = ros::Time::now();
+    // 这里虽然赋值是FRAME_LOCAL_NED，但是Mavros会当成ENU进行处理
     local_setpoint.coordinate_frame = mavros_msgs::PositionTarget::FRAME_LOCAL_NED;
     local_setpoint.type_mask = TypeMask::NONE_TYPE;
     local_setpoint.position.x = 0;
@@ -627,14 +580,19 @@ void UAVControl::set_offboard_control(int mode)
         Logger::error("UAV not armed, cannot enter OFFBOARD mode!");
         return;
     }
-    // 进入OFFBOARD模式前，先设置默认目标点
-    set_hover_pos();
-    control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+
+    // 通过检查，设置无人机默认指令为Hover
     control_cmd.header.stamp = ros::Time::now();
+    control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+    // 设置当前点为默认悬停目标点
+    set_hover_pos();
+
+    // 发送Mavros指令，切换PX4至OFFBOARD模式
     if (px4_state.mode != "OFFBOARD")
     {
         set_offboard_mode();
     }
+
     system_params.control_mode = mode;
 }
 
@@ -648,17 +606,21 @@ void UAVControl::set_offboard_mode()
         return;
     }
 
-    // 设置默认目标点+设置PX4为OFFBOARD模式（PX4进入OFFBOARD模式，需要发送指令才可进入，此处发送0指令）
+    // 设置默认目标点+设置PX4为OFFBOARD模式
+    // 注意：PX4进入OFFBOARD模式，需要发送期望指令才可进入，此处发送0指令
     set_default_local_setpoint();
     local_setpoint.velocity.x = 0.0;
     local_setpoint.velocity.y = 0.0;
     local_setpoint.velocity.z = 0.0;
     setpoint_local_pub(TypeMask::XYZ_VEL, local_setpoint);
+    // 设置PX4飞行模式
     set_px4_flight_mode("OFFBOARD");
 
-    control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
-    set_hover_pos();
+    // 设置无人机默认指令为Hover
     control_cmd.header.stamp = ros::Time::now();
+    control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+    // 设置当前点为默认悬停目标点
+    set_hover_pos();
 }
 
 // 安全检查 + 发布状态
@@ -752,7 +714,7 @@ void UAVControl::pos_controller()
     send_attitude_setpoint(u_att);
 }
 
-// 从指令中获取期望位置
+// CMD控制模式（CMD_CONTROL）处理函数
 void UAVControl::handle_cmd_control()
 {
     // 判断是否是新的指令
@@ -762,10 +724,10 @@ void UAVControl::handle_cmd_control()
     {
         if ((ros::Time::now() - last_control_cmd.header.stamp).toSec() > system_params.cmd_timeout)
         {
-            Logger::error("Command timeout, change to hover mode");
+            Logger::error("CMD_CONTROL: Command timeout, change to hover mode");
             // 超时会切换到悬停模式
-            control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             control_cmd.header.stamp = ros::Time::now();
+            control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             set_desired_from_hover();
             return;
         }
@@ -775,7 +737,7 @@ void UAVControl::handle_cmd_control()
     {
         if (new_cmd)
         {
-            Logger::error("UAV not armed, can't set desired from cmd");
+            Logger::error("CMD_CONTROL: UAV not armed, can't set desired from cmd");
             last_control_cmd = control_cmd;
         }
         // 切换回INIT
@@ -787,9 +749,8 @@ void UAVControl::handle_cmd_control()
     // 特殊指令单独判断，执行对应的特殊指令处理函数
     if (advancedModeFuncMap.find(control_cmd.cmd) != advancedModeFuncMap.end())
     {
-        // 调用对应的函数
-        // std::cout<<"advancedMode"<<std::endl;
-        // 目标点赋值
+        // Logger::warning("CMD_CONTROL: advancedModeFun ", moveModeMapStr[control_cmd.cmd]);
+        // 调用对应的函数对local_setpoint进行赋值
         advancedModeFuncMap[control_cmd.cmd]();
         // 发布PX4指令
         setpoint_local_pub(system_params.type_mask, local_setpoint);
@@ -797,15 +758,13 @@ void UAVControl::handle_cmd_control()
     else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::GlobalPos)
     {
         // 经纬度海拔控制模式
-        // std::cout<<"globalPos"<<std::endl;
         set_default_global_setpoint();
         global_setpoint.latitude = control_cmd.latitude;
         global_setpoint.longitude = control_cmd.longitude;
         global_setpoint.altitude = control_cmd.altitude;
         global_setpoint.yaw = control_cmd.desired_yaw;
-        system_params.type_mask = TypeMask::GLOBAL_POSITION;
-
-        setpoint_global_pub(system_params.type_mask, global_setpoint);
+        global_setpoint.type_mask = TypeMask::GLOBAL_POSITION;
+        pub_setpoint_raw_global(global_setpoint);
     }
     else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::CTRL_XyzPos || control_cmd.cmd == sunray_msgs::UAVControlCMD::CTRL_Traj)
     {
@@ -1008,24 +967,7 @@ void UAVControl::handle_land_control()
     setpoint_local_pub(system_params.type_mask, local_setpoint);
 }
 
-// 获取悬停的期望值
-void UAVControl::set_desired_from_hover()
-{
-    // 判断是否是新的指令
-    bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
-    if ((new_cmd && last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover) || control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover)
-    {
-        control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
-        control_cmd.header.stamp = ros::Time::now();
-        set_default_local_setpoint();
-        set_hover_pos();
-    }
-    local_setpoint.position.x = flight_params.hover_pos[0];
-    local_setpoint.position.y = flight_params.hover_pos[1];
-    local_setpoint.position.z = flight_params.hover_pos[2];
-    local_setpoint.yaw = flight_params.hover_yaw;
-    system_params.type_mask = TypeMask::XYZ_POS_YAW;
-}
+
 
 // 高级模式-返航模式的实现函数
 void UAVControl::return_to_home()
@@ -1048,16 +990,17 @@ void UAVControl::return_to_home()
             local_setpoint.position.y = flight_params.home_pos[1];
             local_setpoint.position.z = px4_state.position[2];
             local_setpoint.yaw = flight_params.home_yaw;
+            local_setpoint.type_mask = TypeMask::XYZ_POS_YAW;
             system_params.type_mask = TypeMask::XYZ_POS_YAW;
         }
     }
+
     // 达到home点上方后，且速度降低后开始降落
     if ((px4_state.position[0] - flight_params.home_pos[0]) < 0.15 &&
         (px4_state.position[1] - flight_params.home_pos[1]) < 0.15 &&
         abs(px4_state.velocity[0]) < 0.1 &&
         abs(px4_state.velocity[1]) < 0.1 &&
         abs(px4_state.velocity[2]) < 0.1)
-
     {
         control_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
         control_cmd.header.stamp = ros::Time::now();
@@ -1121,6 +1064,7 @@ void UAVControl::waypoint_mission()
         set_desired_from_hover();
         return;
     }
+
     // 进入航点模式先重置航点索引
     if (last_control_cmd.cmd != control_cmd.cmd)
     {
@@ -1131,6 +1075,7 @@ void UAVControl::waypoint_mission()
         wp_params.wp_point_takeoff[0] = px4_state.position[0];
         wp_params.wp_point_takeoff[1] = px4_state.position[1];
     }
+
     // 如果过程包含起飞过程，则先解锁起飞
     if (wp_params.wp_takeoff && (wp_params.wp_state == 0 || wp_params.wp_state == 1))
     {
@@ -1317,7 +1262,7 @@ void UAVControl::waypoint_mission()
     }
 }
 
-// 设置起飞的期望值
+// 特殊指令实现函数（sunray_msgs::UAVControlCMD::Takeoff）：设置起飞的期望值
 void UAVControl::set_takeoff()
 {
     // 判断是否是新的指令
@@ -1332,9 +1277,7 @@ void UAVControl::set_takeoff()
             return;
         }
         // 如果已经起飞，则不执行
-        if ((px4_state.position[0] - flight_params.home_pos[0]) > 0.1 ||
-            (px4_state.position[1] - flight_params.home_pos[1]) > 0.1 ||
-            (px4_state.position[2] - flight_params.home_pos[2]) > 0.1)
+        if (uav_state.landed_state != sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
         {
             Logger::warning("UAV already takeoff!");
         }
@@ -1350,16 +1293,37 @@ void UAVControl::set_takeoff()
     }
 }
 
-// 进入降落模式
+// 特殊指令实现函数：进入降落模式
 void UAVControl::set_land()
 {
     // 当前模式不是降落模式，且要处于RC_CONTROL或CMD_CONTROL模式才会进入降落模式
     if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL))
     {
         system_params.control_mode = Control_Mode::LAND_CONTROL;
-        handle_land_control();
     }
 }
+
+// Hover移动模式实现函数：获取悬停的期望值
+void UAVControl::set_desired_from_hover()
+{
+    // 判断是否是新的指令
+    bool new_cmd = control_cmd.header.stamp != last_control_cmd.header.stamp;
+    if ((new_cmd && last_control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover) || control_cmd.cmd != sunray_msgs::UAVControlCMD::Hover)
+    {
+        control_cmd.header.stamp = ros::Time::now();
+        control_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+        set_default_local_setpoint();
+        // 将当前位置设置为flight_params.hover_pos
+        set_hover_pos();
+    }
+    local_setpoint.position.x = flight_params.hover_pos[0];
+    local_setpoint.position.y = flight_params.hover_pos[1];
+    local_setpoint.position.z = flight_params.hover_pos[2];
+    local_setpoint.yaw = flight_params.hover_yaw;
+    local_setpoint.type_mask = TypeMask::XYZ_POS_YAW;
+    system_params.type_mask = TypeMask::XYZ_POS_YAW;
+}
+
 
 // 发布goal话题
 void UAVControl::publish_goal()
@@ -1614,4 +1578,69 @@ void UAVControl::printf_params()
     Logger::print_color(int(LogColor::blue), "system_params.cmd_timeout: [", system_params.cmd_timeout, "]");
     Logger::print_color(int(LogColor::blue), "system_params.use_rc: [", system_params.use_rc, "]");
     Logger::print_color(int(LogColor::blue), "system_params.use_offset: [", system_params.use_offset, "]");
+}
+
+
+void UAVControl::waypoint_callback(const sunray_msgs::UAVWayPoint::ConstPtr &msg)
+{
+    // 如果当前模式处于航点模式则不允许赋值
+    if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Waypoint && system_params.control_mode == Control_Mode::CMD_CONTROL)
+    {
+        Logger::error("Waypoint mode is not allowed to be set when the current mode is waypoint mode!");
+        return;
+    }
+    wp_params.wp_takeoff = msg->wp_takeoff;
+    wp_params.wp_move_vel = msg->wp_move_vel;
+    wp_params.wp_vel_p = msg->wp_vel_p;
+    wp_params.z_height = msg->z_height;
+    wp_params.wp_type = msg->wp_type;
+    wp_params.wp_end_type = msg->wp_end_type;
+    wp_params.wp_yaw_type = msg->wp_yaw_type;
+    wp_params.wp_num = msg->wp_num;
+    wp_params.wp_points[0][0] = msg->wp_point_1[0];
+    wp_params.wp_points[0][1] = msg->wp_point_1[1];
+    wp_params.wp_points[0][2] = msg->wp_point_1[2];
+    wp_params.wp_points[0][3] = msg->wp_point_1[3];
+    wp_params.wp_points[1][0] = msg->wp_point_2[0];
+    wp_params.wp_points[1][1] = msg->wp_point_2[1];
+    wp_params.wp_points[1][2] = msg->wp_point_2[2];
+    wp_params.wp_points[1][3] = msg->wp_point_2[3];
+    wp_params.wp_points[2][0] = msg->wp_point_3[0];
+    wp_params.wp_points[2][1] = msg->wp_point_3[1];
+    wp_params.wp_points[2][2] = msg->wp_point_3[2];
+    wp_params.wp_points[2][3] = msg->wp_point_3[3];
+    wp_params.wp_points[3][0] = msg->wp_point_4[0];
+    wp_params.wp_points[3][1] = msg->wp_point_4[1];
+    wp_params.wp_points[3][2] = msg->wp_point_4[2];
+    wp_params.wp_points[3][3] = msg->wp_point_4[3];
+    wp_params.wp_points[4][0] = msg->wp_point_5[0];
+    wp_params.wp_points[4][1] = msg->wp_point_5[1];
+    wp_params.wp_points[4][2] = msg->wp_point_5[2];
+    wp_params.wp_points[4][3] = msg->wp_point_5[3];
+    wp_params.wp_points[5][0] = msg->wp_point_6[0];
+    wp_params.wp_points[5][1] = msg->wp_point_6[1];
+    wp_params.wp_points[5][2] = msg->wp_point_6[2];
+    wp_params.wp_points[5][3] = msg->wp_point_6[3];
+    wp_params.wp_points[6][0] = msg->wp_point_7[0];
+    wp_params.wp_points[6][1] = msg->wp_point_7[1];
+    wp_params.wp_points[6][2] = msg->wp_point_7[2];
+    wp_params.wp_points[6][3] = msg->wp_point_7[3];
+    wp_params.wp_points[7][0] = msg->wp_point_8[0];
+    wp_params.wp_points[7][1] = msg->wp_point_8[1];
+    wp_params.wp_points[7][2] = msg->wp_point_8[2];
+    wp_params.wp_points[7][3] = msg->wp_point_8[3];
+    wp_params.wp_points[8][0] = msg->wp_point_9[0];
+    wp_params.wp_points[8][1] = msg->wp_point_9[1];
+    wp_params.wp_points[8][2] = msg->wp_point_9[2];
+    wp_params.wp_points[8][3] = msg->wp_point_9[3];
+    wp_params.wp_points[9][0] = msg->wp_point_10[0];
+    wp_params.wp_points[9][1] = msg->wp_point_10[1];
+    wp_params.wp_points[9][2] = msg->wp_point_10[2];
+    wp_params.wp_points[9][3] = msg->wp_point_10[3];
+    // 环绕点的值在最后一位获取
+    wp_params.wp_points[10][0] = msg->wp_circle_point[0];
+    wp_params.wp_points[10][1] = msg->wp_circle_point[1];
+
+    wp_params.wp_init = true;
+    Logger::warning("Waypoint setup success!");
 }
