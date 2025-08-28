@@ -1,4 +1,5 @@
 // common
+#include <ros/ros.h>
 #include <iostream>
 #include <bitset>
 #include <signal.h>
@@ -29,7 +30,6 @@ using namespace sunray_logger;
 #include <sunray_msgs/UAVWayPoint.h>
 #include <sunray_msgs/UGVControlCMD.h>
 #include <sunray_msgs/UGVState.h>
-
 #include <sunray_msgs/PositionCommand.h>
 #include <sunray_msgs/OrcaCmd.h>
 #include <sunray_msgs/TargetMsg.h>

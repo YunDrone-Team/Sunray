@@ -74,9 +74,7 @@ private:
 class ExternalPosition
 {
 public:
-    ExternalPosition()
-    {
-    }
+    ExternalPosition(){};
     
     sunray_msgs::ExternalOdom external_odom;                // 声明一个自定义话题 - sunray_msgs::ExternalOdom
     sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
