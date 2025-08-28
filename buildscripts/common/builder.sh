@@ -97,18 +97,38 @@ build_catkin_module() {
     local source_path=$(get_module_config "$module" "source_path")
     local build_path=$(get_module_config "$module" "build_path")
     
-    local build_cmd="catkin_make -j$build_jobs --source $source_path --build $build_path"
-    echo "执行构建命令: $build_cmd"
+    # 分两步：1) catkin_make初始化 2) 直接调用make
+    echo "执行构建命令: catkin_make -j$build_jobs --source $source_path --build $build_path"
     echo "================================"
     
-    # 直接执行命令，显示所有输出
-    if eval "$build_cmd"; then
+    set +e  # 临时禁用错误退出
+    
+    # 第一步：让catkin_make做初始化（生成Makefile等）
+    catkin_make --source "$source_path" --build "$build_path" --cmake-args
+    local cmake_exit_code=$?
+    
+    if [[ $cmake_exit_code -ne 0 ]]; then
         echo "================================"
+        echo "catkin构建失败: $module (cmake configuration failed)"
+        set -e
+        return 1
+    fi
+    
+    # 第二步：直接调用make，它的退出码是可靠的
+    cd "$build_path" && make -j"$build_jobs"
+    local make_exit_code=$?
+    cd - > /dev/null
+    
+    set -e  # 恢复错误退出
+    
+    echo "================================"
+    echo "[DEBUG] make exit code: $make_exit_code"
+    
+    if [[ $make_exit_code -eq 0 ]]; then
         echo "catkin构建成功: $module"
         return 0
     else
-        echo "================================"
-        echo "catkin构建失败: $module"
+        echo "catkin构建失败: $module (make failed with exit code: $make_exit_code)"
         return 1
     fi
 }

@@ -178,6 +178,7 @@ ${YELLOW}选项:${NC}
   -g, --groups        列出模块组
   -s, --same          使用上次选择
   --clean             清理构建目录
+  --clean-bs          清理buildscripts目录
   --dry-run           预览构建
 
 ${YELLOW}示例:${NC}
