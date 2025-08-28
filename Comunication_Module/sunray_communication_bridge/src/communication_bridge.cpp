@@ -119,9 +119,12 @@ void communication_bridge::init(ros::NodeHandle &nh)
         }
     }
 
-    FACMapSendData.data.FACMap.init(); //初始化FAC地图数据
+    //初始化FAC地图数据
+    FACMapSendData.data.FACMap.init(); 
     // 【订阅】FAC赛地图
     FACMap_sub=nh.subscribe<sunray_msgs::Competion>("/CompetionState", 1, boost::bind(&communication_bridge::FACMap_cb, this,_1));
+     // 【订阅】FAC比赛状态
+    FACState_sub=nh.subscribe<std_msgs::String>("/CompetionDebug", 1, boost::bind(&communication_bridge::FACState_cb, this,_1));
 
     // 【订阅】编队切换
     formation_sub=nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd", 1, boost::bind(&communication_bridge::formation_cmd_cb, this,_1));
@@ -1180,6 +1183,16 @@ void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstP
     // 本节点 --UDP--> 其他智能体 编队切换组播链路发送
     int back = udpSocket->sendUDPMulticastData(codec.coder(formationData), udp_port);
     
+}
+void communication_bridge::FACState_cb(const std_msgs::String::ConstPtr &msg)
+{
+    DataFrame facStateData;
+    facStateData.seq=MessageID::FACCompetitionStateMessageID;
+    facStateData.robot_ID=uav_id;
+    facStateData.data.FACState.init();
+    facStateData.data.FACState.stateSize = msg->data.size();
+    msg->data.copy(facStateData.data.FACState.stateStr, msg->data.size());
+    SendUdpDataToAllOnlineGroundStations(facStateData);
 }
 
 // 比较结构体与msg数据（精确到3位小数）

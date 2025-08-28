@@ -10,6 +10,7 @@ enum MessageID
     NodeMessageID                   = 30,
     AgentComputerStatusMessageID    = 31,
     FACMapDataMessageID             = 32,
+    FACCompetitionStateMessageID    = 33,
     FormationMessageID              = 40,
     GroundFormationMessageID        = 41,
 //    TakeoffMessageID    = 101,

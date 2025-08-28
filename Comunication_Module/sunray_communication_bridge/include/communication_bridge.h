@@ -13,6 +13,8 @@
 #include "sunray_msgs/UAVControlCMD.h"
 #include "sunray_msgs/Formation.h"
 #include "sunray_msgs/Competion.h"
+#include "std_msgs/String.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -109,6 +111,7 @@ private:
     ros::Publisher  formation_pub;
 
     ros::Subscriber FACMap_sub;
+    ros::Subscriber FACState_sub;
 
     ros::Timer HeartbeatTimer;
     ros::Timer CheckChildProcessTimer;
@@ -164,6 +167,8 @@ private:
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
     void FACMap_cb(const sunray_msgs::Competion::ConstPtr &msg);
     bool isFACMapEqual3Decimals(const FACMapData& mapData, const sunray_msgs::Competion::ConstPtr& msg);
+    void FACState_cb(const std_msgs::String::ConstPtr &msg);
+
 
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);

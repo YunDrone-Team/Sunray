@@ -186,6 +186,23 @@ void Codec::decoderNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node)
 }
 
 
+void Codec::decoderFACCompetitionStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    FACCompetitionState& data = dataFrameStruct.data.FACState;
+    data.init();
+
+    // 读取stateSize（2字节，小端序）
+    data.stateSize = static_cast<uint16_t>(dataFrame[0]);
+    data.stateSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+    // 读取stateStr
+    for (uint16_t j = 0; j < data.stateSize; ++j)
+        data.stateStr[j] = static_cast<char>(dataFrame[j]);
+    data.stateStr[data.stateSize] = '\0';  //添加终止符
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.stateSize);
+}
+
 void Codec::decoderFACMapDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
     FACMapData& data = dataFrameStruct.data.FACMap;
@@ -652,9 +669,15 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*PayloadFAC赛地图数据反序列化*/
         decoderFACMapDataPayload(undecodedData,decoderData);
         break;
+    case MessageID::FACCompetitionStateMessageID:
+        /*PayloadFAC比赛状态数据反序列化*/
+        decoderFACCompetitionStatePayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
+
+
 
 }
 
@@ -677,7 +700,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
         break;
     case MessageID::UAVStateMessageID: case MessageID::UGVStateMessageID:
     case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
-    case MessageID::FACMapDataMessageID:
+    case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -1011,6 +1034,19 @@ void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
 
 }
 
+void Codec::coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    FACCompetitionState data=codelessData.data.FACState;
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.stateSize >> (i * 8)) & 0xFF));
+
+    if(payload.capacity()<data.stateSize+4)
+        payload.reserve(data.stateSize+4);
+
+    for(int j=0;j<data.stateSize;++j)
+        payload.push_back(static_cast<uint8_t>(data.stateStr[j]));
+}
+
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     AgentComputerStatus data=codelessData.data.computerStatus;
@@ -1113,6 +1149,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::FACMapDataMessageID:
         /*PayloadFAC赛地图数据序列化*/
         coderFACMapPayload(PayloadData,codelessData);
+        break;
+    case MessageID::FACCompetitionStateMessageID:
+        /*PayloadFAC比赛状态数据序列化*/
+        coderFACCompetitionStatePayload(PayloadData,codelessData);
         break;
     default:break;
     }

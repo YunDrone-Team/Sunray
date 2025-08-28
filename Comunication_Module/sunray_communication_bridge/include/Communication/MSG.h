@@ -240,6 +240,17 @@ struct FACMapData
 
 };
 
+//FAC比赛状态 -FACCompetitionState（#33）
+struct FACCompetitionState
+{
+    uint16_t stateSize;
+    char stateStr[300];
+    void init()
+    {
+        stateSize=0;
+    }
+};
+
 //编队切换 - Formation（#40）
 struct Formation
 {
@@ -481,6 +492,7 @@ union Payload
     Goal goal;                          // 规划点- Goal（#204）
     AgentComputerStatus computerStatus; // 智能体电脑状态 -AgentComputerStatus（#31）
     FACMapData FACMap;                  // FAC赛地图数据 -FACMapData（#32）
+    FACCompetitionState FACState;       // FAC比赛状态 -FACCompetitionState（#33）
 };
 
 //整个数据帧
