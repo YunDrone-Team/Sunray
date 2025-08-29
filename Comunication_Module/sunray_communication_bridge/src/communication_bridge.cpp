@@ -2,12 +2,13 @@
 
 void communication_bridge::init(ros::NodeHandle &nh)
 {
-    nh.param<bool>("is_simulation", is_simulation, false);      // 【参数】仿真模式or真机模式：仿真模式下，多个飞机只启动一个公用的通信节点，真机模式下，每个飞机在机载电脑中分别启动一个通信节点
+    nh.param<bool>("is_simulation", is_simulation, false);          // 【参数】仿真模式or真机模式：仿真模式下，多个飞机只启动一个公用的通信节点，真机模式下，每个飞机在机载电脑中分别启动一个通信节点
+    nh.param<bool>("multiClientSwitch", multiClientSwitch, false);  // 【参数】多客户端模式开关：给同一个IP地址的多个端口发送数据
 
-    nh.param<int>("uav_experiment_num", uav_experiment_num, 0); // 【参数】无人机真机数量（用于智能体之间的通信）
-    nh.param<int>("uav_simulation_num", uav_simulation_num, 0); // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
-    nh.param<int>("uav_id", uav_id, -1);                        // 【参数】无人机编号(真机为本机，仿真为1)
-    nh.param<string>("uav_name", uav_name, "uav");              // 【参数】无人机名字前缀
+    nh.param<int>("uav_experiment_num", uav_experiment_num, 0);     // 【参数】无人机真机数量（用于智能体之间的通信）
+    nh.param<int>("uav_simulation_num", uav_simulation_num, 0);     // 【参数】仿真无人机数量（用于仿真时，一次性订阅多个无人机消息）
+    nh.param<int>("uav_id", uav_id, -1);                            // 【参数】无人机编号(真机为本机，仿真为1)
+    nh.param<string>("uav_name", uav_name, "uav");                  // 【参数】无人机名字前缀
 
     nh.param<int>("ugv_experiment_num", ugv_experiment_num, 0); // 【参数】无人车真车数量
     nh.param<int>("ugv_simulation_num", ugv_simulation_num, 0); // 【参数】仿真无人车数量
@@ -170,12 +171,23 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
     // 地面站连接后，则开启心跳包；地面站断开后，则关闭心跳包
     if (state)
     {
-        GSIPHash.insert(IP);
+        auto it = GSIPHash.find(IP);
+        if (it != GSIPHash.end())
+        {
+            it->second = it->second+1;
+        }else
+            GSIPHash[IP] = 1;
         station_connected = true;
-    }
-    else
-    {
-        GSIPHash.erase(IP);
+    }else{
+        auto it = GSIPHash.find(IP);
+        if (it != GSIPHash.end())
+        {
+            if(it->second==1)
+                GSIPHash.erase(IP);
+            else    
+                it->second = it->second-1;
+        }
+
         if (GSIPHash.empty())
             station_connected = false;
     }
@@ -961,9 +973,22 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(DataFrame data)
 
     for (const auto &ip : GSIPHash)
     {
-        int sendBack = udpSocket->sendUDPData(codec.coder(data), ip, udp_ground_port);
+        if(multiClientSwitch)
+        {
+            if(data.seq == MessageID::UAVStateMessageID)
+            {
+                int multiSendBack = udpSocket->sendUDPData(codec.coder(data), ip.first, 12310+(data.robot_ID-1));
+                if (multiSendBack < 0)
+                    tempVec.push_back(ip.first);
+                // std::cout <<"multiSendBack:"<<multiSendBack<<data.robot_ID-1<< std::endl;
+
+            }
+        }
+
+        int sendBack = udpSocket->sendUDPData(codec.coder(data), ip.first, udp_ground_port);
         if (sendBack < 0)
-            tempVec.push_back(ip);
+            tempVec.push_back(ip.first);
+        
     }
 
     for (const auto &ip : tempVec)
@@ -1045,6 +1070,7 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     uavStateData[index].data.uavState.velocity[1] = msg->velocity[1];
     uavStateData[index].data.uavState.velocity[2] = msg->velocity[2];
     uavStateData[index].data.uavState.attitude[0] = msg->attitude[0];
+
     uavStateData[index].data.uavState.attitude[1] = msg->attitude[1];
     uavStateData[index].data.uavState.attitude[2] = msg->attitude[2];
 

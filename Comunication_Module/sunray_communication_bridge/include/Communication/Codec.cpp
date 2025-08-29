@@ -534,6 +534,7 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
     for (int i = 0; i <(int)sizeof(uint32_t); ++i)
         decoderData.length |= static_cast<uint32_t>(static_cast<uint8_t>(undecodedData[i+2])) << (i * 8);
 
+
     if(undecodedData.size()<decoderData.length)
         return false;
 
@@ -547,6 +548,7 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
     decoderData.check=0;
     decoderData.check = static_cast<uint16_t>(undecodedData[undecodedData.size()-2]) |
                             (static_cast<uint16_t>(undecodedData[undecodedData.size()-1]) << 8);
+
 
     //去除开头的消息帧头2个字节，消息大小4个字节，消息编号1个字节，机器人编号1个字节，时间戳8个字节
     //2+4+1+1+8=16

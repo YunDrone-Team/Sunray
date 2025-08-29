@@ -75,6 +75,9 @@ void TCPClient::onRun()
 
             temp.clear();
         }
+
+        lockRun.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5)); // 休眠10毫秒
     }
     std::unique_lock<std::mutex> lockRun(mutexRun);
 
@@ -149,13 +152,13 @@ void TCPClient::setRunState(int state)
 int  TCPClient::clientSendTCPData(std::vector<uint8_t> sendData,std::string targetIp)
 {
     int sendResult = 0;
-std::cout << "TCPClient::clientSendTCPData clientVector "<<clientVector.size()<<" "<<sendData.size()<<std::endl;
+//std::cout << "TCPClient::clientSendTCPData clientVector "<<clientVector.size()<<" "<<sendData.size()<<std::endl;
     if(sendData.size()<=0)
         return -1;
 
     for (const auto& item : clientVector)
     {
-        std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
+//        std::cout << "targetIp "<<targetIp<<" item->getTCPClientTargetIP() "<<item->getTCPClientTargetIP()<<std::endl;
 
         if(targetIp!=item->getTCPClientTargetIP())
                    continue;
@@ -166,6 +169,7 @@ std::cout << "TCPClient::clientSendTCPData clientVector "<<clientVector.size()<<
 
 #ifdef _WIN32
          sendResult = send(item->getTCPClientSocket(), reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0);
+
 #else
         sendResult = send(item->getTCPClientSocket(), sendData.data(), sendData.size(), 0);
 #endif
@@ -212,7 +216,7 @@ void TCPClient::createThread()
 {
     while (createThreadRun)
     {
-
+//        std::unique_lock<std::mutex> lockRun(mutexRun);
         std::unique_lock<std::mutex> lock(mutexConnect);
         if(WaitConnectVector.size()>0)
         {
