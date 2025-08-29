@@ -1,10 +1,10 @@
 <launch>
     <include file="$(find sunray_uav_control)/launch/sunray_mavros_exp.launch">
-        <arg name="uav_id" value="2" />
+        <arg name="uav_id" value="1" />
     </include>
 
     <include file="$(find sunray_uav_control)/launch/external_fusion.launch">
         <arg name="external_source" value="4" />
-        <arg name="uav_id" value="2" />
+        <arg name="uav_id" value="1" />
     </include>
 </launch>

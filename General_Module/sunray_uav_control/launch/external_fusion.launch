@@ -1,6 +1,6 @@
 <launch>
     <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
-    <arg name="uav_id" default="2" />
+    <arg name="uav_id" default="1" />
     <arg name="external_source" default="0" />
     <arg name="uav_name" default="uav" />
     <!-- <arg name="position_topic" default="/baton/stereo3/odometry" /> -->
