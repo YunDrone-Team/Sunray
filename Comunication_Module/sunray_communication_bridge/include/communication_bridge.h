@@ -12,6 +12,8 @@
 #include "sunray_msgs/UAVState.h"
 #include "sunray_msgs/UAVControlCMD.h"
 #include "sunray_msgs/Formation.h"
+#include "sunray_msgs/Competion.h"
+#include "std_msgs/String.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -62,6 +64,11 @@ public:
 
     void init(ros::NodeHandle &nh);
 
+    // 辅助函数：比较两个浮点数是否在3位小数精度内相等
+    bool isFloatEqual3Decimals(float a, float b) 
+    {
+        return std::fabs(a - b) < EPS;
+    }
 private:
     bool is_simulation;
     uint32_t last_time_stamp;
@@ -103,6 +110,9 @@ private:
     ros::Subscriber  formation_sub;
     ros::Publisher  formation_pub;
 
+    ros::Subscriber FACMap_sub;
+    ros::Subscriber FACState_sub;
+
     ros::Timer HeartbeatTimer;
     ros::Timer CheckChildProcessTimer;
     ros::Timer UpdateROSNodeInformationTimer;
@@ -119,6 +129,10 @@ private:
 
     DataFrame uavOnlineNodeData[MAX_AGENT_NUM];
     DataFrame ugvOnlineNodeData[MAX_AGENT_NUM]; 
+
+    DataFrame FACMapSendData;   // FACMap数据
+
+    const float EPS = 0.0005f;  // 3位小数的精度阈值：0.0005（确保四舍五入到千分位后相等）
 
     std::mutex _mutexUDP;       // 互斥锁
     std::mutex _mutexTCPServer; // 互斥锁
@@ -148,10 +162,13 @@ private:
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
     void UpdateUDPMulticast(const ros::TimerEvent &e);
 
-
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
+    void FACMap_cb(const sunray_msgs::Competion::ConstPtr &msg);
+    bool isFACMapEqual3Decimals(const FACMapData& mapData, const sunray_msgs::Competion::ConstPtr& msg);
+    void FACState_cb(const std_msgs::String::ConstPtr &msg);
+
 
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);

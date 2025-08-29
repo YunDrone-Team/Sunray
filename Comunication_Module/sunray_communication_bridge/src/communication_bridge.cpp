@@ -119,6 +119,13 @@ void communication_bridge::init(ros::NodeHandle &nh)
         }
     }
 
+    //初始化FAC地图数据
+    FACMapSendData.data.FACMap.init(); 
+    // 【订阅】FAC赛地图
+    FACMap_sub=nh.subscribe<sunray_msgs::Competion>("/CompetionState", 1, boost::bind(&communication_bridge::FACMap_cb, this,_1));
+    // 【订阅】FAC比赛状态
+    FACState_sub=nh.subscribe<std_msgs::String>("/CompetionDebug", 1, boost::bind(&communication_bridge::FACState_cb, this,_1));
+
     // 【订阅】编队切换
     formation_sub=nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd", 1, boost::bind(&communication_bridge::formation_cmd_cb, this,_1));
     // 【发布】编队切换
@@ -178,6 +185,18 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
         }else
             GSIPHash[IP] = 1;
         station_connected = true;
+
+        FACMapData temp;
+        temp.init();
+
+        if(FACMapSendData.data.FACMap==temp)
+            return;
+        for(int i=0;i<5;++i)
+        {
+            int sendBack = udpSocket->sendUDPData(codec.coder(FACMapSendData), IP, udp_ground_port);
+        }
+
+
     }else{
         auto it = GSIPHash.find(IP);
         if (it != GSIPHash.end())
@@ -616,6 +635,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         waypoint_msg.wp_vel_p = readData.dataFrame.data.waypointData.wp_vel_p;
         waypoint_msg.z_height = readData.dataFrame.data.waypointData.z_height;
 
+
         // std::cout << "MessageID::WaypointMessageID 2 "<<readData.data.waypointData.Waypoint1.X<< std::endl; wp_point_1[0]
 
         waypoint_msg.wp_point_1 = {readData.dataFrame.data.waypointData.wp_point_1[0], readData.dataFrame.data.waypointData.wp_point_1[1],
@@ -989,6 +1009,11 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(DataFrame data)
         if (sendBack < 0)
             tempVec.push_back(ip.first);
         
+        // if(sendBack <= 0)
+        //     std::cout << "发送数据到" << ip.first << " 失败! "<<"sendBack: " <<sendBack<< std::endl;
+        // else if(sendBack > 0 &&    data.seq==MessageID::FACMapDataMessageID )
+        //     std::cout << "发送数据到" << ip.first << " 成功! "<<"sendBack: " <<sendBack<< std::endl;
+
     }
 
     for (const auto &ip : tempVec)
@@ -1159,6 +1184,94 @@ void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstP
     int back = udpSocket->sendUDPMulticastData(codec.coder(formationData), udp_port);
     
 }
+void communication_bridge::FACState_cb(const std_msgs::String::ConstPtr &msg)
+{
+    DataFrame facStateData;
+    facStateData.seq=MessageID::FACCompetitionStateMessageID;
+    facStateData.robot_ID=uav_id;
+    facStateData.data.FACState.init();
+    facStateData.data.FACState.stateSize = msg->data.size();
+    msg->data.copy(facStateData.data.FACState.stateStr, msg->data.size());
+    SendUdpDataToAllOnlineGroundStations(facStateData);
+}
+
+// 比较结构体与msg数据（精确到3位小数）
+bool communication_bridge::isFACMapEqual3Decimals(const FACMapData& mapData, const sunray_msgs::Competion::ConstPtr& msg) {
+    // 中心障碍物边长
+    if (!isFloatEqual3Decimals(mapData.centralObstacleSideLength, msg->central_a)) 
+        return false;
+    
+    // 投送区中心点坐标
+    if (!isFloatEqual3Decimals(mapData.dropZoneCenterCoords[0], msg->delivery[0]) ||
+        !isFloatEqual3Decimals(mapData.dropZoneCenterCoords[1], msg->delivery[1])) 
+        return false;
+    
+    // 第一个障碍物坐标
+    if (!isFloatEqual3Decimals(mapData.firstObstacleCoords[0], msg->obstacle_1[0]) ||
+        !isFloatEqual3Decimals(mapData.firstObstacleCoords[1], msg->obstacle_1[1])) 
+        return false;
+    
+    // 第二个障碍物坐标
+    if (!isFloatEqual3Decimals(mapData.secondObstacleCoords[0], msg->obstacle_2[0]) ||
+        !isFloatEqual3Decimals(mapData.secondObstacleCoords[1], msg->obstacle_2[1])) 
+        return false;
+    
+    // 第三个障碍物坐标
+    if (!isFloatEqual3Decimals(mapData.thirdObstacleCoords[0], msg->obstacle_3[0]) ||
+        !isFloatEqual3Decimals(mapData.thirdObstacleCoords[1], msg->obstacle_3[1])) 
+        return false;
+    
+    // 障碍物半径
+    if (!isFloatEqual3Decimals(mapData.obstacleRadius, msg->obstacle_r)) 
+        return false;
+    
+    // 大框中心点坐标
+    if (!isFloatEqual3Decimals(mapData.largeFrameCoords[0], msg->large_box[0]) ||
+        !isFloatEqual3Decimals(mapData.largeFrameCoords[1], msg->large_box[1])) 
+        return false;
+    
+    // 小框中心点坐标
+    if (!isFloatEqual3Decimals(mapData.smallFrameCoords[0], msg->small_box[0]) ||
+        !isFloatEqual3Decimals(mapData.smallFrameCoords[1], msg->small_box[1])) 
+        return false;
+    
+    return true;
+}
+
+void communication_bridge::FACMap_cb(const sunray_msgs::Competion::ConstPtr &msg)
+{
+    // std::cout << "接收到fFACMap数据:" << std::endl;
+
+    if(isFACMapEqual3Decimals(FACMapSendData.data.FACMap,msg))
+        return;
+
+    if (uav_id>0 )
+        FACMapSendData.robot_ID = uav_id;
+
+    FACMapSendData.seq=MessageID::FACMapDataMessageID;
+    FACMapSendData.data.FACMap.init();
+
+    FACMapSendData.data.FACMap.centralObstacleSideLength=msg->central_a;
+    FACMapSendData.data.FACMap.dropZoneCenterCoords[0] =msg->delivery[0];
+    FACMapSendData.data.FACMap.dropZoneCenterCoords[1] =msg->delivery[1];
+    FACMapSendData.data.FACMap.firstObstacleCoords[0] =msg->obstacle_1[0];
+    FACMapSendData.data.FACMap.firstObstacleCoords[1] =msg->obstacle_1[1];
+    FACMapSendData.data.FACMap.secondObstacleCoords[0] =msg->obstacle_2[0];
+    FACMapSendData.data.FACMap.secondObstacleCoords[1] =msg->obstacle_2[1];
+    FACMapSendData.data.FACMap.thirdObstacleCoords[0] =msg->obstacle_3[0];
+    FACMapSendData.data.FACMap.thirdObstacleCoords[1] =msg->obstacle_3[1];
+    FACMapSendData.data.FACMap.obstacleRadius=msg->obstacle_r;
+    FACMapSendData.data.FACMap.largeFrameCoords[0] =msg->large_box[0];
+    FACMapSendData.data.FACMap.largeFrameCoords[1] =msg->large_box[1];
+    FACMapSendData.data.FACMap.smallFrameCoords[0] =msg->small_box[0];
+    FACMapSendData.data.FACMap.smallFrameCoords[1] =msg->small_box[1];
+
+    for(int i=0;i<5;++i)
+        SendUdpDataToAllOnlineGroundStations(FACMapSendData);
+
+
+}
+
 
 void communication_bridge::ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id)
 {

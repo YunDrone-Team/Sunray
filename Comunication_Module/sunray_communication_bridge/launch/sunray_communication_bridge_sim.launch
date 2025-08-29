@@ -14,7 +14,7 @@
 
     <arg name="tcp_port" default="8969" />          <!-- TCP绑定端口-->
     <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->
-    <arg name="udp_ground_port" default="9696" />   <!-- 组播目标端口，用于机间通信-->
+    <arg name="udp_ground_port" default="9696" />   <!-- 目标地面站端口，用于和地面站通信，要和地面站监听端口一致 -->
    
 
     <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
