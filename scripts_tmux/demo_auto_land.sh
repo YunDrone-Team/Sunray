@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # 引入 TMUX 会话管理模块
-source /home/ray/Sunray/scripts_tmux/auto_tmux.sh
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_DIR}/auto_tmux.sh"
 
 # ===================== 配置区域 =====================
 UAV_ID=1
