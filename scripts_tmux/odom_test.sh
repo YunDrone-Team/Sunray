@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # 引入 TMUX 会话管理模块
-source /home/ray/Sunray/scripts_tmux/auto_tmux.sh
+source /home/PRR/Sunray/scripts_tmux/auto_tmux.sh
 
-UAV_ID=2    # 无人机ID
+UAV_ID=1    # 无人机ID
 SESSION_NAME=sunray_tmux  # 会话名称，统一使用sunray_tmux
 FIRST_WINDOW="main.2"
 
