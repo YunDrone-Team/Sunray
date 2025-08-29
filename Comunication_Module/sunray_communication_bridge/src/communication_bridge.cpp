@@ -123,7 +123,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     FACMapSendData.data.FACMap.init(); 
     // 【订阅】FAC赛地图
     FACMap_sub=nh.subscribe<sunray_msgs::Competion>("/CompetionState", 1, boost::bind(&communication_bridge::FACMap_cb, this,_1));
-     // 【订阅】FAC比赛状态
+    // 【订阅】FAC比赛状态
     FACState_sub=nh.subscribe<std_msgs::String>("/CompetionDebug", 1, boost::bind(&communication_bridge::FACState_cb, this,_1));
 
     // 【订阅】编队切换
