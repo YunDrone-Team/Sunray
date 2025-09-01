@@ -7,4 +7,4 @@ sudo apt-get install libyaml-cpp-dev -y
 sudo apt-get install libsfml-dev -y
 
 sudo apt install tmux
-echo 'set -g mouse on' | tee -a ~/.tmux.conf
+tail -n 1 ~/.tmux.conf | grep -q "set -g mouse on" || echo 'set -g mouse on' | tee -a ~/.tmux.conf

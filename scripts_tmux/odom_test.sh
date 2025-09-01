@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # 引入 TMUX 会话管理模块
-source /home/PRR/Sunray/scripts_tmux/auto_tmux.sh
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_DIR}/auto_tmux.sh"
 
 UAV_ID=1    # 无人机ID
 SESSION_NAME=sunray_tmux  # 会话名称，统一使用sunray_tmux
