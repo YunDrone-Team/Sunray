@@ -360,7 +360,7 @@ void ExternalFusion::show_px4_state()
 
     // 基本信息 - 连接状态、飞控模式、电池状态
     Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/sunray/px4_state (Sunray get from PX4 via Mavros)");
-    Logger::print_color(int(LogColor::green), "PX4 FCU  : [ CONNECTED ]  BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
+    Logger::print_color(int(LogColor::green), "PX4 FCU: [ CONNECTED ]  BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
 
     if (px4_state.armed)
     {
@@ -383,10 +383,10 @@ void ExternalFusion::show_px4_state()
         }
     }
 
-    // 位置和姿态
+    // 无人机的位置和姿态
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
-        // 无GPS模式的情况
+        // 无GPS模式的情况：本地位置
         Logger::print_color(int(LogColor::blue), "PX4 Local Position & Attitude:");
         Logger::print_color(int(LogColor::green), "POS_UAV [X Y Z]:",
                             px4_state.position[0],
@@ -403,31 +403,35 @@ void ExternalFusion::show_px4_state()
                             px4_state.attitude[1] / M_PI * 180,
                             px4_state.attitude[2] / M_PI * 180,
                             "[deg]");
-        Logger::print_color(int(LogColor::blue), "PX4 Local Position Setpoint & Attitude Setpoint:");
-        Logger::print_color(int(LogColor::green), "POS_SP [X Y Z]:",
-                            px4_state.pos_setpoint[0],
-                            px4_state.pos_setpoint[1],
-                            px4_state.pos_setpoint[2],
-                            "[ m ]");
-        Logger::print_color(int(LogColor::green), "VEL_SP [X Y Z]:",
-                            px4_state.vel_setpoint[0],
-                            px4_state.vel_setpoint[1],
-                            px4_state.vel_setpoint[2],
-                            "[m/s]");   
-        Logger::print_color(int(LogColor::green), "ATT_SP [X Y Z]:",
-                            px4_state.att_setpoint[0] / M_PI * 180,
-                            px4_state.att_setpoint[1] / M_PI * 180,
-                            px4_state.att_setpoint[2] / M_PI * 180,
-                            "[deg]");       
-        Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint*100, "[ % ]");
     }else
     {
+        // GPS模式的情况：经纬度（全局位置）
         Logger::print_color(int(LogColor::blue), "GPS Status");
         Logger::print_color(int(LogColor::green), "GPS STATUS:", px4_state.gps_status, "SERVICE:", px4_state.gps_service);
         Logger::print_color(int(LogColor::green), "GPS SATS:", px4_state.satellites);
         Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(px4_state.latitude), int(px4_state.longitude), int(px4_state.altitude));
         // todo global position
     }
+
+    // 期望位置和姿态
+    Logger::print_color(int(LogColor::blue), "PX4 Local Position Setpoint & Attitude Setpoint:");
+    Logger::print_color(int(LogColor::green), "POS_SP [X Y Z]:",
+                        px4_state.pos_setpoint[0],
+                        px4_state.pos_setpoint[1],
+                        px4_state.pos_setpoint[2],
+                        "[ m ]");
+    Logger::print_color(int(LogColor::green), "VEL_SP [X Y Z]:",
+                        px4_state.vel_setpoint[0],
+                        px4_state.vel_setpoint[1],
+                        px4_state.vel_setpoint[2],
+                        "[m/s]");   
+    Logger::print_color(int(LogColor::green), "ATT_SP [X Y Z]:",
+                        px4_state.att_setpoint[0] / M_PI * 180,
+                        px4_state.att_setpoint[1] / M_PI * 180,
+                        px4_state.att_setpoint[2] / M_PI * 180,
+                        "[deg]");       
+    Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint*100, "[ % ]");
+
 
     // 外部定位信息
     Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/mavros/vision_pose (Sunray send to PX4 for state fusion)");
@@ -447,9 +451,7 @@ void ExternalFusion::show_px4_state()
             Logger::print_color(int(LogColor::green), "external_source: [ MOCAP ]");
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
-            Logger::print_color(int(LogColor::green), "external_source: [ VIOBOT ]");
-            Logger::print_color(int(LogColor::green), "is_viobot_start: ", ext_pos.external_odom.vio_start == true ? "[ True ]" : "[ False ]");
-            Logger::print_color(int(LogColor::green), "algo_status: [ ", ext_pos.external_odom.algo_status, " ]");
+            Logger::print_color(int(LogColor::green), "external_source: [ VIOBOT ]", " is_viobot_start: ", ext_pos.external_odom.vio_start == true ? "[ True ]" : "[ False ]", "algo_status: [ ", ext_pos.external_odom.algo_status, " ]");
             break;
         case sunray_msgs::ExternalOdom::GPS:
             Logger::print_color(int(LogColor::green), "external_source: [ GPS ]");
@@ -463,22 +465,19 @@ void ExternalFusion::show_px4_state()
     {
         if (ext_pos.external_odom.odom_valid)
         {
-            Logger::print_color(int(LogColor::green), "external_odom: [ VALID ]");
+            if (ext_pos.external_odom.fusion_success)
+            {
+                Logger::print_color(int(LogColor::green), "external_odom: [ VALID ]", "fusion_success: [ GOOD ]");
+            }
+            else
+            {
+                Logger::print_color(int(LogColor::green), "external_odom: [ VALID ]", "fusion_success: [ Fail ]");
+            }
         }
         else
         {
             Logger::print_color(int(LogColor::red), "external_odom: [ INVALID ]");
         }
-
-        if (ext_pos.external_odom.fusion_success)
-        {
-            Logger::print_color(int(LogColor::green), "fusion_success: [ VALID ]");
-        }
-        else
-        {
-            Logger::print_color(int(LogColor::red), "fusion_success: [ INVALID ]");
-        }
-
 
         Logger::print_color(int(LogColor::blue), "PX4 Vision Pose:");
 

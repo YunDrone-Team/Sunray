@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         uav_ctrl.mainLoop();
 
         // 定时打印状态
-        if (ros::Time::now() - last_time > ros::Duration(1.0) && flag_printf)
+        if (ros::Time::now() - last_time > ros::Duration(5.0) && flag_printf)
         {
             uav_ctrl.show_ctrl_state();
             last_time = ros::Time::now();
