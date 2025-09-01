@@ -45,6 +45,10 @@ catkin_package(
 include_directories(
   include
   include/pos_controller
+  externalFusion
+  mavlink
+  mavlink/include
+  mavlink/include/mavlink/include/mavlink/v2.0/c_library_v2/
   ${catkin_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
 )
@@ -59,16 +63,20 @@ add_dependencies(uav_control_node sunray_control_gencpp)
 target_link_libraries(uav_control_node ${catkin_LIBRARIES})
 target_link_libraries(uav_control_node uav_control)
 
-add_library(externalFusion src/externalFusion.cpp)
+add_executable(rc_control_node src/rc_control_node.cpp)
+target_link_libraries(rc_control_node ${catkin_LIBRARIES})
+
+add_library(externalFusion externalFusion/externalFusion.cpp)
 target_link_libraries(externalFusion ${catkin_LIBRARIES})
 
-add_executable(external_fusion_node src/external_fusion_node.cpp)
+add_executable(external_fusion_node 
+  externalFusion/external_fusion_node.cpp
+  mavlink/mavlink_control.cpp
+  mavlink/autopilot_interface.cpp
+  mavlink/serial_port.cpp)
 add_dependencies(external_fusion_node sunray_control_gencpp)
 target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 target_link_libraries(external_fusion_node externalFusion)
-
-# add_executable(external_fusion_node src/externalFusion.cpp)
-# target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 
 add_executable(control_evaluation_node utils/control_evaluation_node.cpp)
 add_dependencies(control_evaluation_node sunray_control_gencpp)
@@ -104,9 +112,6 @@ target_link_libraries(flip_stop_node ${catkin_LIBRARIES})
 # target_link_libraries(logTest ${catkin_LIBRARIES})
 
 
-
-add_executable(rc_control_node src/rc_control_node.cpp)
-target_link_libraries(rc_control_node ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/

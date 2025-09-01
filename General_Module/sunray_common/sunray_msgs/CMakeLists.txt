@@ -28,7 +28,6 @@ add_message_files(
   ExternalOdom.msg
   SetMode.msg
   UGVControlCMD.msg
-  ViobotState.msg
   PositionCommand.msg
   OrcaCmd.msg
   OrcaSetup.msg
@@ -40,6 +39,14 @@ add_message_files(
   LinktrackNode2.msg
   LinktrackNodeframe2.msg
   Competion.msg
+)
+
+add_message_files(
+  DIRECTORY viobot_msg
+  FILES
+  algo_ctrl.msg
+  algo_status.msg
+  viobot_ctrl.msg
 )
 
 generate_messages(
