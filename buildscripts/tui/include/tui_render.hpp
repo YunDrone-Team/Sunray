@@ -80,6 +80,11 @@ private:
    */
   ftxui::Component create_component();
 
+  /**
+   * @brief 创建按钮组件
+   */
+  void create_buttons();
+
   // ==================== 双栏渲染辅助方法 ====================
 
   /**

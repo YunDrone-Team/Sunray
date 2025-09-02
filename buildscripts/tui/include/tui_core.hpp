@@ -138,13 +138,13 @@ struct UIState {
     /** @brief 构建按钮Y坐标 - 显示为 "Build: (44,61)" */
     int build_button_y = -1;
     /** @brief 构建按钮是否被鼠标悬停 - 显示为 "BuildHover: N" 或 "BuildHover: Y" */
-    bool build_button_hovered = true;
+    bool build_button_hovered = false;
     
-    // ==================== 调试显示开关 ====================
+    // ==================== 调试显示开关 ======z==============
     /** @brief 是否显示鼠标坐标信息 - 控制 "Mouse: (0,67)" 行 */
     bool show_mouse_coords = true;
     /** @brief 是否显示鼠标按键状态 - 控制 "Buttons: L0 R0" 行 */
-      bool show_mouse_buttons = true;
+      bool show_mouse_buttons = false;
     /** @brief 是否显示鼠标滚轮信息 - 控制 "Scroll: Up" 行 */
     bool show_mouse_scroll = false;
     /** @brief 是否显示键盘按键信息 - 控制 "Key: Other" 行 */
@@ -156,7 +156,7 @@ struct UIState {
     /** @brief 是否显示模块统计信息 - 控制 "Modules: 16 Groups: 6" 行 */
     bool show_module_stats = false;
     /** @brief 是否显示终端尺寸信息 - 控制 "Terminal: 89x73" 行 */
-    bool show_terminal_size = false;
+    bool show_terminal_size = true;
     /** @brief 是否显示构建按钮悬停状态 - 控制 "BuildHover: N" 行 */
     bool show_build_hover = false;
     
@@ -199,7 +199,7 @@ struct UIState {
   /** 
    * @brief 最小窗口宽度要求
    */
-  static constexpr int MIN_TERMINAL_WIDTH = 65;
+  static constexpr int MIN_TERMINAL_WIDTH = 70;
   
   /** 
    * @brief 最小窗口高度要求
