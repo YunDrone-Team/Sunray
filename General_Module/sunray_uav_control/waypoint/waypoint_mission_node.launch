@@ -1,0 +1,8 @@
+<launch>
+    <node name="waypoint_mission_node" pkg="sunray_uav_control" type="waypoint_mission_node" output="screen">
+        <param name="uav_id" value="1" />
+        <param name="uav_name" value="uav" />
+        <param name="max_vel" value="1.0" />
+        <param name="kp_vel" value="0.5" />
+    </node>
+</launch>

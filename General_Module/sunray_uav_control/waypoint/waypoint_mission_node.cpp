@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     // 初始化检查：等待PX4连接
     int trials = 0;
-    while (ros::ok() && !wp.px4_state.connected)
+    while (ros::ok() && !wp.uav_state.connected)
     {
         ros::spinOnce();
         ros::Duration(1.0).sleep();
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         wp.mainLoop();
 
         // 定时打印状态
-        if (ros::Time::now() - last_time > ros::Duration(5.0) && flag_printf)
+        if (ros::Time::now() - last_time > ros::Duration(2.0) && flag_printf)
         {
             wp.show_state();
             last_time = ros::Time::now();

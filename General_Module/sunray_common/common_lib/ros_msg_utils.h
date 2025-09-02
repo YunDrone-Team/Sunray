@@ -29,7 +29,9 @@ using namespace sunray_logger;
 #include <sunray_msgs/PX4State.h>
 #include <sunray_msgs/TextInfo.h>
 #include <sunray_msgs/UAVWayPoint.h>
-#include <sunray_msgs/UAVWayPointState.h>
+#include <sunray_msgs/Point.h>
+#include <sunray_msgs/WayPoint.h>
+#include <sunray_msgs/WayPointState.h>
 #include <sunray_msgs/UGVControlCMD.h>
 #include <sunray_msgs/UGVState.h>
 #include <sunray_msgs/PositionCommand.h>
@@ -59,6 +61,7 @@ using namespace sunray_logger;
 #include <sensor_msgs/NavSatFix.h>
 
 // geometry_msgs
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/TransformStamped.h>

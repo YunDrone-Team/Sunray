@@ -364,7 +364,7 @@ void ExternalFusion::show_px4_state()
 
     if (px4_state.armed)
     {
-        if(px4_state.landed_state == 1)
+        if(px4_state.landed_state == sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
         {
             Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ ON_GROUND ]");   
         }else
@@ -374,7 +374,7 @@ void ExternalFusion::show_px4_state()
     }
     else
     {
-        if(px4_state.landed_state == 1)
+        if(px4_state.landed_state == sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
         {
             Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ ON_GROUND ]");   
         }else

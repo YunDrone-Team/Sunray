@@ -1,0 +1,6 @@
+<launch>
+    <node name="waypoint_pub" pkg="sunray_uav_control" type="waypoint_pub" output="screen">
+        <param name="uav_id" value="1" />
+        <param name="uav_name" value="uav" />
+    </node>
+</launch>

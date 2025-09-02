@@ -27,7 +27,7 @@ float32 wp_vel_p
 # 起飞或返航高度
 float32 z_height
 
-# 航点 xyzyaw 或 经纬高yaw
+# 航点 xyzyaw
 float64[4] wp_point_1
 float64[4] wp_point_2
 float64[4] wp_point_3
@@ -39,5 +39,5 @@ float64[4] wp_point_8
 float64[4] wp_point_9
 float64[4] wp_point_10
 
-# 环绕点 xy 或 经纬
+# 环绕点 xy 或 经纬 未使用
 float64[2] wp_circle_point

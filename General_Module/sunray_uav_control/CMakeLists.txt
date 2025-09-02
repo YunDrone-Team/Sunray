@@ -78,6 +78,15 @@ add_dependencies(external_fusion_node sunray_control_gencpp)
 target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
 target_link_libraries(external_fusion_node externalFusion)
 
+
+add_executable(waypoint_mission_node waypoint/waypoint_mission_node.cpp)
+add_dependencies(waypoint_mission_node sunray_control_gencpp)
+target_link_libraries(waypoint_mission_node ${catkin_LIBRARIES})
+
+add_executable(waypoint_pub waypoint/waypoint_pub.cpp)
+add_dependencies(waypoint_pub sunray_control_gencpp)
+target_link_libraries(waypoint_pub ${catkin_LIBRARIES})
+
 add_executable(control_evaluation_node utils/control_evaluation_node.cpp)
 add_dependencies(control_evaluation_node sunray_control_gencpp)
 target_link_libraries(control_evaluation_node ${catkin_LIBRARIES})
@@ -86,9 +95,7 @@ add_executable(uav_command_pub utils/uav_command_pub.cpp)
 add_dependencies(uav_command_pub sunray_control_gencpp)
 target_link_libraries(uav_command_pub ${catkin_LIBRARIES})
 
-add_executable(waypoint_pub utils/waypoint_pub.cpp)
-add_dependencies(waypoint_pub sunray_control_gencpp)
-target_link_libraries(waypoint_pub ${catkin_LIBRARIES})
+
 
 add_executable(positioning_accuracy utils/positioning_accuracy.cpp)
 add_dependencies(positioning_accuracy sunray_control_gencpp)

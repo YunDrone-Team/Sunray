@@ -22,8 +22,10 @@ add_message_files(
   UAVState.msg
   UAVSetup.msg
   PX4State.msg
+  Point.msg
   UAVWayPoint.msg
-  UAVWayPointState.msg
+  WayPoint.msg
+  WayPointState.msg
   RcState.msg
   TextInfo.msg
   ExternalOdom.msg
