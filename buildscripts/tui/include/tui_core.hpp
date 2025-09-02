@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include "ftxui/dom/elements.hpp"  // for ftxui::Box
 
 namespace sunray_tui {
 
@@ -137,13 +138,13 @@ struct UIState {
     /** @brief 构建按钮Y坐标 - 显示为 "Build: (44,61)" */
     int build_button_y = -1;
     /** @brief 构建按钮是否被鼠标悬停 - 显示为 "BuildHover: N" 或 "BuildHover: Y" */
-    bool build_button_hovered = false;
+    bool build_button_hovered = true;
     
     // ==================== 调试显示开关 ====================
     /** @brief 是否显示鼠标坐标信息 - 控制 "Mouse: (0,67)" 行 */
     bool show_mouse_coords = true;
     /** @brief 是否显示鼠标按键状态 - 控制 "Buttons: L0 R0" 行 */
-    bool show_mouse_buttons = true;
+      bool show_mouse_buttons = true;
     /** @brief 是否显示鼠标滚轮信息 - 控制 "Scroll: Up" 行 */
     bool show_mouse_scroll = false;
     /** @brief 是否显示键盘按键信息 - 控制 "Key: Other" 行 */
@@ -294,6 +295,8 @@ struct UIState {
    * 影响按钮的视觉显示（高亮、边框等）
    */
   bool build_button_focused = false;
+  // 按键面板内的按钮焦点：0=开始构建，1=清除构建
+  int button_focus_index = 0;
   
   /** 
    * @brief 构建按钮悬停状态
@@ -308,6 +311,12 @@ struct UIState {
    * -1表示按钮不可见或坐标未计算
    */
   int build_button_screen_y = -1;
+
+  /**
+   * @brief 构建按钮的布局盒子（由FTXUI reflect捕获）
+   * 用于提供更精确的X坐标范围（x_min..x_max）
+   */
+  ftxui::Box build_button_box;
   
   // ==================== 冲突提示系统 ====================
   

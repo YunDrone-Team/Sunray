@@ -11,8 +11,12 @@ std::unique_ptr<ConfigData> load_config(const std::string &file_path) {
   throw std::runtime_error("yaml-cpp support not compiled");
 #else
   YAML::Node config;
-  try { config = YAML::LoadFile(file_path); }
-  catch (const YAML::Exception &e) { throw std::runtime_error("Failed to load YAML file: " + std::string(e.what())); }
+  try {
+    config = YAML::LoadFile(file_path);
+  } catch (const YAML::Exception &e) {
+    throw std::runtime_error("Failed to load YAML file: " +
+                             std::string(e.what()));
+  }
 
   auto data = std::make_unique<ConfigData>();
   if (config["modules"]) {
@@ -28,12 +32,14 @@ std::unique_ptr<ConfigData> load_config(const std::string &file_path) {
       if (props["dependencies"] && props["dependencies"].IsSequence()) {
         const auto &deps = props["dependencies"];
         module.dependencies.reserve(deps.size());
-        for (const auto &dep : deps) module.dependencies.emplace_back(dep.as<std::string>());
+        for (const auto &dep : deps)
+          module.dependencies.emplace_back(dep.as<std::string>());
       }
       if (props["conflicts_with"] && props["conflicts_with"].IsSequence()) {
         const auto &conflicts = props["conflicts_with"];
         module.conflicts_with.reserve(conflicts.size());
-        for (const auto &conflict : conflicts) module.conflicts_with.emplace_back(conflict.as<std::string>());
+        for (const auto &conflict : conflicts)
+          module.conflicts_with.emplace_back(conflict.as<std::string>());
       }
       data->modules.emplace_back(std::move(module));
     }
@@ -49,7 +55,8 @@ std::unique_ptr<ConfigData> load_config(const std::string &file_path) {
       if (props["modules"] && props["modules"].IsSequence()) {
         const auto &modules = props["modules"];
         group.modules.reserve(modules.size());
-        for (const auto &mod : modules) group.modules.emplace_back(mod.as<std::string>());
+        for (const auto &mod : modules)
+          group.modules.emplace_back(mod.as<std::string>());
       }
       data->groups.emplace_back(std::move(group));
     }
@@ -58,8 +65,9 @@ std::unique_ptr<ConfigData> load_config(const std::string &file_path) {
 #endif
 }
 
-std::unique_ptr<ConfigData> ConfigData::load_from_file(const std::string &file_path) {
+std::unique_ptr<ConfigData>
+ConfigData::load_from_file(const std::string &file_path) {
   return load_config(file_path);
 }
 
-}
+} // namespace sunray_tui

@@ -1,12 +1,20 @@
 #include "tui_render.hpp"
 #include "ftxui/component/animation.hpp"
 #include "ftxui/component/component.hpp"
+#include "ftxui/component/component_options.hpp"
 #include "ftxui/component/event.hpp"
 #include "ftxui/component/screen_interactive.hpp"
 #include "ftxui/dom/elements.hpp"
 #include "ftxui/screen/terminal.hpp"
 #include "tui_terminal.hpp"
+#include <cstdlib>
+#include <filesystem>
+#include <sys/wait.h>
+#include <thread>
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 using namespace ftxui;
 
@@ -57,28 +65,229 @@ Component UIRenderer::create_component() {
   state_.update_group_render_items();
   state_.update_module_render_items();
 
+  // ========== 组件化底部按钮 ==========
+  // 开始编译构建按钮：保持原有行为
+  auto start_opt = ButtonOption::Animated();
+  // 自定义外观（方括号+括号内固定宽度6，hover包含括号，未hover无背景）
+  start_opt.transform = [this](const EntryState &s) {
+    const bool has_selection = !state_.view.selected_modules.empty();
+    const bool hover_like = (start_button_hovered_ || s.focused || s.active);
+    const int inner_width = 18;
+
+    std::string raw = (!has_selection && start_button_hovered_)
+                          ? "请选择模块"
+                          : std::string(s.label);
+    if ((int)raw.size() > inner_width)
+      raw = raw.substr(0, inner_width);
+    Element inner = text(raw) | center | size(WIDTH, EQUAL, inner_width);
+    Element full = hbox({text("["), inner, text("]")});
+
+    if (!has_selection) {
+      if (start_button_hovered_) {
+        full = full | bold | bgcolor(Color::Red) | color(Color::White);
+      } else {
+        full = full | bold | color(Color::GrayDark) | dim;
+      }
+    } else {
+      if (hover_like) {
+        full =
+            full | bold | bgcolor(Color::RGB(60, 60, 60)) | color(Color::White);
+      } else {
+        full = full | bold | color(Color::Blue);
+      }
+    }
+    return full;
+  };
+  start_button_ = Button(
+      "开始编译构建",
+      [this] {
+        // 仅当选择了模块才触发
+        if (!state_.view.selected_modules.empty()) {
+          state_.handle_build_button();
+        } else {
+          state_.trigger_build_warning_flash();
+          animation::RequestAnimationFrame();
+        }
+      },
+      start_opt);
+  // 绑定 Hover 状态
+  start_button_ = Hoverable(start_button_, &start_button_hovered_);
+
+  // 清除构建按钮：点击后绿色闪烁三次（不做实际逻辑）
+  auto clear_opt = ButtonOption::Animated();
+  clear_opt.transform = [this](const EntryState &s) {
+    const bool hover_like = (clear_button_hovered_ || s.focused || s.active);
+    const int inner_width = 18;
+
+    std::string raw;
+    switch (clear_state_) {
+    case CleanState::Idle:
+      raw = std::string(s.label);
+      break;
+    case CleanState::Running:
+      raw = "清除构建..";
+      break; // 两个点
+    case CleanState::Success:
+      raw = "已完成";
+      break;
+    case CleanState::Error:
+      raw = "失败";
+      break;
+    }
+    if ((int)raw.size() > inner_width)
+      raw = raw.substr(0, inner_width);
+    Element inner = text(raw) | center | size(WIDTH, EQUAL, inner_width);
+    Element full = hbox({text("["), inner, text("]")});
+
+    if (clear_state_ == CleanState::Running) {
+      full =
+          full | bold | bgcolor(Color::RGB(60, 60, 60)) | color(Color::White);
+    } else if (clear_state_ == CleanState::Success) {
+      full = full | bold | color(Color::Green);
+    } else if (clear_state_ == CleanState::Error) {
+      full = full | bold | color(Color::Red);
+    } else {
+      if (hover_like) {
+        full =
+            full | bold | bgcolor(Color::RGB(60, 60, 60)) | color(Color::White);
+      } else {
+        full = full | bold | color(Color::Green);
+      }
+    }
+    return full;
+  };
+
+  clear_button_ = Button(
+      "清除构建",
+      [this] {
+        if (clear_state_ == CleanState::Running)
+          return; // 忽略重复点击
+        // 如果之前在成功显示窗口，重置
+        clear_success_frames_remaining_ = 0;
+        clear_state_ = CleanState::Running;
+        clear_anim_tick_ = 0;
+        animation::RequestAnimationFrame();
+
+        // 后台线程执行清理
+        std::thread([this] {
+          auto detect_root = []() -> std::string {
+            try {
+              namespace fs = std::filesystem;
+#ifdef __APPLE__
+              char exe_path_buf[PATH_MAX];
+              uint32_t size = sizeof(exe_path_buf);
+              fs::path exe_path;
+              if (_NSGetExecutablePath(exe_path_buf, &size) == 0) {
+                exe_path = fs::canonical(exe_path_buf);
+              }
+#else
+              fs::path exe_path = fs::canonical("/proc/self/exe");
+#endif
+              fs::path cand =
+                  exe_path.parent_path().parent_path().parent_path();
+              if (fs::exists(cand / "build.sh"))
+                return cand.string();
+              for (const auto &root_path :
+                   {"../../../", "../../", "../", "./"}) {
+                fs::path test_path = fs::canonical(root_path);
+                if (fs::exists(test_path / "build.sh"))
+                  return test_path.string();
+              }
+            } catch (...) {
+            }
+            return std::filesystem::current_path().string();
+          };
+
+          std::string root = detect_root();
+          // 捕获输出，并在末尾打印显式退出码标记，避免 pclose()/wait
+          // 宏兼容性问题
+          std::string cmd = "cd '" + root +
+                            "' && ( ./build.sh --clean 2>&1; printf "
+                            "\"__EXIT_CODE:%d\\n\" $? )";
+          std::string out;
+          FILE *pipe = popen(cmd.c_str(), "r");
+          if (pipe) {
+            char buf[512];
+            while (fgets(buf, sizeof(buf), pipe) != nullptr) {
+              out.append(buf);
+            }
+          }
+          int status = pipe ? pclose(pipe) : -1;
+          // 优先从输出中解析显式退出码
+          bool ok = false;
+          int parsed_exit = -1;
+          const std::string marker = "__EXIT_CODE:";
+          size_t mpos = out.rfind(marker);
+          if (mpos != std::string::npos) {
+            size_t line_end = out.find('\n', mpos);
+            std::string code_str =
+                out.substr(mpos + marker.size(),
+                           (line_end == std::string::npos
+                                ? std::string::npos
+                                : line_end - (mpos + marker.size())));
+            try {
+              parsed_exit = std::stoi(code_str);
+            } catch (...) {
+              parsed_exit = -1;
+            }
+            ok = (parsed_exit == 0);
+            // 移除标记行
+            out.erase(mpos,
+                      (line_end == std::string::npos ? out.size() - mpos
+                                                     : (line_end - mpos + 1)));
+          } else {
+            // 回退：使用 pclose 返回的 wait 状态
+            ok = (status != -1) && WIFEXITED(status) &&
+                 (WEXITSTATUS(status) == 0);
+            parsed_exit =
+                (status != -1 && WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
+          }
+          if (ok) {
+            clear_state_ = CleanState::Success;
+            clear_success_frames_remaining_ = 30 + 30; // 约2秒
+            clear_output_.clear();
+            clear_exit_code_ = 0;
+          } else {
+            clear_state_ = CleanState::Error;
+            clear_success_frames_remaining_ = 60; // 失败提示约2秒
+            clear_exit_code_ = parsed_exit;
+            clear_output_ = std::move(out);
+          }
+          // 唤醒渲染循环
+          if (state_.trigger_exit_callback)
+            state_.trigger_exit_callback();
+        }).detach();
+      },
+      clear_opt);
+  // 绑定 Hover 状态
+  clear_button_ = Hoverable(clear_button_, &clear_button_hovered_);
+
+  buttons_row_ = Container::Horizontal({start_button_, clear_button_});
+
   auto renderer = Renderer([&] {
     // 首先检查窗口尺寸
     if (!state_.check_window_size()) {
       auto [current_width, current_height] = state_.get_terminal_size();
-      
+
       // 窗口太小，显示尺寸警告
       Elements warning_elements;
-      warning_elements.push_back(text("") | center);  // 空行用于垂直居中
-      warning_elements.push_back(text("⚠️  终端窗口尺寸过小  ⚠️") | bold | color(Color::Red) | center);
+      warning_elements.push_back(text("") | center); // 空行用于垂直居中
+      warning_elements.push_back(text("⚠️  终端窗口尺寸过小  ⚠️") | bold |
+                                 color(Color::Red) | center);
       warning_elements.push_back(text("") | center);
-      warning_elements.push_back(text("最小要求: " + 
-                                      std::to_string(UIState::MIN_TERMINAL_WIDTH) + " × " + 
-                                      std::to_string(UIState::MIN_TERMINAL_HEIGHT)) | 
-                                color(Color::Yellow) | center);
-      warning_elements.push_back(text("当前大小: " + 
-                                      std::to_string(current_width) + " × " + 
-                                      std::to_string(current_height)) | 
-                                color(Color::Cyan) | center);
+      warning_elements.push_back(
+          text("最小要求: " + std::to_string(UIState::MIN_TERMINAL_WIDTH) +
+               " × " + std::to_string(UIState::MIN_TERMINAL_HEIGHT)) |
+          color(Color::Yellow) | center);
+      warning_elements.push_back(
+          text("当前大小: " + std::to_string(current_width) + " × " +
+               std::to_string(current_height)) |
+          color(Color::Cyan) | center);
       warning_elements.push_back(text("") | center);
-      warning_elements.push_back(text("请调整终端窗口大小") | color(Color::White) | center);
+      warning_elements.push_back(text("请调整终端窗口大小") |
+                                 color(Color::White) | center);
       warning_elements.push_back(text("") | center);
-      
+
       return vbox(warning_elements) | center | border;
     }
 
@@ -111,18 +320,18 @@ Component UIRenderer::create_component() {
     Elements right_column_elements;
     right_column_elements.push_back(text("所有模块") | bold | center);
     right_column_elements.push_back(separator());
-    
+
     // 重新计算可见数量（终端可能调整大小）
     state_.calculate_module_visible_count();
     state_.ensure_module_selection_visible();
-    
+
     // 只渲染可见范围内的模块
     if (!state_.module_render_items.empty()) {
       const int start_index = state_.module_scroll_offset;
-      const int end_index = std::min(
-          static_cast<int>(state_.module_render_items.size()),
-          start_index + state_.module_visible_count);
-      
+      const int end_index =
+          std::min(static_cast<int>(state_.module_render_items.size()),
+                   start_index + state_.module_visible_count);
+
       for (int i = start_index; i < end_index; ++i) {
         const auto &item = state_.module_render_items[i];
         bool is_selected = (i == state_.module_selection_index);
@@ -131,15 +340,16 @@ Component UIRenderer::create_component() {
         right_column_elements.push_back(
             render_module_item(item, is_selected, is_focused, is_hovered));
       }
-      
+
       // 显示滚动指示器（如果需要）
-      const int total_modules = static_cast<int>(state_.module_render_items.size());
+      const int total_modules =
+          static_cast<int>(state_.module_render_items.size());
       if (total_modules > state_.module_visible_count) {
-        std::string scroll_info = "(" + std::to_string(start_index + 1) + "-" + 
-                                  std::to_string(end_index) + "/" + 
+        std::string scroll_info = "(" + std::to_string(start_index + 1) + "-" +
+                                  std::to_string(end_index) + "/" +
                                   std::to_string(total_modules) + ")";
-        right_column_elements.push_back(
-            text(scroll_info) | dim | color(Color::GrayLight) | center);
+        right_column_elements.push_back(text(scroll_info) | dim |
+                                        color(Color::GrayLight) | center);
       }
     } else {
       right_column_elements.push_back(text("没有可用的模块") | dim | center);
@@ -147,19 +357,24 @@ Component UIRenderer::create_component() {
 
     // 获取终端尺寸并计算双栏可用高度
     auto [terminal_width, terminal_height] = state_.get_terminal_size();
-    
+
     // 计算固定UI元素占用的高度
-    // 标题(1) + 分隔符(1) + 分隔符(1) + 描述(1) + 详细信息(3) + 分隔符(1) + 构建按钮(1) + 分隔符(1) + 按键提示(3) + 调试窗口(5) + 边框(2)
-    const int fixed_ui_height = 1 + 1 + 1 + 1 + 3 + 1 + 1 + 1 + 3 + 5 + 2;  // = 20行
-    const int available_height_for_columns = std::max(8, terminal_height - fixed_ui_height);  // 最少8行给双栏
-    
+    // 标题(1) + 分隔符(1) + 分隔符(1) + 描述(1) + 详细信息(3) + 分隔符(1) +
+    // 构建按钮(1) + 分隔符(1) + 按键提示(3) + 调试窗口(5) + 边框(2)
+    const int fixed_ui_height =
+        1 + 1 + 1 + 1 + 3 + 1 + 1 + 1 + 3 + 5 + 2; // = 20行
+    const int available_height_for_columns =
+        std::max(8, terminal_height - fixed_ui_height); // 最少8行给双栏
+
     // 组合左右栏为双栏布局 - 使用固定的50/50分割和动态高度
     Element left_column = vbox(left_column_elements) | border |
                           size(WIDTH, EQUAL, terminal_width / 2 - 1) |
-                          size(HEIGHT, EQUAL, available_height_for_columns) | flex;
+                          size(HEIGHT, EQUAL, available_height_for_columns) |
+                          flex;
     Element right_column = vbox(right_column_elements) | border |
                            size(WIDTH, EQUAL, terminal_width / 2 - 1) |
-                           size(HEIGHT, EQUAL, available_height_for_columns) | flex;
+                           size(HEIGHT, EQUAL, available_height_for_columns) |
+                           flex;
     elements.push_back(hbox({left_column, right_column}));
     elements.push_back(separator());
 
@@ -214,35 +429,21 @@ Component UIRenderer::create_component() {
 
     elements.push_back(separator());
 
-    // 计算构建按钮的固定Y坐标 - 基于精确的公式
-    // 构建按钮现在在主界面内部，紧贴详细信息下方
-    // 公式：y = terminal_height - content_line_debug - content_line_key_guide - 2 - 2
-    // 其中：最后两个-2分别是按键指南边框和调试区域边框
-    try {
-      auto terminal_size = ftxui::Terminal::Size();
-      state_.debug_info.build_button_x = terminal_size.dimx / 2;
-      
-      const int content_line_key_guide = calculate_key_guide_content_lines();  // = 2
-      const int content_line_debug = calculate_debug_content_lines();          // 动态计算
-      
-      // 按键指南边框：总是存在的2行边框
-      const int key_guide_border = 2;
-      
-      // 调试区域边框：只有当有调试内容时才存在
-      const int debug_border = (content_line_debug > 0) ? 2 : 0;
-      
-      // 应用精确公式（构建按钮在主界面内部，不需要单独减去）
-      state_.debug_info.build_button_y = terminal_size.dimy - content_line_debug - content_line_key_guide - key_guide_border - debug_border - 4;
-      
-    } catch (...) {
-      state_.debug_info.build_button_x = 40;
-      state_.debug_info.build_button_y = 25;  // 保守的默认值
-    }
-    state_.build_button_screen_y = state_.debug_info.build_button_y;
+    // 底部按钮改为组件，无需计算构建按钮的Y坐标
+    state_.build_button_screen_y = -1;
 
-    // 添加构建按钮 - 紧贴详细信息下方
-    Element build_button_content = render_build_button_content();
-    elements.push_back(build_button_content);
+    // 添加底部按钮行（组件渲染）- 紧贴详细信息下方
+    Element buttons_row_el = buttons_row_->Render();
+    elements.push_back(hbox({filler(), buttons_row_el, filler()}));
+
+    // 失败详情输出（自动换行）
+    if (clear_state_ == CleanState::Error && !clear_output_.empty()) {
+      elements.push_back(separator());
+      elements.push_back(
+          text("清理失败 (exit: " + std::to_string(clear_exit_code_) + ")") |
+          color(Color::Red) | bold);
+      elements.push_back(paragraph(clear_output_) | color(Color::Red));
+    }
 
     // 渲染结束后重置动画状态
     if (state_.animation_in_progress) {
@@ -260,40 +461,59 @@ Component UIRenderer::create_component() {
       state_.update_build_warning_flash();
       animation::RequestAnimationFrame();
     }
-    // 主界面内容（包含构建按钮，不包含按键指南）
+    // 清除构建按钮状态推进
+    if (clear_state_ == CleanState::Running) {
+      clear_anim_tick_ = (clear_anim_tick_ + 1) % 1000;
+      animation::RequestAnimationFrame();
+    } else if (clear_state_ == CleanState::Success ||
+               clear_state_ == CleanState::Error) {
+      if (clear_success_frames_remaining_ > 0) {
+        --clear_success_frames_remaining_;
+        animation::RequestAnimationFrame();
+      } else {
+        // 恢复到 Idle
+        clear_state_ = CleanState::Idle;
+        clear_anim_tick_ = 0;
+      }
+    }
+
+    // 主界面内容（包含底部按钮，不包含按键指南）
     Element main_content = vbox(elements) | border;
-    
+
     // 🔥 创建按键指南作为独立区域
     Element key_guide = render_key_guide();
-    
+
     // 🔥 只有在有调试元素启用时才显示调试窗口
     if (calculate_debug_content_lines() > 0) {
       Element debug_window = render_debug_window();
-      Element full_interface = vbox({main_content | flex, key_guide, debug_window});
-      
-      // 动态计算对话框按钮位置 - 现在不再需要对话框
-      int dialog_ok_y = -1; // 对话框已删除，保持-1
-      
-      // 重建统一的坐标映射（双栏版本）
-      rebuild_dual_column_coordinate_mapping(dialog_ok_y);
-      
+      Element full_interface =
+          vbox({main_content | flex, key_guide, debug_window});
+
+      // 底部按钮改为组件，不再参与坐标映射
+      state_.build_button_screen_y = -1;
+      // 重建统一的坐标映射（双栏版本），不含构建按钮
+      rebuild_dual_column_coordinate_mapping();
+
       return full_interface;
     } else {
       // 没有调试元素时，调试窗口完全消失
       Element full_interface = vbox({main_content | flex, key_guide});
-      
-      // 动态计算对话框按钮位置 - 现在不再需要对话框
-      int dialog_ok_y = -1; // 对话框已删除，保持-1
-      
-      // 重建统一的坐标映射（双栏版本）
-      rebuild_dual_column_coordinate_mapping(dialog_ok_y);
-      
+
+      // 底部按钮改为组件，不再参与坐标映射
+      state_.build_button_screen_y = -1;
+      // 重建统一的坐标映射（双栏版本），不含构建按钮
+      rebuild_dual_column_coordinate_mapping();
+
       return full_interface;
     }
   });
 
   return CatchEvent(renderer, [this](Event event) {
-    // 对话框已删除，直接处理正常的键盘事件
+    // 先交给底部按钮组件处理（鼠标/键盘都可）
+    if (buttons_row_ && buttons_row_->OnEvent(event)) {
+      return true;
+    }
+    // 其余交由双栏键盘/鼠标逻辑
     return handle_dual_column_keyboard_event(event);
   });
 }
@@ -475,10 +695,10 @@ bool UIRenderer::handle_dual_column_keyboard_event(const Event &event) {
     if (state_.interaction_manager) {
       state_.interaction_manager->clear_all_selections();
     }
-    
+
     // 🔥 同步清空传统状态
     state_.view.selected_modules.clear();
-    
+
     // 更新双栏显示
     state_.update_group_render_items();
     state_.update_module_render_items();
@@ -536,12 +756,12 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
   // 保存当前hover状态用于比较
   int old_group_hover = state_.group_hover_index;
   int old_module_hover = state_.module_hover_index;
-  bool old_build_hover = state_.build_button_hovered;
+  bool old_build_hover = false;
 
   // 重置所有hover状态 - 确保全局只有一个hover
   state_.group_hover_index = -1;
   state_.module_hover_index = -1;
-  state_.build_button_hovered = false;
+  // 底部按钮由组件管理，无需hover状态
 
   // 使用统一的坐标映射系统进行hover检测
   ElementInfo element =
@@ -571,14 +791,7 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
     }
     break;
 
-  case ElementType::BUILD_BUTTON:
-    // 构建按钮hover
-    state_.build_button_hovered = true;
-    break;
-
-  case ElementType::DIALOG_OK_BUTTON:
-    // 对话框按钮hover（如果需要的话）
-    break;
+    // 底部按钮由组件管理，不在映射中
 
   case ElementType::UNKNOWN:
   default:
@@ -588,8 +801,7 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
 
   // 检测状态变化
   if (old_group_hover != state_.group_hover_index ||
-      old_module_hover != state_.module_hover_index ||
-      old_build_hover != state_.build_button_hovered) {
+      old_module_hover != state_.module_hover_index) {
     state_changed = true;
 
     // 🔥 hover时实时更新details区域信息
@@ -630,14 +842,7 @@ bool UIRenderer::handle_dual_column_mouse_click(const Mouse &mouse) {
     }
     break;
 
-  case ElementType::BUILD_BUTTON:
-    // 构建按钮点击
-    state_.handle_build_button();
-    return true;
-
-  case ElementType::DIALOG_OK_BUTTON:
-    // 对话框按钮已删除，不再处理
-    break;
+    // 底部按钮由组件管理，不在映射中
 
   case ElementType::UNKNOWN:
   default:
@@ -657,51 +862,52 @@ bool UIRenderer::handle_mouse_wheel(const Mouse &mouse) {
   } else if (mouse.button == Mouse::WheelDown) {
     state_.debug_info.last_scroll = "Down";
   }
-  
+
   // 检查鼠标位置是否在右栏（模块列表）区域
-  ElementInfo element = state_.coordinate_mapper.get_element_at(mouse.y, mouse.x);
-  
+  ElementInfo element =
+      state_.coordinate_mapper.get_element_at(mouse.y, mouse.x);
+
   // 如果鼠标在模块区域或者右栏焦点激活时，处理滚轮事件
   bool in_module_area = (element.type == ElementType::MODULE_ITEM);
   bool right_pane_active = !state_.left_pane_focused;
-  
+
   if (in_module_area || right_pane_active) {
     int scroll_direction = 0;
-    
+
     if (mouse.button == Mouse::WheelUp) {
       // 向上滚动：向前滚动列表（显示较早的项目）
-      scroll_direction = -3;  // 一次滚动3行
+      scroll_direction = -3; // 一次滚动3行
     } else if (mouse.button == Mouse::WheelDown) {
-      // 向下滚动：向后滚动列表（显示较晚的项目） 
-      scroll_direction = 1;   // 一次滚动3行
+      // 向下滚动：向后滚动列表（显示较晚的项目）
+      scroll_direction = 1; // 一次滚动3行
     }
-    
+
     if (scroll_direction != 0) {
       // 执行滚动
       state_.scroll_module_list(scroll_direction);
-      
+
       // 如果选择项不在可视范围内，调整选择位置
       if (state_.module_selection_index < state_.module_scroll_offset) {
         state_.module_selection_index = state_.module_scroll_offset;
         state_.module_hover_index = state_.module_selection_index;
-      } else if (state_.module_selection_index >= 
+      } else if (state_.module_selection_index >=
                  state_.module_scroll_offset + state_.module_visible_count) {
-        state_.module_selection_index = state_.module_scroll_offset + 
-                                       state_.module_visible_count - 1;
+        state_.module_selection_index =
+            state_.module_scroll_offset + state_.module_visible_count - 1;
         state_.module_hover_index = state_.module_selection_index;
       }
-      
+
       // 更新详情信息
       update_details_on_hover();
-      
+
       // 重建坐标映射以反映滚动后的新位置
-      rebuild_dual_column_coordinate_mapping(-1);
-      
-      return true;  // 处理了滚轮事件
+      rebuild_dual_column_coordinate_mapping();
+
+      return true; // 处理了滚轮事件
     }
   }
-  
-  return false;  // 未处理滚轮事件
+
+  return false; // 未处理滚轮事件
 }
 
 // ==================== UI区域行数动态计算 ====================
@@ -713,28 +919,29 @@ bool UIRenderer::handle_mouse_wheel(const Mouse &mouse) {
 int UIRenderer::calculate_debug_content_lines() const {
   // 🔧 收集所有启用的调试元素
   std::vector<bool> enabled_elements = {
-    state_.debug_info.show_mouse_coords,    // Mouse: (0,67)
-    state_.debug_info.show_mouse_buttons,   // Buttons: L0 R1
-    state_.debug_info.show_mouse_scroll,    // Scroll: Up
-    state_.debug_info.show_keyboard,        // Key: Other
-    state_.debug_info.show_element_info,    // Element: Type=6 Index=-1
-    state_.debug_info.show_build_coords,    // Build: (44,61)
-    state_.debug_info.show_module_stats,    // Modules: 16 Groups: 6
-    state_.debug_info.show_terminal_size,   // Terminal: 89x73
-    state_.debug_info.show_build_hover      // BuildHover: N
+      state_.debug_info.show_mouse_coords,  // Mouse: (0,67)
+      state_.debug_info.show_mouse_buttons, // Buttons: L0 R1
+      state_.debug_info.show_mouse_scroll,  // Scroll: Up
+      state_.debug_info.show_keyboard,      // Key: Other
+      state_.debug_info.show_element_info,  // Element: Type=6 Index=-1
+      state_.debug_info.show_build_coords,  // Build: (44,61)
+      state_.debug_info.show_module_stats,  // Modules: 16 Groups: 6
+      state_.debug_info.show_terminal_size, // Terminal: 89x73
+      state_.debug_info.show_build_hover    // BuildHover: N
   };
-  
+
   // 计算启用的元素总数
   int enabled_count = 0;
   for (bool enabled : enabled_elements) {
-    if (enabled) enabled_count++;
+    if (enabled)
+      enabled_count++;
   }
-  
+
   // 如果没有启用任何元素，调试窗口完全消失
   if (enabled_count == 0) {
     return 0;
   }
-  
+
   // 按行填充：每行3个元素，计算需要的行数
   const int elements_per_row = 3;
   return (enabled_count + elements_per_row - 1) / elements_per_row; // 向上取整
@@ -747,7 +954,7 @@ int UIRenderer::calculate_debug_content_lines() const {
 int UIRenderer::calculate_key_guide_content_lines() const {
   // 四列布局，每列统一2行：
   // 第1列: ↑↓←→, Tab
-  // 第2列: Enter, Space/C  
+  // 第2列: Enter, Space/C
   // 第3列: 鼠标, 滚轮/点击
   // 第4列: q/Esc, Shift+Tab
   return 2;
@@ -755,7 +962,7 @@ int UIRenderer::calculate_key_guide_content_lines() const {
 
 // ==================== 双栏坐标映射和调试 ====================
 
-void UIRenderer::rebuild_dual_column_coordinate_mapping(int dialog_ok_y) {
+void UIRenderer::rebuild_dual_column_coordinate_mapping() {
   // 动态计算Y坐标偏移量 - 基于UI结构而非硬编码
   // 结构分析：title(1) + separator(1) + left_title(1) + left_separator(1) = 4
   const int left_content_start_y = 6;  // 左栏内容开始位置
@@ -768,25 +975,22 @@ void UIRenderer::rebuild_dual_column_coordinate_mapping(int dialog_ok_y) {
 
   // 使用动态参数重建双栏坐标映射
   state_.coordinate_mapper.rebuild_dual_column_mapping(
-      state_.group_render_items,        // 左栏：组列表
-      state_.module_render_items,       // 右栏：模块列表
-      left_content_start_y,             // 左栏内容起始Y坐标
-      right_content_start_y,            // 右栏内容起始Y坐标
-      left_width,                       // 动态计算的左栏宽度边界
-      right_start,                      // 动态计算的右栏起始X坐标
-      state_.debug_info.build_button_y, // 🔥 使用硬编码计算的构建按钮Y坐标
-      state_.show_build_dialog,         // 对话框状态
-      dialog_ok_y,                      // 对话框按钮Y坐标
-      state_.module_scroll_offset,      // 右栏滚动偏移
-      state_.module_visible_count       // 右栏可见数量
+      state_.group_render_items,   // 左栏：组列表
+      state_.module_render_items,  // 右栏：模块列表
+      left_content_start_y,        // 左栏内容起始Y坐标
+      right_content_start_y,       // 右栏内容起始Y坐标
+      left_width,                  // 动态计算的左栏宽度边界
+      right_start,                 // 动态计算的右栏起始X坐标
+      state_.module_scroll_offset, // 右栏滚动偏移
+      state_.module_visible_count  // 右栏可见数量
   );
 }
 
 std::pair<int, int> UIRenderer::calculate_dynamic_column_boundaries() {
   // 根据用户发现的精确公式实现
-  // 左栏起始：x = 2（固定，由边框结构决定）  
+  // 左栏起始：x = 2（固定，由边框结构决定）
   // 右栏起始：x = int((W-1)/2)，其中W为终端宽度
-  
+
   int terminal_width = 80; // 默认值
 
   // 获取实际终端宽度
@@ -799,13 +1003,14 @@ std::pair<int, int> UIRenderer::calculate_dynamic_column_boundaries() {
 
   // 应用用户发现的通用公式
   const int left_column_start_x = 2; // 固定起始位置
-  const int right_column_start_x = (terminal_width - 1) / 2; // 整数除法自动向下取整
-  
+  const int right_column_start_x =
+      (terminal_width - 1) / 2; // 整数除法自动向下取整
+
   // 左栏结束位置：右栏起始前的一个位置减去边框间隔
   const int left_column_end_x = right_column_start_x - 3; // 为边框预留空间
-  
+
   // 最小宽度保护
-  if (left_column_end_x <= left_column_start_x + 20 || 
+  if (left_column_end_x <= left_column_start_x + 20 ||
       terminal_width - right_column_start_x < 25) {
     // 空间太小，使用保守值
     return {35, 40};
@@ -823,7 +1028,7 @@ ftxui::Element UIRenderer::render_debug_window() {
     std::string content;
     Color color;
   };
-  
+
   // 🔥 获取终端尺寸（用于显示）
   int terminal_width = -1;
   int terminal_height = -1;
@@ -834,100 +1039,98 @@ ftxui::Element UIRenderer::render_debug_window() {
   } catch (...) {
     // 获取失败
   }
-  
+
   // 按顺序定义所有9个调试元素
   std::vector<DebugElement> debug_elements = {
-    { // 1. Mouse coordinates
-      state_.debug_info.show_mouse_coords,
-      "Mouse: (" + std::to_string(state_.debug_info.mouse_x) + "," + std::to_string(state_.debug_info.mouse_y) + ")",
-      Color::Cyan
-    },
-    { // 2. Mouse buttons
-      state_.debug_info.show_mouse_buttons,
-      "Buttons: L" + std::string(state_.debug_info.left_button ? "1" : "0") + " R" + std::string(state_.debug_info.right_button ? "1" : "0"),
-      Color::Yellow
-    },
-    { // 3. Mouse scroll
-      state_.debug_info.show_mouse_scroll,
-      "Scroll: " + state_.debug_info.last_scroll,
-      Color::Magenta
-    },
-    { // 4. Keyboard
-      state_.debug_info.show_keyboard,
-      "Key: " + state_.debug_info.last_key,
-      Color::Green
-    },
-    { // 5. Element info
-      state_.debug_info.show_element_info,
-      "Element: Type=" + std::to_string(state_.debug_info.element_type) + " Index=" + std::to_string(state_.debug_info.element_index),
-      Color::Magenta
-    },
-    { // 6. Build coordinates
-      state_.debug_info.show_build_coords,
-      "Build: (" + std::to_string(state_.debug_info.build_button_x) + "," + std::to_string(state_.debug_info.build_button_y) + ")",
-      Color::Red
-    },
-    { // 7. Module statistics
-      state_.debug_info.show_module_stats,
-      "Modules: " + std::to_string(state_.module_render_items.size()) + " Groups: " + std::to_string(state_.group_render_items.size()),
-      Color::White
-    },
-    { // 8. Terminal size
-      state_.debug_info.show_terminal_size,
-      "Terminal: " + std::to_string(terminal_width) + "x" + std::to_string(terminal_height),
-      Color::Cyan
-    },
-    { // 9. Build hover
-      state_.debug_info.show_build_hover,
-      "BuildHover: " + std::string(state_.build_button_hovered ? "Y" : "N"),
-      Color::Yellow
-    }
-  };
-  
+      {// 1. Mouse coordinates
+       state_.debug_info.show_mouse_coords,
+       "Mouse: (" + std::to_string(state_.debug_info.mouse_x) + "," +
+           std::to_string(state_.debug_info.mouse_y) + ")",
+       Color::Cyan},
+      {// 2. Mouse buttons
+       state_.debug_info.show_mouse_buttons,
+       "Buttons: L" + std::string(state_.debug_info.left_button ? "1" : "0") +
+           " R" + std::string(state_.debug_info.right_button ? "1" : "0"),
+       Color::Yellow},
+      {// 3. Mouse scroll
+       state_.debug_info.show_mouse_scroll,
+       "Scroll: " + state_.debug_info.last_scroll, Color::Magenta},
+      {// 4. Keyboard
+       state_.debug_info.show_keyboard, "Key: " + state_.debug_info.last_key,
+       Color::Green},
+      {// 5. Element info
+       state_.debug_info.show_element_info,
+       "Element: Type=" + std::to_string(state_.debug_info.element_type) +
+           " Index=" + std::to_string(state_.debug_info.element_index),
+       Color::Magenta},
+      {// 6. Build coordinates
+       state_.debug_info.show_build_coords,
+       "Build: (" + std::to_string(state_.debug_info.build_button_x) + "," +
+           std::to_string(state_.debug_info.build_button_y) + ")",
+       Color::Red},
+      {// 7. Module statistics
+       state_.debug_info.show_module_stats,
+       "Modules: " + std::to_string(state_.module_render_items.size()) +
+           " Groups: " + std::to_string(state_.group_render_items.size()),
+       Color::White},
+      {// 8. Terminal size
+       state_.debug_info.show_terminal_size,
+       "Terminal: " + std::to_string(terminal_width) + "x" +
+           std::to_string(terminal_height),
+       Color::Cyan},
+      {// 9. Build hover
+       state_.debug_info.show_build_hover,
+       "BuildHover: " + std::string(state_.build_button_hovered ? "Y" : "N"),
+       Color::Yellow}};
+
   // 🔧 收集启用的元素
   std::vector<Element> enabled_elements;
-  for (const auto& debug_elem : debug_elements) {
+  for (const auto &debug_elem : debug_elements) {
     if (debug_elem.enabled) {
-      enabled_elements.push_back(text(debug_elem.content) | color(debug_elem.color));
+      enabled_elements.push_back(text(debug_elem.content) |
+                                 color(debug_elem.color));
     }
   }
-  
+
   // 如果没有启用任何元素，显示提示信息
   if (enabled_elements.empty()) {
     enabled_elements.push_back(text("[调试信息关闭]") | color(Color::GrayDark));
   }
-  
+
   // 🔧 按行排列：每行3个元素
   const int elements_per_row = 3;
   std::vector<Element> rows;
-  
+
   for (size_t i = 0; i < enabled_elements.size(); i += elements_per_row) {
     std::vector<Element> row_elements;
-    
+
     // 添加当前行的元素（最多3个）
-    for (int j = 0; j < elements_per_row && (i + j) < enabled_elements.size(); ++j) {
+    for (int j = 0; j < elements_per_row && (i + j) < enabled_elements.size();
+         ++j) {
       if (j > 0) {
         row_elements.push_back(text(" | ") | color(Color::GrayLight));
       }
       row_elements.push_back(enabled_elements[i + j] | flex);
     }
-    
+
     // 如果这一行不满3个元素，用空白填充
-    int current_row_elements = std::min(elements_per_row, static_cast<int>(enabled_elements.size() - i));
+    int current_row_elements = std::min(
+        elements_per_row, static_cast<int>(enabled_elements.size() - i));
     for (int j = current_row_elements; j < elements_per_row; ++j) {
       if (j > 0) {
         row_elements.push_back(text(" | ") | color(Color::GrayLight));
       }
       row_elements.push_back(text("") | flex);
     }
-    
+
     rows.push_back(hbox(row_elements));
   }
   // 动态计算调试窗口高度：边框(2) + 实际行数
   const int actual_content_lines = static_cast<int>(rows.size());
   const int debug_window_height = 2 + actual_content_lines;
-  
-  return vbox(rows) | border | bgcolor(Color::RGB(20, 20, 20)) | size(HEIGHT, EQUAL, debug_window_height);
+
+  return vbox(rows) | border | bgcolor(Color::RGB(20, 20, 20)) |
+         size(HEIGHT, EQUAL, debug_window_height);
 }
 
 // ==================== 键盘导航辅助方法 ====================
@@ -935,10 +1138,11 @@ ftxui::Element UIRenderer::render_debug_window() {
 void UIRenderer::move_group_hover_up() {
   // 清除其他栏位的hover状态，确保全局只有一个hover
   state_.module_hover_index = -1;
-  
+
   if (state_.group_hover_index <= 0) {
     // 已经在顶部，循环到底部
-    state_.group_hover_index = static_cast<int>(state_.group_render_items.size()) - 1;
+    state_.group_hover_index =
+        static_cast<int>(state_.group_render_items.size()) - 1;
   } else {
     state_.group_hover_index--;
   }
@@ -951,8 +1155,9 @@ void UIRenderer::move_group_hover_up() {
 void UIRenderer::move_group_hover_down() {
   // 清除其他栏位的hover状态，确保全局只有一个hover
   state_.module_hover_index = -1;
-  
-  if (state_.group_hover_index >= static_cast<int>(state_.group_render_items.size()) - 1) {
+
+  if (state_.group_hover_index >=
+      static_cast<int>(state_.group_render_items.size()) - 1) {
     // 已经在底部，循环到顶部
     state_.group_hover_index = 0;
   } else {
@@ -967,10 +1172,11 @@ void UIRenderer::move_group_hover_down() {
 void UIRenderer::move_module_hover_up() {
   // 清除其他栏位的hover状态，确保全局只有一个hover
   state_.group_hover_index = -1;
-  
+
   if (state_.module_hover_index <= 0) {
     // 已经在顶部，循环到底部
-    state_.module_hover_index = static_cast<int>(state_.module_render_items.size()) - 1;
+    state_.module_hover_index =
+        static_cast<int>(state_.module_render_items.size()) - 1;
   } else {
     state_.module_hover_index--;
   }
@@ -985,8 +1191,9 @@ void UIRenderer::move_module_hover_up() {
 void UIRenderer::move_module_hover_down() {
   // 清除其他栏位的hover状态，确保全局只有一个hover
   state_.group_hover_index = -1;
-  
-  if (state_.module_hover_index >= static_cast<int>(state_.module_render_items.size()) - 1) {
+
+  if (state_.module_hover_index >=
+      static_cast<int>(state_.module_render_items.size()) - 1) {
     // 已经在底部，循环到顶部
     state_.module_hover_index = 0;
   } else {
@@ -1004,13 +1211,14 @@ void UIRenderer::sync_hover_to_active_pane() {
   // 清除所有hover状态，然后根据活动栏位设置单一hover
   state_.group_hover_index = -1;
   state_.module_hover_index = -1;
-  
+
   if (state_.left_pane_focused) {
     // 左栏有焦点，设置组hover到当前选择位置
     state_.group_hover_index = state_.group_selection_index;
     // 如果hover位置超出范围，调整到有效范围
-    if (state_.group_hover_index < 0 || 
-        state_.group_hover_index >= static_cast<int>(state_.group_render_items.size())) {
+    if (state_.group_hover_index < 0 ||
+        state_.group_hover_index >=
+            static_cast<int>(state_.group_render_items.size())) {
       state_.group_hover_index = 0;
       state_.group_selection_index = 0;
     }
@@ -1018,8 +1226,9 @@ void UIRenderer::sync_hover_to_active_pane() {
     // 右栏有焦点，设置模块hover到当前选择位置
     state_.module_hover_index = state_.module_selection_index;
     // 如果hover位置超出范围，调整到有效范围
-    if (state_.module_hover_index < 0 || 
-        state_.module_hover_index >= static_cast<int>(state_.module_render_items.size())) {
+    if (state_.module_hover_index < 0 ||
+        state_.module_hover_index >=
+            static_cast<int>(state_.module_render_items.size())) {
       state_.module_hover_index = 0;
       state_.module_selection_index = 0;
     }
@@ -1112,77 +1321,42 @@ void UIRenderer::update_details_on_hover() {
 
 ftxui::Element UIRenderer::render_key_guide() {
   // 按键提示 - 动态四列版本（统一2行）
-  return hbox({
-    // 第一列 - 导航
-    vbox({text("↑↓←→") | color(Color::Cyan),
-          text("Tab") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("导航") | color(Color::GrayLight),
-          text("焦点") | color(Color::GrayLight)}) | flex,
-    text("   ") | color(Color::Default),
-    // 第二列 - 操作
-    vbox({text("Enter") | color(Color::Cyan),
-          text("Space/C") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("选择") | color(Color::GrayLight),
-          text("批量/清空") | color(Color::GrayLight)}) | flex,
-    text("   ") | color(Color::Default),
-    // 第三列 - 鼠标
-    vbox({text("鼠标") | color(Color::Cyan),
-          text("滚轮/点击") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("悬停") | color(Color::GrayLight),
-          text("滚动/交互") | color(Color::GrayLight)}) | flex,
-    text("   ") | color(Color::Default),
-    // 第四列 - 退出
-    vbox({text("q/Esc") | color(Color::Cyan),
-          text("Shift+Tab") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("退出") | color(Color::GrayLight),
-          text("反向") | color(Color::GrayLight)}) | flex
-  }) | border | bgcolor(Color::RGB(30, 30, 30));
-}
-
-// ==================== 构建按钮渲染 ====================
-
-ftxui::Element UIRenderer::render_build_button_content() {
-  // 构建按钮内容 - 紧贴详细信息下方
-  Element build_button_content;
-  
-  // 检查是否没有选择任何模块
-  bool no_modules_selected = state_.view.selected_modules.empty();
-  
-  if (state_.build_warning_flash_active) {
-    // 警告闪烁状态：黄红交替闪烁，显示警告文字
-    if (state_.build_warning_flash_count % 2 == 1) {
-      // 奇数次：红色背景
-      build_button_content = text("【 ⚠️  未选择模块 】") | bold |
-                             bgcolor(Color::Red) | color(Color::White);
-    } else {
-      // 偶数次：黄色背景  
-      build_button_content = text("【 ⚠️  未选择模块 】") | bold |
-                             bgcolor(Color::Yellow) | color(Color::Black);
-    }
-  } else if (no_modules_selected) {
-    // 没有选择模块时：按钮置灰
-    build_button_content = text("【 开始编译构建 】") | bold |
-                           color(Color::GrayDark) | dim;
-  } else if (state_.build_button_focused) {
-    // 正常焦点状态
-    build_button_content = text("【 开始编译构建 】") | bold |
-                           bgcolor(Color::Blue) | color(Color::White);
-  } else if (state_.build_button_hovered) {
-    // 正常hover状态
-    build_button_content = text("【 开始编译构建 】") | bold |
-                           color(Color::Blue) |
-                           bgcolor(Color::RGB(80, 80, 80));
-  } else {
-    // 正常状态
-    build_button_content =
-        text("【 开始编译构建 】") | bold | color(Color::Blue);
-  }
-  
-  return hbox({filler(), build_button_content, filler()}) | center;
+  return hbox({// 第一列 - 导航
+               vbox({text("↑↓←→") | color(Color::Cyan),
+                     text("Tab") | color(Color::Cyan)}) |
+                   flex,
+               text("  ") | color(Color::Default),
+               vbox({text("导航") | color(Color::GrayLight),
+                     text("焦点") | color(Color::GrayLight)}) |
+                   flex,
+               text("   ") | color(Color::Default),
+               // 第二列 - 操作
+               vbox({text("Enter") | color(Color::Cyan),
+                     text("Space/C") | color(Color::Cyan)}) |
+                   flex,
+               text("  ") | color(Color::Default),
+               vbox({text("选择") | color(Color::GrayLight),
+                     text("批量/清空") | color(Color::GrayLight)}) |
+                   flex,
+               text("   ") | color(Color::Default),
+               // 第三列 - 鼠标
+               vbox({text("鼠标") | color(Color::Cyan),
+                     text("滚轮/点击") | color(Color::Cyan)}) |
+                   flex,
+               text("  ") | color(Color::Default),
+               vbox({text("悬停") | color(Color::GrayLight),
+                     text("滚动/交互") | color(Color::GrayLight)}) |
+                   flex,
+               text("   ") | color(Color::Default),
+               // 第四列 - 退出
+               vbox({text("q/Esc") | color(Color::Cyan),
+                     text("Shift+Tab") | color(Color::Cyan)}) |
+                   flex,
+               text("  ") | color(Color::Default),
+               vbox({text("退出") | color(Color::GrayLight),
+                     text("反向") | color(Color::GrayLight)}) |
+                   flex}) |
+         border | bgcolor(Color::RGB(30, 30, 30));
 }
 
 } // namespace sunray_tui
