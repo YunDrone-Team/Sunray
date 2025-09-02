@@ -19,20 +19,20 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     // 无人机名字 = 无人机名字前缀 + 无人机ID
     uav_name = "/" + uav_name + std::to_string(uav_id);
 
-    // 初始化外部定位数据解析类(输入：外部定位数据来源类型)
+    // 【重要外部类】初始化外部定位数据解析类(输入：外部定位数据来源类型 - external_source)
     ext_pos.init(nh, external_source);
 
-    // 【订阅】无人机PX4模式 - 飞控 -> mavros -> 本节点
+    // 【订阅】【重要话题】无人机PX4模式 - 飞控 -> mavros -> 本节点
     px4_state_sub = nh.subscribe<mavros_msgs::State>(uav_name + "/mavros/state", 10, &ExternalFusion::px4_state_callback, this);
     // 【订阅】无人机PX4状态（是否降落） - 飞控 -> mavros -> 本节点
     px4_extended_state_sub = nh.subscribe<mavros_msgs::ExtendedState>(uav_name + "/mavros/extended_state", 10, &ExternalFusion::px4_extended_state_callback, this);
     // 【订阅】无人机电池状态 - 飞控 -> mavros -> 本节点
     px4_battery_sub = nh.subscribe<sensor_msgs::BatteryState>(uav_name + "/mavros/battery", 10, &ExternalFusion::px4_battery_callback, this);
-    // 【订阅】PX4中的无人机位置（坐标系:ENU系） - 飞控 -> mavros -> 本节点
+    // 【订阅】【重要话题】PX4中的无人机位置（坐标系:ENU系） - 飞控 -> mavros -> 本节点
     px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(uav_name + "/mavros/local_position/pose", 10, &ExternalFusion::px4_pose_callback, this);
-    // 【订阅】PX4中的无人机速度（坐标系:ENU系） - 飞控 -> mavros -> 本节点
+    // 【订阅】【重要话题】PX4中的无人机速度（坐标系:ENU系） - 飞控 -> mavros -> 本节点
     px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(uav_name + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
-    // 【订阅】PX4中的无人机欧拉角 - 飞控 -> mavros -> 本节点
+    // 【订阅】【重要话题】PX4中的无人机欧拉角 - 飞控 -> mavros -> 本节点
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(uav_name + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
     // 【订阅】无人机GPS卫星数量 - 飞控 -> mavros -> 本节点
     px4_gps_satellites_sub = nh.subscribe<std_msgs::UInt32>(uav_name + "/mavros/global_position/raw/satellites", 10, &ExternalFusion::px4_gps_satellites_callback, this);
@@ -44,17 +44,17 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_pos_target_sub = nh.subscribe<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/target_local", 1, &ExternalFusion::px4_pos_target_callback, this);
     // 【订阅】PX4中无人机的姿态设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）
     px4_att_target_sub = nh.subscribe<mavros_msgs::AttitudeTarget>(uav_name + "/mavros/setpoint_raw/target_attitude", 1, &ExternalFusion::px4_att_target_callback, this);
-    
+
+    // 【发布】【重要话题】PX4无人机综合状态 - 本节点 -> uav_control_node
+    px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 1);
     // 【发布】无人机里程计 - 本节点 -> 其他需要odom接口的节点/RVIZ
     uav_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/sunray/uav_odom", 1);
     // 【发布】无人机运动轨迹 - 本节点 -> RVIZ
     uav_trajectory_pub = nh.advertise<nav_msgs::Path>(uav_name + "/sunray/uav_trajectory", 1);
     // 【发布】无人机MESH图标 - 本节点 -> RVIZ
     uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(uav_name + "/sunray/uav_mesh", 1);
-    // 【发布】PX4无人机综合状态 - 本节点 -> uav_control_node
-    px4_state_pub = nh.advertise<sunray_msgs::PX4State>(uav_name + "/sunray/px4_state", 1);
 
-    // 【定时器】任务 检查超时等任务以及发布PX4_STATE状态
+    // 【定时器】【重要定时器】检查超时等任务以及发布PX4_STATE状态
     timer_pub_px4_state = nh.createTimer(ros::Duration(0.01), &ExternalFusion::timer_pub_px4_state_cb, this);
     // 【定时器】RVIZ相关话题定时发布  - 本节点 -> RVIZ
     timer_rviz_pub = nh.createTimer(ros::Duration(0.1), &ExternalFusion::timer_rviz, this);
@@ -523,6 +523,7 @@ void ExternalFusion::show_px4_state()
 
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
+        static Eigen::Vector3d pos_control_error; // 控制误差（位置）
         pos_control_error[0] = px4_state.pos_setpoint[0] - px4_state.position[0];
         pos_control_error[1] = px4_state.pos_setpoint[1] - px4_state.position[1];
         pos_control_error[2] = px4_state.pos_setpoint[2] - px4_state.position[2];

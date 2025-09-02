@@ -98,6 +98,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     uav_name = "/" + uav_name + std::to_string(uav_id);               
     nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
     nh.param<bool>("enable_range_sensor", enable_range_sensor, false);                  // 【参数】是否使用距离传感器数据
+    nh.param<bool>("use_vision_pose", use_vision_pose, true);                           // 【参数】是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
 
     // 根据外部定位数据来源，订阅不同的话题
     switch (external_source)
@@ -114,38 +115,45 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
         break;
     // 定位源：GAZEBO仿真时使用Gazebo插件提供的位姿真值
     case sunray_msgs::ExternalOdom::GAZEBO:
+        // GAZEBO属于外部定位源，默认开启外部定位融合
+        enable_external_fusion = true; 
         // 根据uav_id，订阅不同的gazebo_pose话题
         source_topic = uav_name + "/sunray/gazebo_pose";
         odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic, 10, &ExternalPosition::OdomCallback, this);
-        enable_external_fusion = true;
         break;
     // 定位源：动作捕捉系统
     case sunray_msgs::ExternalOdom::MOCAP:
+        // MOCAP属于外部定位源，默认开启外部定位融合
+        enable_external_fusion = true; 
         // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn_client_node -> 本节点
         pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/pose", 1, &ExternalPosition::PosCallback, this);
         // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn_client_node -> 本节点 （此处只是订阅，实际没有使用该速度）
         vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/twist", 1, &ExternalPosition::VelCallback, this);
-        enable_external_fusion = true;
         break;
     // 定位源：VIOBOT
     case sunray_msgs::ExternalOdom::VIOBOT:
-        // 【订阅】viobot的mavlink直通程序 -> 本节点
+        // VIOBOT属于外部定位源，默认开启外部定位融合
+        enable_external_fusion = true;  
+        // 【订阅】VIOBOT算法的IMU数据 - VIOBOT算法程序 -> 本节点
         viobot_imu_sub = nh.subscribe("/baton/imu", 10, &ExternalPosition::viobot_imuCallback, this);
+        // 【订阅】VIOBOT算法的里程计数据 - VIOBOT算法程序 -> 本节点
         viobot_odom_sub = nh.subscribe<nav_msgs::Odometry>("/baton/stereo3/odometry", 10, &ExternalPosition::viobot_odomCallback, this);
+        // 【订阅】VIOBOT算法状态 - VIOBOT算法程序 -> 本节点
         viobot_algo_status_sub = nh.subscribe<sunray_msgs::algo_status>("/baton/algo_status", 2, &ExternalPosition::viobot_algoStatusCallback, this);
-
+        // 【发布】控制VIOBOT算法启动与停止 - 本节点 -> VIOBOT算法程序
         viobot_algo_ctrl_pub = nh.advertise<sunray_msgs::algo_ctrl>("/baton/stereo3_ctrl", 2);
-        enable_external_fusion = true;
         break;
     // 定位源：Gps模式下，无需开启外部定位
     case sunray_msgs::ExternalOdom::GPS:
+        // GPS不属于外部定位源，不开启外部定位融合
         enable_external_fusion = false;
         break;
     // 定位源：RTK模式下，无需开启外部定位
     case sunray_msgs::ExternalOdom::RTK:
+        // RTK不属于外部定位源，不开启外部定位融合
         enable_external_fusion = false;
         break;
-    // VINS-Fusion
+    // 定位源：VINS-Fusion
     case sunray_msgs::ExternalOdom::VINS:
         source_topic = uav_name + "/vins_estimator/odometry";
         enable_external_fusion = true;
@@ -180,7 +188,8 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
             nh.param<int>("baudrate", baudrate, 115200);
             // mavlink通信初始化
             mavlink_init(uart_name.c_str(), baudrate);
-            // mavlink_send_odometry_thread(); // 先保存再在另外的线程里面发送
+            // mavlink通信线程
+            mavlink_send_odometry_thread(); // 先保存再在另外的线程里面发送
         }
 
         // 【定时器】当PX4需要外部定位输入时，定时更新和发布
@@ -276,10 +285,11 @@ void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
         vision_pose_pub.publish(vision_pose);
     }else
     {
-        // 通过Mavlink直接发送外部定位数据到PX4
-        mavlink_send_odometry(get_mavlink_msg());
+        // 通过线程定时发送（25Hz）
+        mavlink_save_odometry(get_mavlink_msg());
+        // 直接发送，随到随发
+        // mavlink_send_odometry(get_mavlink_msg());
     }
-
 }
 
 void ExternalPosition::OdomCallback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -442,7 +452,6 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
     external_odom.attitude_q.y = q.y();
     external_odom.attitude_q.z = q.z();
     external_odom.attitude_q.w = q.w();
-
     external_odom.attitude[0] = roll;
     external_odom.attitude[1] = -pitch;
     external_odom.attitude[2] = -yaw;
@@ -504,7 +513,6 @@ mavlink_odometry_t ExternalPosition::get_mavlink_msg()
 
     for (int i = 0; i < 21; i++)
     {
-
         mavlink_odom.pose_covariance[i] = NAN;
         mavlink_odom.velocity_covariance[i] = NAN;
     }

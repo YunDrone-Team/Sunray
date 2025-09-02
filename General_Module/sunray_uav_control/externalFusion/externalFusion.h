@@ -13,10 +13,10 @@ private:
     int external_source;                                    // 外部定位数据来源
     std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     ros::Time px4_state_time;                               // 无人机状态时间戳
-    Eigen::Vector3d pos_control_error; // 控制误差（位置）
+    
+    ExternalPosition ext_pos;                               // 外部定位源的回调和处理
 
-    ExternalPosition ext_pos;                     // 外部定位源的回调和处理
-
+    // ROS话题订阅句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅
     ros::Subscriber px4_extended_state_sub; // 【订阅】无人机状态订阅
     ros::Subscriber px4_battery_sub;        // 【订阅】无人机电池状态订阅
@@ -29,11 +29,13 @@ private:
     ros::Subscriber px4_pos_target_sub;     // 【订阅】px4目标订阅 位置 速度加 速度
     ros::Subscriber px4_att_target_sub;     // 【订阅】无人机姿态订阅
 
+    // ROS话题发布句柄
     ros::Publisher uav_odom_pub;       // 【发布】无人机里程计发布
     ros::Publisher uav_trajectory_pub; // 【发布】无人机轨迹发布
     ros::Publisher uav_mesh_pub;       // 【发布】无人机mesh发布
     ros::Publisher px4_state_pub;      // 【发布】无人机状态
 
+    // 定时器句柄
     ros::Timer timer_rviz_pub;        // 定时发布rviz显示消息
     ros::Timer timer_pub_px4_state;   // 定时发布px4_state
 
