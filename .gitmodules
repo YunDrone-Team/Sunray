@@ -1,0 +1,3 @@
+[submodule "sunray_scripts"]
+	path = sunray_scripts
+	url = https://gitee.com/yundrone_sunray2023/sunray_scripts
