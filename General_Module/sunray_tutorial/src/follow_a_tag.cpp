@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     
 
     uav_name = "/" + uav_name + to_string(uav_id);
-    // 订阅无人机状态
+    // 【订阅】无人机状态
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
     // 【订阅】目标点位置
     ros::Subscriber target_pos_sub = nh.subscribe<sunray_msgs::TargetsInFrameMsg>(uav_name + "/sunray_detect/qrcode_detection_ros", 1, tagCallback);

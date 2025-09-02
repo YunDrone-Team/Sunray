@@ -90,7 +90,7 @@ private:
     ros::Time mode_takeoff_time;                                             // 第一次进入模式时间
     ros::Time orca_cmd_time;                                                 // orca返回值时间
     ros::Time leader_pose_time;                                              // 领导者位置时间
-    std::map<int, ros::Subscriber> agent_state_sub;                          // 订阅无人机状态
+    std::map<int, ros::Subscriber> agent_state_sub;                          // 【订阅】无人机状态
     std::map<int, ros::Publisher> agent_state_pub;                           // 发布无人机状态
 
     void dynamic_formation_pub(std::string formation_name);                   // 动态编队 离线读取位置 发布位置

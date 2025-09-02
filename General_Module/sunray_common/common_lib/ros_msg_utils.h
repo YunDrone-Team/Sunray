@@ -29,6 +29,7 @@ using namespace sunray_logger;
 #include <sunray_msgs/PX4State.h>
 #include <sunray_msgs/TextInfo.h>
 #include <sunray_msgs/UAVWayPoint.h>
+#include <sunray_msgs/UAVWayPointState.h>
 #include <sunray_msgs/UGVControlCMD.h>
 #include <sunray_msgs/UGVState.h>
 #include <sunray_msgs/PositionCommand.h>

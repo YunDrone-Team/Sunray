@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     nh.param<string>("uav_name", uav_name, "uav");
 
     uav_name = "/" + uav_name + std::to_string(uav_id);
-    //  订阅无人机状态
+    //  【订阅】无人机状态
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
 
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）

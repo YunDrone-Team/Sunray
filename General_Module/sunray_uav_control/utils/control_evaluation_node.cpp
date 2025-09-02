@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     
     uav_name = "/" + uav_name + std::to_string(uav_id);
 
-    // 订阅无人机状态
+    // 【订阅】无人机状态
     px4_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
 
     // 发布控制指令
