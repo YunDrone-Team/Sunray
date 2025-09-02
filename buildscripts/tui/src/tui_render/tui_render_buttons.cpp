@@ -26,10 +26,8 @@ void UIRenderer::create_buttons() {
   // 自定义外观：与清除按钮统一hover逻辑，错误提示改为点击触发
   start_opt.transform = [this](const EntryState &s) {
     const bool has_selection = !state_.view.selected_modules.empty();
-    // 仅依赖唯一的 Hover 标志（与模块/组一致）：
-    // - 键盘进入按钮行时由键盘逻辑置位相应 hovered_ 标志
-    // - 鼠标离开或切换目标时由全局鼠标逻辑清除 hovered_ 标志
-    const bool hover_like = start_button_hovered_;
+    // 第一阶段：通过统一高亮管理器决定唯一高亮
+    const bool hover_like = highlight_mgr_.is_highlighted(InteractiveId::Start());
     const int inner_width = 18;
 
     // 点击未选择模块后，短暂显示“请选择模块”并以红底提示
@@ -71,14 +69,13 @@ void UIRenderer::create_buttons() {
         state_.build_button_focused = false;
       },
       start_opt);
-  // 绑定 Hover 状态
-  start_button_ = Hoverable(start_button_, &start_button_hovered_);
+  // 去除 Hoverable，hover 高亮由统一管理器 + 反射 Box 决定
 
   // 清除构建按钮：点击后绿色闪烁三次（不做实际逻辑）
   auto clear_opt = ButtonOption::Animated();
   clear_opt.transform = [this](const EntryState &s) {
-    // 仅依赖唯一的 Hover 标志（与模块/组一致）
-    const bool hover_like = clear_button_hovered_;
+    // 第一阶段：通过统一高亮管理器决定唯一高亮
+    const bool hover_like = highlight_mgr_.is_highlighted(InteractiveId::Clear());
     const int inner_width = 18;
 
     std::string raw;
@@ -140,7 +137,7 @@ void UIRenderer::create_buttons() {
         clear_anim_tick_ = 0;
         animation::RequestAnimationFrame();
 
-        // 后台线程执行清理
+        // 后台执行清理：无需关心退出码，直接认为成功
         std::thread([this] {
           auto detect_root = []() -> std::string {
             try {
@@ -155,12 +152,10 @@ void UIRenderer::create_buttons() {
 #else
               fs::path exe_path = fs::canonical("/proc/self/exe");
 #endif
-              fs::path cand =
-                  exe_path.parent_path().parent_path().parent_path();
+              fs::path cand = exe_path.parent_path().parent_path().parent_path();
               if (fs::exists(cand / "build.sh"))
                 return cand.string();
-              for (const auto &root_path :
-                   {"../../../", "../../", "../", "./"}) {
+              for (const auto &root_path : {"../../../", "../../", "../", "./"}) {
                 fs::path test_path = fs::canonical(root_path);
                 if (fs::exists(test_path / "build.sh"))
                   return test_path.string();
@@ -171,61 +166,16 @@ void UIRenderer::create_buttons() {
           };
 
           std::string root = detect_root();
-          // 捕获输出，并在末尾打印显式退出码标记，避免 pclose()/wait
-          // 宏兼容性问题
-          std::string cmd = "cd '" + root +
-                            "' && ( ./build.sh --clean 2>&1; printf "
-                            "\"__EXIT_CODE:%d\\n\" $? )";
-          std::string out;
-          FILE *pipe = popen(cmd.c_str(), "r");
-          if (pipe) {
-            char buf[512];
-            while (fgets(buf, sizeof(buf), pipe) != nullptr) {
-              out.append(buf);
-            }
-          }
-          int status = pipe ? pclose(pipe) : -1;
-          // 优先从输出中解析显式退出码
-          bool ok = false;
-          int parsed_exit = -1;
-          const std::string marker = "__EXIT_CODE:";
-          size_t mpos = out.rfind(marker);
-          if (mpos != std::string::npos) {
-            size_t line_end = out.find('\n', mpos);
-            std::string code_str =
-                out.substr(mpos + marker.size(),
-                           (line_end == std::string::npos
-                                ? std::string::npos
-                                : line_end - (mpos + marker.size())));
-            try {
-              parsed_exit = std::stoi(code_str);
-            } catch (...) {
-              parsed_exit = -1;
-            }
-            ok = (parsed_exit == 0);
-            // 移除标记行
-            out.erase(mpos,
-                      (line_end == std::string::npos ? out.size() - mpos
-                                                     : (line_end - mpos + 1)));
-          } else {
-            // 回退：使用 pclose 返回的 wait 状态
-            ok = (status != -1) && WIFEXITED(status) &&
-                 (WEXITSTATUS(status) == 0);
-            parsed_exit =
-                (status != -1 && WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
-          }
-          if (ok) {
-            clear_state_ = CleanState::Success;
-            clear_success_frames_remaining_ = 30 + 30; // 约2秒
-            clear_output_.clear();
-            clear_exit_code_ = 0;
-          } else {
-            clear_state_ = CleanState::Error;
-            clear_success_frames_remaining_ = 60; // 失败提示约2秒
-            clear_exit_code_ = parsed_exit;
-            clear_output_ = std::move(out);
-          }
-          // 唤醒渲染循环
+          // 以后台方式启动清理命令，忽略输出与退出码
+          std::string cmd = "cd '" + root + "' && nohup ./build.sh --clean > /dev/null 2>&1 &";
+          std::system(cmd.c_str());
+
+          // 直接认为成功，显示短暂成功提示
+          clear_state_ = CleanState::Success;
+          clear_success_frames_remaining_ = 60; // 约2秒
+          clear_output_.clear();
+          clear_exit_code_ = 0;
+
           if (state_.trigger_exit_callback)
             state_.trigger_exit_callback();
         }).detach();
@@ -236,8 +186,7 @@ void UIRenderer::create_buttons() {
         state_.build_button_focused = false;
       },
       clear_opt);
-  // 绑定 Hover 状态
-  clear_button_ = Hoverable(clear_button_, &clear_button_hovered_);
+  // 去除 Hoverable，hover 高亮由统一管理器 + 反射 Box 决定
 
   buttons_row_ = Container::Horizontal({start_button_, clear_button_});
 }

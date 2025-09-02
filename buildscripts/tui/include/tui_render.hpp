@@ -3,6 +3,7 @@
 #include "ftxui/component/component.hpp"
 #include "ftxui/dom/elements.hpp"
 #include "tui_core.hpp"
+#include "tui/render/tui_highlight_manager.hpp"
 #include <functional>
 
 
@@ -64,6 +65,13 @@ private:
   // Hover 状态（使用 FTXUI Hoverable 装饰器获取）
   bool start_button_hovered_ = false;
   bool clear_button_hovered_ = false;
+
+  // 统一高亮管理器（第一阶段：先接入按钮）
+  UIHighlightManager highlight_mgr_;
+
+  // 反射捕获的按钮盒子，用于鼠标命中
+  ftxui::Box start_button_box_;
+  ftxui::Box clear_button_box_;
 
   // 清理过程的状态机
   enum class CleanState { Idle, Running, Success, Error };

@@ -94,6 +94,18 @@ ftxui::Component UIRenderer::create_component() {
   Component final_renderer = Renderer(event_handler, [this] {
     // 重建坐标映射 - 在每次渲染前更新
     rebuild_dual_column_coordinate_mapping();
+    // 按钮 Hover 状态由反射 Box + 鼠标命中负责，不在此同步
+    // 键盘焦点同步（仅作为候选，不直接决定高亮）
+    if (state_.build_button_focused) {
+      highlight_mgr_.on_keyboard_focus(
+          state_.button_focus_index == 0 ? std::optional{InteractiveId::Start()}
+                                         : std::optional{InteractiveId::Clear()});
+    } else {
+      // 离开按钮区时，不持有按钮键盘焦点
+      highlight_mgr_.on_keyboard_focus(std::nullopt);
+    }
+    // 计算唯一高亮
+    highlight_mgr_.compute_highlighted();
     // 推进构建按钮的警告闪烁计时，确保点击后能自动恢复
     state_.update_build_warning_flash();
     if (state_.build_warning_flash_active) {
@@ -122,8 +134,27 @@ ftxui::Component UIRenderer::create_component() {
       terminal_height = terminal_size.dimy;
     } catch (...) {}
     
-    // 计算固定UI元素占用的高度 - 标题(1) + 分隔符(1) + 栏目标题(1) + 分隔符(1) + 描述(4) + 分隔符(1) + 按钮(1) + 分隔符(1) + 按键指南(3) + 调试(5) + 边框(2)
-    const int fixed_ui_height = 1 + 1 + 1 + 1 + 4 + 1 + 1 + 1 + 3 + 5 + 2; // = 21行
+    // 计算详情区高度：默认4行（描述1 + 详情3），若描述换行，则在此基础上额外增加至多3行
+    const int content_width = std::max(20, terminal_width - 4);
+    const std::string desc_label_for_calc = "描述: ";
+    const std::string desc_text_for_calc =
+        state_.current_item_description.empty() ? "NULL"
+                                                : state_.current_item_description;
+    // 生成一个与实际渲染一致的描述元素用于测量行数
+    Element desc_measure = hbox({text(desc_label_for_calc),
+                                 paragraph(desc_text_for_calc) |
+                                     size(WIDTH, EQUAL, std::max(1, content_width - (int)desc_label_for_calc.size()))});
+    int desc_lines = 1;
+    try {
+      auto dims = ftxui::Dimension::Fit(desc_measure);
+      desc_lines = std::max(1, dims.dimy);
+    } catch (...) {
+      desc_lines = 1;
+    }
+    const int extra_desc_lines = std::min(3, std::max(0, desc_lines - 1));
+
+    // 固定UI高度 = 标题(1) + 分隔符(1) + 栏目标题(1) + 分隔符(1) + 详情区(4+extra) + 分隔符(1) + 按钮(1) + 分隔符(1) + 按键指南(3) + 调试(5) + 边框(2)
+    const int fixed_ui_height = 1 + 1 + 1 + 1 + (4 + extra_desc_lines) + 1 + 1 + 1 + 3 + 5 + 2;
     const int available_height_for_columns = std::max(8, terminal_height - fixed_ui_height);
 
     // 创建左栏内容
@@ -188,55 +219,73 @@ ftxui::Component UIRenderer::create_component() {
     main_content.push_back(hbox({left_column, right_column}));
     main_content.push_back(separator());
 
-    // 显示当前选中项的信息 - 固定4行高度
-    main_content.push_back(
-        text("描述: " + (state_.current_item_description.empty()
-                             ? "NULL"
-                             : state_.current_item_description)) |
-        bold);
+    // 显示当前选中项的信息（自动换行，悬挂缩进）
+    // 与上面的测量一致的内容宽度
+    // const int content_width 已在上面定义
+    const std::string desc_label = "描述: ";
+    const std::string desc_text =
+        state_.current_item_description.empty() ? "NULL"
+                                                : state_.current_item_description;
+    main_content.push_back(hbox({text(desc_label) | bold,
+                                 paragraph(desc_text) |
+                                     size(WIDTH, EQUAL,
+                                          std::max(1, content_width -
+                                                          (int)desc_label.size())) |
+                                     bold}));
 
-    // 收集详细信息行，确保总共4行
-    std::vector<Element> detail_lines;
+    // 详细信息：依赖/冲突/路径等（自动换行，标签悬挂缩进）
+    auto render_detail_hline = [&](const std::string &line) -> Element {
+      // 切分成 label 与内容（按": ")
+      std::string label;
+      std::string body = line;
+      size_t p = line.find(": ");
+      if (p != std::string::npos) {
+        label = line.substr(0, p + 2);
+        body = line.substr(p + 2);
+      }
+      // 冲突行高亮（仅当非NULL时）
+      bool is_conflict = label.rfind("冲突: ", 0) == 0 &&
+                         body.find("NULL") == std::string::npos;
+      Element row = hbox({text(label),
+                          paragraph(body) | size(WIDTH, EQUAL, std::max(1, content_width - (int)label.size()))});
+      if (is_conflict) {
+        if (state_.conflict_flash_active && (state_.conflict_flash_count % 2 == 1))
+          row = row | bgcolor(Color::Yellow) | color(Color::Black) | bold | blink;
+        else
+          row = row | bgcolor(Color::Red) | color(Color::White) | bold;
+      } else {
+        row = row | dim;
+      }
+      return row;
+    };
+
+    // 渲染三条详情行（若不足则填充空行），每条内部自动换行
+    std::vector<Element> detail_rows;
     if (!state_.current_item_details.empty()) {
       std::string details = state_.current_item_details;
       size_t pos = 0;
-      while (pos < details.length() && detail_lines.size() < 3) {
+      while (pos < details.length() && detail_rows.size() < 3) {
         size_t end = details.find('\n', pos);
         std::string line = (end == std::string::npos)
                                ? details.substr(pos)
                                : details.substr(pos, end - pos);
         pos = (end == std::string::npos) ? details.length() : end + 1;
-
-        // 检查是否是冲突行且包含非NULL内容
-        if (line.find("冲突: ") == 0 &&
-            line.find("NULL") == std::string::npos) {
-          if (state_.conflict_flash_active &&
-              (state_.conflict_flash_count % 2 == 1)) {
-            detail_lines.push_back(text(line) | bgcolor(Color::Yellow) |
-                                   color(Color::Black) | bold | blink);
-          } else {
-            detail_lines.push_back(text(line) | bgcolor(Color::Red) |
-                                   color(Color::White) | bold);
-          }
-        } else {
-          detail_lines.push_back(text(line) | dim);
-        }
+        detail_rows.push_back(render_detail_hline(line));
       }
     }
-
-    // 确保总共3行详细信息（加上描述行总共4行）
-    while (detail_lines.size() < 3) {
-      detail_lines.push_back(text(" "));
-    }
-
-    for (const auto &line : detail_lines) {
-      main_content.push_back(line);
-    }
+    while (detail_rows.size() < 3) detail_rows.push_back(text(" "));
+    for (auto &e : detail_rows) main_content.push_back(e);
 
     // 编译按钮区域
     main_content.push_back(separatorLight());
 
-    main_content.push_back(buttons_row_->Render() | center);
+    // 手动渲染按钮并反射 Box，接入统一高亮管理器
+    Element start_el = start_button_->Render() | reflect(start_button_box_);
+    Element clear_el = clear_button_->Render() | reflect(clear_button_box_);
+    // 注册到管理器（可用于后续更复杂的命中/布局）
+    highlight_mgr_.register_box(InteractiveId::Start(), start_button_box_);
+    highlight_mgr_.register_box(InteractiveId::Clear(), clear_button_box_);
+    main_content.push_back(hbox({start_el, text("  "), clear_el}) | center);
 
     // 清理失败时显示详细输出（如果有）
     if (clear_state_ == CleanState::Error && !clear_output_.empty() &&

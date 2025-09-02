@@ -51,6 +51,8 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
   clear_button_hovered_ = false;
   // 鼠标移动即退出按钮键盘焦点样式，由 Hoverable 决定是否高亮
   state_.build_button_focused = false;
+  // 统一高亮：初始认为不在按钮上，由列表命中设置 pointer_hover
+  highlight_mgr_.set_pointer_hover(std::nullopt);
   // 底部按钮由组件管理，不参与坐标映射
 
   // 使用统一的坐标映射系统进行hover检测
@@ -69,6 +71,7 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
         element.render_item_index <
             static_cast<int>(state_.group_render_items.size())) {
       state_.group_hover_index = element.render_item_index;
+      highlight_mgr_.set_pointer_hover(InteractiveId::Group(state_.group_hover_index));
     }
     break;
 
@@ -78,6 +81,7 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
         element.render_item_index <
             static_cast<int>(state_.module_render_items.size())) {
       state_.module_hover_index = element.render_item_index;
+      highlight_mgr_.set_pointer_hover(InteractiveId::Module(state_.module_hover_index));
     }
     break;
 
@@ -97,6 +101,25 @@ bool UIRenderer::handle_dual_column_mouse_move(const Mouse &mouse) {
     // 🔥 hover时实时更新details区域信息
     update_details_on_hover();
   }
+
+  // 若鼠标位于按钮盒子范围，覆盖为按钮高亮（按钮优先于列表）
+  auto within = [](const ftxui::Box& b, int x, int y) {
+    return x >= b.x_min && x <= b.x_max && y >= b.y_min && y <= b.y_max;
+  };
+  if (within(start_button_box_, mouse.x, mouse.y)) {
+    state_.group_hover_index = -1;
+    state_.module_hover_index = -1;
+    highlight_mgr_.set_pointer_hover(InteractiveId::Start());
+    state_changed = true;
+  } else if (within(clear_button_box_, mouse.x, mouse.y)) {
+    state_.group_hover_index = -1;
+    state_.module_hover_index = -1;
+    highlight_mgr_.set_pointer_hover(InteractiveId::Clear());
+    state_changed = true;
+  }
+
+  // 重新计算唯一高亮
+  highlight_mgr_.compute_highlighted();
 
   return state_changed;
 }
@@ -140,6 +163,26 @@ bool UIRenderer::handle_dual_column_mouse_click(const Mouse &mouse) {
   default:
     // 点击到非交互区域，不处理
     break;
+  }
+
+  // 按钮点击命中（通过反射 Box）
+  auto within = [](const ftxui::Box& b, int x, int y) {
+    return x >= b.x_min && x <= b.x_max && y >= b.y_min && y <= b.y_max;
+  };
+  if (within(start_button_box_, mouse.x, mouse.y)) {
+    // Start 按钮：触发构建或警告
+    if (!state_.view.selected_modules.empty()) {
+      state_.handle_build_button();
+    } else {
+      state_.trigger_build_warning_flash();
+      ftxui::animation::RequestAnimationFrame();
+    }
+    return true;
+  }
+  if (within(clear_button_box_, mouse.x, mouse.y)) {
+    // Clear 按钮：复用已有逻辑
+    trigger_clear_build_clean();
+    return true;
   }
 
   return false;
