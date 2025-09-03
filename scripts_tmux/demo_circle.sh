@@ -13,7 +13,7 @@ LAYOUT="even-horizontal"
 declare -A TMUX_CONFIG=(
     ["main"]="
         roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${UAV_ID}
-        sleep 8 && roslaunch sunray_uav_control external_fusion.launch external_source:=3 enable_rviz:=false uav_id:=${UAV_ID}
+        sleep 8 && roslaunch sunray_uav_control external_fusion.launch external_source:=4 enable_rviz:=false uav_id:=${UAV_ID}
         sleep 5 && roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${UAV_ID}
         sleep 2 && roslaunch sunray_uav_control terminal_control.launch uav_id:=${UAV_ID}
         sleep 15 && roslaunch sunray_tutorial run_demo.launch demo_id:=4 uav_id:=${UAV_ID}

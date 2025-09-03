@@ -240,14 +240,14 @@ uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
 void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
     int send_result;
-    //  std::cout << " GroundControl::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
+    // std::cout << " GroundControl::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
     // std::cout << "UDP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
 
     switch (readData.dataFrame.seq)
     {
     case MessageID::SearchMessageID:// 搜索在线智能体 - SearchData（#200）
     {
-        // std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
+        //std::cout << "MessageID::SearchMessageID: " << (int)readData.communicationType << " readData.ip: " << readData.ip << " readData.port: " << readData.port << std::endl;
         DataFrame backData;
         backData.seq=MessageID::ACKMessageID;
         backData.data.ack.init();
@@ -276,6 +276,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             send_result = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
         }
         // 真机无人机应答
+        //std::cout << "uav_experiment_num: " << uav_experiment_num<<" uav_id "<<uav_id << std::endl;
         if (uav_experiment_num > 0 && uav_id>=0)
         {
             backData.robot_ID = uav_id;
@@ -284,6 +285,7 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
             backData.data.ack.port = static_cast<unsigned short>(std::stoi(tcp_port));
             std::lock_guard<std::mutex> lock(_mutexUDP);
             send_result = udpSocket->sendUDPData(codec.coder(backData), readData.ip, (uint16_t)readData.dataFrame.data.search.port);
+            //std::cout << "发送结果: " << send_result <<" readData.dataFrame.data.search.port: "<<(int)readData.dataFrame.data.search.port<<std::endl;
         }
         // 真机无人车应答
         if (ugv_experiment_num > 0 && ugv_id>=0)
