@@ -361,14 +361,7 @@ void UAVControl::control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr
     control_cmd.header.stamp = ros::Time::now();
 
     // 特殊模式单独判断 （如：紧急停止 航点任务）
-    // 航点模式直接自动切换到CMD_CONTROL模式
-    if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Waypoint)
-    {
-        // 允许就算没有遥控器的情况下临时自动解锁
-        allow_lock = true;
-        system_params.control_mode = Control_Mode::CMD_CONTROL;
-    }
-    else if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Point)
+    if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Point)
     {
         // Point模式：直接发布路径规划目标点（与程序本身状态无关）
         publish_goal();

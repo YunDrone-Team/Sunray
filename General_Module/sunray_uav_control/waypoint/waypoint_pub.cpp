@@ -27,25 +27,44 @@ int main(int argc, char **argv)
 
     sunray_msgs::WayPoint uav_wp;
     uav_wp.start = true;
-    uav_wp.wp_num = 2;
     // 1: 悬停 2: 降落 3: 返航
     uav_wp.wp_end_type = 3;
     // 1: 固定值 2: 朝向下一个航点
-    uav_wp.wp_yaw_type = 2;
+    uav_wp.wp_yaw_type = 1;
     uav_wp.wp_move_vel = 1.0;
 
     sunray_msgs::Point point;
+    point.x = 1.0;
+    point.y = 0.0;
+    point.z = 1.0;
+    point.yaw = 0.0;
+    uav_wp.wp_points.push_back(point);
+
     point.x = 1.0;
     point.y = 1.0;
     point.z = 1.0;
     point.yaw = 0.0;
     uav_wp.wp_points.push_back(point);
 
-    point.x = 2.0;
-    point.y = 2.0;
+    point.x = -1.0;
+    point.y = 0.0;
     point.z = 1.0;
     point.yaw = 0.0;
     uav_wp.wp_points.push_back(point);
+
+    point.x = 0.0;
+    point.y = -1.0;
+    point.z = 1.0;
+    point.yaw = 0.0;
+    uav_wp.wp_points.push_back(point);
+
+    point.x = 3.0;
+    point.y = -1.0;
+    point.z = 1.0;
+    point.yaw = 0.0;
+    uav_wp.wp_points.push_back(point);
+
+    uav_wp.wp_num = uav_wp.wp_points.size();
 
     uav_waypoint_pub.publish(uav_wp);
 
