@@ -5,4 +5,4 @@ gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
 --tab -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=1; exec bash"' \
 --tab -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control waypoint_mission_node.launch; exec bash"' \
 
-gnome-terminal --window -e  'bash -c "sleep 3.0; roslaunch sunray_uav_control waypoint.launch ; exec bash"' \
+gnome-terminal --window -e  'bash -c "sleep 3.0; roslaunch sunray_uav_control waypoint_pub.launch ; exec bash"' \
