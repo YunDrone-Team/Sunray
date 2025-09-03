@@ -560,10 +560,6 @@ clean_build_dirs() {
     done
     
     echo -e "\\n${GREEN}Cleanup completed, processed $total_cleaned items${NC}"
-    if command -v df >/dev/null 2>&1; then
-        local available_space=$(df -h . | awk 'NR==2 {print $4}')
-        echo "Available space: $available_space"
-    fi
 }
 
 clean_buildscripts_dirs() {
@@ -597,10 +593,6 @@ clean_buildscripts_dirs() {
     done
     
     echo -e "\\n${GREEN}Buildscripts cleanup completed, processed $total_cleaned items${NC}"
-    if command -v df >/dev/null 2>&1; then
-        local available_space=$(df -h . | awk 'NR==2 {print $4}')
-        echo "Available space: $available_space"
-    fi
 }
 
 

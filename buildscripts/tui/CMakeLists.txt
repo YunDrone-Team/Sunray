@@ -17,11 +17,21 @@ add_executable(sunray_tui
     src/tui_main.cpp
     src/tui_logic.cpp
     src/tui_interaction.cpp
-    src/tui_render.cpp
     src/tui_core.cpp
     src/tui_screen.cpp
     src/tui_terminal.cpp
     src/tui_config.cpp
+    # Render group
+    src/tui_render/tui_render.cpp
+    src/tui_render/tui_render_component.cpp
+    src/tui_render/tui_render_buttons.cpp
+    src/tui_render/tui_render_keyboard.cpp
+    src/tui_render/tui_render_mouse.cpp
+    src/tui_render/tui_render_layout.cpp
+    src/tui_render/tui_render_cells.cpp
+    src/tui_render/tui_render_details.cpp
+    src/tui_render/tui_render_debug.cpp
+    src/tui_render/tui_highlight_manager.cpp
 )
 
 # Link libraries

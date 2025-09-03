@@ -29,6 +29,57 @@ source "$BUILDSCRIPTS_DIR/common/utils.sh"
 source "$BUILDSCRIPTS_DIR/common/config.sh" 
 source "$BUILDSCRIPTS_DIR/common/builder.sh"
 
+# Ubuntu 依赖检查（cmake 和 build-essential）
+check_ubuntu_build_requirements() {
+    # 仅在 Ubuntu/Debian 系列上进行检查
+    local os_id="" os_like=""
+    if [[ -f /etc/os-release ]]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        os_id="${ID:-}"
+        os_like="${ID_LIKE:-}"
+    fi
+
+    if [[ "$os_id" != "ubuntu" && "$os_like" != *"ubuntu"* && "$os_like" != *"debian"* ]]; then
+        return 0
+    fi
+
+    local has_cmake=true
+    local has_build_essential=true
+
+    if ! command -v cmake >/dev/null 2>&1; then
+        has_cmake=false
+    fi
+
+    # 优先用 dpkg-query 判断 build-essential 是否安装
+    if command -v dpkg-query >/dev/null 2>&1; then
+        if ! dpkg-query -W -f='${Status}' build-essential 2>/dev/null | grep -q "install ok installed"; then
+            has_build_essential=false
+        fi
+    else
+        # 回退：检查 gcc/g++ 和 make 是否存在
+        if ! command -v make >/dev/null 2>&1 || { ! command -v gcc >/dev/null 2>&1 && ! command -v g++ >/dev/null 2>&1; }; then
+            has_build_essential=false
+        fi
+    fi
+
+    if [[ "$has_cmake" == false || "$has_build_essential" == false ]]; then
+        print_error "缺少必要依赖项，无法继续构建："
+        [[ "$has_cmake" == false ]] && echo "  - cmake 未安装"
+        [[ "$has_build_essential" == false ]] && echo "  - build-essential 未安装"
+        echo
+        echo "请执行以下命令安装："
+        if [[ "$has_cmake" == false && "$has_build_essential" == false ]]; then
+            echo "  sudo apt update && sudo apt install -y cmake build-essential"
+        elif [[ "$has_cmake" == false ]]; then
+            echo "  sudo apt update && sudo apt install -y cmake"
+        else
+            echo "  sudo apt update && sudo apt install -y build-essential"
+        fi
+        exit 1
+    fi
+}
+
 cleanup_on_error() {
     echo "❌ Build failed"
 }
@@ -86,6 +137,8 @@ case "$INTERFACE_MODE" in
         source "$BUILDSCRIPTS_DIR/cli/ui.sh"
         ;;
     "tui")
+        # 在进入 CLI/TUI 之前先检查 Ubuntu 依赖
+        check_ubuntu_build_requirements
         build_tui_if_needed
         exec "$BUILDSCRIPTS_DIR/bin/sunray_tui"
         ;;
@@ -116,8 +169,10 @@ main() {
     esac
     
     [[ "$DRY_RUN" == true ]] && exit 0
-    
+
     print_status "初始化构建环境..."
+    # 在实际构建前对 Ubuntu 依赖进行检查
+    check_ubuntu_build_requirements
     init_build_environment "$WORKSPACE_ROOT" || { print_error "构建环境初始化失败"; exit 1; }
     
     print_status "解析模块依赖关系..."
