@@ -39,6 +39,7 @@ add_message_files(
   UGVState.msg
   LinktrackNode2.msg
   LinktrackNodeframe2.msg
+  Competion.msg
 )
 
 generate_messages(
