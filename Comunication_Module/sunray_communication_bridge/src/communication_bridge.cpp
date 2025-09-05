@@ -385,6 +385,28 @@ pid_t communication_bridge::CheckChildProcess(pid_t pid)
 
 pid_t communication_bridge::executeScript(std::string scriptStr, std::string filePath)
 {
+    // pid_t pid = fork();
+    // if (pid == -1)
+    //     perror("fork failed");
+    // else if (pid == 0)
+    // {
+    //     std::string cdCommand = "cd " + getSunrayPath() + filePath;
+    //     std::string fullCommand = cdCommand + " && ./" + scriptStr;
+
+    //     // 构建打开新终端并执行命令的字符串
+    //     std::string terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
+    //     const char *command = terminalCommand.c_str();
+    //     execlp("bash", "bash", "-c", command, (char *)NULL);
+
+    //     // 如果execlp返回，说明执行失败
+    //     perror("OrderCourse Error!");
+    //     _exit(EXIT_FAILURE);
+
+    // }
+    // else
+    //     printf("This is the parent process. Child PID: %d\n", pid);
+
+    // return pid;
     pid_t pid = fork();
     if (pid == -1)
         perror("fork failed");
@@ -394,17 +416,30 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
         std::string fullCommand = cdCommand + " && ./" + scriptStr;
 
         // 构建打开新终端并执行命令的字符串
-        std::string terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
+        std::string terminalCommand;
+        // 先检查XDG_CURRENT_DESKTOP变量
+        const char* display = std::getenv("XDG_CURRENT_DESKTOP");
+    
+        if (display != nullptr && display[0] != '\0') 
+            terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
+        else
+            terminalCommand = fullCommand;
+        
         const char *command = terminalCommand.c_str();
+        
+        //printf("执行命令: %s\n", command);
         execlp("bash", "bash", "-c", command, (char *)NULL);
 
         // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
 
-    }
-    else
+    }else{
         printf("This is the parent process. Child PID: %d\n", pid);
+        const char* display = std::getenv("XDG_CURRENT_DESKTOP");
+        if (display == nullptr || display[0] == '\0') 
+            pendingCloseProcessId.insert(pid);
+     }
 
     return pid;
 }

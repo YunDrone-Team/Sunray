@@ -709,7 +709,7 @@ int CommunicationUDPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize,std
 
 //        uint8_t hexValue=*buffer;
 //        uint8_t  two=*(buffer+1);
-        //std::cout << "udp读取到的数据nLen "<<nLen<<" "<<static_cast<unsigned int>(hexValue)<<" "<<static_cast<unsigned int>(two)<<std::endl;
+//        std::cout << "udp读取到的数据nLen "<<nLen<<std::endl;
 //        std::cout << "udp读取到的数据 来源ip "<<souIp<<std::endl;
     }else {
         std::cout << "Failed to read UDP data. "<<" "<<nLen<<std::endl;
@@ -986,13 +986,13 @@ SOCKET CommunicationUDPSocket::SocketConfiguration(SOCKET tempSock)
     /*设置SO_REUSEADDR SO_REUSEADDR套接字选项允许在同一本地地址和端口上启动监听套接字，SO_REUSEPORT
      * 即使之前的套接字仍在TIME_WAIT状态。这对于快速重启服务器特别有用，因为它可以避免等待TIME_WAIT状态结束。
         UDP没有这个TIME_WAIT状态，该配置会导致端口被占用后还能绑定成功，但是功能不太正常，所以屏蔽这个配置，端口被占用后输出提示信号*/
-    int reuse = 1;
-    if (setsockopt(tempSock, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) < 0)
-    {
-        perror("setsockopt");
-        // 处理错误
-        return INVALID_SOCKET;
-    }
+//    int reuse = 1;
+//    if (setsockopt(tempSock, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) < 0)
+//    {
+//        perror("setsockopt");
+//        // 处理错误
+//        return INVALID_SOCKET;
+//    }
 
 #ifdef _WIN32
     //广播配置

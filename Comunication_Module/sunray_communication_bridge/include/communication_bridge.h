@@ -60,6 +60,13 @@ public:
             
         }
         nodeMap.clear();
+        for (pid_t pid : pendingCloseProcessId) 
+        {
+            if (kill(pid, SIGTERM) != 0)
+                perror("kill failed!");
+            else
+                printf("Sent SIGTERM to child process %d\n", pid);
+        }
     };
 
     void init(ros::NodeHandle &nh);
@@ -186,4 +193,5 @@ private:
 
     double getMemoryUsage(); // 获取内存使用率
     std::vector<double> getCpuTemperatures(); // 获取CPU温度
+    std::unordered_set<pid_t> pendingCloseProcessId;
 };
