@@ -44,7 +44,7 @@ catkin_package(
 ###########
 include_directories(
   include
-  include/pos_controller
+  uav_control/pos_controller
   externalFusion
   mavlink
   mavlink/include
@@ -57,11 +57,11 @@ include_directories(
 ##      声明可执行cpp文件     ##
 ###############################
 ## 无人机控制
-add_library(uav_control uav_control/uav_control.cpp)
+add_library(UAVControl uav_control/UAVControl.cpp)
 add_executable(uav_control_node uav_control/uav_control_node.cpp)
 add_dependencies(uav_control_node sunray_control_gencpp)
 target_link_libraries(uav_control_node ${catkin_LIBRARIES})
-target_link_libraries(uav_control_node uav_control)
+target_link_libraries(uav_control_node UAVControl)
 
 ## 外部定位
 add_library(externalFusion externalFusion/externalFusion.cpp)
@@ -97,9 +97,9 @@ add_executable(control_evaluation_node utils/control_evaluation_node.cpp)
 add_dependencies(control_evaluation_node sunray_control_gencpp)
 target_link_libraries(control_evaluation_node ${catkin_LIBRARIES})
 
-add_executable(uav_command_pub utils/uav_command_pub.cpp)
-add_dependencies(uav_command_pub sunray_control_gencpp)
-target_link_libraries(uav_command_pub ${catkin_LIBRARIES})
+add_executable(terminal_control utils/terminal_control.cpp)
+add_dependencies(terminal_control sunray_control_gencpp)
+target_link_libraries(terminal_control ${catkin_LIBRARIES})
 
 
 

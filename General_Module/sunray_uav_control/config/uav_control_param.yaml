@@ -7,7 +7,7 @@ geo_fence:
   y_max: 20.0
   z_min: -1.0
   z_max: 6.0
-flight_param:
+flight_params:
   land_end_time: 1.0
   land_end_speed: 0.3
   Takeoff_height: 0.6

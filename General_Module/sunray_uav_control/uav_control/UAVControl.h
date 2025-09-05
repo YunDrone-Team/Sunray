@@ -5,30 +5,32 @@
 using namespace sunray_logger;
 
 #define FLIP_ANGLE M_PI/3
+#define RC_DEADZONE 0.2
 
 class UAVControl
 {
 private:
-    std::string node_name;   // 节点名称
-    int uav_id;           // 无人机ID
-    std::string uav_name; // 无人机名称
+    std::string node_name;  // 节点名称
+    int uav_id;             // 【参数】无人机ID
+    std::string uav_name;   // 【参数】无人机名称
 
     // 无人机飞行相关参数
     struct FlightParams
     {
-        float takeoff_height;                        // 起飞高度
-        int land_type = 0;                           // 降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
-        float disarm_height;                         // 锁桨高度
-        float land_speed;                            // 降落速度
-        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
-        float land_yaw = 0.0;                        // 降落点航向
-        float land_end_time;                         // 降落最后一段时间
-        float land_end_speed;                        // 降落最后一段速度
+        float takeoff_height;                        // 【参数】默认起飞高度
+        int land_type = 0;                           // 【参数】降落类型【0:到达指定高度后锁桨 1:使用px4 auto.land】
+        float disarm_height;                         // 【参数】降落时自动上锁高度
+        float land_speed;                            // 【参数】降落速度
+        float land_end_time;                         // 【参数】降落最后一阶段时间
+        float land_end_speed;                        // 【参数】降落最后一阶段速度
         bool set_home = false;                       // 起飞点是否设置
-        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 起飞点
+        Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 【参数】起飞点
         float home_yaw = 0.0;                        // 起飞点航向
         Eigen::Vector3d hover_pos{0.0, 0.0, 0.0};    // 悬停点
         float hover_yaw = 0.0;                       // 无人机目标航向
+        bool set_land_pos{false};                    // 降落点是否设置
+        Eigen::Vector3d land_pos{0.0, 0.0, 0.0};     // 降落点
+        float land_yaw = 0.0;                        // 降落点航向
         Eigen::Vector3d relative_pos{0.0, 0.0, 0.0}; // 相对位置
     };
     FlightParams flight_params;
@@ -48,32 +50,22 @@ private:
     // 无人机系统参数
     struct SystemParams
     {
+        bool allow_lock;          // 【参数】允许临时解锁 特殊模式下允许跳过解锁检查保持在CMD_CONTROL模式
+        bool use_rc;              // 【参数】是否使用遥控器控制
+        bool get_rc_signal;       // 是否收到遥控器的信号
+        bool check_flip;          // 【参数】是否使用翻转上锁，默认启动
+        bool use_offset;          // 【参数】是否使用位置偏移，TODO
+        bool check_cmd_timeout;   // 【参数】是否检查无人机控制指令超时
+        float cmd_timeout;        // 指令超时时间
         int control_mode;         // 无人机控制模式
         int last_control_mode;    // 上一时刻无人机控制模式
         uint16_t type_mask;       // 控制指令类型
         int safety_state;         // 安全标志，0代表正常，其他代表不正常
-        bool get_rc_signal;       // 是否收到遥控器的信号
-        bool check_cmd_timeout;   // 是否检查指令超时
-        float cmd_timeout;        // 指令超时时间
-        bool use_rc;              // 是否使用遥控器
-        bool use_offset;          // 是否添加偏移
         ros::Time last_land_time; // 进入降落最后一阶段的时间戳
         ros::Time last_rc_time;   // 上一个rc控制时间点
-        bool check_flip;
+        
     };
     SystemParams system_params;
-
-    sunray_msgs::UAVControlCMD control_cmd;               // 当前时刻无人机控制指令（来自任务节点）
-    sunray_msgs::UAVControlCMD last_control_cmd;          // 上一时刻无人机控制指令（来自任务节点）
-    sunray_msgs::UAVState uav_state;                      // 当前时刻无人机状态（本节点发布）
-    sunray_msgs::RcState rc_state;                        // 无人机遥控器状态（来自遥控器输入节点）
-    mavros_msgs::PositionTarget local_setpoint;           // PX4的本地位置设定点（待发布）
-    mavros_msgs::GlobalPositionTarget global_setpoint;    // PX4的全局位置设定点（待发布）
-    mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
-    float default_home_x, default_home_y, default_home_z; // 默认home点？
-
-    bool rcState_cb; // 遥控器状态回调
-    bool allow_lock; // 允许临时解锁 特殊模式下允许跳过解锁检查保持在CMD_CONTROL模式
 
     // 无人机控制状态机
     enum Control_Mode
@@ -180,7 +172,6 @@ private:
     void printf_params();
     int safetyCheck();     // 安全检查
     void setArm(bool arm); // 设置解锁 0:上锁 1:解锁
-    void set_auto_land();  // 调用px4 auto.land
     void reboot_px4();     // 重启
     void emergencyStop();  // 紧急停止出来
     void set_px4_flight_mode(std::string mode);
@@ -195,9 +186,7 @@ private:
     void set_hover_pos();                                                                     // 设置悬停位置
     void set_default_local_setpoint();                                                        // 设置默认期望值
     void set_default_global_setpoint();                                                       // 设置默认期望值
-    void set_offboard_mode();                                                                 // 设置offboard模式
     void body2enu(double body_frame[2], double enu_frame[2], double yaw);                     // body坐标系转ned坐标系
-    void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);                        // 遥控器状态回调函数
     void set_offboard_control(int mode);                                                      // 设置offboard控制模式
     void return_to_home();                                                                    // 返航模式实现
     void waypoint_mission();                                                                  // 航点任务实现
@@ -210,15 +199,24 @@ private:
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
     void px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg);
+    void rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg);                        // 遥控器状态回调函数
+
     void pub_setpoint_raw_local(mavros_msgs::PositionTarget setpoint);
 
 public:
     UAVControl() {};
     ~UAVControl() {};
 
-    sunray_msgs::PX4State px4_state; // 当前时刻无人机状态（来自external_fusion_node）
-
     PosControlPID pos_controller_pid;
+
+    sunray_msgs::UAVControlCMD control_cmd;               // 当前时刻无人机控制指令（来自任务节点）
+    sunray_msgs::UAVControlCMD last_control_cmd;          // 上一时刻无人机控制指令（来自任务节点）
+    sunray_msgs::PX4State px4_state;                      // 当前时刻无人机状态（来自external_fusion_node）
+    sunray_msgs::UAVState uav_state;                      // 当前时刻无人机状态（本节点发布）
+    sunray_msgs::RcState rc_state;                        // 无人机遥控器状态（来自遥控器输入节点）
+    mavros_msgs::PositionTarget local_setpoint;           // PX4的本地位置设定点（待发布）
+    mavros_msgs::GlobalPositionTarget global_setpoint;    // PX4的全局位置设定点（待发布）
+    mavros_msgs::AttitudeTarget att_setpoint;             // PX4的姿态设定点（待发布）
 
     void mainLoop();
     void show_ctrl_state(); // 打印状态

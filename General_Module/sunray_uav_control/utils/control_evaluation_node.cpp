@@ -129,10 +129,6 @@ int main(int argc, char **argv)
     Logger::print_color(int(LogColor::green), node_name, ": UAV control_mode set to [CMD_CONTROL] successfully!");
    
     // 解锁无人机
-    Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 5 sec...");
-    ros::Duration(1.0).sleep();
-    Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 4 sec...");
-    ros::Duration(1.0).sleep();
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 3 sec...");
     ros::Duration(1.0).sleep();
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 2 sec...");

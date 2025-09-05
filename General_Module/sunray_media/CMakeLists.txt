@@ -38,5 +38,4 @@ include_directories(
 
 
 add_executable(rtsp_push_node src/rtsp_push.cpp)
-# add_dependencies(uav_command_pub sunray_control_gencpp)
 target_link_libraries(rtsp_push_node ${catkin_LIBRARIES} ${OpenCV_LIBS})

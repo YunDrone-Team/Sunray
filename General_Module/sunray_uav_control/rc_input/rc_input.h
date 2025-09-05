@@ -90,6 +90,7 @@ void RC_Input::handle_rc_data(const mavros_msgs::RCIn::ConstPtr &pMsg)
 	msg = *pMsg;
 
 	// 读取油门、滚转、俯仰、偏航四个通道的数据，并进行归一化处理，取值范围是[-1，1]
+	// 滚转通道ch[0]、俯仰通道ch[1]、油门通道ch[2]、偏航通道ch[3]
 	ch[0] = (msg.channels[0] - 1500) / 500.0;
 	ch[1] = (msg.channels[1] - 1500) / 500.0;
 	ch[2] = (msg.channels[2] - 1500) / 500.0;

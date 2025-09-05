@@ -3,7 +3,7 @@ uav_id: 1
 # 无人机名字，默认为uav
 uav_name: "uav"
 # 无人机飞行参数
-flight_param:
+flight_params:
   Takeoff_height: 1.0   ## 起飞高度
   Disarm_height: 0.2    ## 降落时自动上锁高度
   Land_speed: 0.2       ## 降落速度

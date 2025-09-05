@@ -28,17 +28,17 @@
         <param name="uav_name" value="$(arg uav_name)" />
         <!-- 起飞高度 | 降落第一阶段高度 | 降落速度 -->
         <!-- 降落模式 1：调用px4 auto.land 其他：指定高度锁桨 -->
-        <param name="flight_param/Takeoff_height" value="$(arg Takeoff_height)" />
-        <param name="flight_param/land_type" value="$(arg land_type)" />
-        <param name="flight_param/Disarm_height" value="$(arg Disarm_height)" />
-        <param name="flight_param/Land_speed" value="$(arg Land_speed)" />
+        <param name="flight_params/Takeoff_height" value="$(arg Takeoff_height)" />
+        <param name="flight_params/land_type" value="$(arg land_type)" />
+        <param name="flight_params/Disarm_height" value="$(arg Disarm_height)" />
+        <param name="flight_params/Land_speed" value="$(arg Land_speed)" />
         <!-- 降落最后一阶段需要的时间和速度 -->
-        <param name="flight_param/land_end_time" value="$(arg land_end_time)" />
-        <param name="flight_param/land_end_speed" value="$(arg land_end_speed)" />
+        <param name="flight_params/land_end_time" value="$(arg land_end_time)" />
+        <param name="flight_params/land_end_speed" value="$(arg land_end_speed)" />
         <!-- 默认home点 -->
-        <param name="flight_param/home_x" value="$(arg home_x)" />
-        <param name="flight_param/home_y" value="$(arg home_y)" />
-        <param name="flight_param/home_z" value="$(arg home_z)" />
+        <param name="flight_params/home_x" value="$(arg home_x)" />
+        <param name="flight_params/home_y" value="$(arg home_y)" />
+        <param name="flight_params/home_z" value="$(arg home_z)" />
         <!-- 安全围栏 超出会降落 -->
         <param name="geo_fence/x_min" value="$(arg x_min)" />
         <param name="geo_fence/x_max" value="$(arg x_max)" />

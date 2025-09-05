@@ -27,7 +27,7 @@ std::vector<ros::Publisher> ref_trajectory_pub;
 void auto_takeoff();
 void mySigintHandler(int sig)
 {
-    ROS_INFO("[uav_command_pub] exit...");
+    ROS_INFO("[terminal_control] exit...");
     ros::shutdown();
     exit(0);
 }
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
-    ros::init(argc, argv, "uav_command_pub");
+    ros::init(argc, argv, "terminal_control");
     ros::NodeHandle nh("~");
     signal(SIGINT, mySigintHandler);
 
@@ -461,10 +461,6 @@ void auto_takeoff()
     Logger::print_color(int(LogColor::green), node_name, ": UAV control_mode set to [CMD_CONTROL] successfully!");
 
     // 解锁无人机
-    Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 5 sec...");
-    ros::Duration(1.0).sleep();
-    Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 4 sec...");
-    ros::Duration(1.0).sleep();
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 3 sec...");
     ros::Duration(1.0).sleep();
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV in 2 sec...");
