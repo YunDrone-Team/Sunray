@@ -38,6 +38,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<float>("system_params/cmd_timeout", system_params.cmd_timeout, 2.0);              // 【参数】无人机控制指令超时阈值
     nh.param<bool>("system_params/use_rc_control", system_params.use_rc, true);                // 【参数】是否使用遥控器控制
     nh.param<bool>("system_params/use_offset", system_params.use_offset, false);               // 【参数】是否使用位置偏移
+    nh.param<bool>("system_params/check_flip", system_params.check_flip, true);                // 【参数】是否使用翻转上锁，默认启动
 
     printf_params();
 
@@ -47,7 +48,7 @@ void UAVControl::init(ros::NodeHandle &nh)
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 10, &UAVControl::control_cmd_callback, this);
     // 【订阅】无人机设置指令 - 外部节点 -> 本节点
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 10, &UAVControl::uav_setup_callback, this);
-    // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_control_node -> 本节点
+    // 【订阅】遥控器数据 -- 飞控 -> mavros -> rc_input_node -> 本节点
     rc_state_sub = nh.subscribe<sunray_msgs::RcState>(uav_name + "/sunray/rc_state", 10, &UAVControl::rc_state_callback, this);
 
     // 【发布】无人机状态（接收到vision_pose节点的无人机状态，加上无人机控制模式，重新发布出去）- 本节点 -> 其他控制&任务节点/地面站
@@ -102,6 +103,12 @@ void UAVControl::mainLoop()
 {
     // 安全检查 + 发布状态话题 ~/sunray/uav_state
     check_state();
+    // 检测到无人机倾覆，直接上锁（实现：能够手动翻转上锁）
+    if(system_params.check_flip)
+    {
+        check_flip();
+    }
+    
 
     // 无人机控制状态机：控制模式由遥控器话题（遥控器拨杆）进行切换
     switch (system_params.control_mode)
@@ -659,6 +666,25 @@ void UAVControl::check_state()
 
     uav_state_pub.publish(uav_state);
 }
+
+void UAVControl::check_flip()
+{
+    // 无人机已上锁，跳过该检查
+    if(!uav_state.armed)
+    {
+        return;
+    }
+
+    // 判断是否翻转
+    if (uav_state.attitude[0] > FLIP_ANGLE || uav_state.attitude[0] < -FLIP_ANGLE || uav_state.attitude[1] > M_PI/3 || uav_state.attitude[1]  < -M_PI/3 )
+    {
+        // 停桨
+        emergencyStop();
+        system_params.control_mode = Control_Mode::INIT;
+        Logger::error("FLIP detected! Emergency kill");
+    }
+}
+
 
 // 【坐标系旋转函数】- 机体系到enu系
 // body_frame是机体系,enu_frame是惯性系,yaw_angle是当前偏航角[rad]

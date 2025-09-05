@@ -65,7 +65,9 @@ void RC_Input::init(ros::NodeHandle &nh_, int uav_id = 1, string uav_name = "uav
 	nh.param<int>("channel_kill", channel_kill, 8);
 
 	string topic_prefix = "/" + uav_name + to_string(uav_id);
-	// 【订阅】遥控器输入 -  遥控器 -> 飞控 -> mavros -> 本节点
+	// 【订阅】遥控器输入 
+	//  真机链路：遥控器 -> 飞控 -> mavros -> 本节点
+	//  Gazebo仿真链路： 仿真遥控器 -> joy_node.cpp -> 本节点
 	rc_sub = nh.subscribe<mavros_msgs::RCIn>(topic_prefix + "/sunray/fake_rc_in", 10, &RC_Input::handle_rc_data, this);
 	// 【发布】遥控器指令状态 - 本节点 -> uav_control节点
 	rc_state_pub = nh.advertise<sunray_msgs::RcState>(topic_prefix + "/sunray/rc_state", 10);

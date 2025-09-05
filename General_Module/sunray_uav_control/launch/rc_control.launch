@@ -3,7 +3,7 @@
     <!-- 只有档位发生了变化才会触发事件 [-1]对应值为1000 [0]对应1500 [1]对应2000-->
     <arg name="joy_node" value="true" />
 
-    <node name="rc_control_node" pkg="sunray_uav_control" type="rc_control_node" output="screen">
+    <node name="rc_input_node" pkg="sunray_uav_control" type="rc_input_node" output="screen">
         <param name="uav_id" value="1" />
         <param name="uav_name" type="string" value="uav" />
         <param name="channel_arm" value="5" />

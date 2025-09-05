@@ -4,6 +4,8 @@
 
 using namespace sunray_logger;
 
+#define FLIP_ANGLE M_PI/3
+
 class UAVControl
 {
 private:
@@ -57,6 +59,7 @@ private:
         bool use_offset;          // 是否添加偏移
         ros::Time last_land_time; // 进入降落最后一阶段的时间戳
         ros::Time last_rc_time;   // 上一个rc控制时间点
+        bool check_flip;
     };
     SystemParams system_params;
 
@@ -202,6 +205,7 @@ private:
     void set_land();                                                                          // 降落模式实现
     void publish_goal();                                                                      // 发布规划点
     void pos_controller();
+    void check_flip();
     // 回调函数
     void control_cmd_callback(const sunray_msgs::UAVControlCMD::ConstPtr &msg);
     void uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg);
