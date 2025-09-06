@@ -8,11 +8,31 @@ if [ -n "$2" ]; then
   num=$(($2))
 fi
 
-gnome-terminal --window -e "bash -c \"roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${id}; exec exec bash\"" \
-                --tab -e "bash -c \"sleep 5.0; roslaunch sunray_uav_control external_fusion.launch uav_id:=${id} external_source:=3; exec exec bash\"" \
-                --tab -e "bash -c \"sleep 2.0; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${id}; exec exec bash\"" \
+# 引入 TMUX 会话管理模块
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_DIR}/auto_tmux.sh"
 
-gnome-terminal --window -e "bash -c \"sleep 3.0; roslaunch sunray_orca orca_uav.launch agent_id:=${id} agent_num:=${num}; exec bash\"" \
-                --tab -e "bash -c \"sleep 5.0; roslaunch sunray_formation formation_single_uav.launch agent_id:=${id}  agent_num:=${num}; exec bash\"" \
-                # --tab -e "bash -c \"sleep 5.0; roslaunch sunray_communication_bridge sunray_communication_bridge.launch uav_id:=${id} uav_experiment_num:=${num}; exec bash\"" \
+# ===================== 配置区域 =====================
+UAV_ID=1
+SESSION_NAME=sunray_tmux
+FIRST_WINDOW="main.2"
+LAYOUT="even-horizontal"
 
+declare -A TMUX_CONFIG=(
+    ["main"]="
+        roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${id}
+        sleep 5.0; roslaunch sunray_uav_control external_fusion.launch uav_id:=${id} external_source:=3
+        sleep 2.0; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${id}
+    "
+    ["extra"]="
+        sleep 3.0; roslaunch sunray_orca orca_uav.launch agent_id:=${id} agent_num:=${num}
+        sleep 5.0; roslaunch sunray_formation formation_single_uav.launch agent_id:=${id}  agent_num:=${num}
+    "
+)
+# ===================== 配置结束 =====================
+
+# 创建会话
+create_tmux_session
+
+# 可选：附加到会话
+attach_to_tmux_session

@@ -378,7 +378,9 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
 
         // 构建打开新终端并执行命令的字符串
         std::string terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
-        const char *command = terminalCommand.c_str();
+        // const char *command = terminalCommand.c_str();
+        const char *command = fullCommand.c_str();
+
         execlp("bash", "bash", "-c", command, (char *)NULL);
 
         // 如果execlp返回，说明执行失败
