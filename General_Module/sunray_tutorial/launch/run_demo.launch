@@ -8,22 +8,22 @@
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 
-	<node if="$(eval demo_id == 2)" pkg="sunray_tutorial" type="block_pos" name="block_pos_$(arg uav_id)" output="screen">
+	<node if="$(eval demo_id == 2)" pkg="sunray_tutorial" type="block_xyzpos" name="block_xyzpos_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 
-	<node if="$(eval demo_id == 3)" pkg="sunray_tutorial" type="circle_vel" name="circle_vel_$(arg uav_id)" output="screen">
+	<node if="$(eval demo_id == 3)" pkg="sunray_tutorial" type="circle_xyzvel" name="circle_xyzvel_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 
-	<node if="$(eval demo_id == 4)" pkg="sunray_tutorial" type="circle_z_pos" name="circle_z_pos_$(arg uav_id)" output="screen">
+	<node if="$(eval demo_id == 4)" pkg="sunray_tutorial" type="circle_xyvelzpos" name="circle_xyvelzpos_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 
-	<node if="$(eval demo_id == 5)" pkg="sunray_tutorial" type="pos_body_hexagon" name="pos_body_hexagon_$(arg uav_id)" output="screen">
+	<node if="$(eval demo_id == 5)" pkg="sunray_tutorial" type="hexagon_xyzposyawbody" name="pos_body_hexagon_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
@@ -38,7 +38,7 @@
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 	
-	<!-- <node pkg="sunray_tutorial" type="follow_a_car" name="follow_a_car_$(arg uav_id)" output="screen">
+	<!-- <node pkg="sunray_tutorial" type="follow_car_xyvelzposyawbody" name="follow_a_car_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node> -->

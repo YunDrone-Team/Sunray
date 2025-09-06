@@ -56,53 +56,53 @@ include_directories(
 ##      声明可执行cpp文件     ##
 ###############################
 
-add_executable(takeoff_hover_land src/takeoff_hover_land.cpp)
+add_executable(takeoff_hover_land uav_basic/takeoff_hover_land.cpp)
 add_dependencies(takeoff_hover_land sunray_tutorial_gencpp)
 target_link_libraries(takeoff_hover_land ${catkin_LIBRARIES})
 
-add_executable(block_pos src/block_pos.cpp)
-add_dependencies(block_pos sunray_tutorial_gencpp)
-target_link_libraries(block_pos ${catkin_LIBRARIES})
+add_executable(block_xyzpos uav_basic/block_xyzpos.cpp)
+add_dependencies(block_xyzpos sunray_tutorial_gencpp)
+target_link_libraries(block_xyzpos ${catkin_LIBRARIES})
 
-add_executable(circle_z_pos src/circle_z_pos.cpp)
-add_dependencies(circle_z_pos sunray_tutorial_gencpp)
-target_link_libraries(circle_z_pos ${catkin_LIBRARIES})
+add_executable(circle_xyvelzpos uav_basic/circle_xyvelzpos.cpp)
+add_dependencies(circle_xyvelzpos sunray_tutorial_gencpp)
+target_link_libraries(circle_xyvelzpos ${catkin_LIBRARIES})
 
-add_executable(circle_vel src/circle_vel.cpp)
-add_dependencies(circle_vel sunray_tutorial_gencpp)
-target_link_libraries(circle_vel ${catkin_LIBRARIES})
+add_executable(circle_xyzvel uav_basic/circle_xyzvel.cpp)
+add_dependencies(circle_xyzvel sunray_tutorial_gencpp)
+target_link_libraries(circle_xyzvel ${catkin_LIBRARIES})
 
-add_executable(pos_body_hexagon src/pos_body_hexagon.cpp)
-add_dependencies(pos_body_hexagon sunray_tutorial_gencpp)
-target_link_libraries(pos_body_hexagon ${catkin_LIBRARIES})
+add_executable(hexagon_xyzposyawbody uav_basic/hexagon_xyzposyawbody.cpp)
+add_dependencies(hexagon_xyzposyawbody sunray_tutorial_gencpp)
+target_link_libraries(hexagon_xyzposyawbody ${catkin_LIBRARIES})
 
-add_executable(auto_land src/auto_land.cpp)
-add_dependencies(auto_land sunray_tutorial_gencpp)
-target_link_libraries(auto_land ${catkin_LIBRARIES})
+add_executable(follow_car_xyvelzposyawbody uav_basic/follow_car_xyvelzposyawbody.cpp)
+add_dependencies(follow_car_xyvelzposyawbody sunray_tutorial_gencpp)
+target_link_libraries(follow_car_xyvelzposyawbody ${catkin_LIBRARIES})
 
-add_executable(auto_land_by_pose src/auto_land_by_pose.cpp)
-add_dependencies(auto_land_by_pose sunray_tutorial_gencpp)
-target_link_libraries(auto_land_by_pose ${catkin_LIBRARIES})
+add_executable(follow_tag_xyzvelyawbody uav_basic/follow_tag_xyzvelyawbody.cpp)
+add_dependencies(follow_tag_xyzvelyawbody sunray_tutorial_gencpp)
+target_link_libraries(follow_tag_xyzvelyawbody ${catkin_LIBRARIES})
 
-add_executable(follow_a_car src/follow_a_car.cpp)
-add_dependencies(follow_a_car sunray_tutorial_gencpp)
-target_link_libraries(follow_a_car ${catkin_LIBRARIES})
-
-add_executable(follow_a_tag src/follow_a_tag.cpp)
-add_dependencies(follow_a_tag sunray_tutorial_gencpp)
-target_link_libraries(follow_a_tag ${catkin_LIBRARIES})
-
-add_executable(ugv_block_pos src/ugv_block_pos.cpp)
+add_executable(ugv_block_pos ugv_basic/ugv_block_pos.cpp)
 add_dependencies(ugv_block_pos sunray_tutorial_gencpp)
 target_link_libraries(ugv_block_pos ${catkin_LIBRARIES})
 
-add_executable(ugv_circle_vel src/ugv_circle_vel.cpp)
+add_executable(ugv_circle_vel ugv_basic/ugv_circle_vel.cpp)
 add_dependencies(ugv_circle_vel sunray_tutorial_gencpp)
 target_link_libraries(ugv_circle_vel ${catkin_LIBRARIES})
 
-add_executable(ugv_circle_vel_body src/ugv_circle_vel_body.cpp)
+add_executable(ugv_circle_vel_body ugv_basic/ugv_circle_vel_body.cpp)
 add_dependencies(ugv_circle_vel_body sunray_tutorial_gencpp)
 target_link_libraries(ugv_circle_vel_body ${catkin_LIBRARIES})
+
+add_executable(auto_land advanced/auto_land.cpp)
+add_dependencies(auto_land sunray_tutorial_gencpp)
+target_link_libraries(auto_land ${catkin_LIBRARIES})
+
+add_executable(auto_land_by_pose advanced/auto_land_by_pose.cpp)
+add_dependencies(auto_land_by_pose sunray_tutorial_gencpp)
+target_link_libraries(auto_land_by_pose ${catkin_LIBRARIES})
 
 # add_executable(land_on_a_moving_car advanced/land_on_a_moving_car.cpp)
 # add_dependencies(land_on_a_moving_car sunray_tutorial_gencpp detection_msgs_gencpp)

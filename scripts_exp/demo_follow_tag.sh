@@ -6,4 +6,4 @@ gnome-terminal --window -e 'bash -c "roslaunch sunray_uav_control sunray_mavros_
 
 gnome-terminal --window -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial qrcode_detection_front.launch; exec bash"' \
 --tab -e 'bash -c "sleep 5.0; rosrun rqt_image_view rqt_image_view; exec bash"' \
---tab -e 'bash -c "sleep 8.0; roslaunch sunray_tutorial follow_a_tag.launch; exec bash"' 
+--tab -e 'bash -c "sleep 8.0; roslaunch sunray_tutorial follow_tag_xyzvelyawbody.launch; exec bash"' 

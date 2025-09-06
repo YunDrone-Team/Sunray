@@ -52,9 +52,33 @@ public:
         // 降落无人机
         while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
         {
+            uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
             control_cmd_pub.publish(uav_cmd);
             Logger::print_color(int(LogColor::green), node_name, "Land UAV now.");
+            ros::Duration(4.0).sleep();
+            ros::spinOnce();
+        }
+        // 等待降落
+        while (ros::ok() && uav_state.landed_state != 1)
+        {
+            Logger::print_color(int(LogColor::green), node_name, "Landing");
+            ros::Duration(1.0).sleep();
+            ros::spinOnce();
+        }
+        // 成功降落
+        Logger::print_color(int(LogColor::green), node_name, "Land UAV successfully!");
+    }
+
+    void auto_return()
+    {
+        // 降落无人机
+        while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
+        {
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Return;
+            control_cmd_pub.publish(uav_cmd);
+            Logger::print_color(int(LogColor::green), node_name, "Return UAV now.");
             ros::Duration(4.0).sleep();
             ros::spinOnce();
         }

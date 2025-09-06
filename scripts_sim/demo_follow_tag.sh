@@ -6,5 +6,5 @@ gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
 --tab -e 'bash -c "sleep 1.0; roslaunch sunray_simulator sim_rviz.launch; exec bash"' \
 
 gnome-terminal --window -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial qrcode_detection_sim_front.launch; exec bash"' \
---tab -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial follow_a_tag.launch; exec bash"' \
+--tab -e 'bash -c "sleep 3.0; roslaunch sunray_tutorial follow_tag_xyzvelyawbody.launch; exec bash"' \
 --tab -e 'bash -c "sleep 3.0; rosrun sunray_tutorial key_move_car.py; exec bash"' \

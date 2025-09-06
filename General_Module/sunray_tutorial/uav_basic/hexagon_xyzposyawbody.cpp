@@ -1,7 +1,12 @@
+/*
+程序功能：使用XyzPosYawBody接口绘制六边形轨迹
+*/
+
 #include <ros/ros.h>
 #include <sunray_logger.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
+#include <csignal>
 
 using namespace sunray_logger;
 using namespace std;
@@ -9,13 +14,21 @@ using namespace std;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVControlCMD uav_cmd;
 sunray_msgs::UAVSetup uav_setup;
+
 string node_name;
+
+void mySigintHandler(int sig)
+{
+    std::cout << "[hexagon_xyzposyawbody] exit..." << std::endl;
+
+    ros::shutdown();
+    exit(EXIT_SUCCESS); // 或者使用 exit(0)
+}
 
 void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg)
 {
     uav_state = *msg;
 }
-
 
 
 int main(int argc, char **argv)
@@ -27,25 +40,31 @@ int main(int argc, char **argv)
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
-    ros::init(argc, argv, "circle_vel");
+    ros::init(argc, argv, "hexagon_xyzposyawbody");
     ros::NodeHandle nh("~");
+
     ros::Rate rate(20.0);
     node_name = ros::this_node::getName();
 
     int uav_id;
-    string uav_name;
+
+    signal(SIGINT, mySigintHandler);
+
+    string uav_name, target_topic_name;
+    bool sim_mode, flag_printf;
+    nh.param<bool>("sim_mode", sim_mode, true);
+    nh.param<bool>("flag_printf", flag_printf, true);
     // 【参数】无人机编号
     nh.param<int>("uav_id", uav_id, 1);
     // 【参数】无人机名称
     nh.param<string>("uav_name", uav_name, "uav");
     // 【参数】目标话题名称
-    nh.param<string>("target_tpoic_name", target_tpoic_name, "/vrpn_client_node/target/pose");
+    nh.param<string>("target_topic_name", target_topic_name, "/vrpn_client_node/target/pose");
 
     uav_name = "/" + uav_name + std::to_string(uav_id);
+
     // 【订阅】无人机状态 -- from vision_pose
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1, uav_state_cb);
-    // 【订阅】无人机控制信息
-    ros::Subscriber uav_contorl_state_sub = nh.subscribe<std_msgs::Int32>(uav_name+ "/sunray/control_state", 1, uav_control_state_cb);
 
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 1);
@@ -54,7 +73,7 @@ int main(int argc, char **argv)
 
     // 变量初始化
     uav_cmd.header.stamp = ros::Time::now();
-    uav_cmd.cmd_id = 0;
+    // uav_cmd.cmd_id= 0;
     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
     uav_cmd.desired_pos[0] = 0.0;
     uav_cmd.desired_pos[1] = 0.0;
@@ -70,7 +89,6 @@ int main(int argc, char **argv)
     uav_cmd.desired_att[2] = 0.0;
     uav_cmd.desired_yaw = 0.0;
     uav_cmd.desired_yaw_rate = 0.0;
-    uav_cmd.enable_yawRate = false;
 
     ros::Duration(0.5).sleep();
     // 初始化检查：等待PX4连接
@@ -129,7 +147,7 @@ int main(int argc, char **argv)
     }
     Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV successfully!");
 
-    // 以上: 无人机已成功起飞，进入自由任务模式
+    // 以上: 无人机已成功起飞，进入任务模式
 
     ros::Duration(5).sleep();
     // 悬停
@@ -139,93 +157,40 @@ int main(int argc, char **argv)
     ros::Duration(5).sleep();
     ros::spinOnce();
 
-    double k_p = 1.0;     // proportional gain
-    double z_k_p = 0.5;   // proportional gain
-    double max_vel = 1.0; // maximum velocity (m/s)
-
-    double height = 0.6;
-
-    // Define the circle's center and radius
-    double radius = 1.0;
-
-    double cilcle_time = 5.0;
-    double dt = 2 * M_PI / cilcle_time;
-
-    geometry_msgs::PoseStamped pose;
-    ros::Time start_time = ros::Time::now();
-    while (ros::ok())
+    std::tuple<double, double, double> vertex = std::make_tuple(1, 0, 0);
+    int yaw;
+    for (int i = 0; i < 8; ++i)
     {
-        double theta = (ros::Time::now() - start_time).toSec() * dt;
-        // double theta = 2 * M_PI * t / cilcle_time;
-        pose.pose.position.z = height;
-        ros::Time start_time = ros::Time::now();
-
-        double dz = pose.pose.position.z - uav_state.position[2];
-
-        double vx = radius * sin(theta) * (2 * M_PI / cilcle_time);
-        double vy = -radius * cos(theta) * (2 * M_PI / cilcle_time);
-        double vz = z_k_p * dz;
-        vz = min(max(vz, -max_vel), max_vel);
-        // std::cout << "vx: " << vx << " vy: " << vy << " vz: " << vz << std::endl;
-
+        ros::spinOnce();
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVel;
-        uav_cmd.desired_vel[0] = vx;
-        uav_cmd.desired_vel[1] = vy;
-        uav_cmd.desired_vel[2] = vz;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
+        uav_cmd.desired_pos[0] = std::get<0>(vertex);
+        uav_cmd.desired_pos[1] = std::get<1>(vertex);
+        uav_cmd.desired_pos[2] = 1 - uav_state.position[2];
         uav_cmd.desired_yaw = 0;
-        uav_cmd.enable_yawRate = 0;
-        uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
         control_cmd_pub.publish(uav_cmd);
+        ros::Duration(5).sleep();
 
-        if ((ros::Time::now() - start_time).toSec() > 0.1)
+        if (i == 0 || i == 6)
+        {
+            yaw = 120;
+        }
+        else
+        {
+            yaw = 60;
+        }
+        if (i == 7)
         {
             break;
         }
-        ros::spinOnce();
-        ros::Duration(0.1).sleep();
-    }
-
-    // 回到原点
-    pose.pose.position.x = 0;
-    pose.pose.position.y = 0;
-    pose.pose.position.z = height;
-    while (ros::ok())
-    {
-        // Calculate the distance to the target position
-        double dx = pose.pose.position.x - uav_state.position[0];
-        double dy = pose.pose.position.y - uav_state.position[1];
-        double dz = pose.pose.position.z - uav_state.position[2];
-
-        // Calculate the desired velocity using a proportional controller
-        double vx = k_p * dx;
-        double vy = k_p * dy;
-        double vz = z_k_p * dz;
-
-        // Limit the velocities to a maximum value
-        vx = min(max(vx, -max_vel), max_vel);
-        vy = min(max(vy, -max_vel), max_vel);
-        vz = min(max(vz, -max_vel), max_vel);
-
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVel;
-        uav_cmd.desired_vel[0] = vx;
-        uav_cmd.desired_vel[1] = vy;
-        uav_cmd.desired_vel[2] = vz;
-        uav_cmd.desired_yaw = 0;
-        uav_cmd.enable_yawRate = 0;
-        uav_cmd.cmd_id = uav_cmd.cmd_id + 1;
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
+        uav_cmd.desired_pos[0] = 0;
+        uav_cmd.desired_pos[1] = 0;
+        uav_cmd.desired_pos[2] = 0;
+        uav_cmd.desired_yaw = yaw / 180.0 * M_PI;
         control_cmd_pub.publish(uav_cmd);
-
-        // Check if the drone has reached the target point
-        if (fabs(uav_state.position[0] - pose.pose.position.x) < 0.2 &&
-            fabs(uav_state.position[1] - pose.pose.position.y) < 0.2)
-        {
-            break;
-        }
-
-        ros::spinOnce();
-        rate.sleep();
+        ros::Duration(2).sleep();
     }
 
     // 降落无人机

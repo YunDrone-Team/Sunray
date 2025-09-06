@@ -48,11 +48,11 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 
-# add_library(astar_lib src/Astar.cpp)
-# add_library(map_generator_lib src/map_generator.cpp)
-add_library(ugv_control src/ugv_control.cpp)
+# add_library(astar_lib ugv_control/Astar.cpp)
+# add_library(map_generator_lib ugv_control/map_generator.cpp)
+add_library(ugv_control ugv_control/ugv_control.cpp)
 
-add_executable(map_generator src/map_generator.cpp)
+add_executable(map_generator ugv_control/map_generator.cpp)
 target_link_libraries(map_generator 
                         ${catkin_LIBRARIES}
                         ${OCTOMAP_LIBRARIES}
@@ -60,17 +60,17 @@ target_link_libraries(map_generator
                         # astar_lib
                         )
 
-add_executable(astar src/Astar.cpp)
+add_executable(astar ugv_control/Astar.cpp)
 target_link_libraries(astar ${catkin_LIBRARIES})    
 
-add_executable(ugv_terminal_control src/ugv_terminal_control.cpp)
+add_executable(ugv_terminal_control ugv_control/ugv_terminal_control.cpp)
 target_link_libraries(ugv_terminal_control
     ${catkin_LIBRARIES}
     octomap
     octomath
 )
 
-add_executable(ugv_control_node src/ugv_control_node.cpp)
+add_executable(ugv_control_node ugv_control/ugv_control_node.cpp)
 target_link_libraries(ugv_control_node 
                         ${catkin_LIBRARIES}
                         ${OCTOMAP_LIBRARIES}
@@ -80,7 +80,7 @@ target_link_libraries(ugv_control_node
                         # map_generator_lib
                         )
 
-# add_executable(ugv_control src/ugv_control.cpp)
+# add_executable(ugv_control ugv_control/ugv_control.cpp)
 # target_link_libraries(ugv_control 
 #                         ${catkin_LIBRARIES}
 #                         ${OCTOMAP_LIBRARIES}

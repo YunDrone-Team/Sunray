@@ -1,13 +1,13 @@
 /*
     起飞降落例程：takeoff_hover_land.cpp
-    程序功能：使用解锁、起飞、悬停、降落、等指令
+    程序功能：自动起飞、指定点悬停、自动降落
 */
 
 #include "ros_msg_utils.h"
 
-string node_name;
 int uav_id;
-string uav_name, target_topic_name;
+string node_name;
+string uav_name;
 sunray_msgs::UAVState uav_state;
 sunray_msgs::UAVSetup uav_setup;
 sunray_msgs::UAVControlCMD uav_cmd;
@@ -69,8 +69,8 @@ int main(int argc, char **argv)
 
     // 控制辅助类 - 自动起飞
     uav_control_utils.auto_takeoff();
-    // 以上: 无人机已成功起飞，进入自由任务模式
 
+    // 以上: 无人机已成功起飞，进入自由任务模式
     Logger::print_color(int(LogColor::green), node_name, "Wait 5 sec and then send Hover cmd...");
 
     ros::Duration(5.0).sleep();

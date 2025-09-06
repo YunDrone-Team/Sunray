@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
-    ros::init(argc, argv, "auto_land_node");
+    ros::init(argc, argv, "follow_tag_xyzvelyawbody");
     ros::NodeHandle nh("~");
 
     ros::Rate rate(10.0);
