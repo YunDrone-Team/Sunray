@@ -5,6 +5,7 @@
 #include <string.h>
 #include <vector>
 #include <string>
+#include <cmath>  // 引入 std::fabs 函数的声明
 #include "MessageEnums.h"
 
 //心跳包 - HeartbeatData（#1）
@@ -174,6 +175,80 @@ struct AgentComputerStatus
         cpuTemperature=0;
     }
 
+};
+
+
+//FAC赛地图数据 -FACMapData（#32）
+struct FACMapData
+{
+    float centralObstacleSideLength;    //中心障碍物边长
+    float dropZoneCenterCoords[2];      //投送区中心点坐标
+    float firstObstacleCoords[2];       //第一个障碍物坐标
+    float secondObstacleCoords[2];      //第二个障碍物坐标
+    float thirdObstacleCoords[2];       //第三个障碍物坐标
+    float obstacleRadius;               //障碍物半径
+    float largeFrameCoords[2];          //大框中心点位置
+    float smallFrameCoords[2];          //小框中心点位置
+
+    void init()
+    {
+        centralObstacleSideLength=0;
+        obstacleRadius=0;
+        for(int i=0;i<2;++i)
+        {
+            dropZoneCenterCoords[i]=0;
+            firstObstacleCoords[i]=0;
+            secondObstacleCoords[i]=0;
+            thirdObstacleCoords[i]=0;
+            largeFrameCoords[i]=0;
+            smallFrameCoords[i]=0;
+        }
+    }
+
+     // 重载 == 运算符，实现3位小数精度的比较
+    bool operator==(const FACMapData& other) const
+    {
+        const float EPS = 0.0005f;  // 3位小数的精度阈值
+
+        // 辅助函数：比较两个浮点数是否在3位小数内相等
+        auto isEqual = [EPS](float a, float b) {
+            return std::fabs(a - b) < EPS;
+        };
+
+        // 逐个比较所有成员
+        return isEqual(centralObstacleSideLength, other.centralObstacleSideLength) &&
+               isEqual(obstacleRadius, other.obstacleRadius) &&
+               isEqual(dropZoneCenterCoords[0], other.dropZoneCenterCoords[0]) &&
+               isEqual(dropZoneCenterCoords[1], other.dropZoneCenterCoords[1]) &&
+               isEqual(firstObstacleCoords[0], other.firstObstacleCoords[0]) &&
+               isEqual(firstObstacleCoords[1], other.firstObstacleCoords[1]) &&
+               isEqual(secondObstacleCoords[0], other.secondObstacleCoords[0]) &&
+               isEqual(secondObstacleCoords[1], other.secondObstacleCoords[1]) &&
+               isEqual(thirdObstacleCoords[0], other.thirdObstacleCoords[0]) &&
+               isEqual(thirdObstacleCoords[1], other.thirdObstacleCoords[1]) &&
+               isEqual(largeFrameCoords[0], other.largeFrameCoords[0]) &&
+               isEqual(largeFrameCoords[1], other.largeFrameCoords[1]) &&
+               isEqual(smallFrameCoords[0], other.smallFrameCoords[0]) &&
+               isEqual(smallFrameCoords[1], other.smallFrameCoords[1]);
+    }
+
+    // != 运算符
+    bool operator!=(const FACMapData& other) const
+    {
+        return !(*this == other);
+    }
+
+};
+
+//FAC比赛状态 -FACCompetitionState（#33）
+struct FACCompetitionState
+{
+    uint16_t stateSize;
+    char stateStr[300];
+    void init()
+    {
+        stateSize=0;
+    }
 };
 
 //编队切换 - Formation（#40）
@@ -416,6 +491,8 @@ union Payload
     Formation formation;                // 编队切换 - Formation（#40）
     Goal goal;                          // 规划点- Goal（#204）
     AgentComputerStatus computerStatus; // 智能体电脑状态 -AgentComputerStatus（#31）
+    FACMapData FACMap;                  // FAC赛地图数据 -FACMapData（#32）
+    FACCompetitionState FACState;       // FAC比赛状态 -FACCompetitionState（#33）
 };
 
 //整个数据帧
