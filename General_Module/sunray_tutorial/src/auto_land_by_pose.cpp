@@ -11,7 +11,7 @@
 #include <sunray_msgs/UAVSetup.h>
 #include <sunray_msgs/UAVControlCMD.h>
 #include <sunray_msgs/UAVState.h>
-#include <printf_format.h>
+#include <sunray_logger.h>
 
 using namespace std;
 using namespace sunray_logger;

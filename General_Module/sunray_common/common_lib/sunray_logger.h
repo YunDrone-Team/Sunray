@@ -62,33 +62,33 @@ enum class LogLevel
 enum class LogColor
 {
     def = 0,
-    red,
-    green,
-    yellow,
-    blue,
-    magenta,
-    cyan,
-    white,
-    black,
-    bold,
-    underline,
-    blink,
-    invert,
-    hidden,
-    clear,
-    white_bg_green,
-    white_bg_red,
-    white_bg_yellow,
-    white_bg_blue,
-    white_bg_magenta,
-    white_bg_cyan,
-    white_bg_black,
-    black_bg_white,
-    black_bg_red,
-    black_bg_yellow,
-    black_bg_blue,
-    black_bg_magenta,
-    black_bg_cyan
+    red,                    // 红色
+    green,                  // 绿色
+    yellow,                 // 黄色
+    blue,                   // 蓝色
+    magenta,                // 紫色
+    cyan,                   // 蓝绿色
+    white,                  // 白色
+    black,                  // 黑色
+    bold,                   // 加粗
+    underline,              // 下划线
+    blink,                  // 闪烁
+    invert,                 // 反显
+    hidden,                 // 隐藏
+    clear,                  // 清屏
+    white_bg_green,         // 白底绿字
+    white_bg_red,           // 白底红字
+    white_bg_yellow,        // 白底黄字
+    white_bg_blue,          // 白底蓝字
+    white_bg_magenta,       // 白底紫字
+    white_bg_cyan,          // 白底青字
+    white_bg_black,         // 白底黑字
+    black_bg_white,         // 黑底白字
+    black_bg_red,           // 黑底红字
+    black_bg_yellow,        // 黑底黄字
+    black_bg_blue,          // 黑底蓝字
+    black_bg_magenta,       // 黑底紫字
+    black_bg_cyan           // 黑底青字
 };
 
 // 日志类命名空间，实现静态类
@@ -233,65 +233,13 @@ namespace sunray_logger
             append_to_stream(oss, args...);
         }
 
-        // 主函数：接受1到N个参数，并输出拼接后的字符串
-        template <typename... Args>
-        static void print(Args... args)
-        {
-            if (!is_init)
-            {
-                throw std::logic_error("printf_format not init");
-                return;
-            }
-            std::ostringstream oss;
-            // 强制显示正负号
-            oss << std::showpos;
-            // 设置小数点精度
-            oss << std::fixed << std::setprecision(precision);
-            // 添加颜色
-            oss << printColor;
-            // 判断level和时间是否需要打印
-            if (printLevel)
-            {
-                oss << "[" << printLevelStr << "]";
-            }
-            if (printTime)
-            {
-                oss << get_current_timestamp() << ":";
-            }
-            // 拼接分隔符
-            oss << delimiter;
-            append_to_stream(oss, args...);
-            std::cout << oss.str() << std::endl;
-
-            // 判断是否要输出到文件
-            if (printToFile)
-            {
-                // 判断文件输入已经打开
-                if (is_openFile)
-                {
-                    if (!f_stream.fail())
-                    {
-                        f_stream << oss.str().substr(4) << std::endl;
-                    }
-                }
-                else
-                {
-                    createLogFile();
-                    if (!f_stream.fail())
-                    {
-                        f_stream << oss.str().substr(4) << std::endl;
-                    }
-                }
-            }
-        }
-
         // 主函数：接受颜色 + 1到N个参数，并输出拼接后的字符串
         template <typename... Args>
         static void print_color(int color, Args... args)
         {
             if (!is_init)
             {
-                throw std::logic_error("printf_format not init");
+                throw std::logic_error("sunray_logger not init");
                 return;
             }
             std::ostringstream oss;
@@ -337,68 +285,13 @@ namespace sunray_logger
             }
         }
 
-        // 主函数：接受颜色 + 1到N个参数，并输出拼接后的字符串 不拼接分隔符
-        template <typename... Args>
-        static void color_no_del(int color, Args... args)
-        {
-            if (!is_init)
-            {
-                throw std::logic_error("printf_format not init");
-                return;
-            }
-            std::ostringstream oss;
-            // 强制显示正负号
-            oss << std::showpos;
-            // 设置小数点精度
-            oss << std::fixed << std::setprecision(precision);
-            // 添加颜色
-            oss << colors[color];
-            // 判断level和时间是否需要打印
-            if (printLevel)
-            {
-                oss << "[" << printLevelStr << "]";
-            }
-            if (printTime)
-            {
-                oss << get_current_timestamp() << ":";
-            }
-            // 拼接分隔符
-            oss << delimiter;
-            std::string tmp_delimiter = delimiter;
-            setSeparator("");
-            append_to_stream(oss, args...);
-            std::cout << oss.str() << std::endl;
-            setSeparator(tmp_delimiter.c_str());
-            // 判断是否要输出到文件
-            if (printToFile)
-            {
-                // 判断文件输入已经打开
-                if (is_openFile)
-                {
-                    if (!f_stream.fail())
-                    {
-                        f_stream << oss.str().substr(colors[color].size()) << std::endl;
-                    }
-                }
-                else
-                {
-                    createLogFile();
-                    if (!f_stream.fail())
-                    {
-                        f_stream << oss.str().substr(colors[color].size()) << std::endl;
-                    }
-                }
-            }
-        }
-
-
         // INFO
         template <typename... Args>
         static void info(Args... args)
         {
             if (!is_init)
             {
-                throw std::logic_error("printf_format not init");
+                throw std::logic_error("sunray_logger not init");
                 return;
             }
             std::ostringstream oss;
@@ -407,7 +300,7 @@ namespace sunray_logger
             // 设置小数点精度
             oss << std::fixed << std::setprecision(precision);
             // 添加颜色
-            oss << colors[int(LogColor::green)];
+            oss << colors[int(LogColor::white_bg_green)];
             // 判断level和时间是否需要打印
             if (printLevel)
             {
@@ -420,7 +313,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << oss.str() << std::endl;
+            std::cout << LOG_BOLD << oss.str() << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)
@@ -450,7 +343,7 @@ namespace sunray_logger
         {
             if (!is_init)
             {
-                throw std::logic_error("printf_format not init");
+                throw std::logic_error("sunray_logger not init");
                 return;
             }
             std::ostringstream oss;
@@ -459,7 +352,7 @@ namespace sunray_logger
             // 设置小数点精度
             oss << std::fixed << std::setprecision(precision);
             // 添加颜色
-            oss << colors[int(LogColor::red)];
+            oss << colors[int(LogColor::white_bg_red)];
             // 判断level和时间是否需要打印
             if (printLevel)
             {
@@ -472,7 +365,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << oss.str() << std::endl;
+            std::cout << LOG_BOLD << oss.str() << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)
@@ -502,7 +395,7 @@ namespace sunray_logger
         {
             if (!is_init)
             {
-                throw std::logic_error("printf_format not init");
+                throw std::logic_error("sunray_logger not init");
                 return;
             }
             std::ostringstream oss;
@@ -511,7 +404,7 @@ namespace sunray_logger
             // 设置小数点精度
             oss << std::fixed << std::setprecision(precision);
             // 添加颜色
-            oss << colors[int(LogColor::yellow)];
+            oss << colors[int(LogColor::white_bg_yellow)];
             // 判断level和时间是否需要打印
             if (printLevel)
             {
@@ -524,7 +417,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << oss.str() << std::endl;
+            std::cout << LOG_BOLD << oss.str() << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)
@@ -547,20 +440,6 @@ namespace sunray_logger
                 }
             }
         }
-
-        // 主函数：带有分隔符和颜色，接受1到N个参数，并输出拼接后的字符串
-        // template <typename... Args>
-        // static void print(std::string se, int color, Args... args)
-        // {
-        //     if (!is_init)
-        //     {
-        //         throw std::logic_error("printf_format not init");
-        //         return;
-        //     }
-        //     std::ostringstream oss;
-        //     append_to_stream(oss, args...);
-        //     std::cout << oss.str() << std::endl;
-        // }
 
         // 创建输入文件
         static void createLogFile()
@@ -588,6 +467,7 @@ namespace sunray_logger
                 LOG_BLACK_BG_WHITE, LOG_BLACK_BG_RED, LOG_BLACK_BG_YELLOW, LOG_BLACK_BG_BLUE, LOG_BLACK_BG_MAGENTA,
                 LOG_BLACK_BG_CYAN};
             levels = {"DEBUG", "INFO ", "WARN ", "ERROR", "QUIET"};
+            // 小数点默认保留为2
             precision = 2;
             printLevelStr = levels[0];
             delimiter = " ";

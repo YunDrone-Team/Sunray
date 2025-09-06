@@ -2,7 +2,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Int8.h>
 #include <geometry_msgs/PoseStamped.h>
-#include "printf_format.h"
+#include "sunray_logger.h"
 #include <iostream>
 #include <fstream>
 #include <yaml-cpp/yaml.h>

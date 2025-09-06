@@ -9,7 +9,7 @@
 #include <sunray_msgs/TargetsInFrameMsg.h>
 #include <Eigen/Dense>
 #include "utils.hpp"
-#include <printf_format.h>
+#include <sunray_logger.h>
 
 using namespace std;
 using namespace Eigen;

@@ -8,7 +8,7 @@
 
 #include "printf_utils.h"
 #include "ros_msg_utils.h"
-#include "printf_format.h"
+#include "sunray_logger.h"
 
 #include "Astar.h"
 #include "map_generator.h"

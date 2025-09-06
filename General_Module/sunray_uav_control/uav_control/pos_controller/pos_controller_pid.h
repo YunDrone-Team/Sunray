@@ -2,7 +2,7 @@
 #define __CONTROLLER_H
 
 #include "ros_msg_utils.h"
-#include "printf_format.h"
+#include "sunray_logger.h"
 #include "controller_utils.h"
 #include "geometry_utils.h"
 #include "math_utils.h"

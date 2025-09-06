@@ -8,7 +8,7 @@
 #include <detection_msgs/TargetMsg.h>
 #include <detection_msgs/TargetsInFrameMsg.h>
 #include "utils.hpp"
-#include <printf_format.h>
+#include <sunray_logger.h>
 #include <Eigen/Eigen>
 #include <cmath>
 

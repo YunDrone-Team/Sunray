@@ -4,7 +4,7 @@
 #include <tf/transform_broadcaster.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
-#include <printf_format.h>
+#include <sunray_logger.h>
 
 using namespace sunray_logger;
 string node_name;
