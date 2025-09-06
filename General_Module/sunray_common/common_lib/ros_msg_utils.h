@@ -43,6 +43,8 @@ using namespace sunray_logger;
 #include <sunray_msgs/OrcaSetup.h>
 #include <sunray_msgs/Formation.h>
 #include <sunray_msgs/OrcaCmd.h>
+#include <sunray_msgs/LinktrackNode2.h>
+#include <sunray_msgs/LinktrackNodeframe2.h>
 #include <sunray_msgs/algo_ctrl.h>
 #include <sunray_msgs/algo_status.h>
 // std_msgs

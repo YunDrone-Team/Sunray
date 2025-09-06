@@ -2,8 +2,6 @@
 #include "type_mask.h"
 #include "pos_controller_pid.h"
 
-using namespace sunray_logger;
-
 #define FLIP_ANGLE M_PI/3
 #define RC_DEADZONE 0.2
 

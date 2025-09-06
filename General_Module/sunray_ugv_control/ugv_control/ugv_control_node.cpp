@@ -1,18 +1,17 @@
-#include "ugv_control.h"
+#include "UGVControl.h"
 
 // 中断信号
 void mySigintHandler(int sig)
 {
     ROS_INFO("[ugv_control_node] exit...");
     ros::shutdown();
+    exit(0);
 }
 
 int main(int argc, char **argv)
 {
     // 设置日志
     Logger::init_default();
-    Logger::setPrintLevel(false);
-    Logger::setPrintTime(false);
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
@@ -26,7 +25,7 @@ int main(int argc, char **argv)
     ros::Duration(1.0).sleep();
 
     // 初始化无人车控制类
-    UGV_CONTROL ugv_ctrl;
+    UGVControl ugv_ctrl;
     ugv_ctrl.init(nh);
 
     // 初始化检查：等待连接
@@ -40,6 +39,7 @@ int main(int argc, char **argv)
     }
 
     ros::Time last_time = ros::Time::now();
+    ugv_ctrl.show_ctrl_state();
     // 主循环
     while (ros::ok())
     {

@@ -43,6 +43,7 @@ int main(int argc, char **argv)
     // 主循环
     while (ros::ok())
     {
+        // 回调函数
         ros::spinOnce();
         
         // 控制类主循环函数

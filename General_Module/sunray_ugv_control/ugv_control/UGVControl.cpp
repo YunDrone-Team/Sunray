@@ -5,12 +5,12 @@
     3、发布对应控制指令到无人车底层驱动
     4、发布无人车状态ugv_state
 */
-#include "ugv_control.h"
-#include <sstream>
-#include <iomanip>
+#include "UGVControl.h"
 
-void UGV_CONTROL::init(ros::NodeHandle &nh)
+void UGVControl::init(ros::NodeHandle &nh)
 {
+    node_name = ros::this_node::getName();
+
     // 【参数】编号
     nh.param<int>("ugv_id", ugv_id, 1);
     // 【参数】名称
@@ -58,9 +58,10 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
         int grid_w = static_cast<int>((ugv_geo_fence.max_x - ugv_geo_fence.min_x) / resolution);
         int grid_h = static_cast<int>((ugv_geo_fence.max_y - ugv_geo_fence.min_y) / resolution);
         // 初始化地图
-        map_gen.init(nh, ugv_geo_fence.min_x, ugv_geo_fence.min_y, ugv_geo_fence.max_x, ugv_geo_fence.max_y, resolution, inflate);
+        astar_map.init(nh, ugv_geo_fence.min_x, ugv_geo_fence.min_y, ugv_geo_fence.max_x, ugv_geo_fence.max_y, resolution, inflate);
         // 初始化A*算法
         astar.init(grid_w, grid_h);
+        Logger::info("Astar enable.");
     }
 
     // 初始化变量
@@ -70,27 +71,27 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     // 根据 location_source
     if (location_source == 0)
     {
-        odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/odom", 1, &UGV_CONTROL::odom_cb, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(topic_prefix + "/odom", 1, &UGVControl::odom_cb, this);
     }
     else if (location_source == 1)
     {
         // 【订阅】订阅动捕的数据(位置+速度) vrpn -> 本节点
-        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + topic_prefix + "/pose", 1, &UGV_CONTROL::mocap_pos_cb, this);
-        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + topic_prefix + "/twist", 1, &UGV_CONTROL::mocap_vel_cb, this);
+        mocap_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + topic_prefix + "/pose", 1, &UGVControl::mocap_pos_cb, this);
+        mocap_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vrpn_client_node_" + std::to_string(ugv_id) + topic_prefix + "/twist", 1, &UGVControl::mocap_vel_cb, this);
     }
     else if (location_source == 2)
     {
         // 【订阅】订阅Odom数据
-        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::odom_cb, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGVControl::odom_cb, this);
     }
     else if (location_source == 3)
     {
         // 【订阅】订阅viobot数据
-        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGV_CONTROL::viobot_cb, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &UGVControl::viobot_cb, this);
     }
     else if (location_source == 4)
     {
-        nooploop_sub = nh.subscribe<sunray_msgs::LinktrackNodeframe2>("/nlink_linktrack_nodeframe2", 1, &UGV_CONTROL::nooploop_cb, this);
+        nooploop_sub = nh.subscribe<sunray_msgs::LinktrackNodeframe2>("/nlink_linktrack_nodeframe2", 1, &UGVControl::nooploop_cb, this);
     }
     else
     {
@@ -98,11 +99,11 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     }
 
     // 【订阅】控制指令 外部控制节点 -> 本节点
-    ugv_cmd_sub = nh.subscribe<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 10, &UGV_CONTROL::ugv_cmd_cb, this);
+    ugv_cmd_sub = nh.subscribe<sunray_msgs::UGVControlCMD>(topic_prefix + "/sunray_ugv/ugv_control_cmd", 10, &UGVControl::ugv_cmd_cb, this);
     // 【订阅】ugv电池的数据 ugv_driver -> 本节点
-    battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/PowerVoltage", 1, &UGV_CONTROL::battery_cb, this);
+    battery_sub = nh.subscribe<std_msgs::Float32>(topic_prefix + "/PowerVoltage", 1, &UGVControl::battery_cb, this);
     // 【订阅】目标点 move_base_simple（RVIZ） -> 本节点
-    planner_goal_sub = nh.subscribe<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1, &UGV_CONTROL::goal_point_cb, this);
+    planner_goal_sub = nh.subscribe<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1, &UGVControl::goal_point_cb, this);
     // 【发布】状态 本节点 -> 地面站/其他节点
     ugv_state_pub = nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1);
     // 【发布】控制指令（机体系，单位：米/秒，Rad/秒）本节点 -> ugv_driver
@@ -130,11 +131,11 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
     }
 
     // 【定时器】 定时发布ugv_state - 10Hz
-    timer_state_pub = nh.createTimer(ros::Duration(0.1), &UGV_CONTROL::timercb_state, this);
+    timer_state_pub = nh.createTimer(ros::Duration(0.1), &UGVControl::timercb_state, this);
     // 【定时器】 定时发布RVIZ显示相关话题(仿真) - 10Hz
-    timer_rivz = nh.createTimer(ros::Duration(0.1), &UGV_CONTROL::timercb_rviz, this);
+    timer_rivz = nh.createTimer(ros::Duration(0.1), &UGVControl::timercb_rviz, this);
     // 【定时器】 定时更新A*算法
-    timer_update_astar = nh.createTimer(ros::Duration(1), &UGV_CONTROL::timercb_update_astar, this);
+    timer_update_astar = nh.createTimer(ros::Duration(1), &UGVControl::timercb_update_astar, this);
 
     ugv_state.header.stamp = ros::Time::now();
     ugv_state.header.frame_id = "world";
@@ -164,30 +165,22 @@ void UGV_CONTROL::init(ros::NodeHandle &nh)
 
     // 打印本节点参数，用于检查
     // printf_param();
-
-    node_name = ros::this_node::getName();
-    text_info.data = node_name + topic_prefix + " init!";
-    Logger::print_color(int(LogColor::blue), text_info.data);
 }
 
 // 主循环函数
-void UGV_CONTROL::mainloop()
+void UGVControl::mainloop()
 {
     // 定位数据丢失情况下，不执行控制指令并直接返回，直到动捕恢复
     if (!ugv_state.odom_valid)
     {
-        Logger::print_color(int(LogColor::yellow), "odom_valid: false");
-        desired_vel.linear.x = 0.0;
-        desired_vel.linear.y = 0.0;
-        desired_vel.linear.z = 0.0;
-        desired_vel.angular.z = 0.0;
-        ugv_cmd_vel_pub.publish(desired_vel);
+        Logger::error("odom_valid: false.");
         return;
     }
 
     // 每次进入主循环，先检查无人机是否超出地理围栏，超出的话则不发送任何指令并返回
     if (check_geo_fence())
     {
+        Logger::error("out of geo fence.");
         return;
     }
 
@@ -247,7 +240,7 @@ void UGV_CONTROL::mainloop()
     ugv_state_last = ugv_state;
 }
 
-void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
+void UGVControl::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
 {
     current_ugv_cmd = *msg;
     ugv_state.pos_setpoint[0] = current_ugv_cmd.desired_pos[0];
@@ -258,7 +251,7 @@ void UGV_CONTROL::ugv_cmd_cb(const sunray_msgs::UGVControlCMD::ConstPtr &msg)
 }
 
 // 位置控制算法
-geometry_msgs::Twist UGV_CONTROL::pos_control_mac(double x_ref, double y_ref, double yaw_ref)
+geometry_msgs::Twist UGVControl::pos_control_mac(double x_ref, double y_ref, double yaw_ref)
 {
     float cmd_body[2];
     float cmd_enu[2];
@@ -284,7 +277,7 @@ geometry_msgs::Twist UGV_CONTROL::pos_control_mac(double x_ref, double y_ref, do
     return desired_vel;
 }
 
-geometry_msgs::Twist UGV_CONTROL::pos_vel_control_enu()
+geometry_msgs::Twist UGVControl::pos_vel_control_enu()
 {
     geometry_msgs::Twist body_cmd;
     // 惯性系 -> body frame
@@ -313,7 +306,7 @@ geometry_msgs::Twist UGV_CONTROL::pos_vel_control_enu()
 }
 
 // 惯性系->机体系
-geometry_msgs::Twist UGV_CONTROL::enu_to_body_mac(double vel_x, double vel_y)
+geometry_msgs::Twist UGVControl::enu_to_body_mac(double vel_x, double vel_y)
 {
     geometry_msgs::Twist body_cmd;
     // 惯性系 -> body frame
@@ -339,7 +332,7 @@ geometry_msgs::Twist UGV_CONTROL::enu_to_body_mac(double vel_x, double vel_y)
     return body_cmd;
 }
 
-double UGV_CONTROL::get_yaw_error(double yaw_ref, double yaw_now)
+double UGVControl::get_yaw_error(double yaw_ref, double yaw_now)
 {
     double error = yaw_ref - yaw_now;
 
@@ -355,7 +348,7 @@ double UGV_CONTROL::get_yaw_error(double yaw_ref, double yaw_now)
     return error;
 }
 
-double UGV_CONTROL::normalizeAngle(double angle)
+double UGVControl::normalizeAngle(double angle)
 {
     if (angle > M_PI)
         angle -= 2.0 * M_PI;
@@ -365,7 +358,7 @@ double UGV_CONTROL::normalizeAngle(double angle)
 }
 
 // 位置控制，差速驱动
-geometry_msgs::Twist UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, double yaw_ref)
+geometry_msgs::Twist UGVControl::pos_control_diff(double x_ref, double y_ref, double yaw_ref)
 {
     // 计算目标点与当前点的差值
     double dx = x_ref - ugv_state.position[0];
@@ -428,7 +421,7 @@ geometry_msgs::Twist UGV_CONTROL::pos_control_diff(double x_ref, double y_ref, d
     return desired_vel;
 }
 
-void UGV_CONTROL::path_control()
+void UGVControl::path_control()
 {
     double x_ref, y_ref;
     if (astar_path.size() > 0)
@@ -457,7 +450,7 @@ void UGV_CONTROL::path_control()
 }
 
 // 【坐标系旋转函数】- enu系到body系
-void UGV_CONTROL::rotation_yaw(double yaw_angle, float body_frame[2], float enu_frame[2])
+void UGVControl::rotation_yaw(double yaw_angle, float body_frame[2], float enu_frame[2])
 {
     body_frame[0] = enu_frame[0] * cos(yaw_angle) + enu_frame[1] * sin(yaw_angle);
     body_frame[1] = -enu_frame[0] * sin(yaw_angle) + enu_frame[1] * cos(yaw_angle);
@@ -497,13 +490,13 @@ const char *Location_sourceToString(uint8_t source)
     switch (source)
     {
     case 0:
-        return "Gazebo";
+        return "GAZEBO";
     case 1:
-        return "Mocap";
+        return "MOCAP";
     case 2:
-        return "odom";
+        return "ODOM";
     case 3:
-        return "vibot";
+        return "VIOBOT";
     case 4:
         return "UWB";
     default:
@@ -512,7 +505,7 @@ const char *Location_sourceToString(uint8_t source)
 }
 
 // 定时器回调函数：定时打印
-void UGV_CONTROL::show_ctrl_state()
+void UGVControl::show_ctrl_state()
 {
     Logger::print_color(int(LogColor::green), ">>>>>>>>>>>>>> UGV [", std::to_string(ugv_id), "] <<<<<<<<<<<<<<<");
 
@@ -551,7 +544,7 @@ void UGV_CONTROL::show_ctrl_state()
 }
 
 // 定时器回调函数：定时发布ugv_state
-void UGV_CONTROL::timercb_state(const ros::TimerEvent &e)
+void UGVControl::timercb_state(const ros::TimerEvent &e)
 {
     // 发布 ugv_state
     ugv_state.header.stamp = ros::Time::now();
@@ -572,7 +565,7 @@ void UGV_CONTROL::timercb_state(const ros::TimerEvent &e)
 }
 
 // 定时器回调函数：定时重置A*算法
-void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
+void UGVControl::timercb_update_astar(const ros::TimerEvent &e)
 {
     if (goal_set && current_ugv_cmd.cmd == sunray_msgs::UGVControlCMD::Point_Control_with_Astar)
     {
@@ -582,7 +575,7 @@ void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
         int goal_y = (static_cast<int>((planner_goal.pose.position.y - this->ugv_geo_fence.min_y) / this->resolution));
         astar.setGoal(goal_x, goal_y);
         astar.setStart(start_x, start_y);
-        astar.setGraph(map_gen.astar_grid);
+        astar.setGraph(astar_map.astar_grid);
         astar.a_star_search();
         astar_path.clear();
         astar_path = astar.reconstruct_path();
@@ -610,7 +603,7 @@ void UGV_CONTROL::timercb_update_astar(const ros::TimerEvent &e)
 }
 
 // 回调函数：空循环
-void UGV_CONTROL::nooploop_cb(const sunray_msgs::LinktrackNodeframe2::ConstPtr &msg)
+void UGVControl::nooploop_cb(const sunray_msgs::LinktrackNodeframe2::ConstPtr &msg)
 {
     get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
     ugv_state.position[0] = msg->pos_3d[0];
@@ -641,7 +634,7 @@ void UGV_CONTROL::nooploop_cb(const sunray_msgs::LinktrackNodeframe2::ConstPtr &
     ugv_state.odom_valid = true;
 }
 // 回调函数：动捕
-void UGV_CONTROL::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
+void UGVControl::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     get_odom_time = ros::Time::now(); // 记录时间戳，防止超时
     ugv_state.position[0] = msg->pose.position.x;
@@ -661,7 +654,7 @@ void UGV_CONTROL::mocap_pos_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     ugv_state.odom_valid = true;
 }
 
-void UGV_CONTROL::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
+void UGVControl::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
     ugv_state.position[0] = msg->pose.pose.position.x;
     ugv_state.position[1] = msg->pose.pose.position.y;
@@ -680,7 +673,7 @@ void UGV_CONTROL::odom_cb(const nav_msgs::Odometry::ConstPtr &msg)
     ugv_state.odom_valid = true;
 }
 
-void UGV_CONTROL::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
+void UGVControl::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
     ugv_state.position[0] = msg->pose.pose.position.x;
     ugv_state.position[1] = msg->pose.pose.position.y;
@@ -721,14 +714,14 @@ void UGV_CONTROL::viobot_cb(const nav_msgs::Odometry::ConstPtr &msg)
 }
 
 // 回调函数：动捕
-void UGV_CONTROL::mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
+void UGVControl::mocap_vel_cb(const geometry_msgs::TwistStamped::ConstPtr &msg)
 {
     ugv_state.velocity[0] = msg->twist.linear.x;
     ugv_state.velocity[1] = msg->twist.linear.y;
 }
 
 // 回调函数：电池电量
-void UGV_CONTROL::battery_cb(const std_msgs::Float32::ConstPtr &msg)
+void UGVControl::battery_cb(const std_msgs::Float32::ConstPtr &msg)
 {
     // 记录获取电池（从驱动）的时间，用于判断驱动是否正常
     get_battery_time = ros::Time::now();
@@ -737,7 +730,7 @@ void UGV_CONTROL::battery_cb(const std_msgs::Float32::ConstPtr &msg)
 }
 
 // 回调函数：move_base_goal 目标点, 用于A*算法
-void UGV_CONTROL::goal_point_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
+void UGVControl::goal_point_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
     goal_set = true;
     current_ugv_cmd.cmd = sunray_msgs::UGVControlCMD::Point_Control_with_Astar;
@@ -745,7 +738,7 @@ void UGV_CONTROL::goal_point_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 }
 
 // 定时器回调函数 - 定时发送RVIZ显示数据（仿真）
-void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
+void UGVControl::timercb_rviz(const ros::TimerEvent &e)
 {
     // 如果无人机的odom的状态无效，则停止发布
     if (!enable_rviz || !ugv_state.odom_valid)
@@ -866,7 +859,7 @@ void UGV_CONTROL::timercb_rviz(const ros::TimerEvent &e)
 }
 
 // 限制幅度函数
-float UGV_CONTROL::constrain_function(float data, float Max, float Min)
+float UGVControl::constrain_function(float data, float Max, float Min)
 {
     if (abs(data) > Max)
     {
@@ -883,23 +876,19 @@ float UGV_CONTROL::constrain_function(float data, float Max, float Min)
 }
 
 // 地理围栏检查函数
-bool UGV_CONTROL::check_geo_fence()
+bool UGVControl::check_geo_fence()
 {
     // 安全检查，超出地理围栏自动降落,打印相关位置信息
     if (ugv_state.position[0] > ugv_geo_fence.max_x || ugv_state.position[0] < ugv_geo_fence.min_x ||
         ugv_state.position[1] > ugv_geo_fence.max_y || ugv_state.position[1] < ugv_geo_fence.min_y)
     {
-        ROS_WARN_STREAM("ugv [" << ugv_id << "] out of geofence land! Position: ["
-                                << ugv_state.position[0] << ", " << ugv_state.position[1] << "], Geofence: ["
-                                << ugv_geo_fence.min_x << ", " << ugv_geo_fence.max_x << ", "
-                                << ugv_geo_fence.min_y << ", " << ugv_geo_fence.max_y << "]");
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 // 四元数转欧拉角
-Eigen::Vector3d UGV_CONTROL::quaternion_to_euler(const Eigen::Quaterniond &q)
+Eigen::Vector3d UGVControl::quaternion_to_euler(const Eigen::Quaterniond &q)
 {
     float quat[4];
     quat[0] = q.w();

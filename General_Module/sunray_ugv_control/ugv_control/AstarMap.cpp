@@ -1,16 +1,14 @@
-#include "map_generator.h"
-
-
+#include "AstarMap.h"
 
 int main(int argc, char **argv)
 {
     // 初始化ROS节点
-    ros::init(argc, argv, "map_generator");
+    ros::init(argc, argv, "AstarMap");
     // 创建ROS节点句柄
     ros::NodeHandle nh;
 
-    MapGenerator mg;
-    mg.init(nh, -5, -5, 5, 5, 0.1, 0.1);
+    AstarMap astar_map;
+    astar_map.init(nh, -5, -5, 5, 5, 0.1, 0.1);
 
     ros::spinOnce();
     // Publish the Octomap

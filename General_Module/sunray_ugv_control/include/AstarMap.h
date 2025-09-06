@@ -35,11 +35,11 @@ enum MapState
     MAP_STATE_INITIALIZING
 };
 
-class MapGenerator
+class AstarMap
 {
 public:
-    MapGenerator() {};
-    ~MapGenerator() {};
+    AstarMap() {};
+    ~AstarMap() {};
 
     void init(ros::NodeHandle &nh, float map_min_x, float map_min_y, float map_max_x, float map_max_y, float map_resolution = 0.1, float inflate_size = 0);
     void updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr &msg);
@@ -94,7 +94,7 @@ public:
     ros::Time state_update_time;
 };
 
-void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, float map_max_x, float map_max_y, float map_resolution, float inflate_size)
+void AstarMap::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, float map_max_x, float map_max_y, float map_resolution, float inflate_size)
 {
     int odom_type, ugv_id, input_type;
     std::string odom_topic, laser_topic;
@@ -116,13 +116,13 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
     if (input_type == 0)
     {
         nh.param<std::string>("laser_topic", laser_topic, "/ugv1/scan");
-        mode_sub = nh.subscribe<sensor_msgs::LaserScan>(laser_topic, 1, &MapGenerator::updateMapFromLaserScan, this);
+        mode_sub = nh.subscribe<sensor_msgs::LaserScan>(laser_topic, 1, &AstarMap::updateMapFromLaserScan, this);
     }
     // 三维雷达
     if (input_type == 1)
     {
         nh.param<std::string>("laser_topic", laser_topic, "/livox/lidar");
-        mode_sub = nh.subscribe<sensor_msgs::PointCloud2>(laser_topic, 1, &MapGenerator::updateMapFromMid360Scan, this);
+        mode_sub = nh.subscribe<sensor_msgs::PointCloud2>(laser_topic, 1, &AstarMap::updateMapFromMid360Scan, this);
     }
     // 深度图（预留）
     if (input_type == 2)
@@ -131,11 +131,11 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
 
     if (odom_type == 1)
     {
-        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &MapGenerator::odomCallback, this);
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, &AstarMap::odomCallback, this);
     }
     else
     {
-        ugv_state = nh.subscribe<sunray_msgs::UGVState>(ugv_prefix + "/sunray_ugv/ugv_state", 1, &MapGenerator::ugvStateCallback, this);
+        ugv_state = nh.subscribe<sunray_msgs::UGVState>(ugv_prefix + "/sunray_ugv/ugv_state", 1, &AstarMap::ugvStateCallback, this);
     }
 
     this->map_min_x = map_min_x;
@@ -154,11 +154,11 @@ void MapGenerator::init(ros::NodeHandle &nh, float map_min_x, float map_min_y, f
                                      static_cast<int>((map_max_y - map_min_y) / map_resolution));
 
     // 新增：创建定时器，每0.5秒检查一次超时状态
-    timer = nh.createTimer(ros::Duration(0.5), &MapGenerator::checkInputTimeout, this);
+    timer = nh.createTimer(ros::Duration(0.5), &AstarMap::checkInputTimeout, this);
 };
 
 // 发布地图数据
-void MapGenerator::PublishOctomap()
+void AstarMap::PublishOctomap()
 {
     octomap_msg.header.frame_id = "world";
     octomap_msgs::fullMapToMsg(*tree, octomap_msg);
@@ -168,7 +168,7 @@ void MapGenerator::PublishOctomap()
     occupancy_pub.publish(octomap_grid_msg);
 }
 
-void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr &msg)
+void AstarMap::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
     if (!is_odom_received)
     {
@@ -220,7 +220,7 @@ void MapGenerator::updateMapFromLaserScan(const sensor_msgs::LaserScan::ConstPtr
 }
 
 // 处理三维点云数据
-void MapGenerator::updateMapFromMid360Scan(const sensor_msgs::PointCloud2::ConstPtr &msg)
+void AstarMap::updateMapFromMid360Scan(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
 
     if (!is_odom_received)
@@ -270,7 +270,7 @@ void MapGenerator::updateMapFromMid360Scan(const sensor_msgs::PointCloud2::Const
 }
 
 // 处理三维点云数据
-void MapGenerator::odomCallback(const nav_msgs::Odometry::ConstPtr &odom_msg)
+void AstarMap::odomCallback(const nav_msgs::Odometry::ConstPtr &odom_msg)
 {
     is_odom_received = true;
     odom = *odom_msg;
@@ -292,7 +292,7 @@ void MapGenerator::odomCallback(const nav_msgs::Odometry::ConstPtr &odom_msg)
     }
 }
 
-void MapGenerator::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
+void AstarMap::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
 {
     is_odom_received = true;
     odom.pose.pose.position.x = msg->position[0];
@@ -319,7 +319,7 @@ void MapGenerator::ugvStateCallback(const sunray_msgs::UGVState::ConstPtr &msg)
 }
 
 // 新增：定时器回调函数，检查输入是否超时
-void MapGenerator::checkInputTimeout(const ros::TimerEvent &event)
+void AstarMap::checkInputTimeout(const ros::TimerEvent &event)
 {
     ros::Time current_time = ros::Time::now();
 
@@ -345,7 +345,7 @@ void MapGenerator::checkInputTimeout(const ros::TimerEvent &event)
 }
 
 // 将三维八叉树地图投影为二维占据栅格地图，用于机器人导航
-nav_msgs::OccupancyGrid MapGenerator::projectOctomapSlice(const octomap::OcTree &octree, double height)
+nav_msgs::OccupancyGrid AstarMap::projectOctomapSlice(const octomap::OcTree &octree, double height)
 {
     // 设置OccupancyGrid参数
     nav_msgs::OccupancyGrid grid;
@@ -406,7 +406,7 @@ nav_msgs::OccupancyGrid MapGenerator::projectOctomapSlice(const octomap::OcTree 
     return grid;
 }
 
-void MapGenerator::inflateOccupancyGrid(nav_msgs::OccupancyGrid &grid, double inflation_radius, double resolution)
+void AstarMap::inflateOccupancyGrid(nav_msgs::OccupancyGrid &grid, double inflation_radius, double resolution)
 {
     // 计算膨胀半径对应的像素数
     int inflation_cells = std::ceil(inflation_radius / resolution);

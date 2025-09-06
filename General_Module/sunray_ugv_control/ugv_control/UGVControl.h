@@ -1,32 +1,21 @@
 #ifndef UGV_CONTROL_H
 #define UGV_CONTROL_H
 
-#include <ros/ros.h>
-#include <iostream>
-#include <Eigen/Eigen>
-#include <vector>
-
-#include "printf_utils.h"
 #include "ros_msg_utils.h"
-#include "sunray_logger.h"
 
 #include "Astar.h"
-#include "map_generator.h"
+#include "AstarMap.h"
 
-#include "sunray_msgs/LinktrackNodeframe2.h"
-
-using namespace std;
-using namespace sunray_logger;
 
 #define TRAJECTORY_WINDOW 50
 #define ODOM_TIMEOUT 0.35
 #define DIS_TOLERANCE 0.1
 
-class UGV_CONTROL
+class UGVControl
 {
 public:
     // 构造函数
-    UGV_CONTROL() {};
+    UGVControl() {};
     // 初始化函数
     void init(ros::NodeHandle &nh);
     // 主循环函数
@@ -69,7 +58,7 @@ private:
     vector<geometry_msgs::PoseStamped> pos_vector;
 
     Astar astar;                          // A*算法
-    MapGenerator map_gen;                 // 地图生成器
+    AstarMap astar_map;                 // 地图生成器
     std::vector<GridLocation> astar_path; // A*路径
 
     struct control_param // 控制参数 - 通过参数配置

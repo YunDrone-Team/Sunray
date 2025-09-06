@@ -6,7 +6,7 @@
 #include <sunray_msgs/UGVControlCMD.h>
 // topic 头文件
 #include <geometry_msgs/PoseStamped.h>
-#include "ugv_control.h"
+#include "UGVControl.h"
 
 using namespace std;
 

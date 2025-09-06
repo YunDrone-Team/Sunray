@@ -26,8 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
 )
 
-
-
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ugv_planning
@@ -48,12 +46,10 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 
-# add_library(astar_lib ugv_control/Astar.cpp)
-# add_library(map_generator_lib ugv_control/map_generator.cpp)
-add_library(ugv_control ugv_control/ugv_control.cpp)
+add_library(UGVControl ugv_control/UGVControl.cpp)
 
-add_executable(map_generator ugv_control/map_generator.cpp)
-target_link_libraries(map_generator 
+add_executable(AstarMap ugv_control/AstarMap.cpp)
+target_link_libraries(AstarMap 
                         ${catkin_LIBRARIES}
                         ${OCTOMAP_LIBRARIES}
                         ${PCL_LIBRARIES}
@@ -75,17 +71,10 @@ target_link_libraries(ugv_control_node
                         ${catkin_LIBRARIES}
                         ${OCTOMAP_LIBRARIES}
                         ${PCL_LIBRARIES}
-                        ugv_control
+                        UGVControl
                         # astar_lib
                         # map_generator_lib
                         )
-
-# add_executable(ugv_control ugv_control/ugv_control.cpp)
-# target_link_libraries(ugv_control 
-#                         ${catkin_LIBRARIES}
-#                         ${OCTOMAP_LIBRARIES}
-#                         ${PCL_LIBRARIES}
-#                         )                        
 
 ## 安装Python脚本
 catkin_install_python(PROGRAMS
