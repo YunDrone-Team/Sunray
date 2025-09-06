@@ -436,9 +436,6 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
 
     }else{
         printf("This is the parent process. Child PID: %d\n", pid);
-        const char* display = std::getenv("XDG_CURRENT_DESKTOP");
-        if (display == nullptr || display[0] == '\0') 
-            pendingCloseProcessId.insert(pid);
      }
 
     return pid;
