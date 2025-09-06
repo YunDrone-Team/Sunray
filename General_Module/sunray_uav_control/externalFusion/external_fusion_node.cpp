@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     }
 
     ros::Time last_time = ros::Time::now();
-    
+    external_fusion.show_px4_state();
     // 主循环
     while (ros::ok)
     {

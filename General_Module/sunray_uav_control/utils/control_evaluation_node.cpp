@@ -73,10 +73,6 @@ int main(int argc, char **argv)
 {
     // 设置日志
     Logger::init_default();
-    Logger::setPrintLevel(false);
-    Logger::setPrintTime(false);
-    Logger::setPrintToFile(false);
-    Logger::setFilename("~/Documents/Sunray_log.txt");
 
     ros::init(argc, argv, "control_evaluation_node");
     ros::NodeHandle nh("~");

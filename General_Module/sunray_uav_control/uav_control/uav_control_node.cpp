@@ -39,6 +39,7 @@ int main(int argc, char **argv)
     }
 
     ros::Time last_time = ros::Time::now();
+    uav_ctrl.show_ctrl_state();
     // 主循环
     while (ros::ok())
     {

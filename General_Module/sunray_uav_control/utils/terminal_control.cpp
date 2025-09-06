@@ -71,6 +71,9 @@ int main(int argc, char **argv)
         ref_trajectory_pub.push_back(nh.advertise<nav_msgs::Path>(topic_prefix + "/sunray/reference_trajectory", 1));
     }
 
+    // Control_Utils uav_control_utils;
+    // uav_control_utils.init(nh, 1);
+
     //用于控制器测试的类，功能例如：生成圆形轨迹，8字轨迹等
     TRAJ_GENERATOR traj_generator;
     traj_generator.init(nh);
@@ -134,6 +137,9 @@ int main(int argc, char **argv)
         case 999:
         {
             auto_takeoff();
+
+            // uav_control_utils.auto_takeoff();
+
             break;
         }
         case 901:

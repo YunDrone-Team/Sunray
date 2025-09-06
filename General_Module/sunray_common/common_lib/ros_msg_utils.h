@@ -12,6 +12,7 @@
 #include "printf_utils.h"
 #include "geometry_utils.h"
 #include "math_utils.h"
+#include "control_utils.h"
 
 using namespace std;
 using namespace sunray_logger;
