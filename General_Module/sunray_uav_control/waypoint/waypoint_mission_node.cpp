@@ -12,8 +12,7 @@ int main(int argc, char **argv)
 {
     // 设置日志
     Logger::init_default();
-    Logger::setPrintLevel(false);
-    Logger::setPrintTime(false);
+ 
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
@@ -37,7 +36,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
         ros::Duration(1.0).sleep();
         if (trials++ > 5)
-            Logger::print_color(int(LogColor::red), "Unable to connnect to PX4!!!");
+            Logger::error("Unable to connnect to PX4!!!");
     }
 
     ros::Time last_time = ros::Time::now();

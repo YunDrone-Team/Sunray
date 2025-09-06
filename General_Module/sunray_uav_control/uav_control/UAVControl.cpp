@@ -202,7 +202,7 @@ void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
     if (flight_params.set_home && !msg->armed)
     {
         flight_params.set_home = false;
-        Logger::info("PX4 disarmed, flight_params.set_home [false]!");
+        Logger::warning("PX4 disarmed, flight_params.set_home [false]!");
     }
 
     // 更新px4_state
@@ -281,7 +281,7 @@ void UAVControl::rc_state_callback(const sunray_msgs::RcState::ConstPtr &msg)
     // 紧急停止通道判断
     if (rc_state.kill_state == 1)
     {
-        Logger::error("Emergency Stop with rc");
+        Logger::warning("Emergency Stop with rc");
         emergencyStop();
     }
 }
@@ -617,7 +617,7 @@ void UAVControl::check_state()
         if (px4_state.armed && system_params.control_mode == Control_Mode::CMD_CONTROL)
         {
             system_params.control_mode = Control_Mode::LAND_CONTROL;
-            Logger::error("Out of safe range, landing...");
+            Logger::error("safetyCheck: Out of safe range, landing...");
         }
     }
     else if (system_params.safety_state == 2) // 定位数据失效
@@ -626,7 +626,7 @@ void UAVControl::check_state()
         if (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL)
         {
             system_params.control_mode = Control_Mode::LAND_CONTROL;
-            Logger::error("Lost odom, landing...");
+            Logger::error("safetyCheck: Lost odom, landing...");
         }
     }
 
@@ -672,7 +672,7 @@ void UAVControl::check_flip()
         // 停桨
         emergencyStop();
         system_params.control_mode = Control_Mode::INIT;
-        Logger::error("FLIP detected! Emergency kill");
+        Logger::error("check_flip: FLIP detected! Emergency kill");
     }
 }
 
@@ -760,7 +760,7 @@ void UAVControl::handle_cmd_control()
     {
         if (new_cmd)
         {
-            Logger::warning("CMD_CONTROL: advancedModeFun ", moveModeMapStr[control_cmd.cmd]);
+            Logger::warning("CMD_CONTROL:", moveModeMapStr[control_cmd.cmd]);
         }
         // 调用对应的函数对local_setpoint进行赋值
         advancedModeFuncMap[control_cmd.cmd]();
@@ -1008,12 +1008,12 @@ void UAVControl::return_to_home()
         // 如果未设置home点，则无法进入返航模式
         if (!flight_params.set_home)
         {
-            Logger::error("Home position not set! Cannot return to home!");
+            Logger::error("return_to_home: Home position not set! Cannot return to home!");
             set_desired_from_hover();
             return;
         }
 
-        Logger::warning("Set Return Position Done!");
+        Logger::warning("return_to_home: Set Return Position Done!");
         set_default_local_setpoint();
         local_setpoint.position.x = flight_params.home_pos[0];
         local_setpoint.position.y = flight_params.home_pos[1];
@@ -1057,7 +1057,7 @@ void UAVControl::set_takeoff()
         // 如果已经起飞，则不执行
         if (uav_state.landed_state != sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
         {
-            Logger::warning("UAV already takeoff!");
+            Logger::error("UAV already takeoff!");
             return;
         }
 
@@ -1068,13 +1068,13 @@ void UAVControl::set_takeoff()
         local_setpoint.yaw = flight_params.home_yaw;
         system_params.type_mask = TypeMask::XYZ_POS_YAW;
 
-        Logger::warning("Takeoff height param:", flight_params.takeoff_height, "[ m ]");
-        Logger::warning("Takeoff_POS [X Y Z]:",
+        Logger::info("Takeoff height param:", flight_params.takeoff_height, "[ m ]");
+        Logger::info("Takeoff_POS [X Y Z]:",
                             flight_params.home_pos[0],
                             flight_params.home_pos[1],
                             flight_params.home_pos[2] + flight_params.takeoff_height,
                             "[ m ]");
-        Logger::warning("Takeoff_YAW :", flight_params.home_yaw / M_PI * 180, "[deg]");
+        Logger::info("Takeoff_YAW :", flight_params.home_yaw / M_PI * 180, "[deg]");
     }
 }
 
@@ -1123,103 +1123,93 @@ void UAVControl::publish_goal()
     // 发布goal话题
     goal_pub.publish(goal);
 
-    Logger::warning("Publish goal point to planner");
-    Logger::warning("GOAL_POS [X Y Z]:",
+    Logger::info("Publish goal point to planner");
+    Logger::info("GOAL_POS [X Y Z]:",
                         control_cmd.desired_pos[0],
                         control_cmd.desired_pos[1],
                         control_cmd.desired_pos[2],
                         "[ m ]");
-    Logger::warning("GOAL_YAW :", control_cmd.desired_yaw / M_PI * 180, "[deg]");
+    Logger::info("GOAL_YAW :", control_cmd.desired_yaw / M_PI * 180, "[deg]");
 }
 
 // 打印状态
 void UAVControl::show_ctrl_state()
 {
-    Logger::print_color(int(LogColor::white_bg_blue), ">>>>>>>>>>>>>>>> uav_control_node - [", uav_name, "] <<<<<<<<<<<<<<<<<");
-
-    if (!px4_state.connected)
-    {
-        Logger::print_color(int(LogColor::red), "PX4 FCU:", "[ UNCONNECTED ]");
-        Logger::print_color(int(LogColor::red), "Wait for PX4 FCU connection...");
-        return;
-    }
+    Logger::print_color(int(LogColor::cyan), ">>>>>>>>>>>>>>>> 无人机控制节点 - [", uav_name, "] <<<<<<<<<<<<<<<<<");
 
     // 基本信息 - 连接状态、飞控模式、电池状态
-    Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/sunray/uav_state");
-    Logger::print_color(int(LogColor::green), "PX4 FCU  : [ CONNECTED ]  BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
+    Logger::print_color(int(LogColor::cyan), "-------- 无人机状态 - [~/sunray/uav_state] ");
+
+    Logger::print_color(int(LogColor::green), "飞控连接: [ 已连接 ]  电池状态:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
 
     if (px4_state.armed)
     {
         if (px4_state.landed_state == 1)
         {
-            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ ON_GROUND ]");
+            Logger::print_color(int(LogColor::green), "飞控状态: [ 已解锁 ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ 未起飞 ]");
         }
         else
         {
-            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ IN_AIR ]");
+            Logger::print_color(int(LogColor::green), "飞控状态: [ 已解锁 ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ 已起飞 ]");
         }
     }
     else
     {
         if (px4_state.landed_state == 1)
         {
-            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ ON_GROUND ]");
+            Logger::print_color(int(LogColor::red), "飞控状态: [ 未解锁 ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ 未起飞 ]");
         }
         else
         {
-            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ IN_AIR ]");
+            Logger::print_color(int(LogColor::red), "飞控状态: [ 未解锁 ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ 已起飞 ]");
         }
     }
 
     // 无GPS模式的情况
-    Logger::print_color(int(LogColor::blue), "PX4 Local Position & Attitude:");
-    Logger::print_color(int(LogColor::green), "POS_UAV [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "无人机位置[X Y Z]:",
                         px4_state.position[0],
                         px4_state.position[1],
                         px4_state.position[2],
                         "[ m ]");
-    Logger::print_color(int(LogColor::green), "VEL_UAV [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "无人机速度[X Y Z]:",
                         px4_state.velocity[0],
                         px4_state.velocity[1],
                         px4_state.velocity[2],
                         "[m/s]");
-    Logger::print_color(int(LogColor::green), "ATT_UAV [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "无人机姿态[X Y Z]:",
                         px4_state.attitude[0] / M_PI * 180,
                         px4_state.attitude[1] / M_PI * 180,
                         px4_state.attitude[2] / M_PI * 180,
                         "[deg]");
-    Logger::print_color(int(LogColor::blue), "PX4 Local Position Setpoint & Attitude Setpoint:");
-    Logger::print_color(int(LogColor::green), "POS_SP [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "位置期望值[X Y Z]:",
                         px4_state.pos_setpoint[0],
                         px4_state.pos_setpoint[1],
                         px4_state.pos_setpoint[2],
                         "[ m ]");
-    Logger::print_color(int(LogColor::green), "VEL_SP [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "速度期望值[X Y Z]:",
                         px4_state.vel_setpoint[0],
                         px4_state.vel_setpoint[1],
                         px4_state.vel_setpoint[2],
                         "[m/s]");
-    Logger::print_color(int(LogColor::green), "ATT_SP [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "姿态期望值[X Y Z]:",
                         px4_state.att_setpoint[0] / M_PI * 180,
                         px4_state.att_setpoint[1] / M_PI * 180,
                         px4_state.att_setpoint[2] / M_PI * 180,
-                        "[deg]");
-    Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint * 100, "[ % ]");
+                        "[deg]",
+                        "推力期望值 :", px4_state.thrust_setpoint * 100, "[ % ]");
 
     // control_cmd
-    Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/sunray/uav_control_cmd (from mission node) <<<");
-
-    Logger::print_color(int(LogColor::green), "Control Mode: [", modeMap[system_params.control_mode], "]");
+    Logger::print_color(int(LogColor::cyan), "-------- 无人机控制指令 - [~/sunray/uav_control_cmd] ");
 
     // control_cmd - CMD_CONTROL
     if (system_params.control_mode == Control_Mode::CMD_CONTROL)
     {
-        Logger::print_color(int(LogColor::green), "Move Mode: [", moveModeMapStr[control_cmd.cmd], "]");
+        Logger::print_color(int(LogColor::green), "控制模式: [", modeMap[system_params.control_mode], "]", "- 移动模式: [", moveModeMapStr[control_cmd.cmd], "]");
 
         // 高级指令
         if (control_cmd.cmd == sunray_msgs::UAVControlCMD::Takeoff)
         {
-            Logger::print_color(int(LogColor::green), "Takeoff height param:", flight_params.takeoff_height, "[ m ]");
+            Logger::print_color(int(LogColor::green), "起飞高度:", flight_params.takeoff_height, "[ m ]");
             Logger::print_color(int(LogColor::green), "Takeoff_POS [X Y Z]:",
                                 flight_params.home_pos[0],
                                 flight_params.home_pos[1],
@@ -1313,11 +1303,10 @@ void UAVControl::show_ctrl_state()
                                 "[deg/s]");
         }
     }
-
-    // control_cmd - RC_CONTROL
-    if (system_params.control_mode == Control_Mode::RC_CONTROL)
+    else if (system_params.control_mode == Control_Mode::RC_CONTROL)
     {
-        Logger::print_color(int(LogColor::green), "Move with RC by PX4 original controller");
+        // control_cmd - RC_CONTROL
+        Logger::print_color(int(LogColor::green), "控制模式: [", modeMap[system_params.control_mode], "]", "- Move with RC by PX4 original controller");
         Logger::print_color(int(LogColor::green), "Hover_POS [X Y Z]:",
                             flight_params.hover_pos[0],
                             flight_params.hover_pos[1],
@@ -1326,6 +1315,9 @@ void UAVControl::show_ctrl_state()
         Logger::print_color(int(LogColor::green), "Hover_YAW :",
                             flight_params.hover_yaw / M_PI * 180,
                             "[deg]");
+    }else
+    {
+        Logger::print_color(int(LogColor::green), "控制模式: [", modeMap[system_params.control_mode], "]");
     }
 
     if (system_params.use_offset)
@@ -1344,29 +1336,32 @@ void UAVControl::show_ctrl_state()
                             px4_state.pos_setpoint[2] - flight_params.home_pos[2],
                             "[ m ]");
     }
+
+    Logger::print_color(int(LogColor::cyan), "---------------------------------------------------------");
 }
 
 void UAVControl::printf_params()
 {
-    Logger::print_color(int(LogColor::blue), LOG_BOLD, ">>>>>>>>>> uav_control_node - [", uav_name, "] params <<<<<<<<<<<");
+    Logger::print_color(int(LogColor::green), ">>>>>>>>>> uav_control_node - [", uav_name, "] params <<<<<<<<<<<");
 
-    Logger::print_color(int(LogColor::blue), "uav_id: [", uav_id, "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.takeoff_height: [", flight_params.takeoff_height, "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.land_type: [", flight_params.land_type, "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.disarm_height: [", flight_params.disarm_height, "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.land_speed: [", flight_params.land_speed, "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.land_end_time: [", flight_params.land_end_time, "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.home_pos[0]: [", flight_params.home_pos[0], "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.home_pos[1]: [", flight_params.home_pos[1], "]");
-    Logger::print_color(int(LogColor::blue), "flight_params.home_pos[2]: [", flight_params.home_pos[2], "]");
-    Logger::print_color(int(LogColor::blue), "uav_geo_fence.x_min: [", uav_geo_fence.x_min, "]");
-    Logger::print_color(int(LogColor::blue), "uav_geo_fence.x_max: [", uav_geo_fence.x_max, "]");
-    Logger::print_color(int(LogColor::blue), "uav_geo_fence.y_min: [", uav_geo_fence.y_min, "]");
-    Logger::print_color(int(LogColor::blue), "uav_geo_fence.y_max: [", uav_geo_fence.y_max, "]");
-    Logger::print_color(int(LogColor::blue), "uav_geo_fence.z_min: [", uav_geo_fence.z_min, "]");
-    Logger::print_color(int(LogColor::blue), "uav_geo_fence.z_max: [", uav_geo_fence.z_max, "]");
-    Logger::print_color(int(LogColor::blue), "system_params.check_cmd_timeout: [", system_params.check_cmd_timeout, "]");
-    Logger::print_color(int(LogColor::blue), "system_params.cmd_timeout: [", system_params.cmd_timeout, "]");
-    Logger::print_color(int(LogColor::blue), "system_params.use_rc: [", system_params.use_rc, "]");
-    Logger::print_color(int(LogColor::blue), "system_params.use_offset: [", system_params.use_offset, "]");
+    Logger::print_color(int(LogColor::green), "uav_id: [", uav_id, "]");
+    Logger::print_color(int(LogColor::green), "flight_params.takeoff_height: [", flight_params.takeoff_height, "]");
+    Logger::print_color(int(LogColor::green), "flight_params.land_type: [", flight_params.land_type, "]");
+    Logger::print_color(int(LogColor::green), "flight_params.disarm_height: [", flight_params.disarm_height, "]");
+    Logger::print_color(int(LogColor::green), "flight_params.land_speed: [", flight_params.land_speed, "]");
+    Logger::print_color(int(LogColor::green), "flight_params.land_end_time: [", flight_params.land_end_time, "]");
+    Logger::print_color(int(LogColor::green), "flight_params.home_pos[0]: [", flight_params.home_pos[0], "]");
+    Logger::print_color(int(LogColor::green), "flight_params.home_pos[1]: [", flight_params.home_pos[1], "]");
+    Logger::print_color(int(LogColor::green), "flight_params.home_pos[2]: [", flight_params.home_pos[2], "]");
+    Logger::print_color(int(LogColor::green), "uav_geo_fence.x_min: [", uav_geo_fence.x_min, "]");
+    Logger::print_color(int(LogColor::green), "uav_geo_fence.x_max: [", uav_geo_fence.x_max, "]");
+    Logger::print_color(int(LogColor::green), "uav_geo_fence.y_min: [", uav_geo_fence.y_min, "]");
+    Logger::print_color(int(LogColor::green), "uav_geo_fence.y_max: [", uav_geo_fence.y_max, "]");
+    Logger::print_color(int(LogColor::green), "uav_geo_fence.z_min: [", uav_geo_fence.z_min, "]");
+    Logger::print_color(int(LogColor::green), "uav_geo_fence.z_max: [", uav_geo_fence.z_max, "]");
+    Logger::print_color(int(LogColor::green), "system_params.check_cmd_timeout: [", system_params.check_cmd_timeout, "]");
+    Logger::print_color(int(LogColor::green), "system_params.cmd_timeout: [", system_params.cmd_timeout, "]");
+    Logger::print_color(int(LogColor::green), "system_params.use_rc: [", system_params.use_rc, "]");
+    Logger::print_color(int(LogColor::green), "system_params.use_offset: [", system_params.use_offset, "]");
+    Logger::print_color(int(LogColor::cyan), "---------------------------------------------------------");
 }

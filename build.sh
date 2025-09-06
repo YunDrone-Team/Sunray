@@ -185,7 +185,7 @@ main() {
     
     if build_modules_parallel "${resolved_modules[@]}"; then
         local total_time=$(($(date +%s) - start_time))
-        echo -e "\n${GREEN}🎉 构建完成！${NC}\n总用时: $(format_duration $total_time)"
+        echo -e "\n${GREEN}${BOLD}🎉 构建完成！${NC}\n总用时: $(format_duration $total_time)"
         show_build_results_table
         post_build_actions; return 0
     else

@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     // 分隔符
     Logger::setSeparator("");
     // 是否存储到文件，建议选为false（如果不需要记录日志的话）
-    Logger::setPrintToFile(true);
+    Logger::setPrintToFile(false);
     // 设置日志存储地址
     Logger::setFilename("~/Documents/Sunray_log.txt");
 

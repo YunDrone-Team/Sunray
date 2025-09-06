@@ -287,19 +287,21 @@ void PosControlPID::printf_debug()
 void PosControlPID::printf_param()
 {
     cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>> PID Parameter <<<<<<<<<<<<<<<<<<<<<<<<<" << TAIL <<endl;
-    cout << GREEN <<  "ctrl_param.quad_mass     : "<< ctrl_param.quad_mass<< TAIL <<endl;
-    cout << GREEN <<  "ctrl_param.hov_percent   : "<< ctrl_param.hov_percent<< TAIL <<endl;
-    cout << GREEN <<  "pxy_int_max              : "<< ctrl_param.int_max[0]<< TAIL <<endl;
-    cout << GREEN <<  "pz_int_max               : "<< ctrl_param.int_max[2]<< TAIL <<endl;
+    
 
-    cout << GREEN <<  "Kp_xy         : "<< ctrl_param.Kp(0,0) << TAIL <<endl;
-    cout << GREEN <<  "Kp_z          : "<< ctrl_param.Kp(2,2) << TAIL <<endl;
-    cout << GREEN <<  "Kv_xy         : "<< ctrl_param.Kv(0,0) << TAIL <<endl;
-    cout << GREEN <<  "Kv_z          : "<< ctrl_param.Kv(2,2) << TAIL <<endl;
-    cout << GREEN <<  "Kvi_xy        : "<< ctrl_param.Kvi(0,0) << TAIL <<endl;
-    cout << GREEN <<  "Kvi_z         : "<< ctrl_param.Kvi(2,2) << TAIL <<endl;
-    cout << GREEN <<  "Ka_xy         : "<< ctrl_param.Ka(0,0) << TAIL <<endl;
-    cout << GREEN <<  "Ka_z          : "<< ctrl_param.Ka(2,2) << TAIL <<endl;
-    cout << GREEN <<  "tilt_angle_max: "<< ctrl_param.tilt_angle_max * 180.0 / M_PI << TAIL <<endl;
+    Logger::print_color(int(LogColor::green), "ctrl_param.quad_mass: [", ctrl_param.quad_mass, "]");
+    Logger::print_color(int(LogColor::green), "ctrl_param.hov_percent: [", ctrl_param.hov_percent, "]");
+    Logger::print_color(int(LogColor::green), "pxy_int_max: [", ctrl_param.int_max[0], "]");
+    Logger::print_color(int(LogColor::green), "pz_int_max: [", ctrl_param.int_max[2], "]");
+
+    Logger::print_color(int(LogColor::green), "Kp_xy: [", ctrl_param.Kp(0,0), "]");
+    Logger::print_color(int(LogColor::green), "Kp_z: [", ctrl_param.Kp(2,2), "]");
+    Logger::print_color(int(LogColor::green), "Kv_xy: [", ctrl_param.Kv(0,0), "]");
+    Logger::print_color(int(LogColor::green), "Kv_z: [", ctrl_param.Kv(2,2), "]");
+    Logger::print_color(int(LogColor::green), "Kvi_xy: [", ctrl_param.Kvi(0,0), "]");
+    Logger::print_color(int(LogColor::green), "Kvi_z: [", ctrl_param.Kvi(2,2), "]");
+    Logger::print_color(int(LogColor::green), "Ka_xy: [", ctrl_param.Ka(0,0), "]");
+    Logger::print_color(int(LogColor::green), "Ka_z: [", ctrl_param.Ka(2,2), "]");
+    Logger::print_color(int(LogColor::green), "tilt_angle_max: [", ctrl_param.tilt_angle_max * 180.0 / M_PI, "]");
 }
 #endif

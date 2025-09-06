@@ -41,8 +41,7 @@ int main(int argc, char **argv)
 {
     // 设置日志
     Logger::init_default();
-    Logger::setPrintLevel(false);
-    Logger::setPrintTime(false);
+ 
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
@@ -481,7 +480,7 @@ void auto_takeoff()
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV successfully!");
 
     // 起飞无人机
-    while (ros::ok() && abs(uav_state.position[2] - uav_state.home_pos[2] - uav_state.takeoff_height) > 0.2)
+    while (ros::ok() && uav_state.landed_state != 2)
     {
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;
         for (int i = 0; i < uav_num; i++)

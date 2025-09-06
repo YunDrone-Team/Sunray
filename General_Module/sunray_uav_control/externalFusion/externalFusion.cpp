@@ -349,37 +349,31 @@ void ExternalFusion::px4_pos_target_callback(const mavros_msgs::PositionTarget::
 // 打印状态
 void ExternalFusion::show_px4_state()
 {
-    Logger::print_color(int(LogColor::white_bg_blue), ">>>>>>>>>>>>>>>> external_fusion_node - [", uav_name, "] <<<<<<<<<<<<<<<<<");
-
-    if(!px4_state.connected)
-    {
-        Logger::print_color(int(LogColor::red), "PX4 FCU:", "[ UNCONNECTED ]");
-        Logger::print_color(int(LogColor::red), "Wait for PX4 FCU connection...");
-        return;
-    }
+    Logger::print_color(int(LogColor::cyan), ">>>>>>>>>>>>>>>> 无人机状态节点 - [", uav_name, "] <<<<<<<<<<<<<<<<<");
 
     // 基本信息 - 连接状态、飞控模式、电池状态
-    Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/sunray/px4_state (Sunray get from PX4 via Mavros)");
-    Logger::print_color(int(LogColor::green), "PX4 FCU: [ CONNECTED ]  BATTERY:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
+    Logger::print_color(int(LogColor::cyan), "-------- 飞控状态 - [~/sunray/px4_state]");
+    
+    Logger::print_color(int(LogColor::green), "飞控连接: [ 已连接 ]  电池状态:", px4_state.battery_state, "[V]", px4_state.battery_percentage, "[%]");
 
     if (px4_state.armed)
     {
         if(px4_state.landed_state == sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
         {
-            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ ON_GROUND ]");   
+            Logger::print_color(int(LogColor::green), "飞控状态: [ 已解锁 ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ 未起飞 ]");   
         }else
         {
-            Logger::print_color(int(LogColor::green), "PX4 STATE: [ ARMED ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ IN_AIR ]");   
+            Logger::print_color(int(LogColor::green), "飞控状态: [ 已解锁 ]", LOG_GREEN, "[", px4_state.mode, "]", LOG_GREEN, "[ 已起飞 ]");   
         }
     }
     else
     {
         if(px4_state.landed_state == sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
         {
-            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ ON_GROUND ]");   
+            Logger::print_color(int(LogColor::red), "飞控状态: [ 未解锁 ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ 未起飞 ]");   
         }else
         {
-            Logger::print_color(int(LogColor::red), "PX4 STATE: [ DISARMED ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ IN_AIR ]");   
+            Logger::print_color(int(LogColor::red), "飞控状态: [ 未解锁 ]", LOG_GREEN, "[ ", px4_state.mode, " ]", LOG_GREEN, "[ 已起飞 ]");   
         }
     }
 
@@ -387,18 +381,17 @@ void ExternalFusion::show_px4_state()
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
         // 无GPS模式的情况：本地位置
-        Logger::print_color(int(LogColor::blue), "PX4 Local Position & Attitude:");
-        Logger::print_color(int(LogColor::green), "POS_UAV [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "无人机位置[X Y Z]:",
                             px4_state.position[0],
                             px4_state.position[1],
                             px4_state.position[2],
                             "[ m ]");
-        Logger::print_color(int(LogColor::green), "VEL_UAV [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "无人机速度[X Y Z]:",
                             px4_state.velocity[0],
                             px4_state.velocity[1],
                             px4_state.velocity[2],
                             "[m/s]");
-        Logger::print_color(int(LogColor::green), "ATT_UAV [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "无人机姿态[X Y Z]:",
                             px4_state.attitude[0] / M_PI * 180,
                             px4_state.attitude[1] / M_PI * 180,
                             px4_state.attitude[2] / M_PI * 180,
@@ -414,50 +407,49 @@ void ExternalFusion::show_px4_state()
     }
 
     // 期望位置和姿态
-    Logger::print_color(int(LogColor::blue), "PX4 Local Position Setpoint & Attitude Setpoint:");
-    Logger::print_color(int(LogColor::green), "POS_SP [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "位置期望值[X Y Z]:",
                         px4_state.pos_setpoint[0],
                         px4_state.pos_setpoint[1],
                         px4_state.pos_setpoint[2],
                         "[ m ]");
-    Logger::print_color(int(LogColor::green), "VEL_SP [X Y Z]:",
+    Logger::print_color(int(LogColor::green), "速度期望值[X Y Z]:",
                         px4_state.vel_setpoint[0],
                         px4_state.vel_setpoint[1],
                         px4_state.vel_setpoint[2],
-                        "[m/s]");   
-    Logger::print_color(int(LogColor::green), "ATT_SP [X Y Z]:",
+                        "[m/s]");
+    Logger::print_color(int(LogColor::green), "姿态期望值[X Y Z]:",
                         px4_state.att_setpoint[0] / M_PI * 180,
                         px4_state.att_setpoint[1] / M_PI * 180,
                         px4_state.att_setpoint[2] / M_PI * 180,
-                        "[deg]");       
-    Logger::print_color(int(LogColor::green), "THRUST_SP :", px4_state.thrust_setpoint*100, "[ % ]");
+                        "[deg]",
+                        "推力期望值 :", px4_state.thrust_setpoint * 100, "[ % ]");
 
 
     // 外部定位信息
-    Logger::print_color(int(LogColor::white_bg_green), ">>>>> TOPIC: ~/mavros/vision_pose (Sunray send to PX4 for state fusion)");
+    Logger::print_color(int(LogColor::cyan), "-------- 外部定位状态");
 
     switch (px4_state.external_odom.external_source)
     {
         case sunray_msgs::ExternalOdom::ODOM:
-            Logger::print_color(int(LogColor::green), "external_source: [ ODOM ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ ODOM ]");
             break;
         case sunray_msgs::ExternalOdom::POSE:
-            Logger::print_color(int(LogColor::green), "external_source: [ POSE ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ POSE ]");
             break;
         case sunray_msgs::ExternalOdom::GAZEBO:
-            Logger::print_color(int(LogColor::green), "external_source: [ GAZEBO ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ GAZEBO ]");
             break;
         case sunray_msgs::ExternalOdom::MOCAP:
-            Logger::print_color(int(LogColor::green), "external_source: [ MOCAP ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ MOCAP ]");
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
-            Logger::print_color(int(LogColor::green), "external_source: [ VIOBOT ]", " is_viobot_start: ", ext_pos.external_odom.vio_start == true ? "[ True ]" : "[ False ]", "algo_status: [ ", ext_pos.external_odom.algo_status, " ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ VIOBOT ]", " is_viobot_start: ", ext_pos.external_odom.vio_start == true ? "[ True ]" : "[ False ]", "algo_status: [ ", ext_pos.external_odom.algo_status, " ]");
             break;
         case sunray_msgs::ExternalOdom::GPS:
-            Logger::print_color(int(LogColor::green), "external_source: [ GPS ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ GPS ]");
             break;
         default:
-            Logger::print_color(int(LogColor::red), "external_source: [ UNKNOWN ]");
+            Logger::print_color(int(LogColor::red), "外部定位源: [ UNKNOWN ]");
             break;
     }
 
@@ -467,59 +459,55 @@ void ExternalFusion::show_px4_state()
         {
             if (ext_pos.external_odom.fusion_success)
             {
-                Logger::print_color(int(LogColor::green), "external_odom: [ VALID ]", "fusion_success: [ GOOD ]");
+                Logger::print_color(int(LogColor::green), "定位源状态: [ 有效 ]", "飞控融合状态: [ 成功 ]");
             }
             else
             {
-                Logger::print_color(int(LogColor::green), "external_odom: [ VALID ]", "fusion_success: [ Fail ]");
+                Logger::print_color(int(LogColor::green), "定位源状态: [ 有效 ]", "飞控融合成功: [ 失败 ]");
             }
         }
         else
         {
-            Logger::print_color(int(LogColor::red), "external_odom: [ INVALID ]");
+            Logger::print_color(int(LogColor::red), "定位源状态: [ 失效 ]");
         }
 
-        Logger::print_color(int(LogColor::blue), "PX4 Vision Pose:");
-
-        Logger::print_color(int(LogColor::green), "EXT_POS [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "外部里程计位置[X Y Z]:",
                             ext_pos.external_odom.position[0],
                             ext_pos.external_odom.position[1],
                             ext_pos.external_odom.position[2],
                             "[ m ]");
-        Logger::print_color(int(LogColor::green), "EXT_VEL [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "外部里程计速度[X Y Z]:",
                             ext_pos.external_odom.velocity[0],
                             ext_pos.external_odom.velocity[1],
                             ext_pos.external_odom.velocity[2],
                             "[m/s]");
-        Logger::print_color(int(LogColor::green), "EXT_ATT [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "外部里程计姿态[X Y Z]:",
                             ext_pos.external_odom.attitude[0] / M_PI * 180,
                             ext_pos.external_odom.attitude[1] / M_PI * 180,
                             ext_pos.external_odom.attitude[2] / M_PI * 180,
                             "[deg]");
 
-
-        Logger::print_color(int(LogColor::blue), "Error between Vision Pose & PX4 State: ");
-        Logger::print_color(int(LogColor::green), "POS_ERR [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "飞控融合位置误差[X Y Z]:",
                             ext_pos.external_odom.position[0] - px4_state.position[0],
                             ext_pos.external_odom.position[1] - px4_state.position[1],
                             ext_pos.external_odom.position[2] - px4_state.position[2],
                             "[m]");
-        Logger::print_color(int(LogColor::green), "VEL_ERR [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "飞控融合速度误差[X Y Z]:",
                             ext_pos.external_odom.velocity[0] - px4_state.velocity[0],
                             ext_pos.external_odom.velocity[1] - px4_state.velocity[1],
                             ext_pos.external_odom.velocity[2] - px4_state.velocity[2],
                             "[m/s]");
-        Logger::print_color(int(LogColor::green), "ATT_ERR [ YAW ]:",
+        Logger::print_color(int(LogColor::green), "飞控融合偏航误差[ YAW ]:",
                             (ext_pos.external_odom.attitude[2] - px4_state.attitude[2]) / M_PI * 180,
                             "[deg]");
     }
     else
     {
-        Logger::print_color(int(LogColor::green), "enable_external_fusion: [DISABLED]");
+        Logger::print_color(int(LogColor::green), "外部定位源: [未启用]");
     }
 
     // 控制误差打印
-    Logger::print_color(int(LogColor::white_bg_green), ">>>>> CONTROL ERROR");
+    Logger::print_color(int(LogColor::white_bg_green), ">>>>> 控制误差");
 
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
@@ -529,21 +517,22 @@ void ExternalFusion::show_px4_state()
         pos_control_error[2] = px4_state.pos_setpoint[2] - px4_state.position[2];
 
         // 无GPS模式的情况
-        Logger::print_color(int(LogColor::green), "POS CONTROL ERROR [X Y Z norm]:",
+        Logger::print_color(int(LogColor::green), "位置控制误差[X Y Z norm]:",
                             pos_control_error[0],
                             pos_control_error[1],
                             pos_control_error[2],
                             pos_control_error.norm(),
                             "[ m ]");
-        Logger::print_color(int(LogColor::green), "VEL CONTROL ERROR [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "速度控制误差[X Y Z]:",
                             px4_state.vel_setpoint[0] - px4_state.velocity[0],
                             px4_state.vel_setpoint[1] - px4_state.velocity[1],
                             px4_state.vel_setpoint[2] - px4_state.velocity[2],
                             "[m/s]");
-        Logger::print_color(int(LogColor::green), "ATT CONTROL ERROR [X Y Z]:",
+        Logger::print_color(int(LogColor::green), "姿态控制误差[X Y Z]:",
                             px4_state.att_setpoint[0] / M_PI * 180 - px4_state.attitude[0] / M_PI * 180,
                             px4_state.att_setpoint[1] / M_PI * 180 - px4_state.attitude[1] / M_PI * 180,
                             px4_state.att_setpoint[2] / M_PI * 180 - px4_state.attitude[2] / M_PI * 180,
                             "[deg]");
     }
+    Logger::print_color(int(LogColor::cyan), "---------------------------------------------------------");
 }

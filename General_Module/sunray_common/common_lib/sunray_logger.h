@@ -300,12 +300,9 @@ namespace sunray_logger
             // 设置小数点精度
             oss << std::fixed << std::setprecision(precision);
             // 添加颜色
-            oss << colors[int(LogColor::white_bg_green)];
+            oss << colors[int(LogColor::green)];
             // 判断level和时间是否需要打印
-            if (printLevel)
-            {
-                oss << "[" << levels[int(LogLevel::INFO)] << "]";
-            }
+            oss << "[" << levels[int(LogLevel::INFO)] << "]";
             if (printTime)
             {
                 oss << get_current_timestamp() << ":";
@@ -313,7 +310,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << LOG_BOLD << oss.str() << std::endl;
+            std::cout << LOG_BOLD << LOG_UNDERLINE << oss.str() << LOG_RESET << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)
@@ -352,12 +349,9 @@ namespace sunray_logger
             // 设置小数点精度
             oss << std::fixed << std::setprecision(precision);
             // 添加颜色
-            oss << colors[int(LogColor::white_bg_red)];
+            oss << colors[int(LogColor::red)];
             // 判断level和时间是否需要打印
-            if (printLevel)
-            {
-                oss << "[" << levels[int(LogLevel::ERROR)] << "]";
-            }
+            oss << "[" << levels[int(LogLevel::ERROR)] << "]";
             if (printTime)
             {
                 oss << get_current_timestamp() << ":";
@@ -365,7 +359,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << LOG_BOLD << oss.str() << std::endl;
+            std::cout << LOG_BOLD << LOG_UNDERLINE << oss.str() << LOG_RESET << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)
@@ -404,12 +398,9 @@ namespace sunray_logger
             // 设置小数点精度
             oss << std::fixed << std::setprecision(precision);
             // 添加颜色
-            oss << colors[int(LogColor::white_bg_yellow)];
+            oss << colors[int(LogColor::yellow)];
             // 判断level和时间是否需要打印
-            if (printLevel)
-            {
-                oss << "[" << levels[int(LogLevel::WARN)] << "]";
-            }
+            oss << "[" << levels[int(LogLevel::WARN)] << "]";
             if (printTime)
             {
                 oss << get_current_timestamp() << ":";
@@ -417,7 +408,7 @@ namespace sunray_logger
             // 拼接分隔符
             oss << delimiter;
             append_to_stream(oss, args...);
-            std::cout << LOG_BOLD << oss.str() << std::endl;
+            std::cout << LOG_BOLD << LOG_UNDERLINE << oss.str() << LOG_RESET << std::endl;
 
             // 判断是否要输出到文件
             if (printToFile)
@@ -473,8 +464,8 @@ namespace sunray_logger
             delimiter = " ";
             printColor = colors[int(LogColor::def)];
             fileName = "log.txt";
-            printLevel = true;
-            printTime = true;
+            printLevel = false;
+            printTime = false;
             printToFile = false;
             is_openFile = false;
 
