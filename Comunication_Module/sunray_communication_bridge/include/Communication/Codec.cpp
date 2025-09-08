@@ -185,6 +185,47 @@ void Codec::decoderNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node)
     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.nodeSize);
 }
 
+
+void Codec::decoderFACCompetitionStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    FACCompetitionState& data = dataFrameStruct.data.FACState;
+    data.init();
+
+    // 读取stateSize（2字节，小端序）
+    data.stateSize = static_cast<uint16_t>(dataFrame[0]);
+    data.stateSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+    // 读取stateStr
+    for (uint16_t j = 0; j < data.stateSize; ++j)
+        data.stateStr[j] = static_cast<char>(dataFrame[j]);
+    data.stateStr[data.stateSize] = '\0';  //添加终止符
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.stateSize);
+}
+
+void Codec::decoderFACMapDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    FACMapData& data = dataFrameStruct.data.FACMap;
+    data.init();
+
+    uint8tArrayToFloat(dataFrame, data.centralObstacleSideLength);
+    uint8tArrayToFloat(dataFrame, data.dropZoneCenterCoords[0]);
+    uint8tArrayToFloat(dataFrame, data.dropZoneCenterCoords[1]);
+    uint8tArrayToFloat(dataFrame, data.firstObstacleCoords[0]);
+    uint8tArrayToFloat(dataFrame, data.firstObstacleCoords[1]);
+    uint8tArrayToFloat(dataFrame, data.secondObstacleCoords[0]);
+    uint8tArrayToFloat(dataFrame, data.secondObstacleCoords[1]);
+    uint8tArrayToFloat(dataFrame, data.thirdObstacleCoords[0]);
+    uint8tArrayToFloat(dataFrame, data.thirdObstacleCoords[1]);
+    uint8tArrayToFloat(dataFrame, data.obstacleRadius);
+    uint8tArrayToFloat(dataFrame, data.largeFrameCoords[0]);
+    uint8tArrayToFloat(dataFrame, data.largeFrameCoords[1]);
+    uint8tArrayToFloat(dataFrame, data.smallFrameCoords[0]);
+    uint8tArrayToFloat(dataFrame, data.smallFrameCoords[1]);
+
+
+}
+
 void Codec::decoderWaypointPayload(std::vector<uint8_t>& dataFrame,DataFrame& waypointData)
 {
     WaypointData& data = waypointData.data.waypointData;
@@ -624,9 +665,19 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload智能体电脑状态数据反序列化*/
         decoderAgentComputerStatusPayload(undecodedData,decoderData);
         break;
+    case MessageID::FACMapDataMessageID:
+        /*PayloadFAC赛地图数据反序列化*/
+        decoderFACMapDataPayload(undecodedData,decoderData);
+        break;
+    case MessageID::FACCompetitionStateMessageID:
+        /*PayloadFAC比赛状态数据反序列化*/
+        decoderFACCompetitionStatePayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
+
+
 
 }
 
@@ -649,6 +700,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
         break;
     case MessageID::UAVStateMessageID: case MessageID::UGVStateMessageID:
     case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
+    case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -953,6 +1005,26 @@ void Codec::coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
         payload.push_back(static_cast<uint8_t>(data.nodeStr[j]));
 }
 
+void Codec::coderFACMapPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    FACMapData data=codelessData.data.FACMap;
+    floatCopyToUint8tArray(payload,data.centralObstacleSideLength);
+    floatCopyToUint8tArray(payload,data.dropZoneCenterCoords[0]);
+    floatCopyToUint8tArray(payload,data.dropZoneCenterCoords[1]);
+    floatCopyToUint8tArray(payload,data.firstObstacleCoords[0]);
+    floatCopyToUint8tArray(payload,data.firstObstacleCoords[1]);
+    floatCopyToUint8tArray(payload,data.secondObstacleCoords[0]);
+    floatCopyToUint8tArray(payload,data.secondObstacleCoords[1]);
+    floatCopyToUint8tArray(payload,data.thirdObstacleCoords[0]);
+    floatCopyToUint8tArray(payload,data.thirdObstacleCoords[1]);
+    floatCopyToUint8tArray(payload,data.obstacleRadius);
+    floatCopyToUint8tArray(payload,data.largeFrameCoords[0]);
+    floatCopyToUint8tArray(payload,data.largeFrameCoords[1]);
+    floatCopyToUint8tArray(payload,data.smallFrameCoords[0]);
+    floatCopyToUint8tArray(payload,data.smallFrameCoords[1]);
+
+}
+
 void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     Goal data=codelessData.data.goal;
@@ -960,6 +1032,19 @@ void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
     doubleCopyToUint8tArray(payload,data.positionY);
     doubleCopyToUint8tArray(payload,data.positionZ);
 
+}
+
+void Codec::coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    FACCompetitionState data=codelessData.data.FACState;
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.stateSize >> (i * 8)) & 0xFF));
+
+    if(payload.capacity()<data.stateSize+4)
+        payload.reserve(data.stateSize+4);
+
+    for(int j=0;j<data.stateSize;++j)
+        payload.push_back(static_cast<uint8_t>(data.stateStr[j]));
 }
 
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
@@ -1060,6 +1145,14 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::AgentComputerStatusMessageID:
         /*Payload智能体电脑状态数据序列化*/
         coderAgentComputerStatusload(PayloadData,codelessData);
+        break;
+    case MessageID::FACMapDataMessageID:
+        /*PayloadFAC赛地图数据序列化*/
+        coderFACMapPayload(PayloadData,codelessData);
+        break;
+    case MessageID::FACCompetitionStateMessageID:
+        /*PayloadFAC比赛状态数据序列化*/
+        coderFACCompetitionStatePayload(PayloadData,codelessData);
         break;
     default:break;
     }

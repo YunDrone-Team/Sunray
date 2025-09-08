@@ -2,7 +2,7 @@
 
 Viobot::Viobot()
 {
-    // ³õÊ¼»¯Ïà¹Ø²ÎÊý
+    // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½
     is_viobot_start = false;
     algo_set.algo_enable = false;
     algo_set.algo_reboot = false;
@@ -13,12 +13,12 @@ Viobot::Viobot()
 
 void Viobot::init(ros::NodeHandle &nh)
 {
-    // ¶ÁÈ¡²ÎÊý
+    // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½
     nh.param<string>("uart_name", uart_name, "/dev/ttyS0");
     nh.param<int>("baudrate", baudrate, 115200);
-    nh.param<bool>("viobot_tilted", tilted, true);
+    nh.param<bool>("viobot_tilted", tilted, false);
 
-    // ³õÊ¼»¯»°ÌâºÍ¶¨Ê±Æ÷
+    // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½Ê±ï¿½ï¿½
     imu_sub_ = nh.subscribe("/baton/imu", 10, &Viobot::imuCallback, this);
     odom_sub_ = nh.subscribe("/baton/stereo3/odometry", 2, &Viobot::odomCallback, this);
     algo_status_sub_ = nh.subscribe<sunray_viobot_unit::algo_status>("/baton/algo_status", 2, &Viobot::algoStatusCallback, this);
@@ -33,19 +33,19 @@ void Viobot::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     if (calculation_done)
     {
-        imu_sub_.shutdown(); // ×¢Ïú¶©ÔÄÕß
+        imu_sub_.shutdown(); // ×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         return;
     }
 
-    // ´æ´¢¼ÓËÙ¶È¼ÆÊý¾Ý
+    // ï¿½æ´¢ï¿½ï¿½ï¿½Ù¶È¼ï¿½ï¿½ï¿½ï¿½ï¿½
     ax_values.push_back(msg->linear_acceleration.z);
     ay_values.push_back(-msg->linear_acceleration.x);
     az_values.push_back(msg->linear_acceleration.y);
 
-    // µ±ÊÕ¼¯µ½×ã¹»µÄÑù±¾Ê±¼ÆËãÆ½¾ùÖµºÍ½Ç¶È
+    // ï¿½ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½ï¿½ã¹»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½Öµï¿½Í½Ç¶ï¿½
     if (ax_values.size() >= AVERAGE_COUNT)
     {
-        // ¼ÆËãÆ½¾ùÖµ
+        // ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½Öµ
         double sum_ax = 0, sum_ay = 0, sum_az = 0;
         for (size_t i = 0; i < ax_values.size(); ++i)
         {
@@ -59,17 +59,17 @@ void Viobot::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
         double avg_ay = sum_ay / ay_values.size();
         double avg_az = sum_az / az_values.size();
 
-        // ¼ÆËãÐý×ª¾ØÕóºÍÅ·À­½Ç
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½Å·ï¿½ï¿½ï¿½ï¿½
         Eigen::Vector3d vectorBefore(avg_ax, avg_ay, avg_az);
         vectorBefore.normalize();
         Eigen::Vector3d vectorAfter(0, 0, -1);
         eigen_q_rot = Eigen::Quaterniond::FromTwoVectors(vectorBefore, vectorAfter);
 
-        // ¸³Öµ
+        // ï¿½ï¿½Öµ
         q_rot = tf2::Quaternion(eigen_q_rot.x(), eigen_q_rot.y(), eigen_q_rot.z(), eigen_q_rot.w());
         tf2::Matrix3x3(q_rot).getRPY(rot_roll, rot_pitch, rot_yaw);
 
-        // ´òÓ¡½á¹û
+        // ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½
         ROS_INFO("=== IMU Tilt Calculation Results ===");
         ROS_INFO("Collected %zu samples", ax_values.size());
         ROS_INFO("Roll (around X-axis):  %.2f degrees", rot_roll * 180.0 / M_PI);
@@ -87,15 +87,15 @@ void Viobot::odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
     memset(&mavlink_odom, 0, sizeof(mavlink_odometry_t));
 
-    mavlink_odom.frame_id = MAV_FRAME_LOCAL_FLU;
-    mavlink_odom.child_frame_id = MAV_FRAME_LOCAL_FLU;
+    mavlink_odom.frame_id = MAV_FRAME_LOCAL_FRD;
+    mavlink_odom.child_frame_id = MAV_FRAME_LOCAL_FRD;
     mavlink_odom.estimator_type = MAV_ESTIMATOR_TYPE_VISION;
     mavlink_odom.time_usec = msg->header.stamp.toSec() * 1000;
 
     Eigen::Vector3d p = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
-    mavlink_odom.x = p.x();
-    mavlink_odom.y = p.y();
-    mavlink_odom.z = p.z();
+    mavlink_odom.x = p.y();
+    mavlink_odom.y = p.x();
+    mavlink_odom.z = -p.z();
 
     tf2::Quaternion q;
     q.setW(msg->pose.pose.orientation.w);
@@ -103,47 +103,43 @@ void Viobot::odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
     q.setY(msg->pose.pose.orientation.y);
     q.setZ(msg->pose.pose.orientation.z);
 
-    // ÏÈ°ÑÊý¾Ý´¦Àí³ÉFLU
-    // ÈÆ Z ÖáÐý×ª 90¡ã
+    // ï¿½È°ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ Z ï¿½ï¿½ï¿½ï¿½×ª 90ï¿½ï¿½
     tf2::Quaternion q_z;
-    q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90¡ã
+    q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90ï¿½ï¿½
 
-    // ÈÆ Y ÖáÐý×ª -90¡ã
+    // ï¿½ï¿½ Y ï¿½ï¿½ï¿½ï¿½×ª -90ï¿½ï¿½
     tf2::Quaternion q_y;
-    q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90¡ã
+    q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90ï¿½ï¿½
 
-    // ×éºÏÐý×ª£¨Ë³Ðò£ºÏÈ q_z£¬ÔÙ q_y£©
+    // ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ q_zï¿½ï¿½ï¿½ï¿½ q_yï¿½ï¿½
     q = q * q_z * q_y;
 
-    double roll, pitch, yaw;
-    tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-    // // ´òÓ¡Å·À­½Ç
-    // printf("Original Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", roll * 180 / M_PI, pitch * 180 / M_PI, yaw * 180 / M_PI);
+    // if (tilted)
+    // {
+    //     q = q * q_rot;
+    // }
 
-    // ´¦Àí³ÉFRD
-    q.setRPY(roll, -pitch, -yaw);
-
-    // ´¦Àí³õÊ¼Çã½Ç(ÖØÁ¦¶ÔÆë)
-    if (tilted)
-    {
-        q = q * q_rot;
-    }
-
-    // // ´òÓ¡³öÄ¿Ç°´¦ÀíºóµÄÀï³Ì¼Æ×ËÌ¬
     // double n_roll, n_pitch, n_yaw;
     // tf2::Matrix3x3(q).getRPY(n_roll, n_pitch, n_yaw);
     // printf("Odometry Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", n_roll * 180 / M_PI, n_pitch * 180 / M_PI, n_yaw * 180 / M_PI);
 
-    mavlink_odom.q[0] = q.w();
-    mavlink_odom.q[1] = q.x();
-    mavlink_odom.q[2] = q.y();
-    mavlink_odom.q[3] = q.z();
+    Eigen::Quaterniond mav_q(q.getW(), q.getX(), q.getY(), q.getZ());
+    Eigen::Quaterniond ql(Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
+    Eigen::Quaterniond qr(Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
+
+    mav_q = ql * mav_q *  qr;
+
+    mavlink_odom.q[0] = mav_q.w();
+    mavlink_odom.q[1] = mav_q.x();
+    mavlink_odom.q[2] = mav_q.y();
+    mavlink_odom.q[3] = mav_q.z();
 
     // mavlink_odom.vx = msg->twist.twist.linear.z;
     // mavlink_odom.vy = -msg->twist.twist.linear.x;
     // mavlink_odom.vz = -msg->twist.twist.linear.y;
 
-    // TODO: ´¦ÀíËÙ¶ÈÈÚºÏÎÊÌâ
+    // TODO: ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½Úºï¿½ï¿½ï¿½ï¿½ï¿½
     mavlink_odom.vx = NAN;
     mavlink_odom.vy = NAN;
     mavlink_odom.vz = NAN;
@@ -159,19 +155,19 @@ void Viobot::odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
         mavlink_odom.velocity_covariance[i] = NAN;
     }
 
-    // °ÑÊý¾Ý¸´ÖÆµ½viobot_state
-    viobot_state.position[0] = mavlink_odom.x;
-    viobot_state.position[1] = mavlink_odom.y;
-    viobot_state.position[2] = mavlink_odom.z;
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½Æµï¿½viobot_state
+    viobot_state.position[0] = p.x();
+    viobot_state.position[1] = p.y();
+    viobot_state.position[2] = p.z();
 
     viobot_state.velocity[0] = mavlink_odom.vx;
     viobot_state.velocity[1] = mavlink_odom.vy;
     viobot_state.velocity[2] = mavlink_odom.vz;
 
-    viobot_state.attitude_q.w = mavlink_odom.q[0];
-    viobot_state.attitude_q.x = mavlink_odom.q[1];
-    viobot_state.attitude_q.y = mavlink_odom.q[2];
-    viobot_state.attitude_q.z = mavlink_odom.q[3];
+    viobot_state.attitude_q.w = q.getW();
+    viobot_state.attitude_q.x = q.getX();
+    viobot_state.attitude_q.y = q.getY();
+    viobot_state.attitude_q.z = q.getZ();
 
     viobot_state.header.stamp = ros::Time::now();
 }
@@ -185,13 +181,13 @@ void Viobot::algoStatusCallback(const sunray_viobot_unit::algo_status::ConstPtr 
     }
     else if (msg->algo_status == "stereo3_initializing" || msg->algo_status == "stereo3_running")
     {
-        // Ëã·¨³õÊ¼»¯
+        // ï¿½ã·¨ï¿½ï¿½Ê¼ï¿½ï¿½
         is_viobot_start = true;
     }
 
     viobot_state.vio_start = is_viobot_start;
 
-    if (is_viobot_start == false) // Èç¹ûÃ»ÓÐ¿ªÆôËã·¨£¬×Ô¶¯¿ªÆô
+    if (is_viobot_start == false) // ï¿½ï¿½ï¿½Ã»ï¿½Ð¿ï¿½ï¿½ï¿½ï¿½ã·¨ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½
     {
         algo_set.algo_enable = true;
         algo_ctrl_pub_.publish(algo_set);
@@ -205,3 +201,100 @@ void Viobot::timerCheckTimeoutCallback(const ros::TimerEvent &event)
 
     viobot_state_pub_.publish(viobot_state);
 }
+
+
+// void Viobot::odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
+// {
+//     if (!calculation_done)
+//         return;
+
+//     memset(&mavlink_odom, 0, sizeof(mavlink_odometry_t));
+
+//     mavlink_odom.frame_id = MAV_FRAME_LOCAL_FLU ;
+//     mavlink_odom.child_frame_id = MAV_FRAME_LOCAL_FLU;
+//     mavlink_odom.estimator_type = MAV_ESTIMATOR_TYPE_VISION;
+//     mavlink_odom.time_usec = msg->header.stamp.toSec() * 1000;
+
+//     Eigen::Vector3d p = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+//     mavlink_odom.x = p.x();
+//     mavlink_odom.y = p.y();
+//     mavlink_odom.z = p.z();
+
+//     tf2::Quaternion q;
+//     q.setW(msg->pose.pose.orientation.w);
+//     q.setX(msg->pose.pose.orientation.x);
+//     q.setY(msg->pose.pose.orientation.y);
+//     q.setZ(msg->pose.pose.orientation.z);
+
+//     // ï¿½È°ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½ï¿½FLU
+//     // ï¿½ï¿½ Z ï¿½ï¿½ï¿½ï¿½×ª 90ï¿½ï¿½
+//     tf2::Quaternion q_z;
+//     q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90ï¿½ï¿½
+
+//     // ï¿½ï¿½ Y ï¿½ï¿½ï¿½ï¿½×ª -90ï¿½ï¿½
+//     tf2::Quaternion q_y;
+//     q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90ï¿½ï¿½
+
+//     // ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ q_zï¿½ï¿½ï¿½ï¿½ q_yï¿½ï¿½
+//     q = q * q_z * q_y;
+
+//     double roll, pitch, yaw;
+//     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+//     // // ï¿½ï¿½Ó¡Å·ï¿½ï¿½ï¿½ï¿½
+//     // printf("Original Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", roll * 180 / M_PI, pitch * 180 / M_PI, yaw * 180 / M_PI);
+
+//     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½FRD
+//     q.setRPY(roll, -pitch, -yaw);
+
+//     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+//     if (tilted)
+//     {
+//         q = q * q_rot;
+//     }
+
+//     // // ï¿½ï¿½Ó¡ï¿½ï¿½Ä¿Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½ï¿½ï¿½Ì¬
+//     // double n_roll, n_pitch, n_yaw;
+//     // tf2::Matrix3x3(q).getRPY(n_roll, n_pitch, n_yaw);
+//     // printf("Odometry Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", n_roll * 180 / M_PI, n_pitch * 180 / M_PI, n_yaw * 180 / M_PI);
+
+//     mavlink_odom.q[0] = q.w();
+//     mavlink_odom.q[1] = q.x();
+//     mavlink_odom.q[2] = q.y();
+//     mavlink_odom.q[3] = q.z();
+
+//     // mavlink_odom.vx = msg->twist.twist.linear.z;
+//     // mavlink_odom.vy = -msg->twist.twist.linear.x;
+//     // mavlink_odom.vz = -msg->twist.twist.linear.y;
+
+//     // TODO: ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½Úºï¿½ï¿½ï¿½ï¿½ï¿½
+//     mavlink_odom.vx = NAN;
+//     mavlink_odom.vy = NAN;
+//     mavlink_odom.vz = NAN;
+
+//     mavlink_odom.rollspeed = NAN;
+//     mavlink_odom.pitchspeed = NAN;
+//     mavlink_odom.yawspeed = NAN;
+
+//     for (int i = 0; i < 21; i++)
+//     {
+
+//         mavlink_odom.pose_covariance[i] = NAN;
+//         mavlink_odom.velocity_covariance[i] = NAN;
+//     }
+
+//     // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½Æµï¿½viobot_state
+//     viobot_state.position[0] = mavlink_odom.x;
+//     viobot_state.position[1] = mavlink_odom.y;
+//     viobot_state.position[2] = mavlink_odom.z;
+
+//     viobot_state.velocity[0] = mavlink_odom.vx;
+//     viobot_state.velocity[1] = mavlink_odom.vy;
+//     viobot_state.velocity[2] = mavlink_odom.vz;
+
+//     viobot_state.attitude_q.w = mavlink_odom.q[0];
+//     viobot_state.attitude_q.x = mavlink_odom.q[1];
+//     viobot_state.attitude_q.y = mavlink_odom.q[2];
+//     viobot_state.attitude_q.z = mavlink_odom.q[3];
+
+//     viobot_state.header.stamp = ros::Time::now();
+// }

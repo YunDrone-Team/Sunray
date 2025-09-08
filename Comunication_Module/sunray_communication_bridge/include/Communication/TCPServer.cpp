@@ -61,17 +61,17 @@ void TCPServer::allSendData(std::vector<uint8_t> data)
 #endif
 
         ++it;
-    //    if (sendResult < 0)
-    //    {
-    //        // 打印跨平台错误信息
-    //        std::cerr << "Send failed - IP: " << it->first << ", Socket: " << it->second<< ", Error code: " << errorCode << std::endl;
+//        if (sendResult < 0)
+//        {
+//            // 打印跨平台错误信息
+//            std::cerr << "Send failed - IP: " << it->first << ", Socket: " << it->second<< ", Error code: " << errorCode << std::endl;
 
-    //        // 安全删除当前元素
-    //        it = ipSocketMap.erase(it);
-    //    } else {
-    //        // 发送成功，移动到下一个元素
-    //        ++it;
-    //    }
+//            // 安全删除当前元素
+//            it = ipSocketMap.erase(it);
+//        } else {
+//            // 发送成功，移动到下一个元素
+//            ++it;
+//        }
     }
 }
 

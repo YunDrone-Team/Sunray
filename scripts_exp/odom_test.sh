@@ -1,28 +1,26 @@
 #!/bin/bash
-# ¼ÓÔØbashrc
-source /home/PRR/.bashrc
 
-# ÔÚºóÌ¨Æô¶¯µÚÒ»¸ö½ø³Ì²¢¼ÇÂ¼PID
-roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=2 &
-mavros_pid=$!
-# echo "Æô¶¯sunray_mavros_exp.launch£¬½ø³ÌID: $mavros_pid"
+# å¼•å…¥ TMUX ä¼šè¯ç®¡ç†æ¨¡å—
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_DIR}/auto_tmux.sh"
 
-# µÈ´ı3Ãë
-sleep 3
+UAV_ID=1    # æ— äººæœºID
+SESSION_NAME=sunray_tmux  # ä¼šè¯åç§°ï¼Œç»Ÿä¸€ä½¿ç”¨sunray_tmux
+FIRST_WINDOW="main.2"
 
-# ÔÚºóÌ¨Æô¶¯µÚ¶ş¸ö½ø³Ì²¢¼ÇÂ¼PID
-roslaunch sunray_uav_control external_fusion.launch external_source:=4 enable_rviz:=false uav_id:=2 &
-fusion_pid=$!
-# echo "Æô¶¯external_fusion.launch£¬½ø³ÌID: $fusion_pid"
+# è‡ªå®šä¹‰å‘½ä»¤é…ç½®
+declare -A TMUX_CONFIG=(
+    ["main"]="
+        roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${UAV_ID}
+        sleep 8 && roslaunch sunray_uav_control external_fusion.launch external_source:=4 enable_rviz:=false uav_id:=${UAV_ID}
+        sleep 5 && roslaunch sunray_viobot_unit mavlink.launch
+        sleep 5 && roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${UAV_ID}
+        sleep 2 && roslaunch sunray_uav_control terminal_control.launch uav_id:=${UAV_ID}
+    "
+)
 
-# µÈ´ıËùÓĞºóÌ¨½ø³ÌÍê³É
-wait
-echo "ËùÓĞ½ø³ÌÒÑÍê³É"
+# åˆ›å»ºä¼šè¯
+create_tmux_session
 
-# ²¶»ñCtrl+CĞÅºÅ£¬È·±£ÄÜ¹»ÓÅÑÅÖÕÖ¹½ø³Ì
-trap "kill $mavros_pid 2>/dev/null; kill $fusion_pid 2>/dev/null; sleep 1; exit 0" SIGINT
-
-# ±£³Ö½Å±¾ÔËĞĞ£¬Ö±µ½ÓÃ»§ÖĞ¶Ï
-while true; do
-    sleep 1
-done
+# å¯é€‰ï¼šé™„åŠ åˆ°ä¼šè¯
+attach_to_tmux_session
