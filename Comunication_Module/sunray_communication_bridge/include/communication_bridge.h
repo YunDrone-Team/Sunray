@@ -62,7 +62,7 @@ public:
         nodeMap.clear();
         const char* display = std::getenv("XDG_CURRENT_DESKTOP");
         if (display == nullptr || display[0] == '\0') 
-       	    executeScript("./kill_node.sh", "/scripts_exp/");
+       	    system("tmux kill-session -t sunray_tmux");
     };
 
     void init(ros::NodeHandle &nh);
