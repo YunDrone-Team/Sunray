@@ -16,10 +16,13 @@ find_package(catkin REQUIRED COMPONENTS
   sunray_msgs
   tf2_geometry_msgs
   mavros_msgs
+  cv_bridge
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(OpenCV REQUIRED)
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -45,6 +48,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 
@@ -103,6 +107,10 @@ target_link_libraries(ugv_circle_vel_body ${catkin_LIBRARIES})
 add_executable(land_on_a_moving_car advanced/land_on_a_moving_car.cpp)
 add_dependencies(land_on_a_moving_car sunray_tutorial_gencpp)
 target_link_libraries(land_on_a_moving_car ${catkin_LIBRARIES})
+
+add_executable(simple_obstacle_avoidance src/simple_obstacle_avoidance.cpp)
+add_dependencies(simple_obstacle_avoidance sunray_tutorial_gencpp)
+target_link_libraries(simple_obstacle_avoidance ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
