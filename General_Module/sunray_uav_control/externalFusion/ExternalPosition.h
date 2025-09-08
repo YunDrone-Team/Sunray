@@ -38,7 +38,7 @@ public:
     Eigen::Quaterniond eigen_q_rot;                      // ��Ԫ�� eigen
     tf2::Quaternion q_rot;                               // ��ת��Ԫ��
     double rot_roll, rot_pitch, rot_yaw;                 // ��ʼViobot���õĽǶ�
-    bool calculation_done;                               // ƫת�Ǽ����Ƿ����
+    bool calculation_done{false};                               // ƫת�Ǽ����Ƿ����
 
     bool get_new_external_pos{false};                   // 是否收到新的外部定位数据
 
@@ -135,7 +135,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
         // VIOBOT属于外部定位源，默认开启外部定位融合
         enable_external_fusion = true;  
         // 【订阅】VIOBOT算法的IMU数据 - VIOBOT算法程序 -> 本节点
-        viobot_imu_sub = nh.subscribe("/baton/imu", 10, &ExternalPosition::viobot_imuCallback, this);
+        viobot_imu_sub = nh.subscribe<sensor_msgs::Imu>("/baton/imu", 10, &ExternalPosition::viobot_imuCallback, this);
         // 【订阅】VIOBOT算法的里程计数据 - VIOBOT算法程序 -> 本节点
         viobot_odom_sub = nh.subscribe<nav_msgs::Odometry>("/baton/stereo3/odometry", 10, &ExternalPosition::viobot_odomCallback, this);
         // 【订阅】VIOBOT算法状态 - VIOBOT算法程序 -> 本节点

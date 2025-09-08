@@ -443,7 +443,7 @@ void ExternalFusion::show_px4_state()
             Logger::print_color(int(LogColor::green), "外部定位源: [ MOCAP ]");
             break;
         case sunray_msgs::ExternalOdom::VIOBOT:
-            Logger::print_color(int(LogColor::green), "外部定位源: [ VIOBOT ]", " is_viobot_start: ", ext_pos.external_odom.vio_start == true ? "[ True ]" : "[ False ]", "algo_status: [ ", ext_pos.external_odom.algo_status, " ]");
+            Logger::print_color(int(LogColor::green), "外部定位源: [ VIOBOT ]", " VIO算法是否开启: ", ext_pos.external_odom.vio_start == true ? "[ True ]" : "[ False ]", "算法状态: [ ", ext_pos.external_odom.algo_status, " ]");
             break;
         case sunray_msgs::ExternalOdom::GPS:
             Logger::print_color(int(LogColor::green), "外部定位源: [ GPS ]");
