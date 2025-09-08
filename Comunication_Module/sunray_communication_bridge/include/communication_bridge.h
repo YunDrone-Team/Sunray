@@ -63,7 +63,6 @@ public:
         const char* display = std::getenv("XDG_CURRENT_DESKTOP");
         if (display == nullptr || display[0] == '\0') 
        	    system("tmux kill-session -t sunray_tmux");
-            //executeScript("./kill_node.sh", "/scripts_exp/");
     };
 
     void init(ros::NodeHandle &nh);
