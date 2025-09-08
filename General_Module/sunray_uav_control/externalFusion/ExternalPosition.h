@@ -33,7 +33,7 @@ public:
     std::string source_topic{""};                           // 外部定位数据来源话题
 
     // VIOBOT相关参数
-    bool tilted;                                         // �Ƿ���б����
+    // bool tilted = false;                                         // �Ƿ���б����
     std::vector<double> ax_values, ay_values, az_values; // ���ٶ�����
     Eigen::Quaterniond eigen_q_rot;                      // ��Ԫ�� eigen
     tf2::Quaternion q_rot;                               // ��ת��Ԫ��
@@ -407,14 +407,12 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
     // 位置信息
     Eigen::Vector3d p = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
 
-
     tf2::Quaternion q;
     q.setW(msg->pose.pose.orientation.w);
     q.setX(msg->pose.pose.orientation.x);
     q.setY(msg->pose.pose.orientation.y);
     q.setZ(msg->pose.pose.orientation.z);
 
-    // �Ȱ����ݴ�����FLU
     // �� Z ����ת 90��
     tf2::Quaternion q_z;
     q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90��
@@ -428,17 +426,12 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
 
     double roll, pitch, yaw;
     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-    // // ��ӡŷ����
-    // printf("Original Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", roll * 180 / M_PI, pitch * 180 / M_PI, yaw * 180 / M_PI);
-
-    // ������FRD
-    q.setRPY(roll, -pitch, -yaw);
 
     // ������ʼ���(��������)
-    if (tilted)
-    {
-        q = q * q_rot;
-    }
+    // if (tilted)
+    // {
+    //     q = q * q_rot;
+    // }
 
     // external_odom赋值
     external_odom.header.stamp = ros::Time::now();
@@ -453,8 +446,8 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
     external_odom.attitude_q.z = q.z();
     external_odom.attitude_q.w = q.w();
     external_odom.attitude[0] = roll;
-    external_odom.attitude[1] = -pitch;
-    external_odom.attitude[2] = -yaw;
+    external_odom.attitude[1] = pitch;
+    external_odom.attitude[2] = yaw;
 }
 
 void ExternalPosition::viobot_algoStatusCallback(const sunray_msgs::algo_status::ConstPtr &msg)
@@ -489,19 +482,27 @@ mavlink_odometry_t ExternalPosition::get_mavlink_msg()
 
     memset(&mavlink_odom, 0, sizeof(mavlink_odometry_t));
 
-    mavlink_odom.frame_id = MAV_FRAME_LOCAL_FLU;
-    mavlink_odom.child_frame_id = MAV_FRAME_LOCAL_FLU;
+    mavlink_odom.frame_id = MAV_FRAME_LOCAL_FRD;
+    mavlink_odom.child_frame_id = MAV_FRAME_LOCAL_FRD;
     mavlink_odom.estimator_type = MAV_ESTIMATOR_TYPE_VISION;
     mavlink_odom.time_usec = external_odom.header.stamp.toSec() * 1000;
 
-    mavlink_odom.x = external_odom.position[0];
-    mavlink_odom.y = external_odom.position[1];
-    mavlink_odom.z = external_odom.position[2];
+    mavlink_odom.x = external_odom.position[1];
+    mavlink_odom.y = external_odom.position[0];
+    mavlink_odom.z = -external_odom.position[2];
+    Eigen::Quaterniond mav_q(external_odom.attitude_q.w, external_odom.attitude_q.x, external_odom.attitude_q.y, external_odom.attitude_q.z);
+    Eigen::Quaterniond ql(Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
+    Eigen::Quaterniond qr(Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
 
-    mavlink_odom.q[0] = external_odom.attitude_q.w;
-    mavlink_odom.q[1] = external_odom.attitude_q.x;
-    mavlink_odom.q[2] = external_odom.attitude_q.y;
-    mavlink_odom.q[3] = external_odom.attitude_q.z;
+    mav_q = ql * mav_q *  qr;
+
+    // printf("Original Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", roll * 180 / M_PI, pitch * 180 / M_PI, yaw * 180 / M_PI);
+    // q.setRPY(roll, -pitch, -yaw);
+
+    mavlink_odom.q[0] = mav_q.w();
+    mavlink_odom.q[1] = mav_q.x();
+    mavlink_odom.q[2] = mav_q.y();
+    mavlink_odom.q[3] = mav_q.z();
 
     mavlink_odom.vx = external_odom.velocity[0];
     mavlink_odom.vy = external_odom.velocity[1];
