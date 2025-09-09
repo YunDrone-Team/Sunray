@@ -490,6 +490,7 @@ mavlink_odometry_t ExternalPosition::get_mavlink_msg()
     mavlink_odom.x = external_odom.position[1];
     mavlink_odom.y = external_odom.position[0];
     mavlink_odom.z = -external_odom.position[2];
+    
     Eigen::Quaterniond mav_q(external_odom.attitude_q.w, external_odom.attitude_q.x, external_odom.attitude_q.y, external_odom.attitude_q.z);
     Eigen::Quaterniond ql(Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
     Eigen::Quaterniond qr(Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
