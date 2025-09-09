@@ -217,6 +217,9 @@ void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
     uav_state.battery_percentage = px4_state.battery_percentage;
     uav_state.location_source = px4_state.external_odom.external_source;
     uav_state.odom_valid = px4_state.external_odom.odom_valid;
+    uav_state.vio_start = px4_state.external_odom.vio_start;
+    uav_state.algo_status = px4_state.external_odom.algo_status;
+
     for (int i = 0; i < 3; i++)
     {
         uav_state.position[i] = px4_state.position[i];

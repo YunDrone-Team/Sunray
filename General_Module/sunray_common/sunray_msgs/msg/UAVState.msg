@@ -15,6 +15,8 @@ float32 battery_percentage          ## 电池百分比，[0-1]
 ## 无人机外部里程计信息 - 同步自~/sunray/px4_state
 uint8 location_source               ## 无人机定位来源
 bool odom_valid                     ## 里程计是否有效
+bool vio_start                      ## viobot算法是否开启
+string algo_status                  ## viobot算法状态
 
 ## 无人机位姿状态信息 - 同步自~/sunray/px4_state
 float32[3] position                 ## 位置，单位：[m]
@@ -42,6 +44,7 @@ float32[3] hover_pos            ## 悬停点
 float32 hover_yaw               ## 悬停点
 float32[3] land_pos             ## 悬停点
 float32 land_yaw                ## 悬停点
+
 
 
 
