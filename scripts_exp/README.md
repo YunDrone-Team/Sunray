@@ -14,7 +14,7 @@ Tmux是一个终端复用器（terminal multiplexer），可以在一个终端�
 
 ## 关闭tmux
 ```bash
-tmux kill-session -t session-name
+tmux kill-session -t sunray_tmux
 ```
 
 ## 列举所有tmux会话
@@ -24,7 +24,7 @@ tmux ls
 
 ## 连接tmux会话
 ```bash
-tmux attach -t session-name
+tmux attach -t sunray_tmux
 ```
 
 ## 列出当前所有 Tmux 会话的信息

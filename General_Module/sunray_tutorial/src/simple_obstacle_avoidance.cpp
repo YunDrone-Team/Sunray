@@ -29,9 +29,9 @@ bool target_updated = false;           // 目标是否被更新
 
 // 飞行控制参数
 double flight_height = 1.0;            // 飞行高度，单位：米
-double forward_vel = 0.5;              // 前进速度，单位：m/s
-double rotate_speed = 0.3;             // 旋转速度，单位：rad/s
-double safety_distance = 1.5;          // 安全距离，单位：米
+double forward_vel = 0.3;              // 前进速度，单位：m/s
+double rotate_speed = 0.2;             // 旋转速度，单位：rad/s
+double safety_distance = 0.5;          // 安全距离，单位：米
 
 // 简化的障碍物信息结构体
 struct SimpleObstacleInfo {
@@ -94,7 +94,7 @@ SimpleObstacleInfo process_depth_image_simple()
 
     try {
         // 将ROS图像消息转换为OpenCV格式
-        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_32FC1);
+        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_16UC1);
         cv::Mat depth_mat = cv_ptr->image;
         
         int rows = depth_mat.rows;  // 图像高度
@@ -102,27 +102,34 @@ SimpleObstacleInfo process_depth_image_simple()
         
         // 将图像分成三个区域：左、中、右
         int region_width = cols / 3;           // 每个区域的宽度
-        int check_height = rows / 3;           // 检查区域的高度（图像中间部分）
-        int start_row = rows / 3;              // 开始检查的行（避开天空和地面）
+        int check_height = rows / 2;           // 检查区域的高度（图像中间部分）
+        int start_row = rows / 4;              // 开始检查的行（避开天空和地面）
         
         // 定义三个检查区域
         cv::Rect left_roi(0, start_row, region_width, check_height);                    // 左侧区域
         cv::Rect center_roi(region_width, start_row, region_width, check_height);       // 中间区域
         cv::Rect right_roi(2 * region_width, start_row, region_width, check_height);   // 右侧区域
-        
+
         // 计算每个区域的平均深度
         cv::Mat left_region = depth_mat(left_roi);
         cv::Mat center_region = depth_mat(center_roi);
         cv::Mat right_region = depth_mat(right_roi);
         
+        std::cout << center_region << std::endl;
+
         // 计算有效深度值的平均值（排除0值）
-        cv::Scalar left_mean = cv::mean(left_region, left_region > 0.1);
-        cv::Scalar center_mean = cv::mean(center_region, center_region > 0.1);
-        cv::Scalar right_mean = cv::mean(right_region, right_region > 0.1);
+        cv::Scalar left_mean = cv::mean(left_region, left_region > 10);
+        cv::Scalar center_mean = cv::mean(center_region, center_region > 10);
+        cv::Scalar right_mean = cv::mean(right_region, right_region > 10);
         
-        double left_dist = left_mean[0];     // 左侧平均距离
-        double center_dist = center_mean[0]; // 中间平均距离
-        double right_dist = right_mean[0];   // 右侧平均距离
+        double left_dist = left_mean[0] / 100.0;     // 左侧平均距离
+        double center_dist = center_mean[0] / 100.0; // 中间平均距离
+        double right_dist = right_mean[0] / 100.0;   // 右侧平均距离
+
+        // Logger::print_color(int(LogColor::magenta), "左侧平均距离: " + 
+        //                       std::to_string(left_dist) + "米，中间平均距离：" +
+        //                       std::to_string(center_dist) + "米，右侧平均距离：" +
+        //                       std::to_string(right_dist) + "米。");
         
         info.front_distance = center_dist;
         
@@ -277,47 +284,47 @@ int main(int argc, char **argv)
     }
     Logger::print_color(int(LogColor::green), node_name, ": 无人机已连接!");
 
-    // 设置控制模式为命令控制
-    while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::CMD_CONTROL)
-    {
-        uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
-        uav_setup.control_mode = "CMD_CONTROL";
-        uav_setup_pub.publish(uav_setup);
-        Logger::print_color(int(LogColor::green), node_name, ": 设置控制模式为命令控制");
-        ros::Duration(1.0).sleep();
-        ros::spinOnce();
-    }
-    Logger::print_color(int(LogColor::green), node_name, ": 控制模式设置成功!");
+    // // 设置控制模式为命令控制
+    // while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::CMD_CONTROL)
+    // {
+    //     uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
+    //     uav_setup.control_mode = "CMD_CONTROL";
+    //     uav_setup_pub.publish(uav_setup);
+    //     Logger::print_color(int(LogColor::green), node_name, ": 设置控制模式为命令控制");
+    //     ros::Duration(1.0).sleep();
+    //     ros::spinOnce();
+    // }
+    // Logger::print_color(int(LogColor::green), node_name, ": 控制模式设置成功!");
 
-    // 解锁无人机
-    Logger::print_color(int(LogColor::green), node_name, ": 5秒后解锁无人机...");
-    for (int i = 5; i >= 1; i--) {
-        Logger::print_color(int(LogColor::green), node_name, ": " + std::to_string(i) + "秒后解锁...");
-        ros::Duration(1.0).sleep();
-    }
+    // // 解锁无人机
+    // Logger::print_color(int(LogColor::green), node_name, ": 5秒后解锁无人机...");
+    // for (int i = 5; i >= 1; i--) {
+    //     Logger::print_color(int(LogColor::green), node_name, ": " + std::to_string(i) + "秒后解锁...");
+    //     ros::Duration(1.0).sleep();
+    // }
     
-    while (ros::ok() && !uav_state.armed)
-    {
-        uav_setup.cmd = sunray_msgs::UAVSetup::ARM;
-        uav_setup_pub.publish(uav_setup);
-        Logger::print_color(int(LogColor::green), node_name, ": 正在解锁无人机");
-        ros::Duration(1.0).sleep();
-        ros::spinOnce();
-    }
-    Logger::print_color(int(LogColor::green), node_name, ": 无人机解锁成功!");
+    // while (ros::ok() && !uav_state.armed)
+    // {
+    //     uav_setup.cmd = sunray_msgs::UAVSetup::ARM;
+    //     uav_setup_pub.publish(uav_setup);
+    //     Logger::print_color(int(LogColor::green), node_name, ": 正在解锁无人机");
+    //     ros::Duration(1.0).sleep();
+    //     ros::spinOnce();
+    // }
+    // Logger::print_color(int(LogColor::green), node_name, ": 无人机解锁成功!");
 
-    // 起飞
-    while (ros::ok() && abs(uav_state.position[2] - uav_state.home_pos[2] - uav_state.takeoff_height) > 0.2)
-    {
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;
-        control_cmd_pub.publish(uav_cmd);
-        Logger::print_color(int(LogColor::green), node_name, ": 正在起飞");
-        ros::Duration(4.0).sleep();
-        ros::spinOnce();
-    }
-    Logger::print_color(int(LogColor::green), node_name, ": 起飞成功!");
+    // // 起飞
+    // while (ros::ok() && abs(uav_state.position[2] - uav_state.home_pos[2] - uav_state.takeoff_height) > 0.2)
+    // {
+    //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;
+    //     control_cmd_pub.publish(uav_cmd);
+    //     Logger::print_color(int(LogColor::green), node_name, ": 正在起飞");
+    //     ros::Duration(4.0).sleep();
+    //     ros::spinOnce();
+    // }
+    // Logger::print_color(int(LogColor::green), node_name, ": 起飞成功!");
 
-    ros::Duration(3).sleep();
+    // ros::Duration(3).sleep();
     
     // 开始避障飞行主循环
     Logger::print_color(int(LogColor::green), node_name, ": 开始简易避障飞行...");
@@ -330,29 +337,30 @@ int main(int argc, char **argv)
     
     while (ros::ok())
     {
-        // 检查目标是否被更新
-        if (target_updated) {
-            target_updated = false;
-            Logger::print_color(int(LogColor::magenta), node_name, ": 目标已更新，重新导航至新目标点");
-        }
+        // // 检查目标是否被更新
+        // if (target_updated) {
+        //     target_updated = false;
+        //     Logger::print_color(int(LogColor::magenta), node_name, ": 目标已更新，重新导航至新目标点");
+        // }
         
-        // 检查是否到达目标
-        if (is_target_reached()) {
-            Logger::print_color(int(LogColor::green), node_name, ": 已到达目标点，悬停中... (等待新目标或手动控制)");
+        // // 检查是否到达目标
+        // if (is_target_reached()) {
+        //     Logger::print_color(int(LogColor::green), node_name, ": 已到达目标点，悬停中... (等待新目标或手动控制)");
             
-            // 悬停控制
-            uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;
-            uav_cmd.desired_vel[0] = 0.0;           // X方向速度为0
-            uav_cmd.desired_vel[1] = 0.0;           // Y方向速度为0
-            uav_cmd.desired_pos[2] = flight_height; // 保持飞行高度
-            uav_cmd.desired_yaw_rate = 0.0;         // 停止转向
+        //     // 悬停控制
+        //     uav_cmd.header.stamp = ros::Time::now();
+        //     // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;
+        //     // uav_cmd.desired_vel[0] = 0.0;           // X方向速度为0
+        //     // uav_cmd.desired_vel[1] = 0.0;           // Y方向速度为0
+        //     // uav_cmd.desired_pos[2] = flight_height; // 保持飞行高度
+        //     // uav_cmd.desired_yaw_rate = 0.0;         // 停止转向
+        //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
             
-            control_cmd_pub.publish(uav_cmd);
-            ros::spinOnce();
-            rate.sleep();
-            continue;
-        }
+        //     control_cmd_pub.publish(uav_cmd);
+        //     ros::spinOnce();
+        //     rate.sleep();
+        //     continue;
+        // }
         
         // 处理深度图像，检测障碍物
         SimpleObstacleInfo obstacle_info = process_depth_image_simple();
@@ -361,103 +369,103 @@ int main(int argc, char **argv)
         double vy = 0.0;        // Y方向速度（左右）
         double yaw_rate = 0.0;  // 偏航角速度（转向）
         
-        // 简单的避障逻辑
-        if (obstacle_info.front_blocked) {
-            // 前方有障碍物，停止前进，开始转向
-            vx = 0.0; // 停止前进
+        // // 简单的避障逻辑
+        // if (obstacle_info.front_blocked) {
+        //     // 前方有障碍物，停止前进，开始转向
+        //     vx = 0.0; // 停止前进
             
-            Logger::print_color(int(LogColor::yellow), node_name, ": 前方有障碍物! 距离: " + 
-                              std::to_string(obstacle_info.front_distance) + "米，正在避障");
+        //     Logger::print_color(int(LogColor::yellow), node_name, ": 前方有障碍物! 距离: " + 
+        //                       std::to_string(obstacle_info.front_distance) + "米，正在避障");
             
-            // 选择转向方向
-            if (obstacle_info.left_clear && !obstacle_info.right_clear) {
-                // 左边畅通，右边有障碍，向左转
-                yaw_rate = rotate_speed;
-                Logger::print_color(int(LogColor::yellow), node_name, ": 向左转向避障");
-            } else if (!obstacle_info.left_clear && obstacle_info.right_clear) {
-                // 右边畅通，左边有障碍，向右转
-                yaw_rate = -rotate_speed;
-                Logger::print_color(int(LogColor::yellow), node_name, ": 向右转向避障");
-            } else if (obstacle_info.left_clear && obstacle_info.right_clear) {
-                // 两边都畅通，选择向右转（可以改为向左转）
-                yaw_rate = -rotate_speed;
-                Logger::print_color(int(LogColor::yellow), node_name, ": 两边都畅通，选择向右转");
-            } else {
-                // 三面都有障碍，原地转向寻找出路
-                yaw_rate = rotate_speed;
-                Logger::print_color(int(LogColor::red), node_name, ": 前方和两侧都有障碍，原地转向寻找出路");
-            }
-        } else {
-            // 前方畅通，检查是否面向目标
-            if (is_facing_target()) {
-                // 面向目标，前进
-                vx = forward_vel;
-                yaw_rate = 0.0;
+        //     // 选择转向方向
+        //     if (obstacle_info.left_clear && !obstacle_info.right_clear) {
+        //         // 左边畅通，右边有障碍，向左转
+        //         yaw_rate = rotate_speed;
+        //         Logger::print_color(int(LogColor::yellow), node_name, ": 向左转向避障");
+        //     } else if (!obstacle_info.left_clear && obstacle_info.right_clear) {
+        //         // 右边畅通，左边有障碍，向右转
+        //         yaw_rate = -rotate_speed;
+        //         Logger::print_color(int(LogColor::yellow), node_name, ": 向右转向避障");
+        //     } else if (obstacle_info.left_clear && obstacle_info.right_clear) {
+        //         // 两边都畅通，选择向右转（可以改为向左转）
+        //         yaw_rate = -rotate_speed;
+        //         Logger::print_color(int(LogColor::yellow), node_name, ": 两边都畅通，选择向右转");
+        //     } else {
+        //         // 三面都有障碍，原地转向寻找出路
+        //         yaw_rate = rotate_speed;
+        //         Logger::print_color(int(LogColor::red), node_name, ": 前方和两侧都有障碍，原地转向寻找出路");
+        //     }
+        // } else {
+        //     // 前方畅通，检查是否面向目标
+        //     if (is_facing_target()) {
+        //         // 面向目标，前进
+        //         vx = forward_vel;
+        //         yaw_rate = 0.0;
                 
-                // 计算到目标的距离，用于显示进度
-                double dx = target_pos.x - uav_state.position[0];
-                double dy = target_pos.y - uav_state.position[1];
-                double distance_to_target = sqrt(dx * dx + dy * dy);
+        //         // 计算到目标的距离，用于显示进度
+        //         double dx = target_pos.x - uav_state.position[0];
+        //         double dy = target_pos.y - uav_state.position[1];
+        //         double distance_to_target = sqrt(dx * dx + dy * dy);
                 
-                Logger::print_color(int(LogColor::green), node_name, ": 前方畅通，朝目标前进，距离: " + 
-                                  std::to_string(distance_to_target) + "米");
-            } else {
-                // 没有面向目标，先转向目标方向
-                vx = 0.0; // 停止前进，专心转向
+        //         Logger::print_color(int(LogColor::green), node_name, ": 前方畅通，朝目标前进，距离: " + 
+        //                           std::to_string(distance_to_target) + "米");
+        //     } else {
+        //         // 没有面向目标，先转向目标方向
+        //         vx = 0.0; // 停止前进，专心转向
                 
-                double target_yaw = calculate_target_yaw();
-                double current_yaw = uav_state.attitude[2];
-                double yaw_diff = target_yaw - current_yaw;
+        //         double target_yaw = calculate_target_yaw();
+        //         double current_yaw = uav_state.attitude[2];
+        //         double yaw_diff = target_yaw - current_yaw;
                 
-                // 将角度差限制在[-π, π]范围内
-                while (yaw_diff > M_PI) yaw_diff -= 2 * M_PI;
-                while (yaw_diff < -M_PI) yaw_diff += 2 * M_PI;
+        //         // 将角度差限制在[-π, π]范围内
+        //         while (yaw_diff > M_PI) yaw_diff -= 2 * M_PI;
+        //         while (yaw_diff < -M_PI) yaw_diff += 2 * M_PI;
                 
-                // 根据角度差方向确定转向方向
-                if (yaw_diff > 0) {
-                    yaw_rate = rotate_speed;  // 逆时针转向
-                } else {
-                    yaw_rate = -rotate_speed; // 顺时针转向
-                }
+        //         // 根据角度差方向确定转向方向
+        //         if (yaw_diff > 0) {
+        //             yaw_rate = rotate_speed;  // 逆时针转向
+        //         } else {
+        //             yaw_rate = -rotate_speed; // 顺时针转向
+        //         }
                 
-                Logger::print_color(int(LogColor::cyan), node_name, ": 调整朝向目标方向，角度差: " + 
-                                  std::to_string(yaw_diff * 180.0 / M_PI) + "度");
-            }
-        }
+        //         Logger::print_color(int(LogColor::cyan), node_name, ": 调整朝向目标方向，角度差: " + 
+        //                           std::to_string(yaw_diff * 180.0 / M_PI) + "度");
+        //     }
+        // }
         
-        // 发送控制命令（使用XyVelZPosYawrate模式）
-        uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;  // XY速度，Z位置，偏航角速度控制
-        uav_cmd.desired_vel[0] = vx;                                // X方向速度（前进）
-        uav_cmd.desired_vel[1] = vy;                                // Y方向速度（左右，这里始终为0）
-        uav_cmd.desired_pos[2] = flight_height;                     // Z方向位置（保持飞行高度）
-        uav_cmd.desired_yaw_rate = yaw_rate;                        // 偏航角速度（转向）
+        // // 发送控制命令（使用XyVelZPosYawrate模式）
+        // uav_cmd.header.stamp = ros::Time::now();
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrate;  // XY速度，Z位置，偏航角速度控制
+        // uav_cmd.desired_vel[0] = vx;                                // X方向速度（前进）
+        // uav_cmd.desired_vel[1] = vy;                                // Y方向速度（左右，这里始终为0）
+        // uav_cmd.desired_pos[2] = flight_height;                     // Z方向位置（保持飞行高度）
+        // uav_cmd.desired_yaw_rate = yaw_rate;                        // 偏航角速度（转向）
         
-        control_cmd_pub.publish(uav_cmd);
+        // control_cmd_pub.publish(uav_cmd);
         
         ros::spinOnce();
         rate.sleep();
     }
 
-    // 降落程序
-    while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
-    {
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
-        control_cmd_pub.publish(uav_cmd);
-        Logger::print_color(int(LogColor::green), node_name, ": 正在降落");
-        ros::Duration(4.0).sleep();
-        ros::spinOnce();
-    }
+    // // 降落程序
+    // while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)
+    // {
+    //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
+    //     control_cmd_pub.publish(uav_cmd);
+    //     Logger::print_color(int(LogColor::green), node_name, ": 正在降落");
+    //     ros::Duration(4.0).sleep();
+    //     ros::spinOnce();
+    // }
     
-    // 等待降落完成
-    while (ros::ok() && uav_state.landed_state != 1)
-    {
-        Logger::print_color(int(LogColor::green), node_name, ": 降落中...");
-        ros::Duration(1.0).sleep();
-        ros::spinOnce();
-    }
+    // // 等待降落完成
+    // while (ros::ok() && uav_state.landed_state != 1)
+    // {
+    //     Logger::print_color(int(LogColor::green), node_name, ": 降落中...");
+    //     ros::Duration(1.0).sleep();
+    //     ros::spinOnce();
+    // }
     
-    Logger::print_color(int(LogColor::green), node_name, ": 降落成功!");
-    Logger::print_color(int(LogColor::green), node_name, ": 带动态目标更新的简易避障演示完成!");
+    // Logger::print_color(int(LogColor::green), node_name, ": 降落成功!");
+    // Logger::print_color(int(LogColor::green), node_name, ": 带动态目标更新的简易避障演示完成!");
     return 0;
 }
