@@ -8,6 +8,7 @@
     <arg name="uav_num" default="3" />
     <!-- 是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4 -->
     <arg name="enable_range_sensor" default="true" />
+    <arg name="use_vision_pose" default="true" />
     
     <!-- 启动 external_fusion_node-->
     <node name="external_fusion_$(arg uav_id)" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
