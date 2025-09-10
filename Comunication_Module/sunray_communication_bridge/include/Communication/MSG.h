@@ -24,33 +24,36 @@ struct HeartbeatData
 //无人机状态 - UAVState（#2）
 struct UAVState
 {
-    uint8_t uav_id;
-    bool    connected;
-    bool    armed;
-    uint8_t mode;
-    uint8_t landed_state;
-    float   battery_state;
-    float   battery_percentage;
-    uint8_t location_source;
-    bool    odom_valid;
-    float   position[3];
-    float   velocity[3];
-    float   attitude[3];
-    float   attitude_q[4];
-    float   attitude_rate[3];
-    float   pos_setpoint[3];
-    float   vel_setpoint[3];
-    float   att_setpoint [3];
-    float   thrust_setpoint;
-    uint8_t control_mode;
-    uint8_t move_mode;
-    float   takeoff_height;
-    float   home_pos[3];
-    float   home_yaw;
-    float   hover_pos[3];
-    float   hover_yaw;
-    float   land_pos[3];
-    float   land_yaw;
+    uint8_t   uav_id;
+    bool      connected;
+    bool      armed;
+    uint8_t   mode;
+    uint8_t   landed_state;
+    float     battery_state;
+    float     battery_percentage;
+    uint8_t   location_source;
+    bool      odom_valid;
+    bool      vio_start;
+    uint16_t  viobotStateSize;
+    char      algo_status[300];
+    float     position[3];
+    float     velocity[3];
+    float     attitude[3];
+    float     attitude_q[4];
+    float     attitude_rate[3];
+    float     pos_setpoint[3];
+    float     vel_setpoint[3];
+    float     att_setpoint [3];
+    float     thrust_setpoint;
+    uint8_t   control_mode;
+    uint8_t   move_mode;
+    float     takeoff_height;
+    float     home_pos[3];
+    float     home_yaw;
+    float     hover_pos[3];
+    float     hover_yaw;
+    float     land_pos[3];
+    float     land_yaw;
 
     void init()
     {
@@ -63,6 +66,8 @@ struct UAVState
         battery_percentage=0;
         location_source=0;
         odom_valid=0;
+        vio_start=false;
+        viobotStateSize=0;
         for(int i=0;i<3;++i)
         {
             position[i]=0;
@@ -372,6 +377,22 @@ struct WaypointData
     }
 };
 
+//Viobot算法开关 - ViobotSwitch（#105）
+struct ViobotSwitch
+{
+    bool algoEnable;
+    bool algoReboot;
+    bool algoReset;
+
+    void init()
+    {
+        algoEnable=false;
+        algoReboot=false;
+        algoReset=false;
+    }
+
+};
+
 //无人车控制指令 - UGVControlCMD（#120）
 struct UGVControlCMD
 {
@@ -489,10 +510,11 @@ union Payload
     UGVControlCMD ugvControlCMD;        // 无人车控制指令 - UGVControlCMD（#120）
     NodeData nodeInformation;           // 机载电脑ROS节点 - NodeData（#30）
     Formation formation;                // 编队切换 - Formation（#40）
-    Goal goal;                          // 规划点- Goal（#204）
+    Goal goal;                          // 规划点 - Goal（#204）
     AgentComputerStatus computerStatus; // 智能体电脑状态 -AgentComputerStatus（#31）
     FACMapData FACMap;                  // FAC赛地图数据 -FACMapData（#32）
     FACCompetitionState FACState;       // FAC比赛状态 -FACCompetitionState（#33）
+    ViobotSwitch    viobotSwitchData;   // Viobot算法开关 - ViobotSwitch（#105）
 };
 
 //整个数据帧

@@ -130,6 +130,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     formation_sub=nh.subscribe<sunray_msgs::Formation>("/sunray/formation_cmd", 1, boost::bind(&communication_bridge::formation_cmd_cb, this,_1));
     // 【发布】编队切换
     formation_pub=nh.advertise<sunray_msgs::Formation>("/sunray/formation_cmd/ground", 1);
+    // 【发布】Viobot算法开关
+    viobotSwitch_pub=nh.advertise<sunray_msgs::algo_ctrl>("/baton/stereo3_ctrl", 1);
+
 
     // 【定时器】 定时发送TCP心跳包到地面站
     HeartbeatTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::sendHeartbeatPacket, this);
@@ -771,6 +774,20 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         
         break;   
     }  
+    case MessageID::ViobotSwitchMessageID:
+    {
+        sunray_msgs::algo_ctrl sendMSG;
+        sendMSG.header.seq = 0;
+        sendMSG.header.stamp.sec = 0;    // 秒数设为0
+        sendMSG.header.stamp.nsec = 0;   // 纳秒数设为0
+        sendMSG.header.frame_id = "";     // 空frame_id
+
+        sendMSG.algo_enable = readData.dataFrame.data.viobotSwitchData.algoEnable;
+        sendMSG.algo_reboot = readData.dataFrame.data.viobotSwitchData.algoReboot;
+        sendMSG.algo_reset = readData.dataFrame.data.viobotSwitchData.algoReset;
+        viobotSwitch_pub.publish(sendMSG);
+        break;
+    }
     default:
         break;
     }
@@ -1174,6 +1191,11 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     uavStateData[index].data.uavState.land_pos[2] = msg->land_pos[2];
     uavStateData[index].data.uavState.land_yaw= msg->land_yaw;
     // std::cout << "sendUDPMulticastData uav_state_cb:" << std::endl;
+
+    uavStateData[index].data.uavState.vio_start=msg->vio_start;
+
+    uavStateData[index].data.uavState.viobotStateSize = msg->algo_status.size();
+    msg->algo_status.copy(uavStateData[index].data.uavState.algo_status, msg->algo_status.size());
 
     std::string mode = msg->mode;
     if (mode.length() > 15)

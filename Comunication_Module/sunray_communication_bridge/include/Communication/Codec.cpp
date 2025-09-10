@@ -203,6 +203,16 @@ void Codec::decoderFACCompetitionStatePayload(std::vector<uint8_t>& dataFrame,Da
     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.stateSize);
 }
 
+void Codec::decoderViobotSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    ViobotSwitch& data = dataFrameStruct.data.viobotSwitchData;
+    data.init();
+
+    data.algoEnable = static_cast<uint8_t>(dataFrame[0]);
+    data.algoReboot = static_cast<uint8_t>(dataFrame[1]);
+    data.algoReset  = static_cast<uint8_t>(dataFrame[2]);
+}
+
 void Codec::decoderFACMapDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
     FACMapData& data = dataFrameStruct.data.FACMap;
@@ -496,6 +506,19 @@ void Codec::decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& st
     data.odom_valid = static_cast<bool>(dataFrame[1]);
     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
 
+    //读取viobot算法是否开启
+    data.vio_start = static_cast<uint8_t>(dataFrame[0]);
+    // 读取viobotStateSize（2字节，小端序）
+    data.viobotStateSize = static_cast<uint16_t>(dataFrame[1]);
+    data.viobotStateSize |= (static_cast<uint16_t>(dataFrame[2]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);
+
+    // 读取viobot算法状态
+    for (uint16_t j = 0; j < data.viobotStateSize; ++j)
+        data.algo_status[j] = static_cast<char>(dataFrame[j]);
+    data.algo_status[data.viobotStateSize] = '\0';  //添加终止符
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.viobotStateSize);
+
     // 读取位置数据
     for (int i = 0; i < 3; ++i)
         uint8tArrayToFloat(dataFrame, data.position[i]);
@@ -666,18 +689,20 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         decoderAgentComputerStatusPayload(undecodedData,decoderData);
         break;
     case MessageID::FACMapDataMessageID:
-        /*PayloadFAC赛地图数据反序列化*/
+        /*Payload FAC赛地图数据反序列化*/
         decoderFACMapDataPayload(undecodedData,decoderData);
         break;
     case MessageID::FACCompetitionStateMessageID:
-        /*PayloadFAC比赛状态数据反序列化*/
+        /*Payload FAC比赛状态数据反序列化*/
         decoderFACCompetitionStatePayload(undecodedData,decoderData);
+        break;
+    case MessageID::ViobotSwitchMessageID:
+        /*Payload ViobotSwitch数据反序列化*/
+        decoderViobotSwitchPayload(undecodedData,decoderData);
         break;
     default:break;
     }
     return true;
-
-
 
 }
 
@@ -695,6 +720,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::UGVControlCMDMessageID:case MessageID::UAVSetupMessageID:
     case MessageID::DemoMessageID:case MessageID::ScriptMessageID:
     case MessageID::WaypointMessageID:case MessageID::GoalMessageID:
+    case MessageID::ViobotSwitchMessageID:
         //TCP帧头 0xac43
         codelessData.head=PackBytesLE(0xac,0x43);
         break;
@@ -736,6 +762,16 @@ void Codec::coderUAVStatePayload(std::vector<uint8_t>& payload,DataFrame& codele
     payload.push_back(static_cast<uint8_t>(data.location_source));
     payload.push_back(static_cast<uint8_t>(data.odom_valid));
 
+    payload.push_back(static_cast<uint8_t>(data.vio_start));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.viobotStateSize >> (i * 8)) & 0xFF));
+
+    if(payload.capacity()<data.viobotStateSize+176)
+        payload.reserve(data.viobotStateSize+176);
+
+    for(int j=0;j<data.viobotStateSize;++j)
+        payload.push_back(static_cast<uint8_t>(data.algo_status[j]));
 
     floatCopyToUint8tArray(payload,data.position[0]);
     floatCopyToUint8tArray(payload,data.position[1]);
@@ -1047,6 +1083,15 @@ void Codec::coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFr
         payload.push_back(static_cast<uint8_t>(data.stateStr[j]));
 }
 
+void Codec::coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    ViobotSwitch data=codelessData.data.viobotSwitchData;
+    payload.push_back(static_cast<uint8_t>(data.algoEnable));
+    payload.push_back(static_cast<uint8_t>(data.algoReboot));
+    payload.push_back(static_cast<uint8_t>(data.algoReset));
+
+}
+
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     AgentComputerStatus data=codelessData.data.computerStatus;
@@ -1147,12 +1192,16 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
         coderAgentComputerStatusload(PayloadData,codelessData);
         break;
     case MessageID::FACMapDataMessageID:
-        /*PayloadFAC赛地图数据序列化*/
+        /*Payload FAC赛地图数据序列化*/
         coderFACMapPayload(PayloadData,codelessData);
         break;
     case MessageID::FACCompetitionStateMessageID:
-        /*PayloadFAC比赛状态数据序列化*/
+        /*Payload FAC比赛状态数据序列化*/
         coderFACCompetitionStatePayload(PayloadData,codelessData);
+        break;
+    case MessageID::ViobotSwitchMessageID:
+        /*Payload Viobot算法开关数据序列化*/
+        coderViobotSwitchPayload(PayloadData,codelessData);
         break;
     default:break;
     }

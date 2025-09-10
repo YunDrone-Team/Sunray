@@ -13,6 +13,7 @@
 #include "sunray_msgs/UAVControlCMD.h"
 #include "sunray_msgs/Formation.h"
 #include "sunray_msgs/Competion.h"
+#include "sunray_msgs/algo_ctrl.h"
 #include "std_msgs/String.h"
 
 #include <sys/types.h>
@@ -112,6 +113,7 @@ private:
     std::map<int,ros::Publisher> uav_waypoint_pub;
     ros::Subscriber  formation_sub;
     ros::Publisher  formation_pub;
+    ros::Publisher  viobotSwitch_pub;
 
     ros::Subscriber FACMap_sub;
     ros::Subscriber FACState_sub;

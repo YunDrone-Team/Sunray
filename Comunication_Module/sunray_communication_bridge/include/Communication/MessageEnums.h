@@ -17,6 +17,7 @@ enum MessageID
     UAVControlCMDMessageID          = 102,
     UAVSetupMessageID               = 103,
     WaypointMessageID               = 104,
+    ViobotSwitchMessageID           = 105,
     UGVControlCMDMessageID          = 120,
     SearchMessageID                 = 200,
     ACKMessageID                    = 201,
