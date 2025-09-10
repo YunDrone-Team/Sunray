@@ -17,8 +17,9 @@ declare -A TMUX_CONFIG=(
         sleep 5 && roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${UAV_ID}
     "
     ["extrn"]="
-        sleep 8 && roslaunch sunray_uav_control external_fusion.launch external_source:=4 enable_rviz:=false uav_id:=${UAV_ID}
-        sleep 10 && roslaunch sunray_tutorial simple_obstacle_avoidance.launch uav_id:=${UAV_ID} target_x:=1 target_y:=0
+        sleep 5 && roslaunch sunray_uav_control external_fusion.launch external_source:=4 enable_rviz:=false uav_id:=${UAV_ID}
+        sleep 5 && roslaunch sunray_uav_control terminal_control.launch uav_id:=${UAV_ID}
+        sleep 5 && roslaunch sunray_tutorial simple_obstacle_avoidance.launch uav_id:=${UAV_ID} target_x:=0 target_y:=0
     "
 )
 # ===================== 配置结束 =====================

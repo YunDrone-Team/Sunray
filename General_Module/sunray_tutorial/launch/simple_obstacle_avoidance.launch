@@ -8,7 +8,8 @@
     <arg name="flight_height" default="1.0"/>
     <arg name="forward_vel" default="0.5"/>
     <arg name="rotate_speed" default="0.3"/>
-    <arg name="safety_distance" default="1.5"/>
+    <arg name="obstacle_threshold" default="300"/>
+    <arg name="ratio_threshold" default="0.3"/>
     <arg name="target_x" default="3.0"/>
     <arg name="target_y" default="0.0"/>
     <arg name="target_topic_name" default="/target_pos"/>
@@ -28,7 +29,8 @@
         <param name="flight_height" value="$(arg flight_height)"/>
         <param name="forward_vel" value="$(arg forward_vel)"/>
         <param name="rotate_speed" value="$(arg rotate_speed)"/>
-        <param name="safety_distance" value="$(arg safety_distance)"/>
+        <param name="obstacle_threshold" value="$(arg obstacle_threshold)"/>
+        <param name="ratio_threshold" value="$(arg ratio_threshold)"/>
         
         <!-- 初始目标点 -->
         <param name="target_x" value="$(arg target_x)"/>
