@@ -20,7 +20,7 @@
 class ExternalPosition
 {
 public:
-    ExternalPosition(){};
+    ExternalPosition() {};
 
     // 参数
     int uav_id;                         // 无人机ID
@@ -28,25 +28,25 @@ public:
     bool enable_external_fusion{false}; // 是否使能外部定位源
     bool use_vision_pose{true};         // true:使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
     bool enable_range_sensor{false};
-    std::string uart_name; 
-    int baudrate;         
-    std::string source_topic{""};                           // 外部定位数据来源话题
+    std::string uart_name;
+    int baudrate;
+    std::string source_topic{""}; // 外部定位数据来源话题
 
     // VIOBOT相关参数
-    // bool tilted = false;                                         // �Ƿ���б����
-    std::vector<double> ax_values, ay_values, az_values; // ���ٶ�����
-    Eigen::Quaterniond eigen_q_rot;                      // ��Ԫ�� eigen
-    tf2::Quaternion q_rot;                               // ��ת��Ԫ��
-    double rot_roll, rot_pitch, rot_yaw;                 // ��ʼViobot���õĽǶ�
-    bool calculation_done{false};                               // ƫת�Ǽ����Ƿ����
+    bool tilted;                                         // 是否倾斜放置
+    std::vector<double> ax_values, ay_values, az_values; // 加速度容器
+    Eigen::Quaterniond eigen_q_rot;                      // 四元数 eigen
+    tf2::Quaternion q_rot;                               // 旋转四元数
+    double rot_roll, rot_pitch, rot_yaw;                 // 初始Viobot放置的角度
+    bool calculation_done{false};                        // 偏转角计算是否完成
 
-    bool get_new_external_pos{false};                   // 是否收到新的外部定位数据
+    bool get_new_external_pos{false}; // 是否收到新的外部定位数据
 
-    sunray_msgs::ExternalOdom external_odom;                // 声明一个自定义话题 - sunray_msgs::ExternalOdom
-    sensor_msgs::Range distance_sensor;                     // 距离传感器原始数据
+    sunray_msgs::ExternalOdom external_odom; // 声明一个自定义话题 - sunray_msgs::ExternalOdom
+    sensor_msgs::Range distance_sensor;      // 距离传感器原始数据
 
     Eigen::Vector3d px4_local_pos; // PX4本地位置
-    double px4_yaw;           // PX4本地偏航角
+    double px4_yaw;                // PX4本地偏航角
 
     void init(ros::NodeHandle &nh, int external_source);
     void PosCallback(const geometry_msgs::PoseStamped::ConstPtr &msg);
@@ -56,7 +56,7 @@ public:
     void viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &msg);
     void viobot_algoStatusCallback(const sunray_msgs::algo_status::ConstPtr &msg);
     void px4_distance_callback(const sensor_msgs::Range::ConstPtr &msg);
-    void timer_send_external_pos_cb(const ros::TimerEvent &event);                 // 定时器更新和发布
+    void timer_send_external_pos_cb(const ros::TimerEvent &event); // 定时器更新和发布
     mavlink_odometry_t get_mavlink_msg();
     void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
@@ -72,18 +72,18 @@ private:
     ros::Subscriber pos_sub;
     ros::Subscriber vel_sub;
     ros::Subscriber range_sub;
-    ros::Subscriber viobot_imu_sub;         
-    ros::Subscriber viobot_odom_sub;        
-    ros::Subscriber viobot_algo_status_sub; 
-    ros::Subscriber px4_pose_sub,px4_att_sub;
+    ros::Subscriber viobot_imu_sub;
+    ros::Subscriber viobot_odom_sub;
+    ros::Subscriber viobot_algo_status_sub;
+    ros::Subscriber px4_pose_sub, px4_att_sub;
 
     // ROS话题发布句柄
-    ros::Publisher viobot_algo_ctrl_pub;    
-    ros::Publisher viobot_state_pub; 
-    ros::Publisher vision_pose_pub; 
+    ros::Publisher viobot_algo_ctrl_pub;
+    ros::Publisher viobot_state_pub;
+    ros::Publisher vision_pose_pub;
 
     // 定时器句柄
-    ros::Timer timer_send_external_pos; 
+    ros::Timer timer_send_external_pos;
 
     // 数据平滑滤波器（效果不好，未使用）
     MovingAverageFilter moving_average_filter;
@@ -95,10 +95,10 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     // 初始化参数
     nh.param<int>("uav_id", uav_id, 1);
     nh.param<std::string>("uav_name", uav_name, "uav");
-    uav_name = "/" + uav_name + std::to_string(uav_id);               
-    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose");       // 【参数】外部定位数据来源
-    nh.param<bool>("enable_range_sensor", enable_range_sensor, false);                  // 【参数】是否使用距离传感器数据
-    nh.param<bool>("use_vision_pose", use_vision_pose, true);                           // 【参数】是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
+    uav_name = "/" + uav_name + std::to_string(uav_id);
+    nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose"); // 【参数】外部定位数据来源
+    nh.param<bool>("enable_range_sensor", enable_range_sensor, false);            // 【参数】是否使用距离传感器数据
+    nh.param<bool>("use_vision_pose", use_vision_pose, true);                     // 【参数】是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
 
     // 根据外部定位数据来源，订阅不同的话题
     switch (external_source)
@@ -116,7 +116,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     // 定位源：GAZEBO仿真时使用Gazebo插件提供的位姿真值
     case sunray_msgs::ExternalOdom::GAZEBO:
         // GAZEBO属于外部定位源，默认开启外部定位融合
-        enable_external_fusion = true; 
+        enable_external_fusion = true;
         // 根据uav_id，订阅不同的gazebo_pose话题
         source_topic = uav_name + "/sunray/gazebo_pose";
         odom_sub = nh.subscribe<nav_msgs::Odometry>(source_topic, 10, &ExternalPosition::OdomCallback, this);
@@ -124,7 +124,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     // 定位源：动作捕捉系统
     case sunray_msgs::ExternalOdom::MOCAP:
         // MOCAP属于外部定位源，默认开启外部定位融合
-        enable_external_fusion = true; 
+        enable_external_fusion = true;
         // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn_client_node -> 本节点
         pos_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node_" + std::to_string(uav_id) + uav_name + "/pose", 1, &ExternalPosition::PosCallback, this);
         // 【订阅】动捕的定位数据(坐标系:动捕系统惯性系) vrpn_client_node -> 本节点 （此处只是订阅，实际没有使用该速度）
@@ -133,7 +133,8 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     // 定位源：VIOBOT
     case sunray_msgs::ExternalOdom::VIOBOT:
         // VIOBOT属于外部定位源，默认开启外部定位融合
-        enable_external_fusion = true;  
+        nh.param<bool>("tilted", tilted, false); // 【参数】Viobot是否倾斜放置
+        enable_external_fusion = true;
         // 【订阅】VIOBOT算法的IMU数据 - VIOBOT算法程序 -> 本节点
         viobot_imu_sub = nh.subscribe<sensor_msgs::Imu>("/baton/imu", 10, &ExternalPosition::viobot_imuCallback, this);
         // 【订阅】VIOBOT算法的里程计数据 - VIOBOT算法程序 -> 本节点
@@ -165,7 +166,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     }
 
     // 无人机Z轴高度是否单独订阅定高激光雷达数据
-    if(enable_range_sensor)
+    if (enable_range_sensor)
     {
         // 【订阅】无人机上的激光定高原始数据
         range_sub = nh.subscribe<sensor_msgs::Range>(uav_name + "/mavros/distance_sensor/hrlv_ez4_pub", 1, &ExternalPosition::px4_distance_callback, this);
@@ -178,11 +179,12 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
         px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(uav_name + "/mavros/local_position/pose", 10, &ExternalPosition::px4_pose_callback, this);
         px4_att_sub = nh.subscribe<sensor_msgs::Imu>(uav_name + "/mavros/imu/data", 10, &ExternalPosition::px4_att_callback, this);
         // 如果使能了use_vision_pose，则通过mavros/vision_pose/pose话题定时更新及发布外部定位数据
-        if(use_vision_pose)
+        if (use_vision_pose)
         {
             // 【发布】mavros/vision_pose/pose - 本节点 -> mavros
             vision_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_name + "/mavros/vision_pose/pose", 10);
-        }else
+        }
+        else
         {
             nh.param<string>("uart_name", uart_name, "/dev/ttyS0");
             nh.param<int>("baudrate", baudrate, 115200);
@@ -214,7 +216,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     external_odom.attitude_q.y = 0;
     external_odom.attitude_q.z = 0;
     external_odom.attitude_q.w = 1;
-    external_odom.vio_start = false;    
+    external_odom.vio_start = false;
     external_odom.algo_status = "disable";
 }
 
@@ -227,7 +229,7 @@ void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
         return;
     }
 
-    if(!get_new_external_pos)
+    if (!get_new_external_pos)
     {
         // 如果没有收到新的外部定位数据，则不进行后续处理
         return;
@@ -238,7 +240,7 @@ void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
     bool odom_timeout = (ros::Time::now() - external_odom.header.stamp).toSec() > ODOM_TIMEOUT;
     external_odom.odom_valid = !odom_timeout;
 
-    if(enable_range_sensor)
+    if (enable_range_sensor)
     {
         bool distance_timeout = (ros::Time::now() - distance_sensor.header.stamp).toSec() > DISTANCE_SENSOR_TIMEOUT;
         external_odom.odom_valid = external_odom.odom_valid && !distance_timeout;
@@ -261,19 +263,19 @@ void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
     if (abs(err_external_px4[0]) > 0.05 ||
         abs(err_external_px4[1]) > 0.05 ||
         abs(err_external_px4[2]) > 0.05 ||
-        abs(external_odom.attitude[2] - px4_yaw)/M_PI*180.0 > 5.0) // deg
+        abs(external_odom.attitude[2] - px4_yaw) / M_PI * 180.0 > 5.0) // deg
     {
         external_odom.fusion_success = false;
     }
 
     // 3.将外部定位数据发送到PX4
-    if(use_vision_pose)
+    if (use_vision_pose)
     {
 
         // 将外部定位数据赋值到vision_pose，并发布至PX4（PX4接收并处理该消息需要修改EKF2参数，从而使能EKF2模块融合VISION数据）
         // 发布的ROS话题为~/mavros/vision_pose/pose，对应的MAVLINK消息为VISION_POSITION_ESTIMATE(#102)
         // 注意：该话题需要无人机的XYZ+YAW数据，坐标系方向为FLU（右手系：前-左-上，也可以理解为ENU，只是在无GPS环境，前方就代表E方向）
-        static geometry_msgs::PoseStamped vision_pose;                
+        static geometry_msgs::PoseStamped vision_pose;
         vision_pose.header.stamp = ros::Time::now();
         vision_pose.pose.position.x = external_odom.position[0];
         vision_pose.pose.position.y = external_odom.position[1];
@@ -283,7 +285,8 @@ void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
         vision_pose.pose.orientation.z = external_odom.attitude_q.z;
         vision_pose.pose.orientation.w = external_odom.attitude_q.w;
         vision_pose_pub.publish(vision_pose);
-    }else
+    }
+    else
     {
         // 通过线程定时发送（25Hz）
         mavlink_save_odometry(get_mavlink_msg());
@@ -350,23 +353,22 @@ void ExternalPosition::viobot_imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     if (calculation_done)
     {
-        viobot_imu_sub.shutdown(); // ע��������
+        viobot_imu_sub.shutdown(); // 注销订阅者
         return;
     }
 
-    // �洢���ٶȼ�����
+    // 存储加速度计数据
     ax_values.push_back(msg->linear_acceleration.z);
     ay_values.push_back(-msg->linear_acceleration.x);
     az_values.push_back(msg->linear_acceleration.y);
 
-    // ���ռ����㹻������ʱ����ƽ��ֵ�ͽǶ�
+    // 当收集到足够的样本时计算平均值和角度
     if (ax_values.size() >= AVERAGE_COUNT)
     {
-        // ����ƽ��ֵ
+        // 计算平均值
         double sum_ax = 0, sum_ay = 0, sum_az = 0;
         for (size_t i = 0; i < ax_values.size(); ++i)
         {
-
             sum_ax += ax_values[i];
             sum_ay += ay_values[i];
             sum_az += az_values[i];
@@ -376,17 +378,17 @@ void ExternalPosition::viobot_imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
         double avg_ay = sum_ay / ay_values.size();
         double avg_az = sum_az / az_values.size();
 
-        // ������ת�����ŷ����
+        // 计算旋转矩阵和欧拉角
         Eigen::Vector3d vectorBefore(avg_ax, avg_ay, avg_az);
         vectorBefore.normalize();
         Eigen::Vector3d vectorAfter(0, 0, -1);
         eigen_q_rot = Eigen::Quaterniond::FromTwoVectors(vectorBefore, vectorAfter);
 
-        // ��ֵ
+        // 赋值
         q_rot = tf2::Quaternion(eigen_q_rot.x(), eigen_q_rot.y(), eigen_q_rot.z(), eigen_q_rot.w());
         tf2::Matrix3x3(q_rot).getRPY(rot_roll, rot_pitch, rot_yaw);
 
-        // ��ӡ���
+        // 打印结果
         ROS_INFO("=== IMU Tilt Calculation Results ===");
         ROS_INFO("Collected %zu samples", ax_values.size());
         ROS_INFO("Roll (around X-axis):  %.2f degrees", rot_roll * 180.0 / M_PI);
@@ -413,25 +415,36 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
     q.setY(msg->pose.pose.orientation.y);
     q.setZ(msg->pose.pose.orientation.z);
 
-    // �� Z ����ת 90��
+    // 先把数据处理成相机的FLU（相对于ENU）
+    /*
+        这个坐标系其实就是FLU相对于ENU的位置，ENU作为全局坐标系，其实在程序开启的时候就确定了，如果他和FLU重合，
+        说明此时E指定的就是程序开启时F的指向（机头方向，也就是前方）
+        旋转矩阵：
+        左乘是变换父坐标系
+        右乘是在原本的坐标系下旋转
+
+        以下做的处理是把相机body姿态转为FLU
+    */
+    // 绕 Z 轴旋转 90°
     tf2::Quaternion q_z;
-    q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90��
+    q_z.setRPY(0, 0, M_PI / 2); // M_PI/2 = 90°
 
-    // �� Y ����ת -90��
+    // 绕 Y 轴旋转 -90°
     tf2::Quaternion q_y;
-    q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90��
+    q_y.setRPY(0, -M_PI / 2, 0); // -M_PI/2 = -90°
 
-    // �����ת��˳���� q_z���� q_y��
+    // 组合旋转（顺序：先 q_z，再 q_y）
     q = q * q_z * q_y;
+
+    // 处理初始倾角(重力对齐)
+    if (tilted)
+    {
+        // q = q * q_rot;
+        q = q_rot.inverse() * q;
+    }
 
     double roll, pitch, yaw;
     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-
-    // ������ʼ���(��������)
-    // if (tilted)
-    // {
-    //     q = q * q_rot;
-    // }
 
     // external_odom赋值
     external_odom.header.stamp = ros::Time::now();
@@ -457,12 +470,13 @@ void ExternalPosition::viobot_algoStatusCallback(const sunray_msgs::algo_status:
     if (msg->algo_status == "stereo3_initializing" || msg->algo_status == "stereo3_running")
     {
         external_odom.vio_start = true;
-    }else
+    }
+    else
     {
         external_odom.vio_start = false;
     }
 
-    if (external_odom.vio_start == false) 
+    if (external_odom.vio_start == false)
     {
         static sunray_msgs::algo_ctrl algo_set;
         algo_set.algo_enable = true;
@@ -487,15 +501,20 @@ mavlink_odometry_t ExternalPosition::get_mavlink_msg()
     mavlink_odom.estimator_type = MAV_ESTIMATOR_TYPE_VISION;
     mavlink_odom.time_usec = external_odom.header.stamp.toSec() * 1000;
 
+    // 将里程计相对于ENU的位置转换为相对于NED的位置
     mavlink_odom.x = external_odom.position[1];
     mavlink_odom.y = external_odom.position[0];
     mavlink_odom.z = -external_odom.position[2];
-    
+
     Eigen::Quaterniond mav_q(external_odom.attitude_q.w, external_odom.attitude_q.x, external_odom.attitude_q.y, external_odom.attitude_q.z);
-    Eigen::Quaterniond ql(Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
+
+    // ql是参考坐标系的旋转矩阵：ENU转换到NED，需要绕原始x坐标轴旋转180，再绕原始y坐标轴旋转90
+    Eigen::Quaterniond ql(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
+    // qr是自身坐标系的旋转矩阵：FLU转换到FRD，需要绕原始x坐标轴旋转180
     Eigen::Quaterniond qr(Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
 
-    mav_q = ql * mav_q *  qr;
+    // 先左乘换参考坐标系，再右乘变换自身坐标系
+    mav_q = ql * mav_q * qr;
 
     // printf("Original Euler Angles: Roll: %f, Pitch: %f, Yaw: %f\n", roll * 180 / M_PI, pitch * 180 / M_PI, yaw * 180 / M_PI);
     // q.setRPY(roll, -pitch, -yaw);

@@ -9,6 +9,8 @@
     <!-- 是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4 -->
     <arg name="use_vision_pose" default="true" />
     <arg name="server" default="192.168.20.15"/>
+    <arg name="tilted" default="true"/>
+    
 
     <!-- 启动 external_fusion_node-->
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
@@ -18,6 +20,7 @@
         <param name="position_topic" value="$(arg position_topic)" />
         <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
         <param name="use_vision_pose" value="$(arg use_vision_pose)" />
+        <param name="tilted" value="$(arg tilted)" />
     </node>
 
     <!-- 启动 vrpn_client_ros -->
