@@ -1,0 +1,73 @@
+<launch>
+    <arg name="uav_id" default="1" />
+    <arg name="uav_name" default="uav" />
+    <arg name="x_min" default="-20.0" />
+    <arg name="x_max" default="20.0" />
+    <arg name="y_min" default="-20.0" />
+    <arg name="y_max" default="20.0" />
+    <arg name="z_min" default="-1.0" />
+    <arg name="z_max" default="3.0" />
+    <arg name="land_type" default="0" />
+    <arg name="land_end_time" default="1.0" />
+    <arg name="land_end_speed" default="0.3" />
+    <arg name="takeoff_height" default="1.0" />
+    <arg name="takeoff_speed" default="0.4" />
+    <arg name="disarm_height" default="0.2" />
+    <arg name="land_speed" default="0.2" />
+    <arg name="home_x" default="0.0" />
+    <arg name="home_y" default="0.0" />
+    <arg name="home_z" default="0.0" />
+    <arg name="check_cmd_timeout" default="false" />
+    <arg name="cmd_timeout" default="2.0" />
+    <arg name="use_offset" default="false" />
+
+    <!-- 启动 FMT 控制节点 -->
+    <node name="fmt_control" pkg="sunray_fmt_control" type="fmt_control_node" output="screen">
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        
+        <!-- 飞行参数 -->
+        <param name="flight_param/takeoff_height" value="$(arg takeoff_height)" />
+        <param name="flight_param/takeoff_speed" value="$(arg takeoff_speed)" />
+        <param name="flight_param/land_type" value="$(arg land_type)" />
+        <param name="flight_param/disarm_height" value="$(arg disarm_height)" />
+        <param name="flight_param/land_speed" value="$(arg land_speed)" />
+        <param name="flight_param/land_end_time" value="$(arg land_end_time)" />
+        <param name="flight_param/land_end_speed" value="$(arg land_end_speed)" />
+        
+        <!-- 默认home点 -->
+        <param name="flight_param/home_x" value="$(arg home_x)" />
+        <param name="flight_param/home_y" value="$(arg home_y)" />
+        <param name="flight_param/home_z" value="$(arg home_z)" />
+        
+        <!-- 地理围栏 -->
+        <param name="geo_fence/x_min" value="$(arg x_min)" />
+        <param name="geo_fence/x_max" value="$(arg x_max)" />
+        <param name="geo_fence/y_min" value="$(arg y_min)" />
+        <param name="geo_fence/y_max" value="$(arg y_max)" />
+        <param name="geo_fence/z_min" value="$(arg z_min)" />
+        <param name="geo_fence/z_max" value="$(arg z_max)" />
+        
+        <!-- 系统参数 -->
+        <param name="system/check_cmd_timeout" value="$(arg check_cmd_timeout)" />
+        <param name="system/cmd_timeout" value="$(arg cmd_timeout)" />
+        <param name="system/use_offset" value="$(arg use_offset)" />
+        
+        <!-- FMT 特定参数 -->
+        <param name="fmt/stream_rate_local_position" value="50" />
+        <param name="fmt/stream_rate_global_position" value="10" />
+        
+        <!-- 位置控制器参数 -->
+        <param name="ctrl_param/quad_mass" value="1.0" />
+        <param name="ctrl_param/hov_percent" value="0.37" />
+        <param name="ctrl_param/pxy_int_max" value="10.0" />
+        <param name="ctrl_param/pz_int_max" value="10.0" />
+        <param name="ctrl_param/Kp_xy" value="3.0" />
+        <param name="ctrl_param/Kp_z" value="3.0" />
+        <param name="ctrl_param/Kv_xy" value="3.0" />
+        <param name="ctrl_param/Kv_z" value="3.0" />
+        <param name="ctrl_param/Kvi_xy" value="0.3" />
+        <param name="ctrl_param/Kvi_z" value="0.3" />
+        <param name="ctrl_param/tilt_angle_max" value="20.0" />
+    </node>
+</launch>

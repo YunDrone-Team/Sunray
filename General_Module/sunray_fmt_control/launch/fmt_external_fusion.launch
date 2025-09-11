@@ -1,0 +1,29 @@
+<launch>
+    <!-- 外部定位源类型 -->
+    <!-- ODOM = 0, POSE = 1, GAZEBO = 2, MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
+    <arg name="uav_id" default="1" />
+    <arg name="external_source" default="0" />
+    <arg name="uav_name" default="uav" />
+    <arg name="position_topic" default="/Odometry" />
+    <arg name="enable_range_sensor" default="false" />
+    <arg name="server" default="192.168.20.15"/>
+    
+    <!-- FMT 飞控命名空间 -->
+    <arg name="uav_ns" default="/$(arg uav_name)$(arg uav_id)" />
+
+    <!-- 启动 FMT 外部融合节点 -->
+    <node name="fmt_external_fusion" pkg="sunray_fmt_control" type="fmt_external_fusion_node" output="screen">
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="external_source" value="$(arg external_source)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <param name="position_topic" value="$(arg position_topic)" />
+        <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
+    </node>
+
+    <!-- 启动 vrpn_client_ros (适用于MOCAP) -->
+    <include file="$(find sunray_uav_control)/launch/sunray_vrpn.launch" if="$(eval external_source == 3)">
+        <arg name="server" value="$(arg server)"/>
+        <arg name="uav_id" value="$(arg uav_id)"/>
+    </include>
+
+</launch>

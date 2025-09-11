@@ -1,0 +1,5 @@
+<launch>
+
+    <!-- 启动自动任务节点（如自动解锁、起飞、悬停、降落等） -->
+    <node name="fmt_auto_mission" pkg="sunray_fmt_control" type="fmt_auto_mission" output="screen" />
+</launch>
