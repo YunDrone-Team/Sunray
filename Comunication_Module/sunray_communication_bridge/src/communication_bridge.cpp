@@ -172,6 +172,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
 
     // 变量 - 是否与地面站建立连接
     station_connected = false;
+    
+
 }
 
 void communication_bridge::TCPLinkState(bool state, std::string IP)
