@@ -48,7 +48,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             uav_setup_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            uav_waypoint_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
+            uav_waypoint_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::WayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
             // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
             uav_goal_pub.insert(std::make_pair(i, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(i), 1))));
         }
@@ -78,7 +78,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             uav_setup_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
-            uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVWayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
+            uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::WayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
             // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
             uav_goal_pub.insert(std::make_pair(uav_id, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(uav_id), 1))));
         }
@@ -264,8 +264,7 @@ uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
 void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
     int send_result;
-    //  std::cout << " GroundControl::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
-    // std::cout << "UDP Message Delay:" << calculateMessageDelay(readData.dataFrame.timestamp)<< std::endl;
+    //std::cout << " communication_bridge::UDPCallBack: " << (int)readData.dataFrame.seq << std::endl;
 
     switch (readData.dataFrame.seq)
     {
@@ -350,6 +349,8 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
     default:
         break;
     }
+    //std::cout << " communication_bridge::UDPCallBack end"<< std::endl;
+
 }
 
 pid_t communication_bridge::CheckChildProcess(pid_t pid)
@@ -661,42 +662,28 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             std::cout << "controlCMD UAV" + std::to_string(robot_id) + " topic Publisher not found!" << std::endl;
             break;
         }
-        sunray_msgs::UAVWayPoint waypoint_msg;
+        sunray_msgs::WayPoint waypoint_msg;
         waypoint_msg.header.stamp = ros::Time::now();
+        waypoint_msg.start = readData.dataFrame.data.waypointData.start;
         waypoint_msg.wp_num = readData.dataFrame.data.waypointData.wp_num;
-        waypoint_msg.wp_type = readData.dataFrame.data.waypointData.wp_type;
         waypoint_msg.wp_end_type = readData.dataFrame.data.waypointData.wp_end_type;
-        waypoint_msg.wp_takeoff = readData.dataFrame.data.waypointData.wp_takeoff;
         waypoint_msg.wp_yaw_type = readData.dataFrame.data.waypointData.wp_yaw_type;
         waypoint_msg.wp_move_vel = readData.dataFrame.data.waypointData.wp_move_vel;
-        waypoint_msg.wp_vel_p = readData.dataFrame.data.waypointData.wp_vel_p;
-        waypoint_msg.z_height = readData.dataFrame.data.waypointData.z_height;
 
+        for(int j=0;j<readData.dataFrame.data.waypointData.wp_num;++j)
+        {
+            if(j<MAX_WAYPOINTS)
+            {
+                sunray_msgs::Point point;
+                point.x = readData.dataFrame.data.waypointData.wp_points[j][0];  // x坐标
+                point.y = readData.dataFrame.data.waypointData.wp_points[j][1];  // y坐标
+                point.z = readData.dataFrame.data.waypointData.wp_points[j][2];  // z坐标
+                point.yaw = readData.dataFrame.data.waypointData.wp_points[j][3]; // 偏航角
+                waypoint_msg.wp_points.push_back(point);
+            }
+        }
 
-        // std::cout << "MessageID::WaypointMessageID 2 "<<readData.data.waypointData.Waypoint1.X<< std::endl; wp_point_1[0]
-
-        waypoint_msg.wp_point_1 = {readData.dataFrame.data.waypointData.wp_point_1[0], readData.dataFrame.data.waypointData.wp_point_1[1],
-                                   readData.dataFrame.data.waypointData.wp_point_1[2], readData.dataFrame.data.waypointData.wp_point_1[3]};
-        waypoint_msg.wp_point_2 = {readData.dataFrame.data.waypointData.wp_point_2[0], readData.dataFrame.data.waypointData.wp_point_2[1],
-                                   readData.dataFrame.data.waypointData.wp_point_2[2], readData.dataFrame.data.waypointData.wp_point_2[3]};
-        waypoint_msg.wp_point_3 = {readData.dataFrame.data.waypointData.wp_point_3[0], readData.dataFrame.data.waypointData.wp_point_3[1],
-                                   readData.dataFrame.data.waypointData.wp_point_3[2], readData.dataFrame.data.waypointData.wp_point_3[3]};
-        waypoint_msg.wp_point_4 = {readData.dataFrame.data.waypointData.wp_point_4[0], readData.dataFrame.data.waypointData.wp_point_4[1],
-                                   readData.dataFrame.data.waypointData.wp_point_4[2], readData.dataFrame.data.waypointData.wp_point_4[3]};
-        waypoint_msg.wp_point_5 = {readData.dataFrame.data.waypointData.wp_point_5[0], readData.dataFrame.data.waypointData.wp_point_5[1],
-                                   readData.dataFrame.data.waypointData.wp_point_5[2], readData.dataFrame.data.waypointData.wp_point_5[3]};
-        waypoint_msg.wp_point_6 = {readData.dataFrame.data.waypointData.wp_point_6[0], readData.dataFrame.data.waypointData.wp_point_6[1],
-                                   readData.dataFrame.data.waypointData.wp_point_6[2], readData.dataFrame.data.waypointData.wp_point_6[3]};
-        waypoint_msg.wp_point_7 = {readData.dataFrame.data.waypointData.wp_point_7[0], readData.dataFrame.data.waypointData.wp_point_7[1],
-                                   readData.dataFrame.data.waypointData.wp_point_7[2], readData.dataFrame.data.waypointData.wp_point_7[3]};
-        waypoint_msg.wp_point_8 = {readData.dataFrame.data.waypointData.wp_point_8[0], readData.dataFrame.data.waypointData.wp_point_8[1],
-                                   readData.dataFrame.data.waypointData.wp_point_8[2], readData.dataFrame.data.waypointData.wp_point_8[3]};
-        waypoint_msg.wp_point_9 = {readData.dataFrame.data.waypointData.wp_point_9[0], readData.dataFrame.data.waypointData.wp_point_9[1],
-                                   readData.dataFrame.data.waypointData.wp_point_9[2], readData.dataFrame.data.waypointData.wp_point_9[3]};
-        waypoint_msg.wp_point_10 = {readData.dataFrame.data.waypointData.wp_point_10[0], readData.dataFrame.data.waypointData.wp_point_10[1],
-                                    readData.dataFrame.data.waypointData.wp_point_10[2], readData.dataFrame.data.waypointData.wp_point_10[3]};
-        waypoint_msg.wp_circle_point = {readData.dataFrame.data.waypointData.wp_circle_point[0], readData.dataFrame.data.waypointData.wp_circle_point[1]};
-
+       
         it->second.publish(waypoint_msg);
         break;
     }

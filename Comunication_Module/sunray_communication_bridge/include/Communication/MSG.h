@@ -326,53 +326,30 @@ struct UAVSetup
 };
 
 //航点 - WaypointData（#104）
+#define MAX_WAYPOINTS 20
 struct WaypointData
 {
+    bool start;
     uint8_t wp_num;
-    uint8_t wp_type;
     uint8_t wp_end_type;
-    bool wp_takeoff;
     uint8_t wp_yaw_type;
     float wp_move_vel;
-    float wp_vel_p;
-    float z_height;
-    double wp_point_1[4];
-    double wp_point_2[4];
-    double wp_point_3[4];
-    double wp_point_4[4];
-    double wp_point_5[4];
-    double wp_point_6[4];
-    double wp_point_7[4];
-    double wp_point_8[4];
-    double wp_point_9[4];
-    double wp_point_10[4];
-    double wp_circle_point[2];//环绕点 xy 或 经纬
+    double wp_points[MAX_WAYPOINTS][4];
 
     void init()
     {
+        start=false;
         wp_num=0;
-        wp_type=0;
         wp_end_type=0;
-        wp_takeoff=true;
         wp_yaw_type=1;
         wp_move_vel=1;
-        wp_vel_p=1;
-        z_height=1;
-        for(int i=0;i<4;i++)
+
+        for(int j=0;j<MAX_WAYPOINTS;j++)
         {
-            wp_point_1[i]=0;
-            wp_point_2[i]=0;
-            wp_point_3[i]=0;
-            wp_point_4[i]=0;
-            wp_point_5[i]=0;
-            wp_point_6[i]=0;
-            wp_point_7[i]=0;
-            wp_point_8[i]=0;
-            wp_point_9[i]=0;
-            wp_point_10[i]=0;
+           for(int i=0;i<4;i++)
+               wp_points[j][i]=0;
         }
-       wp_circle_point[0]=0;
-       wp_circle_point[1]=0;
+
 
     }
 };

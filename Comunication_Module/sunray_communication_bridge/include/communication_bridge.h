@@ -14,6 +14,7 @@
 #include "sunray_msgs/Formation.h"
 #include "sunray_msgs/Competion.h"
 #include "sunray_msgs/algo_ctrl.h"
+#include "sunray_msgs/WayPoint.h"
 #include "std_msgs/String.h"
 
 #include <sys/types.h>

@@ -242,34 +242,25 @@ void Codec::decoderWaypointPayload(std::vector<uint8_t>& dataFrame,DataFrame& wa
     data.init();
 
     // 读取基础字段
-    data.wp_num = static_cast<uint8_t>(dataFrame[0]);
-    data.wp_type = static_cast<uint8_t>(dataFrame[1]);
+    data.start = static_cast<uint8_t>(dataFrame[0]);
+    data.wp_num = static_cast<uint8_t>(dataFrame[1]);
     data.wp_end_type = static_cast<uint8_t>(dataFrame[2]);
-    data.wp_takeoff = static_cast<bool>(dataFrame[3]);
-    data.wp_yaw_type = static_cast<uint8_t>(dataFrame[4]);
-    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 5);
+    data.wp_yaw_type = static_cast<uint8_t>(dataFrame[3]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 4);
 
     // 读取浮点数参数
     uint8tArrayToFloat(dataFrame, data.wp_move_vel);
-    uint8tArrayToFloat(dataFrame, data.wp_vel_p);
-    uint8tArrayToFloat(dataFrame, data.z_height);
 
-    // 读取10个航点数据，每个航点包含4个double
-    double* wpPoints[] = {
-        data.wp_point_1, data.wp_point_2, data.wp_point_3, data.wp_point_4,
-        data.wp_point_5, data.wp_point_6, data.wp_point_7, data.wp_point_8,
-        data.wp_point_9, data.wp_point_10
-    };
-
-    for (int wpIdx = 0; wpIdx < 10; ++wpIdx)
+    for (int wpIdx = 0; wpIdx < data.wp_num; ++wpIdx)
     {
-        for (int i = 0; i < 4; ++i)
-            uint8tArrayToDouble(dataFrame, wpPoints[wpIdx][i]);
+        if(wpIdx<MAX_WAYPOINTS)
+        {
+            for (int i = 0; i < 4; ++i)
+                uint8tArrayToDouble(dataFrame, data.wp_points[wpIdx][i]);
+        }
     }
 
-    // 读取圆点坐标
-    uint8tArrayToDouble(dataFrame, data.wp_circle_point[0]);
-    uint8tArrayToDouble(dataFrame, data.wp_circle_point[1]);
+
 
 }
 
@@ -986,39 +977,21 @@ void Codec::coderUAVSetupCMDPayload(std::vector<uint8_t>& payload,DataFrame& cod
  void Codec::coderWaypointPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
  {
      WaypointData data=codelessData.data.waypointData;
+     payload.push_back(static_cast<uint8_t>(data.start));
      payload.push_back(static_cast<uint8_t>(data.wp_num));
-     payload.push_back(static_cast<uint8_t>(data.wp_type));
      payload.push_back(static_cast<uint8_t>(data.wp_end_type));
-     payload.push_back(static_cast<uint8_t>(data.wp_takeoff));
      payload.push_back(static_cast<uint8_t>(data.wp_yaw_type));
-
      floatCopyToUint8tArray(payload,data.wp_move_vel);
-     floatCopyToUint8tArray(payload,data.wp_vel_p);
-     floatCopyToUint8tArray(payload,data.z_height);
 
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_1[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_2[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_3[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_4[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_5[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_6[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_7[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_8[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_9[i]);
-     for(int i=0;i<4;i++)
-         doubleCopyToUint8tArray(payload,data.wp_point_10[i]);
+     for(int j=0;j<data.wp_num;++j)
+     {
+         if(j<MAX_WAYPOINTS)
+         {
+             for(int i=0;i<4;i++)
+                 doubleCopyToUint8tArray(payload,data.wp_points[j][i]);
+         }
+     }
 
-     doubleCopyToUint8tArray(payload,data.wp_circle_point[0]);
-     doubleCopyToUint8tArray(payload,data.wp_circle_point[1]);
  }
 
 void Codec::coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
