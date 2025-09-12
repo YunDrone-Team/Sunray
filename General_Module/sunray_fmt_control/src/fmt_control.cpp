@@ -22,7 +22,7 @@ void FMTControl::init(ros::NodeHandle &nh) {
     fmt_state_sub = nh.subscribe<sunray_msgs::PX4State>(uav_ns + "/sunray/px4_state", 10, &FMTControl::fmt_state_callback, this);
     setup_sub = nh.subscribe<sunray_msgs::UAVSetup>(uav_ns + "/sunray/setup", 10, &FMTControl::uav_setup_callback, this);
     control_cmd_sub = nh.subscribe<sunray_msgs::UAVControlCMD>(uav_ns + "/sunray/uav_control_cmd", 10, &FMTControl::control_cmd_callback, this);
-    uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_ns + "/sunray/waypoint", 10, &FMTControl::waypoint_callback, this);
+    uav_waypoint_sub = nh.subscribe<sunray_msgs::UAVWayPoint>(uav_ns + "/sunray/uav_waypoint", 10, &FMTControl::waypoint_callback, this);
     
     // 初始化发布者
     uav_state_pub = nh.advertise<sunray_msgs::UAVState>(uav_ns + "/sunray/uav_state", 10);
@@ -162,6 +162,8 @@ void FMTControl::fmt_state_callback(const sunray_msgs::PX4State::ConstPtr &msg) 
     uav_state.armed = fmt_state.armed;
     uav_state.mode = fmt_state.mode;
     uav_state.landed_state = fmt_state.landed_state;
+    uav_state.battery_state = fmt_state.battery_state;
+    uav_state.battery_percentage = fmt_state.battery_percentage;
     uav_state.location_source = fmt_state.external_odom.external_source;
     uav_state.odom_valid = fmt_state.external_odom.odom_valid;
     for (int i = 0; i < 3; i++) {

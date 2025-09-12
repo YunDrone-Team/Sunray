@@ -106,8 +106,14 @@ void FMTExternalFusion::init(ros::NodeHandle &nh)
     
     // 设置FMT数据流
     ros::Duration(1.0).sleep(); // 等待服务可用
+    //请求电池状态 (BATTERY_STATUS) 频率 1Hz
+    set_fmt_stream_rate(147, 1, true);
     // 请求高精度IMU数据 (HIGHRES_IMU) 频率 100Hz
     set_fmt_stream_rate(105, 100, true);
+    //请求无人机的位置/速度/加速度设定值 (POSITION_TARGET_LOCAL_NED) 频率 20Hz
+    set_fmt_stream_rate(85, 20, true);
+    // 请求无人机的姿态设定值 (ATTITUDE_TARGET) 频率 20Hz
+    set_fmt_stream_rate(83, 20, true);
     // 请求本地位置和速度数据 (LOCAL_POSITION_NED) 频率 50Hz
     set_fmt_stream_rate(32, 50, true);
     // 请求全局位置数据 (GLOBAL_POSITION_INT) 频率 10Hz
