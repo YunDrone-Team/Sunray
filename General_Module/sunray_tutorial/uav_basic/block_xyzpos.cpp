@@ -10,7 +10,6 @@ string node_name;
 string uav_name;
 sunray_msgs::UAVControlCMD uav_cmd;
 sunray_msgs::UAVState uav_state;
-sunray_msgs::UAVSetup uav_setup;
 
 void mySigintHandler(int sig)
 {
@@ -50,8 +49,6 @@ int main(int argc, char **argv)
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 10, uav_state_callback);
     // 【发布】无人机控制指令 （本节点 -> sunray_control_node）
     ros::Publisher control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 1);
-    // 【发布】无人机设置指令（本节点 -> sunray_control_node）
-    ros::Publisher uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(uav_name + "/sunray/setup", 1);
 
     ros::Duration(0.5).sleep();
     // 控制辅助类 - 初始化
