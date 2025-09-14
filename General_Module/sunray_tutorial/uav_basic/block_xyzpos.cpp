@@ -68,7 +68,6 @@ int main(int argc, char **argv)
     // 控制辅助类 - 自动起飞
     uav_control_utils.auto_takeoff();
 
-
     // 以上: 无人机已成功起飞，进入自由任务模式
     Logger::print_color(int(LogColor::green), node_name, "Wait 5 sec and then send Move cmd...");
 
@@ -113,7 +112,6 @@ int main(int argc, char **argv)
             rate.sleep();
         }
     }
-
 
     Logger::print_color(int(LogColor::green), node_name, "Wait 5 sec and then send Land cmd...");
     ros::Duration(5.0).sleep();
