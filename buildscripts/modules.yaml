@@ -117,6 +117,10 @@ groups:
     description: "默认使用这个组，包含无人机飞行控制，仿真环境，仿真工具，仿真插件，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流，编队控制"
     modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_gimbal", "sunray_media", "ego_planner", "sunray_formation"]
     
+  viobot:
+    description: "VIOBOT无人机飞行控制系统，包含无人机飞行控制，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流"
+    modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_media", "ego_planner"]
+
   # # EGO路径规划系统
   # ego:
   #   description: "EGO路径规划系统，包含EGO路径规划器，仿真工具，路径规划工具"

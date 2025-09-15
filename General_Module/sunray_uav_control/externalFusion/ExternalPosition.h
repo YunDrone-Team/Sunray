@@ -440,7 +440,8 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
     if (tilted)
     {
         // q = q * q_rot;
-        q = q_rot.inverse() * q;
+        // q = q_rot.inverse() * q;
+        q = q * q_rot.inverse();
     }
 
     double roll, pitch, yaw;
