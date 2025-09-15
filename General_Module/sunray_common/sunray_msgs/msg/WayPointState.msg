@@ -18,8 +18,9 @@ uint8 wp_index
 ## 所有航点数量
 uint8 wp_num
 
-## 当前正在执行的航点和执行速度
+## 当前正在执行的航点和执行速度、偏航角
 float32[3] waypoint                 ## 单位：[m]
 float32[2] velocity                 ## 单位：[m/s]
-float32 yaw
+float32 yaw                         ## 单位：[rad]
+
 
