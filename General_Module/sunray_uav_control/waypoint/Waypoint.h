@@ -47,6 +47,7 @@ private:
     // ROS话题发布句柄
     ros::Publisher control_cmd_pub;    
     ros::Publisher uav_setup_pub;  
+    ros::Publisher uav_waypoint_state_pub;
 
     // 定时器句柄
     ros::Timer timer_send_external_pos; 
@@ -71,6 +72,9 @@ void Waypoint::init(ros::NodeHandle &nh)
     control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1);
     // 【发布】无人机设置指令（本节点 -> sunray_control_node）
     uav_setup_pub = nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1);
+    // 【发布】无人机航点状态
+    uav_waypoint_state_pub = nh.advertise<sunray_msgs::WayPointState>(topic_prefix + "/sunray/uav_waypoint_state", 1);
+
 
     // 变量初始化
     control_cmd.header.stamp = ros::Time::now();
@@ -149,6 +153,8 @@ void Waypoint::mainLoop()
         default:
             break;
     }
+
+    uav_waypoint_state_pub.publish(uav_wp_state);
 }
 
 
