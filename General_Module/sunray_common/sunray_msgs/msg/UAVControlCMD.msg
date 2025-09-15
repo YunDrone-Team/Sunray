@@ -32,6 +32,7 @@ uint8 XyzPosYawBody = 14        # 移动指令：机体坐标系XYZ位置 带偏
 uint8 XyzVelYawBody = 15        # 移动指令：机体坐标系XYZ速度 带偏航角，需要配合desired_vel和desired_yaw使用
 uint8 XyVelZPosYawBody = 16     # 移动指令：机体坐标系XY速度 Z位置 带偏航角，需要配合desired_vel[0]、desired_vel[1]、desired_pos[2]和desired_yaw使用
 uint8 GlobalPos = 17            # 移动指令：全局坐标 经纬度海拔，需要配合latitude、longitude、altitude使用
+uint8 XyVelZPosYawrateBody = 18 # 移动指令：机体坐标系XY速度 Z位置 带偏航角速率，需要配合desired_vel[0]、desired_vel[1]、desired_pos[2]和desired_yaw_rate使用
 
 ## 控制命令枚举 - 使用自定义位置控制器进行控制（默认发送期望姿态至PX4飞控）
 uint8 CTRL_XyzPos = 50          # 移动指令：惯性系定点控制 带偏航角, 需要配合desired_pos和desired_yaw使用

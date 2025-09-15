@@ -800,7 +800,8 @@ void UAVControl::handle_cmd_control()
                 // 机体系需要单独做转换
                 if (control_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYawBody ||
                     control_cmd.cmd == sunray_msgs::UAVControlCMD::XyzVelYawBody ||
-                    control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawBody)
+                    control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawBody ||
+                    control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody)
                 {
                     // Body系的需要转换到NED下
                     // 清除过去数据 更新时间戳
@@ -823,7 +824,7 @@ void UAVControl::handle_cmd_control()
 
                     // 机体系偏航角转换
                     local_setpoint.yaw = control_cmd.desired_yaw + px4_state.attitude[2];
-
+                    local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
                     // 设置控制模式
                     system_params.type_mask = moveModeMap[control_cmd.cmd];
                 }

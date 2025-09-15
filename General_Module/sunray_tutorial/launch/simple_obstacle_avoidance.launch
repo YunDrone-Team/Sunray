@@ -6,13 +6,16 @@
     <arg name="uav_id" default="1"/>
     <arg name="uav_name" default="uav"/>
     <arg name="flight_height" default="0.6"/>
-    <arg name="forward_vel" default="1.0"/>
+    <arg name="forward_vel" default="0.5"/>
     <arg name="rotate_speed" default="0.5"/>
     <arg name="obstacle_threshold" default="1000"/>
-    <arg name="ratio_threshold" default="0.3"/>
+    <arg name="ratio_threshold" default="0.28"/>
     <arg name="target_x" default="0.0"/>
     <arg name="target_y" default="0.0"/>
     <arg name="target_topic_name" default="/target_pos"/>
+    <arg name="clear_obstacle_duration" default="3.0"/>
+
+    
     
     <!-- 启动简易避障节点 -->
     <node pkg="sunray_tutorial" 
@@ -39,6 +42,7 @@
         <!-- 动态目标更新话题 -->
         <param name="target_topic_name" value="$(arg target_topic_name)"/>
         
+        <param name="clear_obstacle_duration" value="$(arg clear_obstacle_duration)"/>
     </node>
     
     <!-- 说明信息 -->

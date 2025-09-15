@@ -288,6 +288,7 @@ int main(int argc, char **argv)
     nh.param<double>("ratio_threshold", ratio_threshold, 0.3);               // 障碍物比例阈值，默认30%
     nh.param<double>("target_x", target_pos.x, 3.0);                         // 初始目标X坐标，默认3米
     nh.param<double>("target_y", target_pos.y, 0.0);                         // 初始目标Y坐标，默认0米
+    nh.param<double>("clear_obstacle_duration", clear_obstacle_duration, 2.0);// 清除障碍后的缓冲时间（秒）
 
     target_pos.z = flight_height; // 目标高度设置为飞行高度
     target_set = true;            // 标记目标已设置
@@ -553,11 +554,11 @@ int main(int argc, char **argv)
         
         // 发送控制命令（使用机体坐标系XyVelZPosYawBody模式）
         uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawBody;  // 机体坐标系XY速度，Z位置，偏航角控制
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody;  // 机体坐标系XY速度，Z位置，偏航角控制
         uav_cmd.desired_vel[0] = vx;                                // X方向速度（机体前进方向）
         uav_cmd.desired_vel[1] = vy;                                // Y方向速度（机体左右方向，这里始终为0）
-        uav_cmd.desired_pos[2] = flight_height;                     // Z方向位置（保持飞行高度）
-        uav_cmd.desired_yaw = uav_state.attitude[2] + yaw_rate * 0.05;  // 期望偏航角（当前角度+角速度*时间步长）
+        uav_cmd.desired_pos[2] = flight_height - uav_state.position[2];                     // Z方向位置（保持飞行高度）
+        uav_cmd.desired_yaw_rate = yaw_rate;  // 期望偏航角速率
 
         control_cmd_pub.publish(uav_cmd);
 
