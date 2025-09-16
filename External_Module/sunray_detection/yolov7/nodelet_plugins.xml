@@ -1,0 +1,9 @@
+<library path="lib/libaidetection_yolov7_ros_detector">
+    <class name="aidetection_yolov7_ros/AIDetectorYolov7"
+        type="sunray_detection::aidetection_yolov7_ros::AIDetectorYolov7"
+		base_class_type="nodelet::Nodelet">
+		<description>
+          landmark_detection_ros detector
+		</description>
+	</class>
+</library>
