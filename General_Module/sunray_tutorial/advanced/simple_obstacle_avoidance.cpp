@@ -9,8 +9,7 @@
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
 
-#define DEBUG_MODE 1    // 设置为0以启用调试模式，跳过起飞等步骤，直接进入避障逻辑
-#define RGB_IMAGE 0     // 设置为1以启用彩色深度图像发布
+#define DEBUG_MODE 0    // 设置为0以启用调试模式，跳过起飞等步骤，直接进入避障逻辑
 
 using namespace sunray_logger;
 using namespace std;
@@ -188,17 +187,28 @@ SimpleObstacleInfo process_depth_image_simple()
         {
             info.front_blocked = true;
         }
+        else
+        {
+            info.front_blocked = false;
+        }
         if (left_obstacle_ratio > ratio_threshold)
         {
             info.left_clear = false;
+        }
+        else
+        {
+            info.left_clear = true;
         }
         if (right_obstacle_ratio > ratio_threshold)
         {
             info.right_clear = false;
         }
+        else
+        {
+            info.right_clear = true;
+        }
         info.front_distance = cv::mean(center_region, center_region > 0)[0] / 1000.0; // 转换为米
 
-#if RGB_IMAGE
         // 将原本的深度图像转换成彩色，标记三个区域，并把三个区域内的障碍物比例显示出来，同时显示该区域是否有障碍物，把转换后的图像发布成新话题
         cv::Mat depth_color;
         double min_val, max_val;
@@ -220,7 +230,6 @@ SimpleObstacleInfo process_depth_image_simple()
         static ros::Publisher depth_color_pub = ros::NodeHandle().advertise<sensor_msgs::Image>("/baton/depth_color", 1);
         sensor_msgs::ImagePtr depth_color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depth_color).toImageMsg();
         depth_color_pub.publish(depth_color_msg);   
-#endif
     }
     catch (cv_bridge::Exception &e)
     {
