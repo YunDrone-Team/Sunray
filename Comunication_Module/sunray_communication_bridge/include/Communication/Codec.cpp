@@ -203,6 +203,26 @@ void Codec::decoderFACCompetitionStatePayload(std::vector<uint8_t>& dataFrame,Da
     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.stateSize);
 }
 
+void Codec::decoderWaypointStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    WaypointState& data = dataFrameStruct.data.waypointState;
+    data.init();
+
+    data.wp_state = static_cast<uint8_t>(dataFrame[0]);
+    data.wp_index = static_cast<uint8_t>(dataFrame[1]);
+    data.wp_num  = static_cast<uint8_t>(dataFrame[2]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);  // 移除3个字节
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.waypoint[i]);
+
+    for (int i = 0; i < 2; ++i)
+        uint8tArrayToFloat(dataFrame, data.velocity[i]);
+
+    uint8tArrayToFloat(dataFrame, data.yaw);
+
+}
+
 void Codec::decoderViobotSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
     ViobotSwitch& data = dataFrameStruct.data.viobotSwitchData;
@@ -691,6 +711,10 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload ViobotSwitch数据反序列化*/
         decoderViobotSwitchPayload(undecodedData,decoderData);
         break;
+    case MessageID::WaypointStateMessageID:
+        /*Payload 航点状态数据反序列化*/
+        decoderWaypointStatePayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
@@ -718,6 +742,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::UAVStateMessageID: case MessageID::UGVStateMessageID:
     case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
     case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
+    case MessageID::WaypointStateMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -1065,6 +1090,21 @@ void Codec::coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& co
 
 }
 
+ void Codec::coderWaypointStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     WaypointState data=codelessData.data.waypointState;
+     payload.push_back(static_cast<uint8_t>(data.wp_state));
+     payload.push_back(static_cast<uint8_t>(data.wp_index));
+     payload.push_back(static_cast<uint8_t>(data.wp_num));
+     floatCopyToUint8tArray(payload,data.waypoint[0]);
+     floatCopyToUint8tArray(payload,data.waypoint[1]);
+     floatCopyToUint8tArray(payload,data.waypoint[2]);
+     floatCopyToUint8tArray(payload,data.velocity[0]);
+     floatCopyToUint8tArray(payload,data.velocity[1]);
+     floatCopyToUint8tArray(payload,data.yaw);
+ }
+
+
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     AgentComputerStatus data=codelessData.data.computerStatus;
@@ -1175,6 +1215,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::ViobotSwitchMessageID:
         /*Payload Viobot算法开关数据序列化*/
         coderViobotSwitchPayload(PayloadData,codelessData);
+        break;
+    case MessageID::WaypointStateMessageID:
+        /*Payload 航点状态数据序列化*/
+        coderWaypointStatePayload(PayloadData,codelessData);
         break;
     default:break;
     }

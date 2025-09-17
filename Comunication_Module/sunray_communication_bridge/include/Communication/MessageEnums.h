@@ -11,6 +11,7 @@ enum MessageID
     AgentComputerStatusMessageID    = 31,
     FACMapDataMessageID             = 32,
     FACCompetitionStateMessageID    = 33,
+    WaypointStateMessageID          = 34,
     FormationMessageID              = 40,
     GroundFormationMessageID        = 41,
 //    TakeoffMessageID    = 101,
@@ -163,6 +164,14 @@ enum FormationType
     FormationDYNAMIC=2,
     FormationLEADER=3,
     FormationFLLOW=4,
+};
+
+enum WaypointStateType
+{
+    NotReadyStateType=1,
+    UAVReadyStateType=2,
+    WaypointStateType=3,
+    FinishStateType=4,
 };
 
 //通信类型

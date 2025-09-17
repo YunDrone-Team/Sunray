@@ -256,6 +256,33 @@ struct FACCompetitionState
     }
 };
 
+//航点状态 -WaypointState（#34）
+struct WaypointState
+{
+    uint8_t wp_state;
+    uint8_t wp_index;
+    uint8_t wp_num;
+    float waypoint[3];
+    float velocity[2];
+    float yaw;
+
+    void init()
+    {
+        wp_state=0;
+        wp_index=0;
+        wp_num=0;
+        waypoint[0]=0;
+        waypoint[1]=0;
+        waypoint[2]=0;
+        velocity[0]=0;
+        velocity[1]=0;
+        yaw=0;
+
+    }
+
+};
+
+
 //编队切换 - Formation（#40）
 struct Formation
 {
@@ -492,6 +519,7 @@ union Payload
     FACMapData FACMap;                  // FAC赛地图数据 -FACMapData（#32）
     FACCompetitionState FACState;       // FAC比赛状态 -FACCompetitionState（#33）
     ViobotSwitch    viobotSwitchData;   // Viobot算法开关 - ViobotSwitch（#105）
+    WaypointState waypointState;        // 航点状态 -WaypointState（#34）
 };
 
 //整个数据帧

@@ -43,6 +43,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + uav_name + std::to_string(i);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站
             uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
+            // 【订阅】无人机航点状态 
+            uav_waypointState_sub.push_back(nh.subscribe<sunray_msgs::WayPointState>(topic_prefix + "/sunray/uav_waypoint_state", 1, boost::bind(&communication_bridge::uav_waypointState_cb, this, _1, i)));
             // 【发布】无人机控制指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             control_cmd_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1))));
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
@@ -73,6 +75,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体
             uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
+            // 【订阅】无人机航点状态 
+            uav_waypointState_sub.push_back(nh.subscribe<sunray_msgs::WayPointState>(topic_prefix + "/sunray/uav_waypoint_state", 1, boost::bind(&communication_bridge::uav_waypointState_cb, this, _1, uav_id)));
             // 【发布】无人机控制指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             control_cmd_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1))));
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
@@ -140,9 +144,13 @@ void communication_bridge::init(ros::NodeHandle &nh)
     CheckChildProcessTimer = nh.createTimer(ros::Duration(0.3), &communication_bridge::CheckChildProcessCallBack, this);
     // 【定时器】 定时发送ROS节点信息到地面站
     UpdateROSNodeInformationTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateROSNodeInformation, this);
-    prevData = readCpuData();
-    // 【定时器】 定时发送智能体电脑状态到地面站
+    // 【定时器】 定时发送智能体电脑状态到地面站 
     UpdateCPUUsageRateTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateComputerStatus, this);
+    // 【定时器】 定时发送无人机航点状态到地面站 
+    UAVWaypointStateTimer= nh.createTimer(ros::Duration(0.3), &communication_bridge::UpdateWaypointState, this);
+
+    //  初始化CPU数据
+    prevData = readCpuData();
 
     // 【TCP服务器】 绑定TCP服务器端口
     int back = tcpServer.Bind(static_cast<unsigned short>(std::stoi(tcp_port)));
@@ -1106,8 +1114,73 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
     }
 }
 
+void communication_bridge::uav_waypointState_cb(const sunray_msgs::WayPointState::ConstPtr &msg, int robot_id)
+{
+    int index = robot_id - 1;
+    if (index < 0 || index >= MAX_AGENT_NUM) 
+    {
+        // 处理越界，如打印错误日志
+        ROS_ERROR("Invalid robot_id: %d, index out of range", robot_id);
+        return;
+    }
+    waypointStateArry[index]=*msg;
+} 
     
-    
+void communication_bridge::UpdateWaypointState(const ros::TimerEvent &e)
+{
+
+    DataFrame sendDataFrame;
+    sendDataFrame.data.waypointState.init();
+    sendDataFrame.seq=MessageID::WaypointStateMessageID;
+
+    if (is_simulation)
+    {
+        for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+        {
+            if(i<0 || i>=MAX_AGENT_NUM)
+            {
+                ROS_ERROR("Invalid robot_id: %d, index out of range", i);
+                return;
+            }
+            sendDataFrame.data.waypointState.wp_state = waypointStateArry[i-1].wp_state;
+            sendDataFrame.data.waypointState.wp_index = waypointStateArry[i-1].wp_index;
+            sendDataFrame.data.waypointState.wp_num = waypointStateArry[i-1].wp_num;
+            sendDataFrame.data.waypointState.waypoint[0] = waypointStateArry[i-1].waypoint[0];
+            sendDataFrame.data.waypointState.waypoint[1] = waypointStateArry[i-1].waypoint[1];
+            sendDataFrame.data.waypointState.waypoint[2] = waypointStateArry[i-1].waypoint[2];
+            sendDataFrame.data.waypointState.velocity[0] = waypointStateArry[i-1].velocity[0];
+            sendDataFrame.data.waypointState.velocity[1] = waypointStateArry[i-1].velocity[1];
+            sendDataFrame.data.waypointState.yaw = waypointStateArry[i-1].yaw;
+
+            sendDataFrame.robot_ID=i;
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+
+        
+    }else{
+        if (uav_experiment_num > 0 && uav_id>=0 )
+        {
+            if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
+            {
+                ROS_ERROR("Invalid robot_id: %d, index out of range", uav_id);
+                return;
+            }
+            sendDataFrame.data.waypointState.wp_state = waypointStateArry[uav_id-1].wp_state;
+            sendDataFrame.data.waypointState.wp_index = waypointStateArry[uav_id-1].wp_index;
+            sendDataFrame.data.waypointState.wp_num = waypointStateArry[uav_id-1].wp_num;
+            sendDataFrame.data.waypointState.waypoint[0] = waypointStateArry[uav_id-1].waypoint[0];
+            sendDataFrame.data.waypointState.waypoint[1] = waypointStateArry[uav_id-1].waypoint[1];
+            sendDataFrame.data.waypointState.waypoint[2] = waypointStateArry[uav_id-1].waypoint[2];
+            sendDataFrame.data.waypointState.velocity[0] = waypointStateArry[uav_id-1].velocity[0];
+            sendDataFrame.data.waypointState.velocity[1] = waypointStateArry[uav_id-1].velocity[1];
+            sendDataFrame.data.waypointState.yaw = waypointStateArry[uav_id-1].yaw;
+
+            sendDataFrame.robot_ID=uav_id;
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+    }
+
+}
 
 // UAVState回调函数 - 将读取到的数据按照id顺序存储在uavStateData数组中
 void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)

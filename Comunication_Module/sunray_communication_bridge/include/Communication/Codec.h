@@ -57,7 +57,7 @@ public:
     void coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
-
+    void coderWaypointStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
 
     void decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人机状态Payload帧
     void decoderUGVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人车状态Payload帧
@@ -75,6 +75,7 @@ public:
     void decoderFACMapDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码FAC赛地图数据Payload帧
     void decoderFACCompetitionStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码FAC比赛状态数据Payload帧
     void decoderViobotSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码Viobot算法开关数据Payload帧
+    void decoderWaypointStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码航点状态数据Payload帧
 
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
@@ -112,6 +113,7 @@ private:
         MessageID::FACMapDataMessageID,
         MessageID::FACCompetitionStateMessageID,
         MessageID::ViobotSwitchMessageID,
+        MessageID::WaypointStateMessageID,
     };
 
 };

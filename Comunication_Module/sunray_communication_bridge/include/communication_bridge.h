@@ -98,9 +98,9 @@ private:
 
     bool multiClientSwitch; // 多客户端开关
 
-
     std::vector<ros::Subscriber> uav_state_sub;
     std::vector<ros::Subscriber> ugv_state_sub;
+    std::vector<ros::Subscriber> uav_waypointState_sub;
 
     std::map<int,ros::Publisher> control_cmd_pub;
     std::map<int,ros::Publisher> uav_setup_pub;
@@ -109,7 +109,6 @@ private:
     std::map<int,ros::Publisher> ugv_controlCMD_pub;
     std::map<int,ros::Publisher> uav_goal_pub;
     std::map<int,ros::Publisher> ugv_goal_pub;
-
 
     std::map<int,ros::Publisher> uav_waypoint_pub;
     ros::Subscriber  formation_sub;
@@ -124,12 +123,16 @@ private:
     ros::Timer UpdateROSNodeInformationTimer;
     ros::Timer UpdateUDPMulticastTimer;
     ros::Timer UpdateCPUUsageRateTimer;
+    ros::Timer UAVWaypointStateTimer;
 
     CpuData prevData;
 
     TCPServer tcpServer;
     CommunicationUDPSocket *udpSocket=nullptr;
     Codec codec;
+
+    sunray_msgs::WayPointState waypointStateArry[MAX_AGENT_NUM];
+
     DataFrame uavStateData[MAX_AGENT_NUM];
     DataFrame ugvStateData[MAX_AGENT_NUM]; 
 
@@ -164,17 +167,19 @@ private:
     void CheckChildProcessCallBack(const ros::TimerEvent &e);
     void UpdateROSNodeInformation(const ros::TimerEvent &e);
     void UpdateComputerStatus(const ros::TimerEvent &e);
+    void UpdateWaypointState(const ros::TimerEvent &e);
 
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
     void UpdateUDPMulticast(const ros::TimerEvent &e);
 
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
+    void uav_waypointState_cb(const sunray_msgs::WayPointState::ConstPtr &msg, int robot_id);
+
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
     void FACMap_cb(const sunray_msgs::Competion::ConstPtr &msg);
     bool isFACMapEqual3Decimals(const FACMapData& mapData, const sunray_msgs::Competion::ConstPtr& msg);
     void FACState_cb(const std_msgs::String::ConstPtr &msg);
-
 
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);
