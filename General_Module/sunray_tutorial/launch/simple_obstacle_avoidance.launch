@@ -1,19 +1,16 @@
 <launch>
-    <!-- 简易避障演示启动文件 -->
-    <!-- 使用深度图像和立体视觉里程计进行避障，支持动态目标更新 -->
-    
     <!-- 参数配置 -->
     <arg name="uav_id" default="1"/>
     <arg name="uav_name" default="uav"/>
     <arg name="flight_height" default="0.6"/>
     <arg name="forward_vel" default="0.5"/>
     <arg name="rotate_speed" default="0.5"/>
-    <arg name="obstacle_threshold" default="1000"/>
-    <arg name="ratio_threshold" default="0.28"/>
+    <arg name="obstacle_threshold" default="1200"/>
+    <arg name="ratio_threshold" default="0.3"/>
     <arg name="target_x" default="0.0"/>
     <arg name="target_y" default="0.0"/>
     <arg name="target_topic_name" default="/goal_1"/>
-    <arg name="clear_obstacle_duration" default="3.0"/>
+    <arg name="clear_obstacle_duration" default="2.0"/>
 
     
     
@@ -44,21 +41,4 @@
         
         <param name="clear_obstacle_duration" value="$(arg clear_obstacle_duration)"/>
     </node>
-    
-    <!-- 说明信息 -->
-    <!-- <node pkg="rostopic" type="rostopic" name="usage_info" 
-          args="pub -r 0.1 /obstacle_avoidance_info std_msgs/String 
-          'data: 简易避障演示已启动！
-          输入数据：
-          - /baton/stereo3/odometry (里程计)  
-          - /baton/depth_image (深度图像)
-          动态目标更新：
-          - 发布 geometry_msgs/PoseStamped 到 $(arg target_topic_name)
-          飞行规则：
-          - 只能前进和转向，不能后退和左右平移
-          - 前方有障碍时会转向避障
-          - 没有障碍时会朝目标点前进
-          - 到达目标点后会悬停等待新目标'"
-          output="screen"/> -->
-
 </launch>

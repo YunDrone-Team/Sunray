@@ -109,6 +109,13 @@ modules:
     build_path: "build/sunray_formation"
     dependencies: ["sunray_common"]
 
+  # 图像识别模块
+  sunray_detection:
+    description: "多机编队控制模块"
+    source_path: "External_Module/sunray_detection"
+    build_path: "build/sunray_detection"
+    dependencies: ["sunray_planner_utils"]
+
 # ========== 预定义组 ==========
 # 直接基于 build_deprecated 目录的脚本内容
 groups:
@@ -119,7 +126,7 @@ groups:
     
   viobot:
     description: "VIOBOT无人机飞行控制系统，包含无人机飞行控制，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流"
-    modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_media", "ego_planner"]
+    modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_media", "ego_planner", "sunray_detection"]
 
   # # EGO路径规划系统
   # ego:
