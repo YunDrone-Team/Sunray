@@ -1,0 +1,145 @@
+names:
+  0: person
+  1: bicycle
+  2: car
+  3: motorcycle
+  4: airplane
+  5: bus
+  6: train
+  7: truck
+  8: boat
+  9: traffic light
+  10: fire hydrant
+  11: stop sign
+  12: parking meter
+  13: bench
+  14: bird
+  15: cat
+  16: dog
+  17: horse
+  18: sheep
+  19: cow
+  20: elephant
+  21: bear
+  22: zebra
+  23: giraffe
+  24: backpack
+  25: umbrella
+  26: handbag
+  27: tie
+  28: suitcase
+  29: frisbee
+  30: skis
+  31: snowboard
+  32: sports ball
+  33: kite
+  34: baseball bat
+  35: baseball glove
+  36: skateboard
+  37: surfboard
+  38: tennis racket
+  39: bottle
+  40: wine glass
+  41: cup
+  42: fork
+  43: knife
+  44: spoon
+  45: bowl
+  46: banana
+  47: apple
+  48: sandwich
+  49: orange
+  50: broccoli
+  51: carrot
+  52: hot dog
+  53: pizza
+  54: donut
+  55: cake
+  56: chair
+  57: couch
+  58: potted plant
+  59: bed
+  60: dining table
+  61: toilet
+  62: tv
+  63: laptop
+  64: mouse
+  65: remote
+  66: keyboard
+  67: cell phone
+  68: microwave
+  69: oven
+  70: toaster
+  71: sink
+  72: refrigerator
+  73: book
+  74: clock
+  75: vase
+  76: scissors
+  77: teddy bear
+  78: hair drier
+  79: toothbrush
+
+object_points:
+  person:
+    - [250.0, 0.0, 1700.0] # 右肩
+    - [-250.0, 0.0, 1700.0] # 左肩
+    - [250.0, 0.0, 0.0] # 右脚
+    - [-250.0, 0.0, 0.0] # 左脚
+  car:
+    - [1000.0, 500.0, 0.0] # 右前轮
+    - [-1000.0, 500.0, 0.0] # 左前轮
+    - [1000.0, -500.0, 0.0] # 右后轮
+    - [-1000.0, -500.0, 0.0] # 左后轮
+  bicycle:
+    - [500.0, 200.0, 0.0] # 前轮中心
+    - [-500.0, 200.0, 0.0] # 后轮中心
+    - [0.0, 500.0, 500.0] # 自行车座位
+  motorcycle:
+    - [600.0, 300.0, 0.0] # 前轮中心
+    - [-600.0, 300.0, 0.0] # 后轮中心
+    - [0.0, 700.0, 500.0] # 座椅
+  airplane:
+    - [5000.0, 0.0, 2000.0] # 机头
+    - [-5000.0, 0.0, 2000.0] # 机尾
+    - [0.0, 5000.0, 0.0] # 左机翼
+    - [0.0, -5000.0, 0.0] # 右机翼
+  bus:
+    - [1500.0, 700.0, 0.0] # 右前轮
+    - [-1500.0, 700.0, 0.0] # 左前轮
+    - [1500.0, -700.0, 0.0] # 右后轮
+    - [-1500.0, -700.0, 0.0] # 左后轮
+  train:
+    - [2000.0, 1000.0, 0.0] # 右前轮
+    - [-2000.0, 1000.0, 0.0] # 左前轮
+    - [2000.0, -1000.0, 0.0] # 右后轮
+    - [-2000.0, -1000.0, 0.0] # 左后轮
+  truck:
+    - [2000.0, 1000.0, 0.0] # 右前轮
+    - [-2000.0, 1000.0, 0.0] # 左前轮
+    - [2000.0, -1000.0, 0.0] # 右后轮
+    - [-2000.0, -1000.0, 0.0] # 左后轮
+  boat:
+    - [1500.0, 750.0, 500.0] # 右舷
+    - [-1500.0, 750.0, 500.0] # 左舷
+    - [0.0, 0.0, -500.0] # 船底
+  traffic light:
+    - [100.0, 100.0, 500.0] # 上点
+    - [-100.0, 100.0, 500.0] # 左上角
+    - [100.0, -100.0, 0.0] # 下点
+  fire hydrant:
+    - [250.0, 250.0, 500.0] # 顶点
+    - [-250.0, 250.0, 500.0] # 左顶
+    - [0.0, 0.0, 0.0] # 底部中心
+  stop sign:
+    - [300.0, 300.0, 0.0]
+    - [-300.0, 300.0, 0.0]
+    - [300.0, -300.0, 0.0]
+    - [-300.0, -300.0, 0.0]
+  parking meter:
+    - [100.0, 100.0, 500.0]
+    - [-100.0, 100.0, 500.0]
+    - [0.0, 0.0, 0.0]
+  bench:
+    - [1000.0, 500.0, 0.0] # 右边
+    - [-1000.0, 500.0, 0.0] # 左边

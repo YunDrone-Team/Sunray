@@ -1,0 +1,30 @@
+<launch>
+
+    <node pkg="undistort_image" type="undistort_image" name="undistort_image" output="screen" />
+
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find aidetection_yolov7_ros)/config/rosconsole.config"/>
+    <arg name="camera_name" default="/baton" />
+    <arg name="image_topic" default="undistort_image_left" />
+    <arg name="queue_size" default="1" />
+
+    <node pkg="aidetection_yolov7_ros" type="aidetection_yolov7_ros_node" name="aidetection_yolov7_ros_node" output="screen">
+
+        <remap from="image_rect" to="$(arg camera_name)/$(arg image_topic)" />
+        <param name="queue_size" type="int" value="$(arg queue_size)" />
+        <param name="uav_id" type="int" value="1" />
+        <param name="draw_detections_image" type="bool" value="true" />
+
+        <!-- 注意需不同平台需要更换模型路径 nx为yolov7.plan  viobot为yolov7.rknn-->
+        <param name="platform" type="str" value="viobot" />
+        <param name="model_path" type="str" value="$(find aidetection_yolov7_ros)/model/yolov7.rknn" />
+        <param name="npu_id" type="int" value="0" />
+        <param name="num_classes" type="int" value="80" />
+        <param name="conf_thres" type="double" value="0.25" />
+        <param name="iou_thres" type="double" value="0.65" />
+        <param name="input_size" type="int" value="640" />
+        <param name="algorithm_parameters_file" type="str" value="$(find aidetection_yolov7_ros)/config/algorithm_params.yaml" />
+        <param name="camera_parameters_file" type="str" value="$(find aidetection_yolov7_ros)/config/head_camera.yaml" />
+        <param name="local_saving_path" type="str" value="$(find aidetection_yolov7_ros)/output" />
+        
+    </node>
+</launch>

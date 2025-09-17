@@ -1,0 +1,29 @@
+%YAML:1.0
+---
+calibration_time: "Mon Aug 12 14:19:51 2024"
+image_width: 640
+image_height: 480
+camera_name: usb_cam
+distortion_model: plumb_bob
+camera_matrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [392.87984264089187, 0.0, 323.30687713623047, 0.0, 392.87984264089187, 226.98309707641602, 0.0, 0.0, 1.0]
+distortion_coefficients: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [0.0827802775469342, -0.1693147796350196, -0.0003823512376248, -0.000638650333572, 0.068426429487902]
+rectification_matrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+projection_matrix: !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [392.87984264089187, 0.0, 323.30687713623047, 0.0, 0.0, 392.87984264089187, 226.98309707641602, 0.0, 0.0, 0.0, 1.0, 0.0]
+avg_reprojection_error: 1.6889888091837532e-01
+aruco_reprojection_error: 1.2109431741860688e+00
