@@ -9,7 +9,7 @@
     <!-- 是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4 -->
     <arg name="use_vision_pose" default="true" />
     <arg name="server" default="192.168.20.15"/>
-    <arg name="tilted" default="true"/>
+    <arg name="tilted" default="false"/>
     
 
     <!-- 启动 external_fusion_node-->

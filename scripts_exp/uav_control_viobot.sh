@@ -12,7 +12,7 @@ FIRST_WINDOW="main.2"
 declare -A TMUX_CONFIG=(
     ["main"]="
         roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=${UAV_ID}
-        sleep 3 && roslaunch sunray_uav_control external_fusion.launch external_source:=4 position_topic:=/baton/stereo3/odometry enable_rviz:=false use_vision_pose:=false tilted:=true uav_id:=${UAV_ID}
+        sleep 3 && roslaunch sunray_uav_control external_fusion.launch external_source:=4 position_topic:=/baton/stereo3/odometry enable_rviz:=false use_vision_pose:=false uav_id:=${UAV_ID}
         sleep 3 && roslaunch sunray_uav_control sunray_control_node.launch uav_id:=${UAV_ID}
         sleep 2 && roslaunch sunray_uav_control terminal_control.launch uav_id:=${UAV_ID}
     "
