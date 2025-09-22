@@ -33,7 +33,7 @@ public:
     void waypoint_callback(const sunray_msgs::WayPoint::ConstPtr &msg);
     int waypoint_mission();
     bool arrived_waypoint();
-    float get_vel_from_waypoint(float point_x, float point_y);
+    void get_vel_from_waypoint(float point_x, float point_y);
     float get_yaw_from_waypoint(int type, float point_x, float point_y);
     void show_state();
     void uav_init();
@@ -162,6 +162,16 @@ int Waypoint::waypoint_mission()
 {
     // 判断是否达到当前的航点
     bool arrived = arrived_waypoint();
+    
+    // 计算当前与目标点的距离用于调试
+    float dx = uav_state.position[0] - waypoint_vector[uav_wp_state.wp_index].x;
+    float dy = uav_state.position[1] - waypoint_vector[uav_wp_state.wp_index].y;  
+    float dz = uav_state.position[2] - waypoint_vector[uav_wp_state.wp_index].z;
+    float distance = sqrt(dx*dx + dy*dy + dz*dz);
+    
+    Logger::info(node_name, ": Current pos: [", uav_state.position[0], ", ", uav_state.position[1], ", ", uav_state.position[2], "]");
+    Logger::info(node_name, ": Target pos: [", waypoint_vector[uav_wp_state.wp_index].x, ", ", waypoint_vector[uav_wp_state.wp_index].y, ", ", waypoint_vector[uav_wp_state.wp_index].z, "]");
+    Logger::info(node_name, ": Distance to target: ", distance, " m, Arrived: ", arrived ? "YES" : "NO");
 
     if(arrived)
     {
@@ -180,8 +190,22 @@ int Waypoint::waypoint_mission()
         uav_wp_state.waypoint[0] = waypoint_vector[uav_wp_state.wp_index].x;
         uav_wp_state.waypoint[1] = waypoint_vector[uav_wp_state.wp_index].y;
         uav_wp_state.waypoint[2] = waypoint_vector[uav_wp_state.wp_index].z;
+        
         // 计算航点间的移动速度
         get_vel_from_waypoint(waypoint_vector[uav_wp_state.wp_index].x, waypoint_vector[uav_wp_state.wp_index].y);
+        
+        // 确保速度不为零（防止由于计算误差导致的悬停）
+        float vel_norm = sqrt(uav_wp_state.velocity[0]*uav_wp_state.velocity[0] + uav_wp_state.velocity[1]*uav_wp_state.velocity[1]);
+        if (vel_norm < 0.05) // 如果计算出的速度太小，使用最小速度
+        {
+            Logger::warning(node_name, ": Velocity too small, using minimum velocity");
+            if (abs(dx) > ERR) {
+                uav_wp_state.velocity[0] = (dx > 0) ? -0.1 : 0.1;
+            }
+            if (abs(dy) > ERR) {
+                uav_wp_state.velocity[1] = (dy > 0) ? -0.1 : 0.1;
+            }
+        }
         
         // 发布无人机控制指令，移动模式为XyVelZPosYaw，XY控制速度，Z控制高度，偏航角固定
         control_cmd.header.stamp = ros::Time::now();
@@ -189,11 +213,14 @@ int Waypoint::waypoint_mission()
         control_cmd.desired_vel[0] = uav_wp_state.velocity[0];
         control_cmd.desired_vel[1] = uav_wp_state.velocity[1];
         control_cmd.desired_pos[2] = waypoint_vector[uav_wp_state.wp_index].z;
+        
         // 根据偏航角类型计算航点间的偏航角
         uav_wp_state.yaw = get_yaw_from_waypoint(uav_wp.wp_yaw_type,
                                                     waypoint_vector[uav_wp_state.wp_index].x,
                                                     waypoint_vector[uav_wp_state.wp_index].y);
         control_cmd.desired_yaw = uav_wp_state.yaw;
+        
+        Logger::info(node_name, ": Publishing control cmd - vel: [", control_cmd.desired_vel[0], ", ", control_cmd.desired_vel[1], "], pos_z: ", control_cmd.desired_pos[2], ", yaw: ", control_cmd.desired_yaw);
         control_cmd_pub.publish(control_cmd);
     }
 
@@ -329,19 +356,28 @@ bool Waypoint::arrived_waypoint()
 }
 
 // 计算航点需要的速度
-float Waypoint::get_vel_from_waypoint(float point_x, float point_y)
+void Waypoint::get_vel_from_waypoint(float point_x, float point_y)
 {
     // 根据目标点和当前位置作差计算前往目标点的期望速度
     uav_wp_state.velocity[0] = (point_x - uav_state.position[0]) * kp_vel;
     uav_wp_state.velocity[1] = (point_y - uav_state.position[1]) * kp_vel;
 
     float vel_norm = sqrt(uav_wp_state.velocity[0] * uav_wp_state.velocity[0] + uav_wp_state.velocity[1] * uav_wp_state.velocity[1]);
+    // 添加最小速度阈值，避免速度过小导致无人机不移动
+    if (vel_norm < 0.1) 
+    {
+        Logger::warning(node_name, ": Calculated velocity too small: ", vel_norm, " m/s");
+        return;
+    }
+    
     // 如果合速度大于最大速度，则重新计算为最大速度
     if (vel_norm > uav_wp.wp_move_vel)
     {
         uav_wp_state.velocity[0] = uav_wp_state.velocity[0] * uav_wp.wp_move_vel / vel_norm;
         uav_wp_state.velocity[1] = uav_wp_state.velocity[1] * uav_wp.wp_move_vel / vel_norm;
     }
+    
+    Logger::info(node_name, ": Target vel: [", uav_wp_state.velocity[0], ", ", uav_wp_state.velocity[1], "] m/s, norm: ", vel_norm);
 }
 
 // 计算航点需要的yaw值

@@ -367,7 +367,7 @@ struct WaypointData
     {
         start=false;
         wp_num=0;
-        wp_end_type=0;
+        wp_end_type=1;
         wp_yaw_type=1;
         wp_move_vel=1;
 
