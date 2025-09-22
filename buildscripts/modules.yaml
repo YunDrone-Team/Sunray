@@ -116,6 +116,19 @@ modules:
     build_path: "build/sunray_detection"
     dependencies: ["sunray_planner_utils"]
 
+  # 比赛模块
+  sunray_competition:
+    description: "2025FAC比赛仿真模块"
+    source_path: "Simulation/2025_uav_competiton_demo"
+    build_path: "build/2025_uav_competiton_demo"
+    dependencies: ["sunray_common"]
+
+  sunray_score:
+    description: "2025FAC比赛记分模块"
+    source_path: "Simulation/future_2025_score"
+    build_path: "build/future_2025_score"
+    dependencies: ["sunray_common"]
+
 # ========== 预定义组 ==========
 # 直接基于 build_deprecated 目录的脚本内容
 groups:
@@ -137,6 +150,11 @@ groups:
   # sim:
   #   description: "仿真环境与测试平台"  
   #   modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin"]
+
+  # 仿真环境与测试平台
+  sim_competition:
+    description: "仿真环境与测试平台"  
+    modules: ["sunray_common", "sunray_uav_control", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin", "sunray_competition", "sunray_score"]
     
   # 地面机器人控制系统
   ugv:
