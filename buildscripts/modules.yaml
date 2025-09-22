@@ -87,6 +87,18 @@ modules:
     build_path: "build/gazebo_plugin"
     dependencies: []
 
+  wind_zone_plugin:
+    description: "风场仿真插件"
+    source_path: "Simulation/gazebo_plugin/wind_zone_plugin"
+    build_path: "build/wind_zone_plugin"
+    dependencies: []
+
+  random_cylinder_plugin:
+    description: "随机柱子仿真插件"
+    source_path: "Simulation/gazebo_plugin/random_cylinder_plugin"
+    build_path: "build/random_cylinder_plugin"
+    dependencies: []
+
   # 规划器模块
   ego_planner:
     description: "EGO-planner路径规划算法"
@@ -111,10 +123,23 @@ modules:
 
   # 图像识别模块
   sunray_detection:
-    description: "多机编队控制模块"
+    description: "图像识别模块"
     source_path: "External_Module/sunray_detection"
     build_path: "build/sunray_detection"
     dependencies: ["sunray_planner_utils"]
+
+  # 比赛模块
+  sunray_competition:
+    description: "2025FAC比赛模块"
+    source_path: "Simulation/2025_uav_competiton_demo"
+    build_path: "build/2025_uav_competiton_demo"
+    dependencies: ["sunray_common"]
+
+  sunray_score:
+    description: "2025FAC比赛记分模块"
+    source_path: "Simulation/future_2025_score"
+    build_path: "build/future_2025_score"
+    dependencies: ["sunray_common"]
 
 # ========== 预定义组 ==========
 # 直接基于 build_deprecated 目录的脚本内容
@@ -137,6 +162,11 @@ groups:
   # sim:
   #   description: "仿真环境与测试平台"  
   #   modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin"]
+
+  # 仿真环境与测试平台
+  sim_competition:
+    description: "仿真环境与测试平台"  
+    modules: ["sunray_common", "sunray_uav_control", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin", "sunray_competition", "sunray_score", "wind_zone_plugin", "random_cylinder_plugin"]
     
   # 地面机器人控制系统
   ugv:
