@@ -9,7 +9,7 @@
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
 
-#define DEBUG_MODE 0    // 设置为0以启用调试模式，跳过起飞等步骤，直接进入避障逻辑
+#define DEBUG_MODE 1    // 设置为0以启用调试模式，跳过起飞等步骤，直接进入避障逻辑
 
 using namespace sunray_logger;
 using namespace std;
@@ -32,6 +32,7 @@ double forward_vel = 0.5;       // 前进速度，单位：m/s
 double rotate_speed = 0.3;      // 旋转速度，单位：rad/s
 int obstacle_threshold = 1000;  // 小于1000mm的点视为障碍物
 double ratio_threshold = 0.3;   // 30%的点视为有障碍物
+double roll_time = 0.7;         // 旋转0.7秒
 
 enum AvoidanceState {
     NAVIGATING_TO_TARGET,    // 正常导航到目标
@@ -46,7 +47,8 @@ ros::Time state_change_time;           // 状态改变时间
 double clear_obstacle_duration = 2.0;  // 清除障碍后的缓冲时间（秒）
 int avoid_direction = 0;               // 避障方向：1=左转，-1=右转，0=无
 
-ros::Time last_time;// 上次打印状态的时间
+bool enable;                    // 是否启用避障逻辑
+ros::Time last_time;            // 上次打印状态的时间
 
 struct SimpleObstacleInfo
 {
@@ -137,15 +139,15 @@ void target_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 // 简单的深度图像处理函数
 SimpleObstacleInfo process_depth_image_simple()
 {
-    SimpleObstacleInfo info;
-    info.front_blocked = true;
-    info.left_clear = false;
-    info.right_clear = false;
-    info.front_distance = 0.0;
-
+    static SimpleObstacleInfo info;
+    
     // 如果没有收到深度图像，返回默认值
     if (!depth_image_received)
     {
+        info.front_blocked = true;
+        info.left_clear = false;
+        info.right_clear = false;
+        info.front_distance = 0.0;
         return info;
     }
 
@@ -293,7 +295,7 @@ bool is_target_reached()
     double dy = target_pos.y - uav_state.position[1];
     double distance = sqrt(dx * dx + dy * dy);
 
-    return distance < 0.8; // 距离小于0.8米认为到达目标
+    return distance < 0.15; // 距离小于0.2米认为到达目标
 }
 
 int main(int argc, char **argv)
@@ -315,17 +317,18 @@ int main(int argc, char **argv)
     int uav_id;
     string uav_name;
     string target_topic_name;
-    nh.param<int>("uav_id", uav_id, 1);                                      // 无人机ID，默认为1
-    nh.param<string>("uav_name", uav_name, "uav");                           // 无人机名称，默认为"uav"
-    nh.param<string>("target_topic_name", target_topic_name, "/goal_1"); // 目标点话题名称
-    nh.param<double>("flight_height", flight_height, 0.6);                   // 飞行高度，默认1米
-    nh.param<double>("forward_vel", forward_vel, 0.5);                       // 前进速度，默认0.5m/s
-    nh.param<double>("rotate_speed", rotate_speed, 0.3);                     // 旋转速度，默认0.3rad/s
-    nh.param<int>("obstacle_threshold", obstacle_threshold, 1000);         // 障碍物阈值，默认1000mm
-    nh.param<double>("ratio_threshold", ratio_threshold, 0.3);               // 障碍物比例阈值，默认30%
-    nh.param<double>("target_x", target_pos.x, 3.0);                         // 初始目标X坐标，默认3米
-    nh.param<double>("target_y", target_pos.y, 0.0);                         // 初始目标Y坐标，默认0米
-    nh.param<double>("clear_obstacle_duration", clear_obstacle_duration, 2.0);// 清除障碍后的缓冲时间（秒）
+    nh.param<int>("uav_id", uav_id, 1);                                         // 无人机ID，默认为1
+    nh.param<string>("uav_name", uav_name, "uav");                              // 无人机名称，默认为"uav"
+    nh.param<string>("target_topic_name", target_topic_name, "/goal_1");        // 目标点话题名称
+    nh.param<double>("flight_height", flight_height, 0.6);                      // 飞行高度，默认1米
+    nh.param<double>("forward_vel", forward_vel, 0.5);                          // 前进速度，默认0.5m/s
+    nh.param<double>("rotate_speed", rotate_speed, 0.3);                        // 旋转速度，默认0.3rad/s
+    nh.param<int>("obstacle_threshold", obstacle_threshold, 1000);              // 障碍物阈值，默认1000mm
+    nh.param<double>("ratio_threshold", ratio_threshold, 0.3);                  // 障碍物比例阈值，默认30%
+    nh.param<double>("target_x", target_pos.x, 3.0);                            // 初始目标X坐标，默认3米
+    nh.param<double>("target_y", target_pos.y, 0.0);                            // 初始目标Y坐标，默认0米
+    nh.param<double>("clear_obstacle_duration", clear_obstacle_duration, 2.0);  // 清除障碍后的前进时间（秒）
+    nh.param<double>("roll_time", roll_time, 1.0);                              // 清除障碍后的旋转时间（秒）
 
     target_pos.z = flight_height; // 目标高度设置为飞行高度
     target_set = true;            // 标记目标已设置
@@ -433,6 +436,7 @@ int main(int argc, char **argv)
         // 检查目标是否被更新
         if (target_updated) {
             target_updated = false;
+            enable = true;
             // 重置避障状态机
             current_state = NAVIGATING_TO_TARGET;
             avoid_direction = 0;
@@ -442,6 +446,7 @@ int main(int argc, char **argv)
         if (is_target_reached()) {
             // 重置避障状态机
             current_state = REACHED_TARGET;
+            enable = false;
             avoid_direction = 0;
             // 悬停控制
             uav_cmd.header.stamp = ros::Time::now();
@@ -456,127 +461,143 @@ int main(int argc, char **argv)
             continue;
         }
 
-        switch(current_state) {
-            case NAVIGATING_TO_TARGET:
-            {
-                if (obstacle_info.front_blocked) {
-                    // 检测到障碍物，切换到避障状态
-                    current_state = AVOIDING_OBSTACLE;
-                    state_change_time = ros::Time::now();
-                    
-                    // 选择避障方向
-                    if (obstacle_info.left_clear && !obstacle_info.right_clear) {
-                        avoid_direction = 1;  // 向左转
-                    } else if (!obstacle_info.left_clear && obstacle_info.right_clear) {
-                        avoid_direction = -1; // 向右转
-                    } else if (obstacle_info.left_clear && obstacle_info.right_clear) {
-                        avoid_direction = -1; // 两边都畅通，选择向右转
+        // if (ros::Time::now() - start_time > predict_time)
+        // {
+        //     current_state = ERROR;
+        //     avoid_direction = 0;
+
+        //     uav_cmd.header.stamp = ros::Time::now();
+        //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::Hover;
+        //     control_cmd_pub.publish(uav_cmd);
+
+        //     // // 将当前点设置成目标点
+        //     // target_pos.x = uav_state.position[0];
+        //     // target_pos.y = uav_state.position[1];
+        //     // target_pos.z = flight_height; // 保持飞行高度不变
+        //     continue;
+        // }
+
+        if (enable)
+        {
+            switch(current_state) {
+                case NAVIGATING_TO_TARGET:
+                {
+                    if (obstacle_info.front_blocked) {
+                        // 检测到障碍物，切换到避障状态
+                        current_state = AVOIDING_OBSTACLE;
+                        state_change_time = ros::Time::now();
+                        
+                        // 选择避障方向
+                        if (obstacle_info.left_clear && !obstacle_info.right_clear) {
+                            avoid_direction = 1;  // 向左转
+                        } else if (!obstacle_info.left_clear && obstacle_info.right_clear) {
+                            avoid_direction = -1; // 向右转
+                        } else if (obstacle_info.left_clear && obstacle_info.right_clear) {
+                            avoid_direction = -1; // 两边都畅通，选择向右转
+                        } else {
+                            avoid_direction = 1;  // 三面都有障碍，向左转寻找出路
+                        }
+                        
+                        // 障碍物检测日志已移至状态显示函数
+                    } else if (!is_facing_target()) {
+                        // 前方畅通但未面向目标，切换到转向目标状态
+                        current_state = TURNING_TO_TARGET;
+                        state_change_time = ros::Time::now();
                     } else {
-                        avoid_direction = 1;  // 三面都有障碍，向左转寻找出路
+                        // 面向目标且前方畅通，正常前进
+                        vx = forward_vel;
+                        yaw_rate = 0.0;
+                    }
+                    break;
+                }
+                
+                case AVOIDING_OBSTACLE:
+                {
+                    // 执行避障转向
+                    vx = 0.0; // 停止前进
+                    yaw_rate = avoid_direction * rotate_speed;
+                    
+                    // 如果前方畅通且已避障一定时间，进入清除障碍状态
+                    if (!obstacle_info.front_blocked && 
+                        ros::Time::now() - state_change_time > ros::Duration(1.0)) {
+                        current_state = CLEARING_OBSTACLE;
+                        state_change_time = ros::Time::now();
+                    }
+                    break;
+                }
+                
+                case CLEARING_OBSTACLE:
+                {
+                    // 清除障碍物状态：慢速前进，确保远离障碍物
+                    if (ros::Time::now() - state_change_time < ros::Duration(roll_time))
+                    {
+                        vx = 0.0;
+                        yaw_rate = avoid_direction * rotate_speed;
+                    }
+                    else {
+                        vx = forward_vel;  // 前进
+                        yaw_rate = 0.0;
                     }
                     
-                    // 障碍物检测日志已移至状态显示函数
-                } else if (!is_facing_target()) {
-                    // 前方畅通但未面向目标，切换到转向目标状态
-                    current_state = TURNING_TO_TARGET;
-                    state_change_time = ros::Time::now();
-                } else {
-                    // 面向目标且前方畅通，正常前进
-                    vx = forward_vel;
-                    yaw_rate = 0.0;
+                    // 检查是否完成清除
+                    if (ros::Time::now() - state_change_time > ros::Duration(clear_obstacle_duration + roll_time)) {
+                        current_state = NAVIGATING_TO_TARGET;
+                        avoid_direction = 0;  // 重置避障方向
+                    } else if (obstacle_info.front_blocked) {
+                        // 如果清除过程中又遇到障碍物，重新开始避障
+                        current_state = AVOIDING_OBSTACLE;
+                        state_change_time = ros::Time::now();
+                    }
+                    break;
                 }
-                break;
-            }
-            
-            case AVOIDING_OBSTACLE:
-            {
-                // 执行避障转向
-                vx = 0.0; // 停止前进
-                yaw_rate = avoid_direction * rotate_speed;
                 
-                // 如果前方畅通且已避障一定时间，进入清除障碍状态
-                if (!obstacle_info.front_blocked && 
-                    ros::Time::now() - state_change_time > ros::Duration(1.0)) {
-                    current_state = CLEARING_OBSTACLE;
-                    state_change_time = ros::Time::now();
-                }
-                break;
-            }
-            
-            case CLEARING_OBSTACLE:
-            {
-                // 清除障碍物状态：慢速前进，确保远离障碍物
-                double roll_time = 1.0; // 旋转1秒
-                if (ros::Time::now() - state_change_time < ros::Duration(roll_time))
+                case TURNING_TO_TARGET:
                 {
-                    vx = 0.0;
-                    yaw_rate = avoid_direction * rotate_speed;
+                    // // 转向目标方向
+                    // if (obstacle_info.front_blocked) {
+                    //     // 转向过程中遇到障碍物，立即切换到避障状态
+                    //     current_state = AVOIDING_OBSTACLE;
+                    //     state_change_time = ros::Time::now();
+                        
+                    //     // 重新选择避障方向
+                    //     if (obstacle_info.left_clear && !obstacle_info.right_clear) {
+                    //         avoid_direction = 1;
+                    //     } else if (!obstacle_info.left_clear && obstacle_info.right_clear) {
+                    //         avoid_direction = -1;
+                    //     } else {
+                    //         avoid_direction = -1; // 默认向右
+                    //     }
+                        
+                    // } else 
+                    if (is_facing_target()) {
+                        // 已面向目标，切换到正常导航
+                        current_state = NAVIGATING_TO_TARGET;
+                    } else {
+                        // 继续转向目标
+                        vx = 0.0;
+                        
+                        double target_yaw = calculate_target_yaw();
+                        double current_yaw = uav_state.attitude[2];
+                        double yaw_diff = target_yaw - current_yaw;
+                        
+                        // 将角度差限制在[-π, π]范围内
+                        while (yaw_diff > M_PI) yaw_diff -= 2 * M_PI;
+                        while (yaw_diff < -M_PI) yaw_diff += 2 * M_PI;
+                        
+                        yaw_rate = (yaw_diff > 0) ? rotate_speed : -rotate_speed;
+                    }
+                    break;
                 }
-                else {
-                    vx = forward_vel * 0.5;  // 50%速度前进
-                    yaw_rate = 0.0;
-                }
-                
-                // 检查是否完成清除
-                if (ros::Time::now() - state_change_time > ros::Duration(clear_obstacle_duration + roll_time)) {
-                    current_state = NAVIGATING_TO_TARGET;
-                    avoid_direction = 0;  // 重置避障方向
-                } else if (obstacle_info.front_blocked) {
-                    // 如果清除过程中又遇到障碍物，重新开始避障
-                    current_state = AVOIDING_OBSTACLE;
-                    state_change_time = ros::Time::now();
-                }
-                break;
             }
-            
-            case TURNING_TO_TARGET:
-            {
-                // // 转向目标方向
-                // if (obstacle_info.front_blocked) {
-                //     // 转向过程中遇到障碍物，立即切换到避障状态
-                //     current_state = AVOIDING_OBSTACLE;
-                //     state_change_time = ros::Time::now();
-                    
-                //     // 重新选择避障方向
-                //     if (obstacle_info.left_clear && !obstacle_info.right_clear) {
-                //         avoid_direction = 1;
-                //     } else if (!obstacle_info.left_clear && obstacle_info.right_clear) {
-                //         avoid_direction = -1;
-                //     } else {
-                //         avoid_direction = -1; // 默认向右
-                //     }
-                    
-                // } else 
-                if (is_facing_target()) {
-                    // 已面向目标，切换到正常导航
-                    current_state = NAVIGATING_TO_TARGET;
-                } else {
-                    // 继续转向目标
-                    vx = 0.0;
-                    
-                    double target_yaw = calculate_target_yaw();
-                    double current_yaw = uav_state.attitude[2];
-                    double yaw_diff = target_yaw - current_yaw;
-                    
-                    // 将角度差限制在[-π, π]范围内
-                    while (yaw_diff > M_PI) yaw_diff -= 2 * M_PI;
-                    while (yaw_diff < -M_PI) yaw_diff += 2 * M_PI;
-                    
-                    yaw_rate = (yaw_diff > 0) ? rotate_speed : -rotate_speed;
-                }
-                break;
-            }
+            // 发送控制命令（使用机体坐标系XyVelZPosYawBody模式）
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody;     // 机体坐标系XY速度，Z位置，偏航角速率控制
+            uav_cmd.desired_vel[0] = vx;                                        // X方向速度（机体前进方向）
+            uav_cmd.desired_vel[1] = 0.0;                                       // Y方向速度（机体左右方向，这里始终为0）
+            uav_cmd.desired_pos[2] = flight_height - uav_state.position[2];     // Z方向位置（保持飞行高度）
+            uav_cmd.desired_yaw_rate = yaw_rate;                                // 期望偏航角速率
+            control_cmd_pub.publish(uav_cmd);
         }
-        
-        // 发送控制命令（使用机体坐标系XyVelZPosYawBody模式）
-        uav_cmd.header.stamp = ros::Time::now();
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody;     // 机体坐标系XY速度，Z位置，偏航角速率控制
-        uav_cmd.desired_vel[0] = vx;                                        // X方向速度（机体前进方向）
-        uav_cmd.desired_vel[1] = 0.0;                                       // Y方向速度（机体左右方向，这里始终为0）
-        uav_cmd.desired_pos[2] = flight_height - uav_state.position[2];     // Z方向位置（保持飞行高度）
-        uav_cmd.desired_yaw_rate = yaw_rate;                                // 期望偏航角速率
-        control_cmd_pub.publish(uav_cmd);
-
         ros::spinOnce();
         rate.sleep();
     }
