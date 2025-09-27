@@ -52,6 +52,13 @@ add_message_files(
   viobot_ctrl.msg
 )
 
+add_message_files(
+  DIRECTORY test_msg
+  FILES
+  MissionCMD.msg
+  FollowerCMD.msg
+)
+
 generate_messages(
   DEPENDENCIES
   actionlib_msgs

@@ -47,6 +47,8 @@ using namespace sunray_logger;
 #include <sunray_msgs/LinktrackNodeframe2.h>
 #include <sunray_msgs/algo_ctrl.h>
 #include <sunray_msgs/algo_status.h>
+#include <sunray_msgs/MissionCMD.h>
+#include <sunray_msgs/FollowerCMD.h>
 // std_msgs
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
