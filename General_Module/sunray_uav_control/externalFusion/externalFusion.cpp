@@ -34,11 +34,9 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>(uav_name + "/mavros/local_position/velocity_local", 10, &ExternalFusion::px4_vel_callback, this);
     // 【订阅】【重要话题】PX4中的无人机欧拉角 - 飞控 -> mavros -> 本节点
     px4_att_sub = nh.subscribe<sensor_msgs::Imu>(uav_name + "/mavros/imu/data", 10, &ExternalFusion::px4_att_callback, this);
-    // 【订阅】无人机GPS卫星数量 - 飞控 -> mavros -> 本节点
-    px4_gps_satellites_sub = nh.subscribe<std_msgs::UInt32>(uav_name + "/mavros/global_position/raw/satellites", 10, &ExternalFusion::px4_gps_satellites_callback, this);
-    // 【订阅】无人机GPS状态 - 飞控 -> mavros -> 本节点
+    // 【订阅】无人机GPS状态（融合后） - 飞控 -> mavros -> 本节点
     px4_gps_state_sub = nh.subscribe<sensor_msgs::NavSatFix>(uav_name + "/mavros/global_position/global", 10, &ExternalFusion::px4_gps_state_callback, this);
-    // 【订阅】无人机GPS经纬度 - 飞控 -> mavros -> 本节点
+    // 【订阅】无人机GPS经纬度（原始） - 飞控 -> mavros -> 本节点
     px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(uav_name + "/mavros/gpsstatus/gps1/raw", 10, &ExternalFusion::px4_gps_raw_callback, this);
     // 【订阅】PX4中无人机的位置/速度/加速度设定值 - 飞控 -> mavros -> 本节点 （用于检验控制指令是否被PX4执行）
     px4_pos_target_sub = nh.subscribe<mavros_msgs::PositionTarget>(uav_name + "/mavros/setpoint_raw/target_local", 1, &ExternalFusion::px4_pos_target_callback, this);
@@ -293,25 +291,34 @@ void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.attitude[2] = yaw;
 }
 
-// 无人机卫星数量回调函数
-void ExternalFusion::px4_gps_satellites_callback(const std_msgs::UInt32::ConstPtr &msg)
-{
-    px4_state.satellites = msg->data;
-}
-
 // 无人机卫星状态回调函数
 void ExternalFusion::px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
+    // status（int8）：表示定位质量。
+    // STATUS_NO_FIX = -1：无法定位。
+    // STATUS_FIX = 0：普通定位。
+    // STATUS_SBAS_FIX = 1：带卫星增强系统（如WAAS, EGNOS）的定位。
+    // STATUS_GBAS_FIX = 2：带地面增强系统（如GBAS）的定位。
     px4_state.gps_status = msg->status.status;
+
+    // service（uint16）：表示使用的卫星系统，使用位掩码（bitmask）表示。
+    // SERVICE_GPS = 1：美国GPS。
+    // SERVICE_GLONASS = 2：俄罗斯GLONASS。
+    // SERVICE_COMPASS = 4：中国北斗（BeiDou）。
+    // SERVICE_GALILEO = 8：欧盟Galileo。
     px4_state.gps_service = msg->status.service;
+
+    px4_state.latitude = msg->latitude;
+    px4_state.longitude = msg->longitude;
+    px4_state.altitude = msg->altitude;
 }
 
 // 无人机gps原始数据回调函数
 void ExternalFusion::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg)
 {
-    px4_state.latitude = msg->lat;
-    px4_state.longitude = msg->lon;
-    px4_state.altitude = msg->alt;
+    gps_raw = *msg;
+
+    px4_state.satellites = gps_raw.satellites_visible;
 }
 
 // 回调函数：接收PX4的姿态设定值
@@ -401,11 +408,23 @@ void ExternalFusion::show_px4_state()
     }
     else
     {
+
+    // service（uint16）：表示使用的卫星系统，使用位掩码（bitmask）表示。
+    // SERVICE_GPS = 1：美国GPS。
+    // SERVICE_GLONASS = 2：俄罗斯GLONASS。
+    // SERVICE_COMPASS = 4：中国北斗（BeiDou）。
+    // SERVICE_GALILEO = 8：欧盟Galileo。
+        // status（int8）：表示定位质量。
+        // STATUS_NO_FIX = -1：无法定位。
+        // STATUS_FIX = 0：普通定位。
+        // STATUS_SBAS_FIX = 1：带卫星增强系统（如WAAS, EGNOS）的定位。
+        // STATUS_GBAS_FIX = 2：带地面增强系统（如GBAS）的定位。
+
         // GPS模式的情况：经纬度（全局位置）
         Logger::print_color(int(LogColor::blue), "GPS Status");
         Logger::print_color(int(LogColor::green), "GPS STATUS:", px4_state.gps_status, "SERVICE:", px4_state.gps_service);
-        Logger::print_color(int(LogColor::green), "GPS SATS:", px4_state.satellites);
-        Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(px4_state.latitude), int(px4_state.longitude), int(px4_state.altitude));
+        Logger::print_color(int(LogColor::green), "GPS satellites:", px4_state.satellites);
+        Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(px4_state.latitude), int(px4_state.longitude),"[deg*1e7]", int(px4_state.altitude)/1000.0, "[m](MSL)");
         // todo global position
     }
 

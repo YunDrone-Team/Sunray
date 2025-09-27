@@ -41,8 +41,6 @@ uint8 satellites                 ## GPS卫星数量
 ## 无人机全局定位信息（GPS状态） - 来自~/mavros/global_position/global
 uint8 gps_status                 ## GPS状态
 uint8 gps_service                ## GPS服务
-
-## 无人机全局定位信息（经纬度） - 来自~/mavros/gps1/raw
 float64 latitude                 ## 纬度，单位：[°]
 float64 longitude                ## 经度，单位：[°]
 float64 altitude                 ## 高度，单位：[m]
