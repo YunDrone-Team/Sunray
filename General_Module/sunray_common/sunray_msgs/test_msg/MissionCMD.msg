@@ -4,9 +4,9 @@
 std_msgs/Header header
 
 ## 任务命令
-uint8 mission_cmd
+uint8 mission
 
-## 控制命令枚举 - 基础移动模式
+## 任务命令枚举
 uint8 TAKEOFF = 1       # 起飞
 uint8 LAND = 2          # 原地降落
 uint8 RETURN = 3        # 返回原点
