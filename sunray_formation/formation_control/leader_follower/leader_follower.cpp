@@ -17,6 +17,8 @@ void LeaderFollower::init(ros::NodeHandle &nh)
     // 【订阅】ORCA指令 - orca_node -> 本节点 (转换为UAVControlCMD，发送给uav_control_node)
     orca_cmd_sub = nh.subscribe<sunray_msgs::OrcaCmd>(uav_name + "/orca_cmd", 10, &LeaderFollower::orca_cmd_cb, this);
 
+    // 【订阅】ORCA状态
+
     // 【订阅】无人机的状态
     for (int i = 0; i < agent_num; i++)
     {
@@ -63,7 +65,14 @@ void LeaderFollower::mainLoop()
 
 void LeaderFollower::show_debug_info()
 {
-    
+    Logger::print_color(int(LogColor::cyan), ">>>>>>>>>>>>>>>> 领-从集群编队 - [", uav_name, "] <<<<<<<<<<<<<<<<<");
+
+    // 任务指令 - 连接状态、飞控模式、电池状态
+    Logger::print_color(int(LogColor::cyan), "-------- 任务指令 - [~/sunray/mission_cmd]");
+
+
+
+
 }
 
 // ORCA计算得到的速度，直接发布
