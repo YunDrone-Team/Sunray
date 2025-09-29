@@ -111,6 +111,10 @@ add_executable(sunray_logger_test utils/sunray_logger_test.cpp)
 add_dependencies(sunray_logger_test sunray_control_gencpp)
 target_link_libraries(sunray_logger_test ${catkin_LIBRARIES})
 
+add_executable(WGS84_test utils/WGS84_test.cpp)
+add_dependencies(WGS84_test sunray_control_gencpp)
+target_link_libraries(WGS84_test ${catkin_LIBRARIES})
+
 # add_executable(uav_control_mode_pub utils/uav_control_mode_pub.cpp)
 # add_dependencies(uav_control_mode_pub sunray_control_gencpp)
 # target_link_libraries(uav_control_mode_pub ${catkin_LIBRARIES})

@@ -130,9 +130,17 @@ modules:
   # 编队模块
   sunray_formation:
     description: "多机编队控制模块"
-    source_path: "sunray_formation"
-    build_path: "build/sunray_formation"
+    source_path: "sunray_formation/formation_control"
+    build_path: "build/formation_control"
     dependencies: ["sunray_common"]
+
+  # ORCA算法ROS实现
+  sunray_orca:
+    description: "ORCA算法"
+    source_path: "sunray_formation/sunray_orca"
+    build_path: "build/sunray_orca"
+    dependencies: ["sunray_common"]
+
 
   # 图像识别模块
   sunray_detection:
@@ -178,7 +186,12 @@ groups:
   ugv:
     description: "地面机器人控制系统，包含地面机器人控制节点，地面机器人外部定位，地面机器人控制驱动"
     modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
-    
+
+  swarm_uav:
+    description: "“智群·Sunray”集群控制代码包，包含无人机飞行控制，通信桥接，无人机控制节点，集群控制，ORCA"
+    modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_orca", "sunray_formation"]
+
+
   # # 完整多机系统（不含地面机器人）
   # all:
   #   description: "完整多机系统（不含地面机器人）"

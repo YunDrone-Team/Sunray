@@ -13,6 +13,9 @@
     <arg name="clear_obstacle_duration" default="1.4"/>
     <arg name="roll_time" default="0.1"/>
 
+    <!-- 相机类型，1为viobot，2为d435i -->
+    <arg name="camera_source" default="1"/>
+    
     <!-- 启动简易避障节点 -->
     <node pkg="sunray_tutorial" 
           type="simple_obstacle_avoidance" 
@@ -38,6 +41,9 @@
         
         <!-- 动态目标更新话题 -->
         <param name="target_topic_name" value="$(arg target_topic_name)"/>
+        
+        <!-- 相机参数 -->
+        <param name="camera_source" value="$(arg camera_source)"/>
         
         <param name="clear_obstacle_duration" value="$(arg clear_obstacle_duration)"/>
     </node>
