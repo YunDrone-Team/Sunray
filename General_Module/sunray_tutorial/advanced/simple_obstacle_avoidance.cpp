@@ -33,7 +33,6 @@ double rotate_speed = 0.3;      // 旋转速度，单位：rad/s
 int obstacle_threshold = 1000;  // 小于1000mm的点视为障碍物
 double ratio_threshold = 0.3;   // 30%的点视为有障碍物
 double roll_time = 0.7;         // 旋转0.7秒
-int camera_source = 0;          // 相机类型索引
 
 enum AvoidanceState {
     NAVIGATING_TO_TARGET,    // 正常导航到目标
@@ -58,42 +57,6 @@ struct SimpleObstacleInfo
     bool right_clear;      // 右边是否畅通
     double front_distance; // 前方距离
 };
-
-// 相机类型结构体
-typedef enum {
-    none,
-    viobot,
-    d435i,
-}Type;
-
-struct CameraType
-{
-    Type type;
-    string depth_topic;     // 深度图像话题
-    string cv_type;         // cv格式，如MONO16, MONO8, STEREO16, STEREO8等
-    string depth_unit;      // 深度图单位，如m, mm等
-    double unit_to_m;       // 单位转换系数，将深度图单位转换为m
-};
-
-CameraType camera_type = {none, "", "", "", 0.0};
-
-void set_camera_param(Type type) {
-    if(type == viobot) {
-        camera_type.type = viobot;
-        camera_type.depth_topic = "/baton/depth_image";
-        camera_type.cv_type = "mono16";
-        camera_type.depth_unit = "mm";
-        camera_type.unit_to_m = 0.001;
-    } else if(type == d435i) {
-        camera_type.type = d435i;   
-        camera_type.depth_topic = "/d435i/depth/image_rect";
-        camera_type.cv_type = "32FC1";
-        camera_type.depth_unit = "m";
-        camera_type.unit_to_m = 1;
-    } else {
-        camera_type.type = none;
-    }
-}
 
 string get_state_name(AvoidanceState state) {
     switch(state) {
@@ -191,7 +154,7 @@ SimpleObstacleInfo process_depth_image_simple()
     try
     {
         // 将ROS图像消息转换为OpenCV格式
-        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(depth_image, camera_type.cv_type);
+        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::MONO16);
         cv::Mat depth_mat = cv_ptr->image;
 
         int rows = depth_mat.rows; // 图像高度
@@ -218,9 +181,9 @@ SimpleObstacleInfo process_depth_image_simple()
         right_region.setTo(0, right_region == 0);
         
         // 计算每个区域内小于阈值的点的比例
-        double left_obstacle_ratio = (double)cv::countNonZero(left_region * camera_type.unit_to_m < obstacle_threshold) / (region_width * check_height);
-        double center_obstacle_ratio = (double)cv::countNonZero(center_region * camera_type.unit_to_m < obstacle_threshold) / (region_width * check_height);
-        double right_obstacle_ratio = (double)cv::countNonZero(right_region * camera_type.unit_to_m < obstacle_threshold) / (region_width * check_height);
+        double left_obstacle_ratio = (double)cv::countNonZero(left_region < obstacle_threshold) / (region_width * check_height);
+        double center_obstacle_ratio = (double)cv::countNonZero(center_region < obstacle_threshold) / (region_width * check_height);
+        double right_obstacle_ratio = (double)cv::countNonZero(right_region < obstacle_threshold) / (region_width * check_height);
         // 计算前方距离（中间区域的平均深度，排除0值）
         if (center_obstacle_ratio > ratio_threshold)
         {
@@ -246,7 +209,7 @@ SimpleObstacleInfo process_depth_image_simple()
         {
             info.right_clear = true;
         }
-        info.front_distance = cv::mean(center_region, center_region > 0)[0] * camera_type.unit_to_m; // 转换为米
+        info.front_distance = cv::mean(center_region, center_region > 0)[0] / 1000.0; // 转换为米
 
         // 将原本的深度图像转换成彩色，标记三个区域，并把三个区域内的障碍物比例显示出来，同时显示该区域是否有障碍物，把转换后的图像发布成新话题
         cv::Mat depth_color;
@@ -366,17 +329,6 @@ int main(int argc, char **argv)
     nh.param<double>("target_y", target_pos.y, 0.0);                            // 初始目标Y坐标，默认0米
     nh.param<double>("clear_obstacle_duration", clear_obstacle_duration, 2.0);  // 清除障碍后的前进时间（秒）
     nh.param<double>("roll_time", roll_time, 1.0);                              // 清除障碍后的旋转时间（秒）
-    nh.param<int>("camera_source", camera_source, 0);                  // 相机类型索引，默认0
-
-
-
-    // 根据相机类型赋值相机参数,如果超过索引范围，跳出程序
-    if (camera_source == 0)
-    {
-        ROS_ERROR("请设置正确的相机类型");
-        return -1;
-    }
-    set_camera_param((Type)camera_source);
 
     target_pos.z = flight_height; // 目标高度设置为飞行高度
     target_set = true;            // 标记目标已设置
@@ -387,7 +339,7 @@ int main(int argc, char **argv)
     // 创建订阅者
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1, uav_state_cb);
     ros::Subscriber stereo_odom_sub = nh.subscribe<nav_msgs::Odometry>("/baton/stereo3/odometry", 1, stereo_odom_cb);
-    ros::Subscriber depth_image_sub = nh.subscribe<sensor_msgs::Image>(camera_type.depth_topic, 1, depth_image_cb);
+    ros::Subscriber depth_image_sub = nh.subscribe<sensor_msgs::Image>("/baton/depth_image", 1, depth_image_cb);
     // 动态目标点订阅者 - 支持运行时更新目标点
     ros::Subscriber target_sub = nh.subscribe<geometry_msgs::PoseStamped>(target_topic_name, 1, target_cb);
 
