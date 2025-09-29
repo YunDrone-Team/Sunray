@@ -3,7 +3,7 @@
         <param name="frame_width" type="int" value="640"/>
         <param name="frame_height" type="int" value="480"/>
         <param name="fps" type="int" value="30"/>
-        <param name="rtsp_url" type="string" value="rtsp://XXX:8554/live"/>
-        <param name="topic_name" type="string" value="/uav1/sunray_detect/aidetection_ros/image_rect"/>
+        <param name="rtsp_url" type="string" value="rtsp://192.168.20.12:8554/live"/>
+        <param name="topic_name" type="string" value="/baton/image_left"/>
     </node>
 </launch>

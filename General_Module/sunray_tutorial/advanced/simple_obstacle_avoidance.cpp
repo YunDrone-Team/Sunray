@@ -446,16 +446,19 @@ int main(int argc, char **argv)
         if (is_target_reached()) {
             // 重置避障状态机
             current_state = REACHED_TARGET;
-            enable = false;
-            avoid_direction = 0;
-            // 悬停控制
-            uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
-            uav_cmd.desired_pos[0] = uav_state.position[0];
-            uav_cmd.desired_pos[1] = uav_state.position[1];
-            uav_cmd.desired_pos[2] = flight_height;
+            if (enable)
+            {
+                avoid_direction = 0;
+                // 悬停控制
+                uav_cmd.header.stamp = ros::Time::now();
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
+                uav_cmd.desired_pos[0] = uav_state.position[0];
+                uav_cmd.desired_pos[1] = uav_state.position[1];
+                uav_cmd.desired_pos[2] = flight_height;
 
-            control_cmd_pub.publish(uav_cmd);
+                control_cmd_pub.publish(uav_cmd);
+                enable = false;
+            }
             ros::spinOnce();
             rate.sleep();
             continue;
