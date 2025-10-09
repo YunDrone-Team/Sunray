@@ -1,0 +1,67 @@
+<!-- 独立的Rviz Goal Bridge启动文件 -->
+<launch>
+    <!-- 参数配置 -->
+    <arg name="uav_id" default="1" />
+    <arg name="uav_name" default="uav" />
+    <arg name="enable_bridge" default="true" />
+    <arg name="enable_rviz" default="true" />
+    
+    <!-- Rviz Goal Bridge节点 -->
+    <node name="rviz_goal_bridge" pkg="sunray_uav_control" type="rviz_goal_bridge_node" output="screen">
+        <!-- 基本参数 -->
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        
+        <!-- 桥接功能参数 -->
+        <param name="bridge_params/enable_bridge" value="$(arg enable_bridge)" />
+        <param name="bridge_params/check_uav_state" value="true" />
+        <param name="bridge_params/check_geo_fence" value="true" />
+        <param name="bridge_params/auto_adjust_height" value="true" />
+        <param name="bridge_params/min_height" value="0.5" />
+        <param name="bridge_params/default_height" value="1.5" />
+        <param name="bridge_params/goal_timeout" value="10.0" />
+        
+        <!-- 地理围栏参数 -->
+        <param name="geo_fence/x_min" value="-10.0" />
+        <param name="geo_fence/x_max" value="10.0" />
+        <param name="geo_fence/y_min" value="-10.0" />
+        <param name="geo_fence/y_max" value="10.0" />
+        <param name="geo_fence/z_min" value="0.3" />
+        <param name="geo_fence/z_max" value="3.0" />
+    </node>
+
+    <!-- 可选启动rviz -->
+    <group if="$(arg enable_rviz)">
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sunray_uav_control)/rviz/2d_nav_goal.rviz" />
+    </group>
+
+    <!-- 打印启动信息 -->
+    <node pkg="rosnode" type="rosnode" name="info_printer" 
+          args="info /rviz_goal_bridge" output="screen" 
+          launch-prefix="bash -c 'sleep 2; '" />
+
+</launch>
+
+<!-- 
+使用说明：
+1. 独立启动桥接节点：
+   roslaunch sunray_uav_control rviz_goal_bridge.launch
+
+2. 同时启动rviz：
+   roslaunch sunray_uav_control rviz_goal_bridge.launch enable_rviz:=true
+
+3. 为特定无人机启动：
+   roslaunch sunray_uav_control rviz_goal_bridge.launch uav_id:=2
+
+4. 禁用桥接功能（仅用于测试）：
+   roslaunch sunray_uav_control rviz_goal_bridge.launch enable_bridge:=false
+
+前提条件：
+- UAV控制节点必须已经运行
+- 无人机必须处于CMD_CONTROL模式
+- 无人机必须已解锁并起飞
+
+安全提示：
+- 确保地理围栏参数设置正确
+- 在真实飞行前先在仿真环境中测试
+-->
