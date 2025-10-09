@@ -11,8 +11,8 @@ FIRST_WINDOW="main.2"
 # 自定义命令配置
 declare -A TMUX_CONFIG=(
     ["main"]="
-        roslaunch aidetection_yolov7_ros aidetection_yolov7_viobot.launch
-        sleep 3 && roslaunch sunray_media rtsp_push.launch topic:=/uav1/sunray_detect/aidetection_ros/image_rect
+    
+       roslaunch sunray_media rtsp_push.launch topic:=/baton/image_left
     "
 )
 
