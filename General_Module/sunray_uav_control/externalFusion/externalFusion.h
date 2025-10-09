@@ -15,6 +15,7 @@ private:
     ros::Time px4_state_time;                               // 无人机状态时间戳
     
     ExternalPosition ext_pos;                               // 外部定位源的回调和处理
+    mavros_msgs::GPSRAW gps_raw;
 
     // ROS话题订阅句柄
     ros::Subscriber px4_state_sub;          // 【订阅】无人机状态订阅

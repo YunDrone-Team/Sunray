@@ -81,6 +81,7 @@ private:
     ros::Publisher viobot_algo_ctrl_pub;
     ros::Publisher viobot_state_pub;
     ros::Publisher vision_pose_pub;
+    ros::Publisher viobot_odom_pub;
 
     // 定时器句柄
     ros::Timer timer_send_external_pos;
@@ -139,6 +140,7 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
         viobot_imu_sub = nh.subscribe<sensor_msgs::Imu>("/baton/imu", 10, &ExternalPosition::viobot_imuCallback, this);
         // 【订阅】VIOBOT算法的里程计数据 - VIOBOT算法程序 -> 本节点
         viobot_odom_sub = nh.subscribe<nav_msgs::Odometry>("/baton/stereo3/odometry", 10, &ExternalPosition::viobot_odomCallback, this);
+        viobot_odom_pub = nh.advertise<nav_msgs::Odometry>(uav_name + "/sunray/viobot/odom", 10);
         // 【订阅】VIOBOT算法状态 - VIOBOT算法程序 -> 本节点
         viobot_algo_status_sub = nh.subscribe<sunray_msgs::algo_status>("/baton/algo_status", 2, &ExternalPosition::viobot_algoStatusCallback, this);
         // 【发布】控制VIOBOT算法启动与停止 - 本节点 -> VIOBOT算法程序
@@ -462,6 +464,18 @@ void ExternalPosition::viobot_odomCallback(const nav_msgs::Odometry::ConstPtr &m
     external_odom.attitude[0] = roll;
     external_odom.attitude[1] = pitch;
     external_odom.attitude[2] = yaw;
+
+        // 发布里程计消息
+    nav_msgs::Odometry odom_msg;
+    odom_msg.header = external_odom.header;
+    odom_msg.pose.pose.position.x = p.x();
+    odom_msg.pose.pose.position.y = p.y();
+    odom_msg.pose.pose.position.z = p.z();
+    odom_msg.pose.pose.orientation.x = q.x();
+    odom_msg.pose.pose.orientation.y = q.y();
+    odom_msg.pose.pose.orientation.z = q.z();
+    odom_msg.pose.pose.orientation.w = q.w();
+    viobot_odom_pub.publish(odom_msg);
 }
 
 void ExternalPosition::viobot_algoStatusCallback(const sunray_msgs::algo_status::ConstPtr &msg)

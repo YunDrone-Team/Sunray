@@ -99,6 +99,19 @@ modules:
     build_path: "build/random_cylinder_plugin"
     dependencies: []
 
+  # 比赛模块
+  sunray_competition:
+    description: "2025FAC比赛模块"
+    source_path: "Simulation/2025_uav_competition_demo"
+    build_path: "build/2025_uav_competition_demo"
+    dependencies: ["sunray_common"]
+
+  sunray_score:
+    description: "2025FAC比赛记分模块"
+    source_path: "Simulation/future_2025_score"
+    build_path: "build/future_2025_score"
+    dependencies: ["sunray_common"]
+
   # 规划器模块
   ego_planner:
     description: "EGO-planner路径规划算法"
@@ -117,9 +130,17 @@ modules:
   # 编队模块
   sunray_formation:
     description: "多机编队控制模块"
-    source_path: "sunray_formation"
-    build_path: "build/sunray_formation"
+    source_path: "sunray_formation/formation_control"
+    build_path: "build/formation_control"
     dependencies: ["sunray_common"]
+
+  # ORCA算法ROS实现
+  sunray_orca:
+    description: "ORCA算法"
+    source_path: "sunray_formation/sunray_orca"
+    build_path: "build/sunray_orca"
+    dependencies: ["sunray_common"]
+
 
   # 图像识别模块
   sunray_detection:
@@ -127,19 +148,6 @@ modules:
     source_path: "External_Module/sunray_detection"
     build_path: "build/sunray_detection"
     dependencies: ["sunray_planner_utils"]
-
-  # 比赛模块
-  sunray_competition:
-    description: "2025FAC比赛模块"
-    source_path: "Simulation/2025_uav_competiton_demo"
-    build_path: "build/2025_uav_competiton_demo"
-    dependencies: ["sunray_common"]
-
-  sunray_score:
-    description: "2025FAC比赛记分模块"
-    source_path: "Simulation/future_2025_score"
-    build_path: "build/future_2025_score"
-    dependencies: ["sunray_common"]
 
 # ========== 预定义组 ==========
 # 直接基于 build_deprecated 目录的脚本内容
@@ -163,16 +171,27 @@ groups:
   #   description: "仿真环境与测试平台"  
   #   modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin"]
 
-  # 仿真环境与测试平台
+  # 比赛款无人机飞行控制系统
+  uav_competition:
+    description: "Sunray150-抛投器定制款专用编译模块"
+    modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_competition"]
+    
+
+  # 比赛款仿真环境与测试平台
   sim_competition:
-    description: "仿真环境与测试平台"  
+    description: "2025未来飞行器大赛仿真环境与测试平台"  
     modules: ["sunray_common", "sunray_uav_control", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin", "sunray_competition", "sunray_score", "wind_zone_plugin", "random_cylinder_plugin"]
     
   # 地面机器人控制系统
   ugv:
     description: "地面机器人控制系统，包含地面机器人控制节点，地面机器人外部定位，地面机器人控制驱动"
     modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
-    
+
+  swarm_uav:
+    description: "“智群·Sunray”集群控制代码包，包含无人机飞行控制，通信桥接，无人机控制节点，集群控制，ORCA"
+    modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_orca", "sunray_formation"]
+
+
   # # 完整多机系统（不含地面机器人）
   # all:
   #   description: "完整多机系统（不含地面机器人）"

@@ -47,6 +47,7 @@ catkin_package(
 ###########
 include_directories(
   include
+  leader_follower
   ${catkin_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../../General_Module/sunray_common/common_lib
@@ -66,6 +67,10 @@ target_link_libraries(traj_generator_node traj_generator ${YAML_CPP_LIBRARIES} $
 
 add_executable(formation_switch_node src/formation_switch.cpp)
 target_link_libraries(formation_switch_node  ${catkin_LIBRARIES})
+
+add_library(leader_follower leader_follower/leader_follower.cpp)
+add_executable(leader_follower_node leader_follower/leader_follower_node.cpp)
+target_link_libraries(leader_follower_node leader_follower ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES})
 
 # catkin_install_python(PROGRAMS
 # scripts/key_move_car.py

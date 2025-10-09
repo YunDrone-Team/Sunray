@@ -38,7 +38,7 @@ if ! check_network; then
 fi
 
 # 等待系统完全启动
-sleep 15
+sleep 10
 
 # 加载环境配置
 source /home/PRR/Sunray/devel/setup.sh
