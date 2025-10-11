@@ -36,6 +36,7 @@ void FMTControl::init(ros::NodeHandle &nh) {
     fmt_set_mode_client = nh.serviceClient<mavros_msgs::SetMode>(uav_ns + "/mavros/set_mode");
     fmt_emergency_client = nh.serviceClient<mavros_msgs::CommandLong>(uav_ns + "/mavros/cmd/command");
     fmt_stream_rate_client = nh.serviceClient<mavros_msgs::StreamRate>(uav_ns + "/mavros/set_stream_rate");
+    fmt_reboot_client = nh.serviceClient<mavros_msgs::CommandLong>(uav_ns + "/mavros/cmd/command");
     
     // 初始化系统参数
     system_params.control_mode = Control_Mode::INIT;
@@ -216,6 +217,27 @@ void FMTControl::emergencyStop() {
     }
 }
 
+// 重启FMT
+void FMTControl::reboot_fmt() {
+    mavros_msgs::CommandLong reboot_srv;
+    reboot_srv.request.broadcast = false;
+    reboot_srv.request.command = 246; // MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN
+    reboot_srv.request.confirmation = 0;
+    reboot_srv.request.param1 = 1.0; // 1.0表示重启
+    reboot_srv.request.param2 = 0.0;
+    reboot_srv.request.param3 = 0.0;
+    reboot_srv.request.param4 = 0.0;
+    reboot_srv.request.param5 = 0.0;
+    reboot_srv.request.param6 = 0.0;
+    reboot_srv.request.param7 = 0.0;
+    
+    if (fmt_reboot_client.call(reboot_srv)) {
+        ROS_WARN("Reboot command sent to FMT");
+    } else {
+        ROS_ERROR("Failed to send reboot command");
+    }
+}
+
 // FMT解锁/上锁
 void FMTControl::setArm(bool arm) {
     mavros_msgs::CommandBool arm_cmd;
@@ -267,6 +289,10 @@ void FMTControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg) 
             break;
         case sunray_msgs::UAVSetup::SET_PX4_MODE:
             set_fmt_flight_mode(msg->px4_mode);
+            break;
+        case sunray_msgs::UAVSetup::REBOOT_PX4:
+            reboot_fmt();
+            Logger::warning("Reboot FMT with UAVsetup cmd.");
             break;
         case sunray_msgs::UAVSetup::EMERGENCY_KILL:
             emergencyStop();
@@ -1049,9 +1075,15 @@ void FMTControl::set_takeoff() {
         double desired_alt = flight_params.home_pos[2] + flight_params.takeoff_height;
         // 计算已起飞时间
         double elapsed_time = (ros::Time::now() - flight_params.takeoff_start_time).toSec();
+        // 启动平滑：前2秒使用渐入函数
+        double startup_duration = 2.0;  // 秒
+        double smooth_factor = 1.0;
+        if (elapsed_time < startup_duration) {
+            smooth_factor = (1.0 - cos(M_PI * elapsed_time / startup_duration)) / 2.0;
+        }
         // 计算当前目标高度（线性增长，不超过最终目标）
         double current_target_alt = std::min(
-            flight_params.home_pos[2] + flight_params.takeoff_speed * elapsed_time,
+            flight_params.home_pos[2] + flight_params.takeoff_speed * elapsed_time * smooth_factor,
             desired_alt
         );
 

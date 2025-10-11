@@ -180,9 +180,10 @@ private:
     ros::Publisher goal_pub;                  // 【发布】发布一个目标点 来自外部控制指令
     
     // 服务节点
-    ros::ServiceClient fmt_arming_client;    // 【服务】px4解锁
-    ros::ServiceClient fmt_set_mode_client;  // 【服务】px4模式设置
-    ros::ServiceClient fmt_emergency_client; // 【服务】px4紧急停止
+    ros::ServiceClient fmt_arming_client;    // 【服务】FMT解锁
+    ros::ServiceClient fmt_set_mode_client;  // 【服务】FMT模式设置
+    ros::ServiceClient fmt_emergency_client; // 【服务】FMT紧急停止
+    ros::ServiceClient fmt_reboot_client;    // 【服务】FMT重启
     
     // FMT 特有服务
     ros::ServiceClient fmt_stream_rate_client; // 【服务】FMT数据流设置
@@ -195,8 +196,9 @@ private:
     void printf_params();
     int safetyCheck();     // 安全检查
     void setArm(bool arm); // 设置解锁 0:上锁 1:解锁
-    void set_auto_land();  // 调用px4 auto.land
+    void set_auto_land();  // 调用fmt auto.land
     void emergencyStop();  // 紧急停止出来
+    void reboot_fmt();   // 重启fmt
     void set_fmt_flight_mode(std::string mode);
     void send_attitude_setpoint(Eigen::Vector4d &u_att);                                      // 设置模式
     void setpoint_local_pub(uint16_t type_mask, mavros_msgs::PositionTarget setpoint);        // 【发布】发送控制指令
