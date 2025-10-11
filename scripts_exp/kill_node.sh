@@ -12,7 +12,7 @@ algo_reboot: false
 algo_reset: false"
 
 # ROS节点白名单（用空格分隔）
-WHITELIST="rosout rosmaster /sunray_communication_bridge"
+WHITELIST="rosout rosmaster /sunray_communication_bridge /baton/baton /baton/stereo_depth"
 
 # 获取所有非白名单节点
 NODE_LIST=$(rosnode list | grep -v -E "$(echo $WHITELIST | tr ' ' '|')")
