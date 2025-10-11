@@ -1813,6 +1813,68 @@ std::vector<double> communication_bridge::getCpuTemperatures()
     }
     
     
+
+    // 读取RK3588的温度（匹配实际传感器名称）
+    
+    // RK3588实际的CPU相关传感器名称列表
+    const std::vector<std::string> rk3588_sensors = 
+    {
+        "soc_thermal",
+        "bigcore0_thermal",
+        "bigcore1_thermal",
+        "littlecore_thermal",
+        "center_thermal"
+    };
+    
+    // 遍历hwmon0~hwmon7（根据实际系统调整范围）
+    for (int i = 0; i < 8; ++i) 
+    {
+        std::string hwmon_path = "/sys/class/hwmon/hwmon" + std::to_string(i);
+        std::string name_path = hwmon_path + "/name";
+        std::ifstream name_file(name_path);
+
+        std::string device_name;
+        if (name_file >> device_name) 
+        {
+            // 检查当前传感器是否在目标列表中
+            bool is_target_sensor = false;
+            for (const auto& sensor : rk3588_sensors) 
+            {
+                if (device_name == sensor) 
+                {
+                    is_target_sensor = true;
+                    break;
+                }
+            }
+
+            if (is_target_sensor) 
+            {
+                // RK3588每个传感器只有一个温度输入节点temp1_input
+                std::string temp_input = hwmon_path + "/temp1_input";
+                std::ifstream temp_file(temp_input);
+
+                if (temp_file.good()) 
+                {
+                    long temp_millis;
+                    if (temp_file >> temp_millis) 
+                    {
+                        // 转换为摄氏度（毫摄氏度→摄氏度），过滤异常值
+                        double temp_c = temp_millis / 1000.0;
+                        if (temp_c > 0 && temp_c < 120) 
+                            cpu_temps.push_back(temp_c);
+                    }
+                    temp_file.close();
+                }
+            }
+            name_file.close();
+        }
+    }
+    // 若读取到温度数据，返回结果
+    if (!cpu_temps.empty()) 
+        return cpu_temps;
+    
+
+    
     // 所有方法均失败
     // std::cerr << "[ERROR] 所有方法均无法获取CPU温度数据！" << std::endl;
     // std::cerr << "[ERROR] 请检查: 1) 传感器驱动是否加载 2) 程序是否有读取权限 3) 硬件是否支持温度检测" << std::endl;
