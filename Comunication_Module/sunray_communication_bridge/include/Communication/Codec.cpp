@@ -120,6 +120,7 @@ void Codec::decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFr
     uint8tArrayToDouble(dataFrame, data.positionX);
     uint8tArrayToDouble(dataFrame, data.positionY);
     uint8tArrayToDouble(dataFrame, data.positionZ);
+    uint8tArrayToDouble(dataFrame, data.yaw);
 
 }
 
@@ -1065,6 +1066,7 @@ void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
     doubleCopyToUint8tArray(payload,data.positionX);
     doubleCopyToUint8tArray(payload,data.positionY);
     doubleCopyToUint8tArray(payload,data.positionZ);
+    doubleCopyToUint8tArray(payload,data.yaw);
 
 }
 

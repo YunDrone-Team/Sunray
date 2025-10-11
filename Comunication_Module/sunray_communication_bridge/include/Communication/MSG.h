@@ -488,13 +488,14 @@ struct Goal
     double positionX;
     double positionY;
     double positionZ;
+    double yaw;
 
     void init()
     {
         positionX=0;
         positionY=0;
         positionZ=0;
-
+        yaw=0;
     }
 };
 

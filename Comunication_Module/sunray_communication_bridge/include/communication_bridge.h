@@ -17,6 +17,7 @@
 #include "sunray_msgs/WayPoint.h"
 #include "std_msgs/String.h"
 
+#include <tf/LinearMath/Quaternion.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>

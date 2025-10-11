@@ -740,10 +740,14 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
             geometry_msgs::PoseStamped sendMSG;
             sendMSG.header.stamp = ros::Time::now();
             sendMSG.header.frame_id = "world";
-            sendMSG.pose.orientation.x = 0;
-            sendMSG.pose.orientation.y = 0;
-            sendMSG.pose.orientation.z = 0;
-            sendMSG.pose.orientation.w = 1;
+
+            tf::Quaternion q;
+            q.setRPY(0.0, 0.0, readData.dataFrame.data.goal.yaw);
+
+            sendMSG.pose.orientation.x = q.getX();
+            sendMSG.pose.orientation.y = q.getY();
+            sendMSG.pose.orientation.z = q.getZ();
+            sendMSG.pose.orientation.w = q.getW();
             sendMSG.pose.position.x = readData.dataFrame.data.goal.positionX;
             sendMSG.pose.position.y = readData.dataFrame.data.goal.positionY;
             sendMSG.pose.position.z = readData.dataFrame.data.goal.positionZ;
@@ -1781,7 +1785,7 @@ std::vector<double> communication_bridge::getCpuTemperatures()
                 {
                     size_t pos = line.find(":");
                     if (pos != std::string::npos)
-                     {
+                    {
                         std::string temp_part = line.substr(pos + 1);
                         // 解析温度值（格式可能为" temperature: 45 C"）
                         size_t value_start = temp_part.find_first_not_of(" \t");
