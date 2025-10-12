@@ -112,6 +112,12 @@ modules:
     build_path: "build/future_2025_score"
     dependencies: ["sunray_common"]
 
+  sysu_competition:
+    description: "逸仙勇士杯比赛模块"
+    source_path: "Simulation/sysu_competition"
+    build_path: "build/sysu_competition"
+    dependencies: ["sunray_common"]
+
   # 规划器模块
   ego_planner:
     description: "EGO-planner路径规划算法"

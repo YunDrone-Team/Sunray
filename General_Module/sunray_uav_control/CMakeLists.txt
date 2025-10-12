@@ -132,8 +132,9 @@ target_link_libraries(WGS84_test ${catkin_LIBRARIES})
 
 # add_executable(logTest test/logTest.cpp)
 # target_link_libraries(logTest ${catkin_LIBRARIES})
-
-
+add_executable(image_marker_publisher rviz/image_marker_publisher.cpp)
+add_dependencies(image_marker_publisher sunray_control_gencpp)
+target_link_libraries(image_marker_publisher ${catkin_LIBRARIES})
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
