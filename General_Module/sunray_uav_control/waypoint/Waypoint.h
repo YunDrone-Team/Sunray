@@ -274,7 +274,7 @@ void Waypoint::waypoint_callback(const sunray_msgs::WayPoint::ConstPtr &msg)
         return_point.y = uav_state.position[1];
         return_point.z = uav_wp.wp_points[uav_wp.wp_num-1].z;
         return_point.yaw = uav_state.attitude[2];
-        waypoint_vector.insert(std::make_pair(uav_wp_state.wp_num,return_point));
+        waypoint_vector[uav_wp_state.wp_num] = return_point;
     }
 
     Logger::warning("Read Waypoint!");
