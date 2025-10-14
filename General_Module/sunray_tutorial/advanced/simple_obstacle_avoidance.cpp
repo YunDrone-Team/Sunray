@@ -1,13 +1,7 @@
-#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
-#include <geometry_msgs/Point.h>
-#include <sunray_logger.h>
 #include "ros_msg_utils.h"
-#include "printf_utils.h"
 
 #define DEBUG_MODE 1    // 设置为0以启用调试模式，跳过起飞等步骤，直接进入避障逻辑
 
@@ -22,6 +16,7 @@ sensor_msgs::Image depth_image;     // 深度图像
 string node_name;                   // 节点名称
 
 geometry_msgs::Point target_pos;   // 目标位置
+double goal_yaw = 0;
 bool target_set = false;           // 目标是否设置
 bool depth_image_received = false; // 是否收到深度图像
 bool odom_received = false;        // 是否收到里程计数据
@@ -131,7 +126,18 @@ void target_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     // 更新目标点
     target_pos.x = msg->pose.position.x;
     target_pos.y = msg->pose.position.y;
+    flight_height = msg->pose.position.z;
     target_pos.z = flight_height; // 保持飞行高度不变
+
+    tf2::Quaternion q;
+    q.setW(msg->pose.orientation.w);
+    q.setX(msg->pose.orientation.x);
+    q.setY(msg->pose.orientation.y);
+    q.setZ(msg->pose.orientation.z);
+
+    double roll, pitch;
+    tf2::Matrix3x3(q).getRPY(roll, pitch, goal_yaw);
+
     target_set = true;
     target_updated = true;
 }
@@ -295,7 +301,7 @@ bool is_target_reached()
     double dy = target_pos.y - uav_state.position[1];
     double distance = sqrt(dx * dx + dy * dy);
 
-    return distance < 0.15; // 距离小于0.2米认为到达目标
+    return distance < 0.15; // 距离小于0.15米认为到达目标
 }
 
 int main(int argc, char **argv)
@@ -340,6 +346,7 @@ int main(int argc, char **argv)
     ros::Subscriber uav_state_sub = nh.subscribe<sunray_msgs::UAVState>(uav_name + "/sunray/uav_state", 1, uav_state_cb);
     ros::Subscriber stereo_odom_sub = nh.subscribe<nav_msgs::Odometry>("/baton/stereo3/odometry", 1, stereo_odom_cb);
     ros::Subscriber depth_image_sub = nh.subscribe<sensor_msgs::Image>("/baton/depth_image", 1, depth_image_cb);
+
     // 动态目标点订阅者 - 支持运行时更新目标点
     ros::Subscriber target_sub = nh.subscribe<geometry_msgs::PoseStamped>(target_topic_name, 1, target_cb);
 
@@ -444,6 +451,7 @@ int main(int argc, char **argv)
 
         // 检查是否到达目标
         if (is_target_reached()) {
+
             // 重置避障状态机
             current_state = REACHED_TARGET;
             if (enable)
@@ -451,11 +459,11 @@ int main(int argc, char **argv)
                 avoid_direction = 0;
                 // 悬停控制
                 uav_cmd.header.stamp = ros::Time::now();
-                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPos;
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
                 uav_cmd.desired_pos[0] = uav_state.position[0];
                 uav_cmd.desired_pos[1] = uav_state.position[1];
                 uav_cmd.desired_pos[2] = flight_height;
-
+                uav_cmd.desired_yaw = goal_yaw;
                 control_cmd_pub.publish(uav_cmd);
                 enable = false;
             }
@@ -573,8 +581,10 @@ int main(int argc, char **argv)
                         
                     // } else 
                     if (is_facing_target()) {
+
                         // 已面向目标，切换到正常导航
                         current_state = NAVIGATING_TO_TARGET;
+                        
                     } else {
                         // 继续转向目标
                         vx = 0.0;
@@ -601,6 +611,7 @@ int main(int argc, char **argv)
             uav_cmd.desired_yaw_rate = yaw_rate;                                // 期望偏航角速率
             control_cmd_pub.publish(uav_cmd);
         }
+
         ros::spinOnce();
         rate.sleep();
     }
