@@ -64,11 +64,10 @@ target_link_libraries(uav_control_node ${catkin_LIBRARIES})
 target_link_libraries(uav_control_node UAVControl)
 
 ## rviz 2D Nav Goal桥接节点
-add_library(RvizGoalBridge uav_control/RvizGoalBridge.cpp)
-add_executable(rviz_goal_bridge_node uav_control/rviz_goal_bridge_node.cpp)
+add_library(RvizGoalBridge utils/RvizGoalBridge.cpp)
+add_executable(rviz_goal_bridge_node utils/rviz_goal_bridge_node.cpp)
 add_dependencies(rviz_goal_bridge_node sunray_control_gencpp)
-target_link_libraries(rviz_goal_bridge_node ${catkin_LIBRARIES})
-target_link_libraries(rviz_goal_bridge_node RvizGoalBridge)
+target_link_libraries(rviz_goal_bridge_node RvizGoalBridge ${catkin_LIBRARIES})
 
 ## 外部定位
 add_library(externalFusion externalFusion/externalFusion.cpp)
