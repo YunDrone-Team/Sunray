@@ -510,18 +510,20 @@ bool CommunicationUDPSocket::HandleUdpSocketReadEvent(SOCKET tempSock,fd_set& fd
         {
 //            std::cout << "len<0 UDPReadState=false:  "<<len<<std::endl;
 //            std::cerr << "recvfrom failed: " << WSAGetLastError() << std::endl;
+            std::cout << "UDP ReadData return : "<<len<<std::endl;
             Close(tempSock);
-            UDPReadState=false;
+            //UDPReadState=false;
             return false;
 
         }else if(len==0){
 #ifdef _WIN32
             //closesocket(sock);
 #else
+            std::cout << "UDP ReadData return 0 !"<<std::endl;
             //这一块处理不确定，待测试
-            Close(tempSock);
-            UDPReadState=false;
-            return false;
+            // Close(tempSock);
+            // UDPReadState=false;
+            // return false;
 #endif
         }else{
 //                    std::string str(szRecv); // 使用C风格字符串初始化std::string
@@ -656,12 +658,12 @@ void CommunicationUDPSocket::OnRun()
             for (const auto& pair : ipSocketMap)
             {
                 if( !HandleUdpSocketReadEvent(pair.second,fdRead) )
-                    break;
+                    continue;
             }
             if(ipSocketMap.size()<=0 && defaultSock !=INVALID_SOCKET)
             {
                 if( !HandleUdpSocketReadEvent(defaultSock,fdRead) )
-                    break;
+                    continue;
             }
 
         }
@@ -711,6 +713,8 @@ int CommunicationUDPSocket::ReadData(SOCKET Sock,char* buffer,int bufferSize,std
 //        uint8_t  two=*(buffer+1);
 //        std::cout << "udp读取到的数据nLen "<<nLen<<std::endl;
 //        std::cout << "udp读取到的数据 来源ip "<<souIp<<std::endl;
+    }else if(nLen==0){
+        std::cout << "UDP recvfrom 0 socket:"<<" "<<Sock<<std::endl;
     }else {
         std::cout << "Failed to read UDP data. "<<" "<<nLen<<std::endl;
         sigUDPError(errno);
