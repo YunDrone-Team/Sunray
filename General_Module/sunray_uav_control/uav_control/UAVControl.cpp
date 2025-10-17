@@ -1105,11 +1105,25 @@ void UAVControl::set_desired_from_hover()
         // 将当前位置设置为flight_params.hover_pos
         set_hover_pos();
     }
-    local_setpoint.position.x = flight_params.hover_pos[0];
-    local_setpoint.position.y = flight_params.hover_pos[1];
-    local_setpoint.position.z = flight_params.hover_pos[2];
-    local_setpoint.yaw = flight_params.hover_yaw;
-    system_params.type_mask = TypeMask::XYZ_POS_YAW;
+    
+    // 如果无人机在地面（未起飞），发送0速度指令而不是位置指令，避免传感器噪声导致自动离地
+    if (uav_state.landed_state == sunray_msgs::PX4State::LANDED_STATE_ON_GROUND)
+    {
+        local_setpoint.velocity.x = 0.0;
+        local_setpoint.velocity.y = 0.0;
+        local_setpoint.velocity.z = 0.0;
+        local_setpoint.yaw = flight_params.hover_yaw;
+        system_params.type_mask = TypeMask::XYZ_VEL_YAW;
+    }
+    else
+    {
+        // 已起飞，使用位置控制
+        local_setpoint.position.x = flight_params.hover_pos[0];
+        local_setpoint.position.y = flight_params.hover_pos[1];
+        local_setpoint.position.z = flight_params.hover_pos[2];
+        local_setpoint.yaw = flight_params.hover_yaw;
+        system_params.type_mask = TypeMask::XYZ_POS_YAW;
+    }
 }
 
 // 发布goal话题
