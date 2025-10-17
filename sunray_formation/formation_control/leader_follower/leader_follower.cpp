@@ -1,5 +1,8 @@
 #include "leader_follower.h"
-
+// leader_follower
+// 领机位置为外部程序指定
+// 从机位置根据与领机的相对位置来进行队形切换
+// 领机为
 void LeaderFollower::init(ros::NodeHandle &nh)
 {
     node_name = ros::this_node::getName();
@@ -19,19 +22,21 @@ void LeaderFollower::init(ros::NodeHandle &nh)
 
     // 【订阅】ORCA状态
 
-    // 【订阅】无人机的状态
+    // 【订阅】无人机的状态（所有无人机）
     for (int i = 0; i < agent_num; i++)
     {
         topic_prefix = "/uav" + std::to_string(i + 1);
 
         uav_state_sub[i] = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10,
                                                                     boost::bind(&LeaderFollower::uav_state_cb, this, _1, i));
-
+        
         // 【发布】定位状态到 ORCA 节点 - 本节点 -> orca_node
         agent_state_pub[i] = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/orca/agent_state", 10);
     }
 
-    // 领机发布任务指令，从机接收指令
+    // 如果uav_id=1,则是领机类;其他情况都是从机
+    // 领机发布从机任务指令
+    // 从机从领机接收任务指令
     if(uav_id == 1)
     {
         // 【发布】从机任务指令 - 本节点（领机） -> 本节点（从机）
@@ -42,7 +47,6 @@ void LeaderFollower::init(ros::NodeHandle &nh)
         // 【订阅】从机任务指令 - 本节点（领机） -> 本节点（从机）
         follower_cmd_sub = nh.subscribe<sunray_msgs::FollowerCMD>(uav_name + "/sunray/follower_cmd", 10, &LeaderFollower::follower_cmd_cb, this);
     }
-
 
     // 【发布】无人机控制指令 - 本节点 -> uav_control_node
     control_cmd_pub = nh.advertise<sunray_msgs::UAVControlCMD>(uav_name + "/sunray/uav_control_cmd", 10);
