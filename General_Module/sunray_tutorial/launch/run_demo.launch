@@ -28,6 +28,33 @@
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 
+	<!-- 新增python脚本节点 -->
+	<node if="$(eval demo_id == 11)" pkg="sunray_tutorial" type="uav_python/takeoff_hover_land.py" name="takeoff_hover_land_py$(arg uav_id)" output="screen" required="true">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
+
+	<node if="$(eval demo_id == 12)" pkg="sunray_tutorial" type="uav_python/block_pos.py" name="block_pos_py$(arg uav_id)" output="screen" required="true">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
+
+	<node if="$(eval demo_id == 13)" pkg="sunray_tutorial" type="uav_python/circle_vel.py" name="circle_vel_py$(arg uav_id)" output="screen" required="true">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
+
+	<node if="$(eval demo_id == 14)" pkg="sunray_tutorial" type="uav_python/circle_z_pos.py" name="circle_z_pos_py$(arg uav_id)" output="screen" required="true">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
+
+	<node if="$(eval demo_id == 15)" pkg="sunray_tutorial" type="uav_python/pos_body_hexagon.py" name="pos_body_hexagon_py$(arg uav_id)" output="screen" required="true">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
+	
+	<!-- 其他原有节点保持不变 -->
 	<node if="$(eval demo_id == 6)" pkg="sunray_tutorial" type="vel_body_follow_car" name="vel_body_follow_car$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
@@ -37,7 +64,7 @@
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
-	
+
 	<!-- <node pkg="sunray_tutorial" type="follow_a_car" name="follow_a_car_$(arg uav_id)" output="screen">
 		<param name="uav_id" value="$(arg uav_id)" />
 		<param name="uav_name" value="$(arg uav_name)" />

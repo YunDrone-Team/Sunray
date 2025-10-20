@@ -113,6 +113,19 @@ scripts/key_move_car.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+catkin_install_python(PROGRAMS
+  uav_python/sunray_logger.py
+  uav_python/takeoff_hover_land.py
+  uav_python/block_pos.py
+  uav_python/circle_vel.py
+  uav_python/circle_z_pos.py
+  uav_python/pos_body_hexagon.py
+  ugv_python/ugv_block_pos.py
+  ugv_python/ugv_circle_vel.py
+  ugv_python/ugv_circle_vel_body.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

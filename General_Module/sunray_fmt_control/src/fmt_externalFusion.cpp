@@ -3,12 +3,11 @@
     1.根据外部定位来源参数，订阅外部定位数据（如动捕、SLAM等），并进行坐标转换处理
     2.检查外部定位数据超时、跳变、异常情况，进行定位有效判断
     3.将外部定位数据通过~/mavros/vision_pose/pose话题转发到PX4中，用于给无人机做位姿估计
-    4.订阅PX4相关话题（多个）及外部定位信息，打包为一个自定义消息话题PX4State发布，~/sunray/px4_state
-    5.发布相关无人机位置、轨迹、mesh等话题用于rviz显示(包括TF转换)
-    6.通过服务设置FMT数据流
+    4.订阅FMT相关话题（多个）及外部定位信息，打包为一个自定义消息话题PX4State发布，~/sunray/px4_state
+    5.通过服务设置FMT数据流
 
 添加自定义外部定位数据：
-    1.参考相关程序在 【include/ExternalPosition.h】 中实现自己的解析类
+    1.参考相关程序在 【include/fmt_externalFusion.h】 中实现自己的解析类
 */
 
 #include "FMTexternalFusion.h"
@@ -101,7 +100,7 @@ void FMTExternalFusion::init(ros::NodeHandle &nh)
     // 【定时器】当FMT需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
     if (enable_vision_pose)
     {
-        ros::Timer timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &FMTExternalFusion::timer_pub_vision_pose_cb, this);
+        timer_pub_vision_pose = nh.createTimer(ros::Duration(0.01), &FMTExternalFusion::timer_pub_vision_pose_cb, this);
     }
     
     // 设置FMT数据流
@@ -126,7 +125,7 @@ void FMTExternalFusion::init(ros::NodeHandle &nh)
     ROS_INFO("数据流请求完成，开始监听话题...");
 
     // 定时器任务 - 发布FMT状态
-    ros::Timer timer_pub_fmt_state = nh.createTimer(ros::Duration(0.01), &FMTExternalFusion::timer_pub_fmt_state_cb, this);
+    timer_pub_fmt_state = nh.createTimer(ros::Duration(0.01), &FMTExternalFusion::timer_pub_fmt_state_cb, this);
 
     // FMT无人机状态 - 初始化
     init_fmt_state();

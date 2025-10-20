@@ -275,6 +275,8 @@ private:
     int external_source;                                // 外部定位数据来源
     std::set<int> err_msg;                              // 错误消息集合
     ros::Time fmt_state_time;                           // FMT状态时间戳
+    ros::Timer timer_pub_fmt_state;                     // 定时器 - 发布FMT状态
+    ros::Timer timer_pub_vision_pose;                   // 定时器 - 发布vision_pose   
     bool enable_vision_pose{true};                      // 是否发布vision_pose
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
 
