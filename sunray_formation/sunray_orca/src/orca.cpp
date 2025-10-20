@@ -60,7 +60,7 @@ void ORCA::init(ros::NodeHandle &nh)
 	setup_agents();
 	// ORCA算法初始化 - 添加障碍物
 	setup_obstacles();
-
+	start_flag = false;
 	node_name = ros::this_node::getName();
 }
 
@@ -88,6 +88,7 @@ bool ORCA::orca_run()
 		OrcaCmd.goal_pos[0] = goal_pos[0];
 		OrcaCmd.goal_pos[1] = goal_pos[1];
 		OrcaCmd.goal_pos[2] = goal_pos[2];
+		OrcaCmd.goal_yaw = 0.0;
 		cmd_pub.publish(OrcaCmd);
 		return false;
 	}
@@ -401,6 +402,7 @@ void ORCA::setup_cb(const sunray_msgs::OrcaSetup::ConstPtr &msg, int i)
 	else if (msg->cmd == sunray_msgs::OrcaSetup::STOP)
 	{
 		orca_state = sunray_msgs::OrcaCmd::STOP;
+		start_flag = false;
 	}
 	else if (msg->cmd == sunray_msgs::OrcaSetup::RUN)
 	{

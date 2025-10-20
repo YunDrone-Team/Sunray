@@ -72,6 +72,10 @@ add_library(leader_follower leader_follower/leader_follower.cpp)
 add_executable(leader_follower_node leader_follower/leader_follower_node.cpp)
 target_link_libraries(leader_follower_node leader_follower ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES})
 
+
+add_executable(missioncmd_pub leader_follower/missioncmd_pub.cpp)
+target_link_libraries(missioncmd_pub  ${catkin_LIBRARIES})
+
 # catkin_install_python(PROGRAMS
 # scripts/key_move_car.py
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

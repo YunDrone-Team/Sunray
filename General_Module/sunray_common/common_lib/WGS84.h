@@ -1,3 +1,6 @@
+#ifndef WGS84_H
+#define WGS84_H
+
 #include <stdio.h>
 #include <math.h>
 
@@ -6,11 +9,13 @@
 #endif
 
 #define DEG_TO_RAD (M_PI / 180.0)
+#define RAD_TO_DEG (180.0 / M_PI)
 
 // WGS84椭球体参数
 #define WGS84_A 6378137.0           // 长半轴(m)
 #define WGS84_F (1.0/298.257223563) // 扁率
 #define WGS84_E2 (2*WGS84_F - WGS84_F*WGS84_F) // 第一偏心率平方
+#define WGS84_E (sqrt(WGS84_E2))    // 第一偏心率
 
 // 经纬高结构体
 typedef struct 
@@ -60,6 +65,108 @@ ECEF_Coord llh_to_ecef(const LLH_Coord* llh)
     
     return ecef;
 }
+
+/**
+ * @brief 将ECEF坐标转换为经纬高
+ * @param ecef ECEF地心地固坐标
+ * @return 经纬高坐标
+ */
+LLH_Coord ecef_to_llh(const ECEF_Coord* ecef) 
+{
+    LLH_Coord llh;
+    double p, theta, sin_theta, cos_theta, N, alt, lat_rad, lon_rad;
+    
+    p = sqrt(ecef->x * ecef->x + ecef->y * ecef->y);
+    
+    // 计算经度
+    lon_rad = atan2(ecef->y, ecef->x);
+    llh.lon = lon_rad * RAD_TO_DEG;
+    
+    // 初始纬度估计
+    theta = atan2(ecef->z * WGS84_A, p * (WGS84_A * (1 - WGS84_E2)));
+    
+    // 迭代计算纬度和高度
+    for (int i = 0; i < 10; i++) { // 通常3-4次迭代就足够精确
+        sin_theta = sin(theta);
+        cos_theta = cos(theta);
+        
+        N = WGS84_A / sqrt(1 - WGS84_E2 * sin_theta * sin_theta);
+        alt = p / cos_theta - N;
+        
+        double new_theta = atan2(ecef->z + WGS84_E2 * N * sin_theta, p);
+        
+        // 检查收敛
+        if (fabs(new_theta - theta) < 1e-15) {
+            theta = new_theta;
+            break;
+        }
+        theta = new_theta;
+    }
+    
+    lat_rad = theta;
+    llh.lat = lat_rad * RAD_TO_DEG;
+    
+    // 最终计算高度
+    sin_theta = sin(theta);
+    N = WGS84_A / sqrt(1 - WGS84_E2 * sin_theta * sin_theta);
+    llh.alt = p / cos(theta) - N;
+    
+    return llh;
+}
+
+/**
+ * @brief 根据ENU坐标和原点经纬高计算目标点经纬高
+ * @param origin 原点经纬高坐标
+ * @param enu 目标点在ENU坐标系中的坐标
+ * @return 目标点的经纬高坐标
+ */
+LLH_Coord enu_to_llh(const LLH_Coord* origin, const ENU_Coord* enu) 
+{
+    LLH_Coord target;
+    
+    // 参数检查
+    if (origin == NULL || enu == NULL) {
+        // 返回无效坐标
+        target.lat = 0.0;
+        target.lon = 0.0;
+        target.alt = -1000.0; // 无效高度
+        return target;
+    }
+    
+    // 1. 将原点坐标转换为ECEF
+    ECEF_Coord ecef_origin = llh_to_ecef(origin);
+    
+    // 2. 计算原点的经纬度(弧度)
+    double lat_rad = origin->lat * DEG_TO_RAD;
+    double lon_rad = origin->lon * DEG_TO_RAD;
+    double sin_lat = sin(lat_rad);
+    double cos_lat = cos(lat_rad);
+    double sin_lon = sin(lon_rad);
+    double cos_lon = cos(lon_rad);
+    
+    // 3. ENU到ECEF的旋转矩阵（转置矩阵，因为我们要从ENU转换到ECEF）
+    // 旋转矩阵R的转置：
+    // [ -sin(lon)                 -sin(lat)*cos(lon)        cos(lat)*cos(lon) ]
+    // [  cos(lon)                 -sin(lat)*sin(lon)        cos(lat)*sin(lon) ]
+    // [  0                         cos(lat)                 sin(lat)          ]
+    
+    // 计算ECEF坐标增量
+    double dx = -sin_lon * enu->x - sin_lat * cos_lon * enu->y + cos_lat * cos_lon * enu->z;
+    double dy = cos_lon * enu->x - sin_lat * sin_lon * enu->y + cos_lat * sin_lon * enu->z;
+    double dz = 0.0 * enu->x + cos_lat * enu->y + sin_lat * enu->z;
+    
+    // 4. 计算目标点的ECEF坐标
+    ECEF_Coord ecef_target;
+    ecef_target.x = ecef_origin.x + dx;
+    ecef_target.y = ecef_origin.y + dy;
+    ecef_target.z = ecef_origin.z + dz;
+    
+    // 5. 将目标点ECEF坐标转换为经纬高
+    target = ecef_to_llh(&ecef_target);
+    
+    return target;
+}
+
 
 /**
  * @brief 计算从初始点到目标点的ENU坐标
@@ -138,3 +245,4 @@ void calculate_enu_metrics(const ENU_Coord* enu, double* distance, double* horiz
         *elevation = atan2(enu->z, h_dist) * (180.0 / M_PI);
     }
 }
+#endif

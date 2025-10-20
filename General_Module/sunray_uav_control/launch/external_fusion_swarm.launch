@@ -22,6 +22,7 @@
     <include file="$(find sunray_uav_control)/launch/external_fusion_swarm.launch" if="$(eval (arg('uav_num') > arg('uav_id')))">
         <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
         <arg name="uav_num" value="$(arg uav_num)" />
+        <arg name="external_source" value="$(arg external_source)" />
     </include>
 
     <group if="$(eval uav_id == 1)">

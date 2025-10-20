@@ -1,0 +1,21 @@
+<launch>
+    <arg name="enable_rviz" default="false" />
+    <arg name="uav_id" default="1" />
+    <!-- 集群数量 -->
+    <arg name="agent_num" default="3" />
+    
+    <node name="leader_follower_node_$(arg uav_id)" pkg="sunray_formation" type="leader_follower_node" output="screen">
+        <param name="uav_id" type="int" value="$(arg uav_id)" />
+        <param name="agent_num" type="int" value="$(arg agent_num)" />
+    </node>
+
+    <include file="$(find sunray_formation)/launch_leader_follower/leader_follower_sim.launch" if="$(eval (arg('agent_num') > arg('uav_id')))">
+        <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
+        <arg name="enable_rviz" value="false" />
+    </include>
+
+    <group if="$(arg enable_rviz)">
+        <arg name="rivz_config" default="$(find sunray_formation)/rviz/leader_follower_node.rviz"/>
+        <node type="rviz" name="rviz_external_fusion" pkg="rviz" args="-d $(arg rivz_config)"/>
+    </group>
+</launch>

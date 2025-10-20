@@ -430,7 +430,7 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
             }
             else if (system_params.safety_state != 0)
             {
-                Logger::error("Get uav setup cmd: Safety state error, cannot switch to RC_CONTROL mode.");
+                Logger::error("Get uav setup cmd: Safety state error, cannot switch to RC_CONTROL mode. system_params.safety_state:", system_params.safety_state);
             }
         }
         else if (msg->control_mode == "CMD_CONTROL")
@@ -442,7 +442,7 @@ void UAVControl::uav_setup_callback(const sunray_msgs::UAVSetup::ConstPtr &msg)
             }
             else if (system_params.safety_state != 0)
             {
-                Logger::error("Get uav setup cmd: Safety state error, cannot switch to CMD_CONTROL mode.");
+                Logger::error("Get uav setup cmd: Safety state error, cannot switch to CMD_CONTROL mode. system_params.safety_state:", system_params.safety_state);
             }
         }
         else if (msg->control_mode == "LAND_CONTROL")
