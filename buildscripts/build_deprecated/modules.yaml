@@ -36,6 +36,13 @@ modules:
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
 
+  # fmt控制模块
+  sunray_fmt_control:
+    description: "fmt控制模块"
+    source_path: "General_Module/sunray_fmt_control"
+    build_path: "build/sunray_fmt_control"
+    dependencies: ["sunray_common", "sunray_uav_control"]
+
   #云台控制模块
   sunray_gimbal:
     description: "云台控制系统"
@@ -115,7 +122,7 @@ groups:
   # 无人机飞行控制系统
   control:
     description: "无人机飞行控制系统"
-    modules: ["sunray_common", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial"]
+    modules: ["sunray_common", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial","sunray_fmt_control"]
     
   # EGO路径规划系统
   ego:
@@ -135,7 +142,7 @@ groups:
   # 完整多机系统（不含地面机器人）
   all:
     description: "完整多机系统（不含地面机器人）"
-    modules: ["sunray_common", "sunray_uav_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "sunray_planner_utils", "sunray_communication_bridge", "sunray_media", "ego_planner", "simulator_utils", "gazebo_plugin", "sunray_formation","sunray_gimbal"]
+    modules: ["sunray_common", "sunray_uav_control","sunray_fmt_control", "vrpn_client_ros", "sunray_tutorial", "sunray_simulator", "sunray_planner_utils", "sunray_communication_bridge", "sunray_media", "ego_planner", "simulator_utils", "gazebo_plugin", "sunray_formation","sunray_gimbal"]
 
 # ========== 构建配置 ==========
 build_config:

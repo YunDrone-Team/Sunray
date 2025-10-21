@@ -38,9 +38,9 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  /home/robot/Sunray/General_Module/sunray_common/common_lib
-  /home/robot/Sunray/General_Module/sunray_uav_control/include
-  /home/robot/Sunray/General_Module/sunray_uav_control/include/pos_controller
+  /home/yundrone/Sunray/General_Module/sunray_common/common_lib
+  /home/yundrone/Sunray/General_Module/sunray_uav_control/include
+  /home/yundrone/Sunray/General_Module/sunray_uav_control/include/pos_controller
 )
 
 

@@ -35,6 +35,13 @@ modules:
     source_path: "General_Module/sunray_uav_control"
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
+  
+  # fmt 控制模块
+  sunray_fmt_control:
+    description: "fmt控制模块"
+    source_path: "General_Module/sunray_fmt_control"
+    build_path: "build/sunray_fmt_control"
+    dependencies: ["sunray_common", "sunray_uav_control"]
     
   vrpn_client_ros:
     description: "VRPN客户端，获取动捕数据"
@@ -115,8 +122,11 @@ groups:
   # 无人机飞行控制系统
   uav:
     description: "默认使用这个组，包含无人机飞行控制，仿真环境，仿真工具，仿真插件，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流，编队控制"
-    modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_gimbal", "sunray_media", "ego_planner", "sunray_formation"]
+    modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_fmt_control", "sunray_tutorial", "sunray_planner_utils", "sunray_gimbal", "sunray_media", "ego_planner", "sunray_formation"]
     
+  fmt:
+    description: "fmt控制模块"
+    modules: ["sunray_common", "vrpn_client_ros", "sunray_tutorial","sunray_communication_bridge","sunray_uav_control","sunray_fmt_control"]
   # # EGO路径规划系统
   # ego:
   #   description: "EGO路径规划系统，包含EGO路径规划器，仿真工具，路径规划工具"
