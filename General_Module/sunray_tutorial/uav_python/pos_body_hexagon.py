@@ -99,40 +99,32 @@ def main():
     control_cmd_pub.publish(uav_cmd)
     rospy.sleep(5)
 
-    # 六边形顶点
-    radius = 1.0
-    height = 1.0
-    hex_points = [(radius * np.cos(np.pi/3 * i), radius * np.sin(np.pi/3 * i), height) for i in range(6)]
-    hex_points.append(hex_points[0]) # 回到起点
-
-    # 依次飞向六边形各顶点
-    for i, pt in enumerate(hex_points):
-        # 机体坐标系yaw设置
-        # 第一个点和第六个点yaw设置为120度，其他为60度
-        if i == 0 or i == 5:
-            yaw_deg = 120
-        else:
-            yaw_deg = 60
-
-        # 机体坐标系yaw设置为弧度
-        yaw_rad = yaw_deg / 180.0 * np.pi
-        rospy.loginfo(f'Go to hexagon point {i}: {pt}, yaw={yaw_deg}')
-
-        # 飞向目标点
+    # 六边形轨迹主循环
+    vertex = (1, 0, 0)
+    for i in range(8):
         uav_cmd.cmd = UAVControlCMD.XyzPosYawBody
-        uav_cmd.desired_pos = [pt[0], pt[1], pt[2]]
-        uav_cmd.desired_yaw = yaw_rad
+        uav_cmd.desired_pos[0] = vertex[0]
+        uav_cmd.desired_pos[1] = vertex[1]
+        uav_cmd.desired_pos[2] = 1 - uav_state.position[2]
+        uav_cmd.desired_yaw = 0.0
         control_cmd_pub.publish(uav_cmd)
         rospy.sleep(5)
 
-        # 回到原点
-        if i < len(hex_points)-1:
-            uav_cmd.cmd = UAVControlCMD.XyzPosYawBody
-            uav_cmd.desired_pos = [0, 0, height]
-            uav_cmd.desired_yaw = yaw_rad
-            control_cmd_pub.publish(uav_cmd)
-            rospy.sleep(2)
+        # 计算下一个顶点位置
+        if i == 0 or i == 6:
+            yaw_deg = 120
+        else:
+            yaw_deg = 60
+        if i == 7:
+            break
 
+        uav_cmd.cmd = UAVControlCMD.XyzPosYawBody
+        uav_cmd.desired_pos = [0, 0, 0]
+        uav_cmd.desired_yaw = yaw_deg / 180.0 * np.pi
+        control_cmd_pub.publish(uav_cmd)
+        rospy.loginfo(f'Back to origin, set yaw={yaw_deg}')
+        rospy.sleep(2)
+        
     # 降落无人机
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.LAND_CONTROL and uav_state.landed_state != 1:
         uav_cmd.cmd = UAVControlCMD.Land
