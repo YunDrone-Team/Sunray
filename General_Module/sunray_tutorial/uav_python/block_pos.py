@@ -9,7 +9,6 @@ from sunray_msgs.msg import UAVState, UAVSetup, UAVControlCMD
 import signal
 import sys
 import time
-from sunray_logger import Logger, LogColor
 
 node_name = 'block_pos_py'
 uav_state = UAVState()
@@ -29,18 +28,12 @@ def uav_state_callback(msg):
 
 # 信号处理，支持Ctrl+C安全退出
 def sigint_handler(sig, frame):
-    Logger.print_color(LogColor.green, node_name, '[block_pos] exit...')
+    rospy.loginfo('[block_pos] exit...')
     rospy.signal_shutdown('SIGINT')
     sys.exit(0)
 signal.signal(signal.SIGINT, sigint_handler)
 
 def main():
-    Logger.init_default()
-    Logger.setPrintLevel(False)
-    Logger.setPrintTime(False)
-    Logger.setPrintToFile(False)
-    Logger.setFilename('~/Documents/Sunray_log.txt')
-
     rospy.init_node(node_name)
     rate = rospy.Rate(20)
     # 获取无人机ID
@@ -73,43 +66,43 @@ def main():
         rospy.sleep(1.0)
         times += 1
         if times > 5:
-            Logger.print_color(LogColor.red, node_name, ': Wait for UAV connect...')
-    Logger.print_color(LogColor.green, node_name, ': UAV connected!')
+            rospy.logwarn('Wait for UAV connect...')
+    rospy.loginfo('UAV connected!')
 
     #设置无人机为命令控制模式（同时fmt切换到offboard模式）
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.CMD_CONTROL:
         uav_setup.cmd = UAVSetup.SET_CONTROL_MODE
         uav_setup.control_mode = 'CMD_CONTROL'
         uav_setup_pub.publish(uav_setup)
-        Logger.print_color(LogColor.green, node_name, ': SET_CONTROL_MODE - [CMD_CONTROL].')
+        rospy.loginfo('SET_CONTROL_MODE - [CMD_CONTROL].')
         rospy.sleep(1.0)
-    Logger.print_color(LogColor.green, node_name, ': UAV control_mode set to [CMD_CONTROL] successfully!')
+    rospy.loginfo('UAV control_mode set to [CMD_CONTROL] successfully!')
 
     #解锁无人机
     for i in range(5, 0, -1):
-        Logger.print_color(LogColor.green, node_name, f': Arm UAV in {i} sec...')
+        rospy.loginfo(f'Arm UAV in {i} sec...')
         rospy.sleep(1.0)
 
     while not rospy.is_shutdown() and not uav_state.armed:
         uav_setup.cmd = UAVSetup.ARM
         uav_setup_pub.publish(uav_setup)
-        Logger.print_color(LogColor.green, node_name, ': Arm UAV now.')
+        rospy.loginfo('Arm UAV now.')
         rospy.sleep(1.0)
-    Logger.print_color(LogColor.green, node_name, ': Arm UAV successfully!')
+    rospy.loginfo('Arm UAV successfully!')
 
     #起飞无人机
     while not rospy.is_shutdown() and abs(uav_state.position[2] - uav_state.home_pos[2] - uav_state.takeoff_height) > 0.2:
         uav_cmd.cmd = UAVControlCMD.Takeoff
         control_cmd_pub.publish(uav_cmd)
-        Logger.print_color(LogColor.green, node_name, ': Takeoff UAV now.')
+        rospy.loginfo('Takeoff UAV now.')
         rospy.sleep(4.0)
-    Logger.print_color(LogColor.green, node_name, ': Takeoff UAV successfully!')
+    rospy.loginfo('Takeoff UAV successfully!')
 
     #以上：无人机已经起飞，接下来执行四边形轨迹飞行任务
 
     #悬停5秒
     rospy.sleep(5)
-    Logger.print_color(LogColor.green, node_name, ': Send UAV Hover cmd.')
+    rospy.loginfo('Send UAV Hover cmd.')
     uav_cmd.cmd = UAVControlCMD.Hover
     control_cmd_pub.publish(uav_cmd)
     rospy.sleep(5)
@@ -126,12 +119,12 @@ def main():
 
     for vertex in vertices:
         #输出当前目标点，在每个顶点发送控制指令直到无人机到达该点
-        Logger.print_color(LogColor.green, node_name, f': go to point: {vertex}')
+        rospy.loginfo(f'go to point: {vertex}')
 
         while not rospy.is_shutdown():
             #如果收到停止任务指令，跳出循环，降落无人机
             if stop_flag:
-                Logger.print_color(LogColor.green, node_name, ': Land UAV now.')
+                rospy.loginfo('Land UAV now.')
                 uav_cmd.cmd = UAVControlCMD.Land
                 control_cmd_pub.publish(uav_cmd)
                 rospy.sleep(0.5)
@@ -142,7 +135,7 @@ def main():
             uav_cmd.desired_pos = list(vertex)
             control_cmd_pub.publish(uav_cmd)
 
-            #判断无人机是否到达目标点
+            #检查无人机是否到达目标点
             if (abs(uav_state.position[0] - vertex[0]) < 0.15 and
                 abs(uav_state.position[1] - vertex[1]) < 0.15 and
                 abs(uav_state.position[2] - vertex[2]) < 0.15):
@@ -155,19 +148,19 @@ def main():
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.LAND_CONTROL and uav_state.landed_state != 1:
         uav_cmd.cmd = UAVControlCMD.Land
         control_cmd_pub.publish(uav_cmd)
-        Logger.print_color(LogColor.green, node_name, ': Land UAV now.')
+        rospy.loginfo('Land UAV now.')
         rospy.sleep(4.0)
 
-    #等待降落完成
+    #等待降落完成    
     while not rospy.is_shutdown() and uav_state.landed_state != 1:
-        Logger.print_color(LogColor.green, node_name, ': Landing')
+        rospy.loginfo('Landing')
         rospy.sleep(1.0)
-
+    
     #降落完成
-    Logger.print_color(LogColor.green, node_name, ': Land UAV successfully!')
+    rospy.loginfo('Land UAV successfully!')
 
-    # 任务完成，退出
-    Logger.print_color(LogColor.green, node_name, ': Demo finished, quit!')
+    #任务完成，退出
+    rospy.loginfo('Demo finished, quit!')
 
 if __name__ == '__main__':
     main()

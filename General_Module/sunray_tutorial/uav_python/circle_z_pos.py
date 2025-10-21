@@ -8,7 +8,6 @@ from sunray_msgs.msg import UAVState, UAVSetup, UAVControlCMD
 import signal
 import sys
 import time
-from sunray_logger import Logger, LogColor
 import numpy as np
 
 node_name = 'circle_z_pos_py'
@@ -23,19 +22,12 @@ def uav_state_callback(msg):
 
 # 信号处理，支持Ctrl+C安全退出
 def sigint_handler(sig, frame):
-    Logger.print_color(LogColor.green, node_name, '[circle_z_pos] exit...')
+    rospy.loginfo('[circle_z_pos] exit...')
     rospy.signal_shutdown('SIGINT')
     sys.exit(0)
 signal.signal(signal.SIGINT, sigint_handler)
 
 def main():
-    #设置日志
-    Logger.init_default()
-    Logger.setPrintLevel(False)
-    Logger.setPrintTime(False)
-    Logger.setPrintToFile(False)
-    Logger.setFilename('~/Documents/Sunray_log.txt')
-
     rospy.init_node(node_name)
     rate = rospy.Rate(20)
     # 获取无人机ID
@@ -67,42 +59,42 @@ def main():
         rospy.sleep(1.0)
         times += 1
         if times > 5:
-            Logger.print_color(LogColor.red, node_name, ': Wait for UAV connect...')
-    Logger.print_color(LogColor.green, node_name, ': UAV connected!')
+            rospy.logwarn('Wait for UAV connect...')
+    rospy.loginfo('UAV connected!')
 
     # 设置控制模式为CMD_CONTROL（同时，FMT会自动切换到OFFBOARD模式）
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.CMD_CONTROL:
         uav_setup.cmd = UAVSetup.SET_CONTROL_MODE
         uav_setup.control_mode = 'CMD_CONTROL'
         uav_setup_pub.publish(uav_setup)
-        Logger.print_color(LogColor.green, node_name, ': SET_CONTROL_MODE - [CMD_CONTROL].')
+        rospy.loginfo('SET_CONTROL_MODE - [CMD_CONTROL].')
         rospy.sleep(1.0)
-    Logger.print_color(LogColor.green, node_name, ': UAV control_mode set to [CMD_CONTROL] successfully!')
+    rospy.loginfo('UAV control_mode set to [CMD_CONTROL] successfully!')
 
     # 解锁无人机
     for i in range(5, 0, -1):
-        Logger.print_color(LogColor.green, node_name, f': Arm UAV in {i} sec...')
+        rospy.loginfo(f'Arm UAV in {i} sec...')
         rospy.sleep(1.0)
     while not rospy.is_shutdown() and not uav_state.armed:
         uav_setup.cmd = UAVSetup.ARM
         uav_setup_pub.publish(uav_setup)
-        Logger.print_color(LogColor.green, node_name, ': Arm UAV now.')
+        rospy.loginfo('Arm UAV now.')
         rospy.sleep(1.0)
-    Logger.print_color(LogColor.green, node_name, ': Arm UAV successfully!')
+    rospy.loginfo('Arm UAV successfully!')
 
     # 起飞无人机
     while not rospy.is_shutdown() and abs(uav_state.position[2] - uav_state.home_pos[2] - uav_state.takeoff_height) > 0.2:
         uav_cmd.cmd = UAVControlCMD.Takeoff
         control_cmd_pub.publish(uav_cmd)
-        Logger.print_color(LogColor.green, node_name, ': Takeoff UAV now.')
+        rospy.loginfo('Takeoff UAV now.')
         rospy.sleep(4.0)
-    Logger.print_color(LogColor.green, node_name, ': Takeoff UAV successfully!')
+    rospy.loginfo('Takeoff UAV successfully!')
 
     #以上：无人机起飞完成，以下：开始圆形轨迹飞行
 
     # 悬停
     rospy.sleep(5)
-    Logger.print_color(LogColor.green, node_name, ': Send UAV Hover cmd.')
+    rospy.loginfo('Send UAV Hover cmd.')
     uav_cmd.cmd = UAVControlCMD.Hover
     control_cmd_pub.publish(uav_cmd)
     rospy.sleep(5)
@@ -121,7 +113,7 @@ def main():
     # 圈数
     num_circle = 2
 
-    Logger.print_color(LogColor.green, node_name, ': Start circle.')
+    rospy.loginfo('Start circle.')
     for n in range(num_circle):
         for i in range(num_points):
             # 计算目标点
@@ -188,19 +180,19 @@ def main():
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.LAND_CONTROL and uav_state.landed_state != 1:
         uav_cmd.cmd = UAVControlCMD.Land
         control_cmd_pub.publish(uav_cmd)
-        Logger.print_color(LogColor.green, node_name, ': Land UAV now.')
+        rospy.loginfo('Land UAV now.')
         rospy.sleep(4.0)
     
     # 等待降落完成
     while not rospy.is_shutdown() and uav_state.landed_state != 1:
-        Logger.print_color(LogColor.green, node_name, ': Landing')
+        rospy.loginfo('Landing')
         rospy.sleep(1.0)
 
     # 降落完成
-    Logger.print_color(LogColor.green, node_name, ': Land UAV successfully!')
+    rospy.loginfo('Land UAV successfully!')
     
     #Demo 完成，退出
-    Logger.print_color(LogColor.green, node_name, ': Demo finished, quit!')
+    rospy.loginfo('Demo finished, quit!')
 
 if __name__ == '__main__':
     main()
