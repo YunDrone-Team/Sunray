@@ -150,11 +150,16 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     case sunray_msgs::ExternalOdom::GPS:
         // GPS不属于外部定位源，不开启外部定位融合
         enable_external_fusion = false;
+        // GPS模式下，订阅PX4的GPS位置数据，外部定位标记为有效
+        external_odom.odom_valid = true;
+        Logger::info("GPS mode enabled, external odometry marked as valid");
         break;
     // 定位源：RTK模式下，无需开启外部定位
     case sunray_msgs::ExternalOdom::RTK:
         // RTK不属于外部定位源，不开启外部定位融合
         enable_external_fusion = false;
+        external_odom.odom_valid = true;
+        Logger::info("RTK mode enabled, external odometry marked as valid");
         break;
     // 定位源：VINS-Fusion
     case sunray_msgs::ExternalOdom::VINS:
@@ -195,16 +200,20 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
             // mavlink通信线程
             mavlink_send_odometry_thread(); // 先保存再在另外的线程里面发送
         }
-
-        // 【定时器】当PX4需要外部定位输入时，定时更新和发布
-        timer_send_external_pos = nh.createTimer(ros::Duration(0.01), &ExternalPosition::timer_send_external_pos_cb, this);
     }
+
+    // 【定时器】定时更新和发布外部定位状态（GPS/RTK模式也需要此定时器来维持odom_valid状态）
+    timer_send_external_pos = nh.createTimer(ros::Duration(0.01), &ExternalPosition::timer_send_external_pos_cb, this);
 
     // 初始化外部定位状态
     external_odom.header.stamp = ros::Time::now();
     external_odom.external_source = external_source;
-    external_odom.odom_valid = false;
-    external_odom.fusion_success = false;
+    // GPS/RTK模式下odom_valid已在switch中设置为true，其他模式设置为false
+    if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
+    {
+        external_odom.odom_valid = false;
+        external_odom.fusion_success = false;
+    }
     external_odom.position[0] = NAN;
     external_odom.position[1] = NAN;
     external_odom.position[2] = NAN;
@@ -225,9 +234,18 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
 // 定时器回调函数
 void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
 {
-    if (!enable_external_fusion)
+    // GPS/RTK模式下，不需要外部定位融合，直接标记为有效
+    if (external_odom.external_source == sunray_msgs::ExternalOdom::GPS ||
+        external_odom.external_source == sunray_msgs::ExternalOdom::RTK)
     {
         external_odom.odom_valid = true;
+        external_odom.fusion_success = true;
+        return;
+    }
+
+    // 其他未使能外部融合的模式，不做任何处理（保持初始状态）
+    if (!enable_external_fusion)
+    {
         return;
     }
 

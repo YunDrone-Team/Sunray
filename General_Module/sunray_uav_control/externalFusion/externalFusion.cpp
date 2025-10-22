@@ -424,8 +424,25 @@ void ExternalFusion::show_px4_state()
         Logger::print_color(int(LogColor::blue), "GPS Status");
         Logger::print_color(int(LogColor::green), "GPS STATUS:", px4_state.gps_status, "SERVICE:", px4_state.gps_service);
         Logger::print_color(int(LogColor::green), "GPS satellites:", px4_state.satellites);
-        Logger::print_color(int(LogColor::green), "GPS POS[lat lon alt]:", int(px4_state.latitude), int(px4_state.longitude),"[deg*1e7]", int(px4_state.altitude)/1000.0, "[m](MSL)");
-        // todo global position
+        
+        // 格式化GPS坐标，保留7位小数
+        char lat_str[32], lon_str[32], alt_msl_str[32];
+        snprintf(lat_str, sizeof(lat_str), "%.7f", px4_state.latitude);
+        snprintf(lon_str, sizeof(lon_str), "%.7f", px4_state.longitude);
+        snprintf(alt_msl_str, sizeof(alt_msl_str), "%.7f", px4_state.altitude);
+        
+        Logger::print_color(int(LogColor::green), "GPS POS[lat lon]:", 
+                           lat_str, "°,", lon_str, "°");
+        Logger::print_color(int(LogColor::green), "GPS 高度[MSL 相对地面]:", 
+                           alt_msl_str, "m (海拔高度) /", 
+                           px4_state.position[2], "m (相对地面)");
+        
+        // 显示本地位置（ENU坐标系，相对于起飞点）
+        Logger::print_color(int(LogColor::green), "本地位置[X Y Z]:",
+                            px4_state.position[0],
+                            px4_state.position[1],
+                            px4_state.position[2],
+                            "[ m ] (相对起飞点)");
     }
 
     // 期望位置和姿态

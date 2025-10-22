@@ -165,7 +165,21 @@ void UAVControl::mainLoop()
 // 安全检查 是否超出地理围栏 外部定位是否有效
 int UAVControl::safetyCheck()
 {
-    // 如果超出地理围栏，则返回1
+    // 如果外部定位失效，则返回2
+    if (!uav_state.odom_valid)
+    {
+        return 2;
+    }
+
+    // GPS/RTK模式下，暂时不检查地理围栏
+    if (uav_state.location_source == sunray_msgs::ExternalOdom::GPS ||
+        uav_state.location_source == sunray_msgs::ExternalOdom::RTK)
+    {
+        // GPS模式下，可以根据需要添加基于经纬度的围栏检查
+        return 0;
+    }
+
+    // 如果超出地理围栏，则返回1（仅对本地定位模式有效）
     if (px4_state.position[0] < uav_geo_fence.x_min ||
         px4_state.position[0] > uav_geo_fence.x_max ||
         px4_state.position[1] < uav_geo_fence.y_min ||
@@ -176,11 +190,6 @@ int UAVControl::safetyCheck()
         return 1;
     }
 
-    // 如果外部定位失效，则返回2
-    if (!uav_state.odom_valid)
-    {
-        return 2;
-    }
     return 0;
 }
 
