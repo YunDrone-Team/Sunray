@@ -9,7 +9,6 @@ void LeaderFollower::init(ros::NodeHandle &nh)
     // 【参数】无人机编号，默认1号机为leader
     nh.param<int>("uav_id", uav_id, 1);                 
     nh.param<int>("agent_num", agent_num, 1);
-    nh.param<std::string>("file_path", file_path, "/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml");
 
     // 无人机名字 = 无人机名字前缀 + 无人机ID
     uav_name = "/uav" + std::to_string(uav_id);
@@ -22,8 +21,6 @@ void LeaderFollower::init(ros::NodeHandle &nh)
 
     // 【订阅】ORCA状态(暂无)
 
-
-
     // 【订阅】无人机的状态（所有无人机）
     for (int i = 1; i <= agent_num; i++)
     {
@@ -31,11 +28,9 @@ void LeaderFollower::init(ros::NodeHandle &nh)
 
         uav_state_sub[i] = nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 10,
                                                                     boost::bind(&LeaderFollower::uav_state_cb, this, _1, i));
-        
         // 【订阅】PX4无人机综合状态 - external_fusion_node -> 本节点
         px4_state_sub[i] = nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 10, 
                                                                     boost::bind(&LeaderFollower::px4_state_cb, this, _1, i));
-
         // 【发布】定位状态到 ORCA 节点 - 本节点 -> orca_node
         agent_state_pub[i] = nh.advertise<nav_msgs::Odometry>(topic_prefix + "/orca/agent_state", 10);
     }
@@ -61,40 +56,39 @@ void LeaderFollower::init(ros::NodeHandle &nh)
     // 【发布】ORCA设置指令 - 本节点 -> orca_node
     orca_setup_pub = nh.advertise<sunray_msgs::OrcaSetup>(uav_name + "/orca/setup", 10);
     
-
-    // this->read_formation_yaml();
-
-
-
-
     uav_control_utils.init(nh, uav_id, node_name);
 
+    // 【定时器】定时检查通信状态，通过判断收到PX4_STATE的频率
+    timer_check_communication = nh.createTimer(ros::Duration(1.0), &LeaderFollower::timer_check_communication_cb, this);
 }
+
 
 // 无人机状态回调
 void LeaderFollower::px4_state_cb(const sunray_msgs::PX4State::ConstPtr &msg, int i)
 {
-    formation.get_px4_state[i] = true;
+    formation.get_px4_state = true;
+    // 数据存储
     formation.px4_state[i] = *msg;
 
-    // 从机的位置
+    // 将经纬高赋值到follower_point
     formation.follower_point[i].lat = msg->latitude;
     formation.follower_point[i].lon = msg->longitude;
     formation.follower_point[i].alt = msg->altitude;
 
     if(formation.set_origin_point)
     {
-        // 计算从机的xyz位置
+        // 计算从机的xyz位置，并赋值到follower_point_xyz
         calculate_enu_coordinates(&formation.origin_point, &formation.follower_point[i], &formation.follower_point_xyz[i]);
     }
 
-    // 
+    // 赋值orca_agent_state，用于发布到ORCA节点
     formation.orca_agent_state[i].header.stamp = ros::Time::now();
     formation.orca_agent_state[i].pose.pose.position.x = msg->position[0];
     formation.orca_agent_state[i].pose.pose.position.y = msg->position[1];
     formation.orca_agent_state[i].pose.pose.position.z = msg->position[2];
     formation.orca_agent_state[i].pose.pose.orientation = msg->attitude_q;
 
+    // 如果是领机，则也要赋值到leader_point和leader_point_xyz
     if(i==1)
     {
         formation.leader_point.lat = msg->latitude;
@@ -123,11 +117,15 @@ void LeaderFollower::mainLoop()
     // 定时更新ORCA所需要的agent_state
     pub_orca_agent_state();
 
-    
 }
 
 void LeaderFollower::show_debug_info()
 {
+    if(uav_id != 1)
+    {
+        return;
+    }
+
     Logger::print_color(int(LogColor::cyan), ">>>>>>>>>>>>>>>> 领-从集群编队 - [", uav_name, "] <<<<<<<<<<<<<<<<<");
 
     // 任务指令 - 连接状态、飞控模式、电池状态
@@ -144,29 +142,24 @@ void LeaderFollower::show_debug_info()
         Logger::print_color(int(LogColor::green), "mission_cmd.mission","RETURN");
     }else if(formation.mission_cmd.mission == sunray_msgs::MissionCMD::MOVE)
     {
-        Logger::print_color(int(LogColor::green), "mission_cmd.mission","MOVE");
-
-        
+        Logger::print_color(int(LogColor::green), "mission_cmd.mission","MOVE");      
         Logger::print_color(int(LogColor::green), "Leader Goal Point[lat lon alt]:", formation.leader_goal_point.lat, formation.leader_goal_point.lon,"[deg*1e7]", formation.leader_goal_point.alt, "[m](MSL)");
-
         Logger::print_color(int(LogColor::green), "Leader Goal Point ENU [x y z]:", formation.leader_goal_point_xyz.x, formation.leader_goal_point_xyz.y, formation.leader_goal_point_xyz.z, "[m]");
 
-        Logger::print_color(int(LogColor::green), "Follower Goal Point[lat lon alt]:", formation.follower_goal_point[uav_id].lat, formation.follower_goal_point[uav_id].lon,"[deg*1e7]", formation.follower_goal_point[uav_id].alt, "[m](MSL)");
-
-        Logger::print_color(int(LogColor::green), "Follower Goal Point ENU [x y z]:", formation.follower_goal_point_xyz[uav_id].x, formation.follower_goal_point_xyz[uav_id].y, formation.follower_goal_point_xyz[uav_id].z, "[m]");
-
-
-        Logger::print_color(int(LogColor::green), "Follower Point[lat lon alt]:", formation.follower_point[uav_id].lat, formation.follower_point[uav_id].lon,"[deg*1e7]", formation.follower_point[uav_id].alt, "[m](MSL)");
-
-        Logger::print_color(int(LogColor::green), "Follower Point ENU [x y z]:", formation.follower_point_xyz[uav_id].x, formation.follower_point_xyz[uav_id].y, formation.follower_point_xyz[uav_id].z, "[m]");
-
-        Logger::print_color(int(LogColor::green), "ORCA goal_pos  [x y z]:", formation.orca_cmd.goal_pos[0], formation.orca_cmd.goal_pos[1], formation.orca_cmd.goal_pos[2], "[m]");
-        Logger::print_color(int(LogColor::green), "ORCA linearcmd [x y z]:", formation.orca_cmd.linear[0], formation.orca_cmd.linear[1], formation.orca_cmd.linear[2], "[m]");
+        for (int i = 1; i <= agent_num; i++)
+        {
+            show_follower_info(i);
+        }
     }
+}
 
-
-
-
+void LeaderFollower::show_follower_info(int id)
+{
+    Logger::print_color(int(LogColor::green), "Follower [", id, "]");
+    Logger::print_color(int(LogColor::green), "Follower Goal Point[lat lon alt]:", formation.follower_goal_point[id].lat, formation.follower_goal_point[id].lon,"[deg*1e7]", formation.follower_goal_point[id].alt, "[m](MSL)");
+    Logger::print_color(int(LogColor::green), "Follower Goal Point ENU [x y z]:", formation.follower_goal_point_xyz[id].x, formation.follower_goal_point_xyz[id].y, formation.follower_goal_point_xyz[id].z, "[m]");
+    Logger::print_color(int(LogColor::green), "Follower Point[lat lon alt]:", formation.follower_point[id].lat, formation.follower_point[id].lon,"[deg*1e7]", formation.follower_point[id].alt, "[m](MSL)");
+    Logger::print_color(int(LogColor::green), "Follower Point ENU [x y z]:", formation.follower_point_xyz[id].x, formation.follower_point_xyz[id].y, formation.follower_point_xyz[id].z, "[m]");
 }
 
 // ORCA计算得到的速度，直接发布
@@ -219,37 +212,15 @@ void LeaderFollower::orca_cmd_cb(const sunray_msgs::OrcaCmd::ConstPtr &msg)
 void LeaderFollower::mission_cmd_cb(const sunray_msgs::MissionCMD::ConstPtr &msg)
 {
     formation.mission_cmd = *msg;
-    
+
     // 读取阵型
     formation.formation_name = msg->mission_formation;
-    // 读取领机的期望经纬高
-    formation.leader_goal_point.lat =  msg->leader_lat_ref;
-    formation.leader_goal_point.lon =  msg->leader_lon_ref;
-    formation.leader_goal_point.alt =  msg->leader_alt_ref;
+
     // 读取原点
     formation.origin_point.lat =  msg->origin_lat;
     formation.origin_point.lon =  msg->origin_lon;
     formation.origin_point.alt =  msg->origin_alt;
     formation.set_origin_point = true;
-
-    // 计算领机的期望xyz点
-    calculate_enu_coordinates(&formation.origin_point, &formation.leader_goal_point, &formation.leader_goal_point_xyz);
-
-    // 计算从机的期望xyz点（以下这部分接口可以写的更加智能，只要保证输入输出即可）
-    // 1、生成队形偏移量结构体 
-    FormationOffsets dynamic_formation = createCircleFormation(agent_num, 15.0);
-    // 2、计算从机的期望xyz位置
-    for (int i = 1; i <= agent_num; i++)
-    {
-        formation.follower_goal_point_xyz[i] = calculateFollowerPosition(&formation.leader_goal_point_xyz, &dynamic_formation, i-1);
-    }
-
-    // 计算从机的期望经纬高
-    for (int i = 1; i <= agent_num; i++)
-    {
-        formation.follower_goal_point[i] = enu_to_llh(&formation.origin_point, &formation.follower_goal_point_xyz[i]);
-    }
-    // Logger::info( "3");
 
     // 执行MissionCMD指令
     switch (formation.mission_cmd.mission)
@@ -268,9 +239,43 @@ void LeaderFollower::mission_cmd_cb(const sunray_msgs::MissionCMD::ConstPtr &msg
         uav_control_utils.auto_return();
         break;
     case sunray_msgs::MissionCMD::MOVE:
-        // 飞机向目标点+目标阵型移动
-        // 移动 + orca设置 + 发布从机指令
-        // 经纬度结算XYZ    
+
+        // 读取领机的期望经纬高
+        formation.leader_goal_point.lat =  msg->leader_lat_ref;
+        formation.leader_goal_point.lon =  msg->leader_lon_ref;
+        formation.leader_goal_point.alt =  msg->leader_alt_ref;
+
+        // 计算领机的期望xyz点
+        calculate_enu_coordinates(&formation.origin_point, &formation.leader_goal_point, &formation.leader_goal_point_xyz);
+
+        // 计算从机的期望xyz点（以下这部分接口可以写的更加智能，只要保证输入输出即可）
+        // 1、生成队形偏移量结构体 (根据阵型指令选择，具体什么样的阵型待修改待定)
+        if(formation.formation_name == sunray_msgs::MissionCMD::FORMATION1)
+        {
+            formation.dynamic_formation = createCircleFormation(agent_num, 5.0);
+        }else if(formation.formation_name == sunray_msgs::MissionCMD::FORMATION2)
+        {
+            formation.dynamic_formation = createLineFormation(agent_num, 5.0);
+        }else if(formation.formation_name == sunray_msgs::MissionCMD::FORMATION3)
+        {
+            formation.dynamic_formation = createDiamondFormation(agent_num, 5.0);
+        }else
+        {
+            Logger::info("Wrong formation_name");
+            return;
+        }
+        
+        // 2、计算从机的期望xyz位置
+        for (int i = 1; i <= agent_num; i++)
+        {
+            formation.follower_goal_point_xyz[i] = calculateFollowerPosition(&formation.leader_goal_point_xyz, &formation.dynamic_formation, i-1);
+        }
+
+        // 计算从机的期望经纬高
+        for (int i = 1; i <= agent_num; i++)
+        {
+            formation.follower_goal_point[i] = enu_to_llh(&formation.origin_point, &formation.follower_goal_point_xyz[i]);
+        }
 
         // 发布ORCA设置指令
         formation.orca_setup.header.stamp = ros::Time::now();
@@ -282,8 +287,6 @@ void LeaderFollower::mission_cmd_cb(const sunray_msgs::MissionCMD::ConstPtr &msg
         orca_setup_pub.publish(formation.orca_setup);
         break;
     }
-
-
 }
 
 void LeaderFollower::follower_cmd_cb(const sunray_msgs::FollowerCMD::ConstPtr &msg)
@@ -299,14 +302,32 @@ void LeaderFollower::follower_cmd_cb(const sunray_msgs::FollowerCMD::ConstPtr &m
     // 根据领机的经纬高和阵型指令，解算自身期望的XYZ 
 }
 
-
+void LeaderFollower::timer_check_communication_cb(const ros::TimerEvent &event)
+{
+    if(formation.get_px4_state && formation.px4_state[uav_id].connected)
+    {
+        formation.communication_timeout = true;
+    }else
+    {
+        formation.communication_timeout = false;
+        return;
+    }
+    
+    for (int i = 1; i <= agent_num; i++)
+    {
+        if((ros::Time::now() - formation.px4_state[i].header.stamp).toSec() > COMMUNICATION_TIMEOUT)
+        {
+            formation.communication_timeout = false;
+            return;
+        }
+    }
+}
 
 // 无人机状态回调
 void LeaderFollower::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int i)
 {
 
 }
-
 
 // // 固定编队
 // void LeaderFollower::static_formation_pub(std::string name)

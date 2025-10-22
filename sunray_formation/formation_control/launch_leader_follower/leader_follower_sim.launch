@@ -11,6 +11,7 @@
 
     <include file="$(find sunray_formation)/launch_leader_follower/leader_follower_sim.launch" if="$(eval (arg('agent_num') > arg('uav_id')))">
         <arg name="uav_id" value="$(eval arg('uav_id') + 1)" />
+        <arg name="agent_num" value="$(arg agent_num)" />
         <arg name="enable_rviz" value="false" />
     </include>
 

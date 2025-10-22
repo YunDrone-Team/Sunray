@@ -1,0 +1,1044 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 138
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Status1
+      Splitter Ratio: 0.48458150029182434
+    Tree Height: 303
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 0; 0; 0
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 20
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/TF
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Alpha: 1
+      Marker Scale: 1.5
+      Name: TF
+      Show Arrows: false
+      Show Axes: true
+      Show Names: true
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_8/mesh
+          Name: rmtt8_mesh
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_7/mesh
+          Name: rmtt7_mesh
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_6/mesh
+          Name: rmtt6_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_5/mesh
+          Name: rmtt5_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_4/mesh
+          Name: rmtt4_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_3/mesh
+          Name: rmtt3_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_2/mesh
+          Name: rmtt2_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_1/mesh
+          Name: rmtt1_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+      Enabled: true
+      Name: RMTT_mesh
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 0; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt1_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_1/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 0; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt2_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_2/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 0; 0; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt3_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_3/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt4_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_4/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 0; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt5_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_5/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 0; 255; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt6_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_6/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 127; 127; 127
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt7_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_7/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 77; 179; 51
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt8_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/rmtt_8/trajectory
+          Unreliable: false
+          Value: true
+      Enabled: true
+      Name: RMTT_path
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt1_vel
+          Queue Size: 10
+          Topic: /sunray_swarm/rmtt_1/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 3
+          Linear Color: 204; 51; 51
+          Name: rmtt2_vel
+          Queue Size: 20
+          Topic: /sunray_swarm/rmtt_2/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt3_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/rmtt_3/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt4_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/rmtt_4/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt5_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/rmtt_5/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt6_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/rmtt_6/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt7_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/rmtt_7/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: rmtt8_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/rmtt_8/vel_rviz
+          Unreliable: false
+          Value: true
+      Enabled: true
+      Name: RMTT_vel
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_1/goal_point_rviz
+          Name: rmtt1_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_2/goal_point_rviz
+          Name: rmtt2_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_3/goal_point_rviz
+          Name: rmtt3_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_4/goal_point_rviz
+          Name: rmtt4_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_5/goal_point_rviz
+          Name: rmtt5_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_6/goal_point_rviz
+          Name: rmtt6_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_7/goal_point_rviz
+          Name: rmtt7_goal
+          Namespaces:
+            {}
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/rmtt_8/goal_point_rviz
+          Name: rmtt8_goal
+          Namespaces:
+            {}
+          Queue Size: 1
+          Value: true
+      Enabled: true
+      Name: RMTT_goalpoint
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_8/mesh
+          Name: ugv8_mesh
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_7/mesh
+          Name: ugv7_mesh
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_6/mesh
+          Name: ugv6_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_5/mesh
+          Name: ugv5_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_4/mesh
+          Name: ugv4_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_3/mesh
+          Name: ugv3_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_2/mesh
+          Name: ugv2_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_1/mesh
+          Name: ugv1_mesh
+          Namespaces:
+            mesh: true
+          Queue Size: 100
+          Value: true
+      Enabled: true
+      Name: ugv_mesh
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 0; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt1_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_1/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 0; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt2_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_2/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 0; 0; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt3_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_3/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt4_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_4/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 0; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt5_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_5/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 0; 255; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt6_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_6/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 127; 127; 127
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt7_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_7/trajectory
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 77; 179; 51
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: rmtt8_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 1
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /sunray_swarm/ugv_8/trajectory
+          Unreliable: false
+          Value: true
+      Enabled: true
+      Name: ugv_path
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv1_vel
+          Queue Size: 10
+          Topic: /sunray_swarm/ugv_1/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 3
+          Linear Color: 204; 51; 51
+          Name: ugv2_vel
+          Queue Size: 20
+          Topic: /sunray_swarm/ugv_2/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv3_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/ugv_3/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv4_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/ugv_4/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv5_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/ugv_5/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv6_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/ugv_6/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv7_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/ugv_7/vel_rviz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Angular Arrow Scale: 3
+          Angular Color: 204; 204; 51
+          Arrow Width: 1
+          Class: rviz/TwistStamped
+          Enabled: true
+          Hide Small Values: false
+          History Length: 1
+          Linear Arrow Scale: 2
+          Linear Color: 204; 51; 51
+          Name: ugv8_vel
+          Queue Size: 1
+          Topic: /sunray_swarm/ugv_8/vel_rviz
+          Unreliable: false
+          Value: true
+      Enabled: true
+      Name: ugv_vel
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_1/goal_point_rviz
+          Name: ugv1_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_2/goal_point_rviz
+          Name: ugv2_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_3/goal_point_rviz
+          Name: ugv3_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_4/goal_point_rviz
+          Name: ugv4_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_5/goal_point_rviz
+          Name: ugv5_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_6/goal_point_rviz
+          Name: ugv6_goal
+          Namespaces:
+            goal: true
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_7/goal_point_rviz
+          Name: ugv7_goal
+          Namespaces:
+            {}
+          Queue Size: 1
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /sunray_swarm/ugv_8/goal_point_rviz
+          Name: ugv8_goal
+          Namespaces:
+            {}
+          Queue Size: 1
+          Value: true
+      Enabled: true
+      Name: ugv_goalpoint
+  Enabled: true
+  Global Options:
+    Background Color: 136; 138; 133
+    Default Light: true
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/Select
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 13.345762252807617
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Field of View: 0.7853981852531433
+      Focal Point:
+        X: 0.6815460324287415
+        Y: 0.28380176424980164
+        Z: 0.30965644121170044
+      Focal Shape Fixed Size: false
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.7597970962524414
+      Target Frame: <Fixed Frame>
+      Yaw: 3.241736650466919
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: true
+  Height: 1057
+  Hide Left Dock: true
+  Hide Right Dock: true
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f7000003dffc020000000dfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000006e000003df000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610000000231000000bc0000000000000000fb0000000a0049006d0061006700650000000232000000bb0000000000000000fb0000000a0049006d0061006700650000000231000000bc0000000000000000fb0000000a0049006d006100670065000000022f000000b70000000000000000fb0000000a0049006d0061006700650000000231000000bc0000000000000000000000010000010f000002aefc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002ae000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003e10000005efc0100000002fb0000000800540069006d00650100000000000003e1000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000003e10000036300000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: true
+  Width: 993
+  X: 242
+  Y: 143

@@ -1,0 +1,8 @@
+<launch>
+        <node pkg="sunray_swarm" name="orca_node_rmtt" type="orca_node" output="screen">
+                <param name="agent_type" type="int" value="0" />
+                <param name="agent_num" value="6" />
+                <param name="agent_height" type="double" value="1.0" />	
+        </node>
+</launch>
+

@@ -140,6 +140,13 @@ modules:
     build_path: "build/formation_control"
     dependencies: ["sunray_common"]
 
+  # 编队RVIZ仿真模块
+  formation_sim:
+    description: "多机编队RVIZ仿真模块"
+    source_path: "sunray_formation/formation_sim"
+    build_path: "build/formation_sim"
+    dependencies: ["sunray_common"]
+
   # ORCA算法ROS实现
   sunray_orca:
     description: "ORCA算法"

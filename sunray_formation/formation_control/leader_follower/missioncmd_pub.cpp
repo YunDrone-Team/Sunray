@@ -7,6 +7,7 @@ sunray_msgs::MissionCMD mission_cmd;
 LLH_Coord origin_point;
 LLH_Coord target_point;
 ENU_Coord target_point_xyz;
+
 void mySigintHandler(int sig)
 {
     ROS_INFO("[missioncmd_pub] exit...");
@@ -17,53 +18,51 @@ void mySigintHandler(int sig)
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>主 函 数<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 int main(int argc, char **argv)
 {
+    // 模拟地面站发布MissionCMD指令
     ros::init(argc, argv, "missioncmd_pub");
     ros::NodeHandle nh("~");
     signal(SIGINT, mySigintHandler);
-    int uav_id;
-    int uav_num;
-    string uav_name{""};
-    nh.param("uav_id", uav_id, 1);
-    nh.param("uav_num", uav_num, 1);
-    nh.param<string>("uav_name", uav_name, "uav");
 
-    uav_name = uav_name + std::to_string(uav_id);
+    // 模拟发布
     ros::Publisher mission_cmd_pub = nh.advertise<sunray_msgs::MissionCMD>("/sunray/mission_cmd", 10);
+    
     int CMD = 0;
-    float state_desired[4];
+    int Formation = 0;
+    double state_desired[4];
 
-    origin_point.lat = 47.397742;
-    origin_point.lon = 8.5455932;
+    // 原点坐标，精确到小数点后7位时有厘米级精度
+    origin_point.lat = 47.3977421;
+    origin_point.lon =  8.5455940;
     origin_point.alt = 535.7399167266602;
-
 
     mission_cmd.mission = sunray_msgs::MissionCMD::LAND;
     mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION1;
-
     mission_cmd.origin_lat = origin_point.lat;
     mission_cmd.origin_lon = origin_point.lon;
     mission_cmd.origin_alt = origin_point.alt;
-
     mission_cmd.leader_lat_ref = origin_point.lat;
     mission_cmd.leader_lon_ref = origin_point.lon;
     mission_cmd.leader_alt_ref = origin_point.alt;
 
-
     while (ros::ok())
     {
         ros::spinOnce();
-        cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>mission_cmd<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
+        cout << GREEN << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>missioncmd_pub<<<<<<<<<<<<<<<<<<<<<<<<< " << TAIL << endl;
         cout << GREEN << "CMD: "
              << YELLOW << " 1 " << GREEN << "TAKEOFF,"
              << YELLOW << " 2 " << GREEN << "LAND,"
              << YELLOW << " 3 " << GREEN << "RETURN,"
-             << YELLOW << " 4 " << GREEN << "MOVE," << TAIL << endl;
+             << YELLOW << " 4 " << GREEN << "MOVE in ENU," 
+             << YELLOW << " 5 " << GREEN << "MOVE in WGS84," << TAIL << endl;
         cin >> CMD;
 
         switch (CMD)
         {
         case 1:
             mission_cmd.mission = sunray_msgs::MissionCMD::TAKEOFF;
+            mission_cmd.origin_lat = origin_point.lat;
+            mission_cmd.origin_lon = origin_point.lon;
+            mission_cmd.origin_alt = origin_point.alt;
             mission_cmd_pub.publish(mission_cmd);
             break;
         case 2:
@@ -75,6 +74,8 @@ int main(int argc, char **argv)
             mission_cmd_pub.publish(mission_cmd);
             break;
         case 4:
+            cout << BLUE << "请输入期望的阵型, 1 for FORMATION1, 2 for FORMATION2, 3 for FORMATION3." << endl;
+            cin >> Formation;
             cout << BLUE << "请输入领机期望的[X Y Z]" << endl;
             cout << BLUE << "desired_pos: --- x [m] " << endl;
             cin >> state_desired[0];
@@ -86,20 +87,61 @@ int main(int argc, char **argv)
             target_point_xyz.x = state_desired[0];
             target_point_xyz.y = state_desired[1];
             target_point_xyz.z = state_desired[2];
-
             target_point = enu_to_llh(&origin_point, &target_point_xyz);
 
             mission_cmd.mission = sunray_msgs::MissionCMD::MOVE;
-            mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION1;
-
+            if (Formation == 1)
+            {
+                mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION1;
+            }else if (Formation == 2)
+            {
+                mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION2;
+            }else if (Formation == 3)
+            {
+                mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION3;
+            }else
+            {
+                mission_cmd.mission_formation = Formation;
+            }
             mission_cmd.origin_lat = origin_point.lat;
             mission_cmd.origin_lon = origin_point.lon;
             mission_cmd.origin_alt = origin_point.alt;
-
             mission_cmd.leader_lat_ref = target_point.lat;
             mission_cmd.leader_lon_ref = target_point.lon;
             mission_cmd.leader_alt_ref = target_point.alt;
+            mission_cmd_pub.publish(mission_cmd);
+            break;
+        case 5:
+            cout << BLUE << "请输入期望的阵型, 1 for FORMATION1, 2 for FORMATION2, 3 for FORMATION3." << endl;
+            cin >> Formation;
+            cout << BLUE << "请输入领机期望的经纬高（注意需要到小数点后7位）" << endl;
+            cout << BLUE << "desired_lat: --- [deg] " << endl;
+            cin >> state_desired[0];
+            cout << BLUE << "desired_lon: --- [deg]" << endl;
+            cin >> state_desired[1];
+            cout << BLUE << "desired_alt: --- [m]" << endl;
+            cin >> state_desired[2];
 
+            mission_cmd.mission = sunray_msgs::MissionCMD::MOVE;
+            if (Formation == 1)
+            {
+                mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION1;
+            }else if (Formation == 2)
+            {
+                mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION2;
+            }else if (Formation == 3)
+            {
+                mission_cmd.mission_formation = sunray_msgs::MissionCMD::FORMATION3;
+            }else
+            {
+                mission_cmd.mission_formation = Formation;
+            }
+            mission_cmd.origin_lat = origin_point.lat;
+            mission_cmd.origin_lon = origin_point.lon;
+            mission_cmd.origin_alt = origin_point.alt;
+            mission_cmd.leader_lat_ref = state_desired[0];
+            mission_cmd.leader_lon_ref = state_desired[1];
+            mission_cmd.leader_alt_ref = state_desired[2];
             mission_cmd_pub.publish(mission_cmd);
             break;
         }
