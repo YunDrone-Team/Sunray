@@ -23,3 +23,7 @@ uint8 FORMATION3 = 3
 float64 leader_lat_ref                ## 领队无人机期望经度                 
 float64 leader_lon_ref                ## 领队无人机期望纬度
 float64 leader_alt_ref                ## 领队无人机期望高度
+
+float64 origin_lat                ## 原点经度                 
+float64 origin_lon                ## 原点纬度
+float64 origin_alt                ## 原点高度

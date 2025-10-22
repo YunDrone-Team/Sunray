@@ -26,6 +26,17 @@ int main(int argc, char** argv)
     LeaderFollower leader_follower;
     leader_follower.init(nh);
 
+    // 初始化检查：等待PX4连接
+    int trials = 0;
+    while (ros::ok() && !leader_follower.formation.communication_timeout)
+    {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (trials++ > 5)
+            Logger::error("UAV", leader_follower.uav_id, "unable to connnect to PX4!!!");
+    }
+    Logger::info("UAV", leader_follower.uav_id,"connected.");
+
     ros::Time last_time = ros::Time::now();
     leader_follower.show_debug_info();
     // 主循环
@@ -34,7 +45,7 @@ int main(int argc, char** argv)
         // 回调函数
         ros::spinOnce();
         
-        // 控制类主循环函数
+        // 主循环函数
         leader_follower.mainLoop();
 
         // 定时打印状态
@@ -46,7 +57,6 @@ int main(int argc, char** argv)
 
         rate.sleep();
     }
-
 
     return 0;
 }

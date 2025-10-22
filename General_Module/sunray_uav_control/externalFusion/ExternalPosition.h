@@ -101,6 +101,27 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     nh.param<bool>("enable_range_sensor", enable_range_sensor, false);            // 【参数】是否使用距离传感器数据
     nh.param<bool>("use_vision_pose", use_vision_pose, true);                     // 【参数】是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
 
+    // 初始化外部定位状态
+    external_odom.header.stamp = ros::Time::now();
+    external_odom.external_source = external_source;
+    external_odom.odom_valid = false;
+    external_odom.fusion_success = false;
+    external_odom.position[0] = NAN;
+    external_odom.position[1] = NAN;
+    external_odom.position[2] = NAN;
+    external_odom.velocity[0] = NAN;
+    external_odom.velocity[1] = NAN;
+    external_odom.velocity[2] = NAN;
+    external_odom.attitude[0] = NAN;
+    external_odom.attitude[1] = NAN;
+    external_odom.attitude[2] = NAN;
+    external_odom.attitude_q.x = 0;
+    external_odom.attitude_q.y = 0;
+    external_odom.attitude_q.z = 0;
+    external_odom.attitude_q.w = 1;
+    external_odom.vio_start = false;
+    external_odom.algo_status = "disable";
+
     // 根据外部定位数据来源，订阅不同的话题
     switch (external_source)
     {
