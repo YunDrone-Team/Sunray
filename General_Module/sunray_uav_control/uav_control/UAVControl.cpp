@@ -552,7 +552,7 @@ void UAVControl::set_default_local_setpoint()
 void UAVControl::set_default_global_setpoint()
 {
     global_setpoint.header.stamp = ros::Time::now();
-    global_setpoint.coordinate_frame = mavros_msgs::GlobalPositionTarget::FRAME_GLOBAL_REL_ALT; // 相对高度
+    global_setpoint.coordinate_frame = mavros_msgs::GlobalPositionTarget::FRAME_GLOBAL_INT; // 相对高度: FRAME_GLOBAL_REL_ALT, 绝对高度: FRAME_GLOBAL_INT
     global_setpoint.type_mask = TypeMask::GLOBAL_POSITION;
     global_setpoint.latitude = 0;
     global_setpoint.longitude = 0;

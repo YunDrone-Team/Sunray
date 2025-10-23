@@ -87,6 +87,7 @@ void ExternalFusion::init(ros::NodeHandle &nh)
     px4_state.latitude = -1;
     px4_state.longitude = -1;
     px4_state.altitude = -1;
+    px4_state.altitude_amsl = -1;
     px4_state.pos_setpoint[0] = 0.0;
     px4_state.pos_setpoint[1] = 0.0;
     px4_state.pos_setpoint[2] = 0.0;
@@ -291,7 +292,7 @@ void ExternalFusion::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     px4_state.attitude[2] = yaw;
 }
 
-// 无人机卫星状态回调函数
+// 无人机卫星状态及经纬高回调函数
 void ExternalFusion::px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
     // status（int8）：表示定位质量。
@@ -319,6 +320,10 @@ void ExternalFusion::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &m
     gps_raw = *msg;
 
     px4_state.satellites = gps_raw.satellites_visible;
+    
+    // 获取AMSL海拔高度（从GPS原始数据）
+    // GPSRAW.alt单位是毫米(mm)，需要转换为米(m)
+    px4_state.altitude_amsl = gps_raw.alt / 1000.0;
 }
 
 // 回调函数：接收PX4的姿态设定值
@@ -409,40 +414,112 @@ void ExternalFusion::show_px4_state()
     else
     {
 
-    // service（uint16）：表示使用的卫星系统，使用位掩码（bitmask）表示。
-    // SERVICE_GPS = 1：美国GPS。
-    // SERVICE_GLONASS = 2：俄罗斯GLONASS。
-    // SERVICE_COMPASS = 4：中国北斗（BeiDou）。
-    // SERVICE_GALILEO = 8：欧盟Galileo。
-        // status（int8）：表示定位质量。
-        // STATUS_NO_FIX = -1：无法定位。
-        // STATUS_FIX = 0：普通定位。
-        // STATUS_SBAS_FIX = 1：带卫星增强系统（如WAAS, EGNOS）的定位。
-        // STATUS_GBAS_FIX = 2：带地面增强系统（如GBAS）的定位。
-
         // GPS模式的情况：经纬度（全局位置）
-        Logger::print_color(int(LogColor::blue), "GPS Status");
-        Logger::print_color(int(LogColor::green), "GPS STATUS:", px4_state.gps_status, "SERVICE:", px4_state.gps_service);
-        Logger::print_color(int(LogColor::green), "GPS satellites:", px4_state.satellites);
+        Logger::print_color(int(LogColor::blue), "-------- GPS状态");
         
-        // 格式化GPS坐标，保留7位小数
-        char lat_str[32], lon_str[32], alt_msl_str[32];
-        snprintf(lat_str, sizeof(lat_str), "%.7f", px4_state.latitude);
-        snprintf(lon_str, sizeof(lon_str), "%.7f", px4_state.longitude);
-        snprintf(alt_msl_str, sizeof(alt_msl_str), "%.7f", px4_state.altitude);
-        
-        Logger::print_color(int(LogColor::green), "GPS POS[lat lon]:", 
-                           lat_str, "°,", lon_str, "°");
-        Logger::print_color(int(LogColor::green), "GPS 高度[MSL 相对地面]:", 
-                           alt_msl_str, "m (海拔高度) /", 
-                           px4_state.position[2], "m (相对地面)");
-        
-        // 显示本地位置（ENU坐标系，相对于起飞点）
-        Logger::print_color(int(LogColor::green), "本地位置[X Y Z]:",
-                            px4_state.position[0],
-                            px4_state.position[1],
-                            px4_state.position[2],
-                            "[ m ] (相对起飞点)");
+        // 检查GPS数据是否已初始化（初始值为-1）
+        if (px4_state.gps_status == -1 || px4_state.satellites == -1) 
+        {
+            Logger::print_color(int(LogColor::yellow), "GPS数据尚未接收，等待GPS话题...");
+        } 
+        else 
+        {
+            // GPS数据已接收，正常显示
+            
+            // 定位质量
+            std::string gps_fix_str;
+            int color_status;
+            // status（int8）：表示定位质量
+            // STATUS_NO_FIX = -1：无法定位
+            // STATUS_FIX = 0：普通定位
+            // STATUS_SBAS_FIX = 1：SBAS增强（WAAS, EGNOS）
+            // STATUS_GBAS_FIX = 2：GBAS增强
+            if (px4_state.gps_status == -1) 
+            {
+                gps_fix_str = "无定位";
+                color_status = int(LogColor::red);
+            } 
+            else if (px4_state.gps_status == 0) 
+            {
+                gps_fix_str = "普通定位";
+                color_status = int(LogColor::green);
+            } 
+            else if (px4_state.gps_status == 1) 
+            {
+                gps_fix_str = "SBAS增强";
+                color_status = int(LogColor::green);
+            } 
+            else if (px4_state.gps_status == 2) 
+            {
+                gps_fix_str = "GBAS增强";
+                color_status = int(LogColor::green);
+            } 
+            else 
+            {
+                gps_fix_str = "未知状态";
+                color_status = int(LogColor::yellow);
+            }
+            
+            // 卫星系统
+            // service（uint8）：位掩码
+            // SERVICE_GPS = 1：美国GPS
+            // SERVICE_GLONASS = 2：俄罗斯GLONASS
+            // SERVICE_COMPASS = 4：中国北斗
+            // SERVICE_GALILEO = 8：欧盟Galileo
+            int service = (int)px4_state.gps_service;
+            std::string gps_service_str = "";
+            if (service & 1) gps_service_str += "GPS+";
+            if (service & 2) gps_service_str += "GLONASS+";
+            if (service & 4) gps_service_str += "北斗+";
+            if (service & 8) gps_service_str += "Galileo+";
+            if (!gps_service_str.empty()) 
+            {
+                gps_service_str.pop_back();
+            } 
+            else 
+            {
+                gps_service_str = "无";
+            }
+            
+            Logger::print_color(color_status, 
+                               "GPS定位:", gps_fix_str,
+                               "  卫星系统:", gps_service_str,
+                               "  可见卫星:", (int)px4_state.satellites);
+            
+            // 卫星数告警
+            if (px4_state.satellites < 6) 
+            {
+                Logger::print_color(int(LogColor::yellow), 
+                                   "警告: 卫星数不足 (", (int)px4_state.satellites, " < 6)");
+            }
+            
+            // 格式化GPS坐标
+            char lat_str[32], lon_str[32], alt_ellipsoid_str[32], alt_amsl_str[32];
+            snprintf(lat_str, sizeof(lat_str), "%.7f", px4_state.latitude);
+            snprintf(lon_str, sizeof(lon_str), "%.7f", px4_state.longitude);
+            snprintf(alt_ellipsoid_str, sizeof(alt_ellipsoid_str), "%.2f", px4_state.altitude);
+            snprintf(alt_amsl_str, sizeof(alt_amsl_str), "%.2f", px4_state.altitude_amsl);
+            
+            Logger::print_color(int(LogColor::green), "GPS坐标[纬度 经度]:", 
+                               lat_str, "°N,", lon_str, "°E");
+            Logger::print_color(int(LogColor::green), "GPS高度(椭球):", 
+                               alt_ellipsoid_str, "m");
+            Logger::print_color(int(LogColor::cyan), "GPS高度(海拔AMSL):", 
+                               alt_amsl_str, "m");
+            
+            // 计算并显示geoid高度差
+            double geoid_height = px4_state.altitude - px4_state.altitude_amsl;
+            char geoid_str[32];
+            snprintf(geoid_str, sizeof(geoid_str), "%.2f", geoid_height);
+            Logger::print_color(int(LogColor::yellow), 
+                               "大地水准面高度差:", geoid_str, "m");
+            
+            // 显示本地位置（ENU坐标系，相对于起飞点）
+            Logger::print_color(int(LogColor::green), "本地位置[X Y Z]:",
+                                px4_state.position[0], "m,",
+                                px4_state.position[1], "m,",
+                                px4_state.position[2], "m (相对起飞点)");
+        }
     }
 
     // 期望位置和姿态
