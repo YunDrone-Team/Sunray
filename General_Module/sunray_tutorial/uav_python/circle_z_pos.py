@@ -99,6 +99,7 @@ def main():
     control_cmd_pub.publish(uav_cmd)
     rospy.sleep(5)
 
+    #==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
     # 定义圆形中心和半径
     center_x = 0
     center_y = 0
@@ -175,7 +176,8 @@ def main():
             rospy.sleep(1.0)
             break
         rate.sleep()
-
+    #==================================== 轨迹控制关键代码段 END（二次开发） ======================================
+    
     # 降落无人机
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.LAND_CONTROL and uav_state.landed_state != 1:
         uav_cmd.cmd = UAVControlCMD.Land

@@ -110,7 +110,7 @@ int main(int argc, char **argv)
     {
 
         uav_setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
-        uav_setup.control_mode = "CMD_CONTROL";
+        uav_setup.control_mode = "CMD_CONTROL"; 
         uav_setup_pub.publish(uav_setup);
         Logger::print_color(int(LogColor::green), node_name, ": SET_CONTROL_MODE - [CMD_CONTROL]. ");
         ros::Duration(1.0).sleep();
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     ros::Duration(1.0).sleep();
     while (ros::ok() && !uav_state.armed)
     {
-        uav_setup.cmd = sunray_msgs::UAVSetup::ARM;
+        uav_setup.cmd = sunray_msgs::UAVSetup::ARM;  //1
         uav_setup_pub.publish(uav_setup);
         Logger::print_color(int(LogColor::green), node_name, ": Arm UAV now.");
         ros::Duration(1.0).sleep();
@@ -159,6 +159,8 @@ int main(int argc, char **argv)
     control_cmd_pub.publish(uav_cmd);
     ros::Duration(5).sleep();
     ros::spinOnce();
+
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================*/
 
     // Define the circle's center and radius
     double center_x = 0;
@@ -259,6 +261,8 @@ int main(int argc, char **argv)
         ros::spinOnce();
         rate.sleep();
     }
+
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ==========================================*/
 
     // 降落无人机
     while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)

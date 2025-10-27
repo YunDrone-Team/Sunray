@@ -21,6 +21,7 @@ class CircularBodyControl:
         self.cmd_pub = rospy.Publisher(cmd_topic, UGVControlCMD, queue_size=10)
         rospy.loginfo(f"UGV Circular Body Demo initialized for UGV {self.ugv_id}")
 
+    #==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
     # 生成控制指令
     def generate_commands(self):
         # 如果运动已完成，则不再发送指令
@@ -56,7 +57,9 @@ class CircularBodyControl:
         
         # 打印当前速度指令
         rospy.loginfo_throttle(1.0, f"Publishing body vel: [{ugv_cmd.desired_vel[0]:.2f}, {ugv_cmd.desired_vel[1]:.2f}] m/s | ang: {ugv_cmd.angular_vel:.2f} rad/s")
-
+    #==================================== 轨迹控制关键代码段 END（二次开发） ======================================
+    
+    # 主循环，持续生成指令直到运动完成或节点被关闭
     def run(self):
         # 20 Hz循环频率
         rate = rospy.Rate(20)

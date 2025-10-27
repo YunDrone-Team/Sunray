@@ -157,6 +157,8 @@ int main(int argc, char **argv)
     ros::Duration(5).sleep();
     ros::spinOnce();
 
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================*/
+
     std::tuple<double, double, double> vertex = std::make_tuple(1, 0, 0);
     int yaw;
     for (int i = 0; i < 8; ++i)
@@ -192,6 +194,8 @@ int main(int argc, char **argv)
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }
+
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ======================================*/
 
     // 降落无人机
     while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)

@@ -11,7 +11,6 @@
 using namespace sunray_logger;
 using namespace std;
 
-
 string node_name;
 sunray_msgs::UAVControlCMD uav_cmd;
 sunray_msgs::UAVState uav_state;
@@ -156,6 +155,8 @@ int main(int argc, char **argv)
     ros::Duration(5).sleep();
     ros::spinOnce();
 
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发）=====================================*/
+
     // 定义正方形的顶点,并导入容器储存
     std::vector<std::tuple<double, double, double>> vertices = {
         std::make_tuple(0.9, -0.9, 0.8),  // Start point
@@ -201,6 +202,8 @@ int main(int argc, char **argv)
             rate.sleep();
         }
     }
+
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ======================================*/
 
     // 降落无人机
     while (ros::ok() && uav_state.control_mode != sunray_msgs::UAVSetup::LAND_CONTROL && uav_state.landed_state != 1)

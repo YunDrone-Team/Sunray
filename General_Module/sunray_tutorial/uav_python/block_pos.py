@@ -107,7 +107,9 @@ def main():
     control_cmd_pub.publish(uav_cmd)
     rospy.sleep(5)
 
-    # 定义四边形顶点，导入容器储存
+    #==================================== 轨迹控制关键代码段 BEGIN (二次开发)====================================
+
+    # 定义四边形顶点
     vertices = [
         (0.9, -0.9, 0.8),
         (0.9, 0.9, 0.8),
@@ -117,12 +119,31 @@ def main():
         (0, 0, 0.8)
     ]
 
-    for vertex in vertices:
-        #输出当前目标点，在每个顶点发送控制指令直到无人机到达该点
-        rospy.loginfo(f'go to point: {vertex}')
+    # [轨迹控制优化] 离散化每条边，生成所有中间点
+    def interpolate_points(p1, p2, num_segments):
+        points = []
+        for i in range(1, num_segments+1):
+            t = i / num_segments
+            x = p1[0] + t * (p2[0] - p1[0])
+            y = p1[1] + t * (p2[1] - p1[1])
+            z = p1[2] + t * (p2[2] - p1[2])
+            points.append((x, y, z))
+        return points
 
+    all_points = []
+    num_segments = 10  # 每条边分成10段
+    for i in range(len(vertices)-1):
+        p1 = vertices[i]
+        p2 = vertices[i+1]
+        all_points.append(p1)
+        all_points.extend(interpolate_points(p1, p2, num_segments))
+    all_points.append(vertices[-1])
+
+    # 依次飞往所有离散点
+    for point in all_points:
+        rospy.loginfo(f'go to point: {point}')
         while not rospy.is_shutdown():
-            #如果收到停止任务指令，跳出循环，降落无人机
+            # 检查是否收到停止指令，如果收到则降落
             if stop_flag:
                 rospy.loginfo('Land UAV now.')
                 uav_cmd.cmd = UAVControlCMD.Land
@@ -130,19 +151,19 @@ def main():
                 rospy.sleep(0.5)
                 break
 
-            #发送位置控制指令
+            # 发送位置指令
             uav_cmd.cmd = UAVControlCMD.XyzPos
-            uav_cmd.desired_pos = list(vertex)
+            uav_cmd.desired_pos = list(point)
             control_cmd_pub.publish(uav_cmd)
 
-            #检查无人机是否到达目标点
-            if (abs(uav_state.position[0] - vertex[0]) < 0.15 and
-                abs(uav_state.position[1] - vertex[1]) < 0.15 and
-                abs(uav_state.position[2] - vertex[2]) < 0.15):
-                #停下来1秒等待无人机速度速度降下来
-                rospy.sleep(1.0)
+            # 判断是否到达目标点
+            if (abs(uav_state.position[0] - point[0]) < 0.15 and
+                abs(uav_state.position[1] - point[1]) < 0.15 and
+                abs(uav_state.position[2] - point[2]) < 0.15):
+                rospy.sleep(0.5)
                 break
             rate.sleep()
+    #==================================== 轨迹控制关键代码段 END (二次开发)======================================
 
     #降落无人机
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.LAND_CONTROL and uav_state.landed_state != 1:

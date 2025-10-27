@@ -99,6 +99,7 @@ def main():
     control_cmd_pub.publish(uav_cmd)
     rospy.sleep(5)
 
+    #==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
     # 六边形轨迹主循环
     vertex = (1, 0, 0)
     for i in range(8):
@@ -124,7 +125,8 @@ def main():
         control_cmd_pub.publish(uav_cmd)
         rospy.loginfo(f'Back to origin, set yaw={yaw_deg}')
         rospy.sleep(2)
-        
+    #==================================== 轨迹控制关键代码段 END（二次开发） ======================================
+    
     # 降落无人机
     while not rospy.is_shutdown() and uav_state.control_mode != UAVSetup.LAND_CONTROL and uav_state.landed_state != 1:
         uav_cmd.cmd = UAVControlCMD.Land

@@ -89,6 +89,7 @@ class SquareDemo:
 
         rospy.loginfo("First state received. Starting trajectory.")
 
+    #==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
         # 发送第一个目标点
         self.publish_waypoint()
         
@@ -136,6 +137,7 @@ class SquareDemo:
                         rospy.loginfo("Trajectory completed (with timeout).")
                         break
             rate.sleep()
+    #==================================== 轨迹控制关键代码段 END（二次开发） ======================================
 
         # 发送停止指令
         stop_cmd = UGVControlCMD()

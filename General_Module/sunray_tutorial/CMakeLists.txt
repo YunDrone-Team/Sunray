@@ -114,7 +114,6 @@ scripts/key_move_car.py
 )
 
 catkin_install_python(PROGRAMS
-  uav_python/sunray_logger.py
   uav_python/takeoff_hover_land.py
   uav_python/block_pos.py
   uav_python/circle_vel.py

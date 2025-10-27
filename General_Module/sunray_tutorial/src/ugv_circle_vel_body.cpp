@@ -37,6 +37,7 @@ public:
         start_time = ros::Time::now();
     }
 
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================*/
     void generate_commands()
     {
         if (motion_completed)
@@ -75,6 +76,7 @@ public:
         ROS_INFO_THROTTLE(1.0, "Publishing body vel: [%.2f, %.2f] m/s | ang: %.2f rad/s",
                           ugv_cmd.desired_vel[0], ugv_cmd.desired_vel[1], ugv_cmd.angular_vel);
     }
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ======================================*/
 
     void run()
     {
