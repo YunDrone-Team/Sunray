@@ -2,18 +2,13 @@
 程序功能：根据相对位置进行标签跟踪，跟踪方向：下方物体
 */
 
-/*
-    起飞降落例程: follow_car_xyvelzposyawbody.cpp
-    程序功能：使用XyzVel接口进行圆形轨迹飞行，最后返航降落
-*/
-
 #include <ros/ros.h>
 #include "ros_msg_utils.h"
 #include "printf_utils.h"
 #include <sunray_msgs/TargetMsg.h>
 #include <sunray_msgs/TargetsInFrameMsg.h>
 #include "utils.hpp"
-#include <sunray_logger.h>
+#include <printf_format.h>
 
 using namespace std;
 using namespace sunray_logger;

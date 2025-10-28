@@ -8,7 +8,7 @@
 #include <detection_msgs/TargetMsg.h>
 #include <detection_msgs/TargetsInFrameMsg.h>
 #include "utils.hpp"
-#include <sunray_logger.h>
+#include <printf_format.h>
 #include <Eigen/Eigen>
 #include <cmath>
 
@@ -317,7 +317,7 @@ int arm_takeoff()
     Logger::print_color(int(LogColor::green), node_name, ": Arm UAV successfully!");
 
     // 起飞无人机
-    while (ros::ok() && uav_state.landed_state != 2)
+    while (ros::ok() && uav_state.landed_state !=2)
     {
         uav_cmd.cmd = sunray_msgs::UAVControlCMD::Takeoff;
         control_cmd_pub.publish(uav_cmd);
@@ -346,7 +346,8 @@ int main(int argc, char **argv)
 {
     // 设置日志
     Logger::init_default();
- 
+    Logger::setPrintLevel(false);
+    Logger::setPrintTime(false);
     Logger::setPrintToFile(false);
     Logger::setFilename("~/Documents/Sunray_log.txt");
 
