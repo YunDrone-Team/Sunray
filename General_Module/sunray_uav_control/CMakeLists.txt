@@ -107,7 +107,9 @@ add_executable(terminal_control utils/terminal_control.cpp)
 add_dependencies(terminal_control sunray_control_gencpp)
 target_link_libraries(terminal_control ${catkin_LIBRARIES})
 
-
+add_executable(px4_param_test utils/px4_param_test.cpp)
+add_dependencies(px4_param_test sunray_control_gencpp)
+target_link_libraries(px4_param_test ${catkin_LIBRARIES})
 
 add_executable(positioning_accuracy utils/positioning_accuracy.cpp)
 add_dependencies(positioning_accuracy sunray_control_gencpp)
