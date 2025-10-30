@@ -82,6 +82,10 @@ add_executable(triangle_xyzvel uav_basic/triangle_xyzvel.cpp)
 add_dependencies(triangle_xyzvel sunray_tutorial_gencpp)
 target_link_libraries(triangle_xyzvel ${catkin_LIBRARIES})
 
+add_executable(triangle_xyzpos uav_basic/triangle_xyzpos.cpp)
+add_dependencies(triangle_xyzpos sunray_tutorial_gencpp)
+target_link_libraries(triangle_xyzpos ${catkin_LIBRARIES})
+
 add_executable(follow_car_xyvelzposyawbody uav_basic/follow_car_xyvelzposyawbody.cpp)
 add_dependencies(follow_car_xyvelzposyawbody sunray_tutorial_gencpp)
 target_link_libraries(follow_car_xyvelzposyawbody ${catkin_LIBRARIES})

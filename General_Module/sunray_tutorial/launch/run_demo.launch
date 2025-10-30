@@ -75,5 +75,9 @@
 		<param name="uav_name" value="$(arg uav_name)" />
 	</node>
 	
+	<node if="$(eval demo_id == 17)" pkg="sunray_tutorial" type="triangle_xyzpos" name="triangle_xyzpos$(arg uav_id)" output="screen">
+		<param name="uav_id" value="$(arg uav_id)" />
+		<param name="uav_name" value="$(arg uav_name)" />
+	</node>
 </launch>
 

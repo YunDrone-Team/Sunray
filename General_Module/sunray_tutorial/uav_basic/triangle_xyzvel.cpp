@@ -1,6 +1,6 @@
 /*
-    起飞降落例程：circle_xyzvel.cpp
-    程序功能：使用XyzVel接口进行圆形轨迹飞行，最后返航降落
+    起飞降落例程：triangle_xyzvel.cpp
+    程序功能：使用XyzVel接口进行三角形轨迹飞行，最后返航降落
 */
 
 #include "ros_msg_utils.h"
