@@ -75,6 +75,13 @@ modules:
     build_path: "build/turn_on_wheeltec_robot"
     dependencies: []
 
+  # P2117 控制模块
+  p2117_ros:
+    description: "P2117 控制模块"
+    source_path: "External_Module/p2117_ros"
+    build_path: "build/p2117_ros"
+    dependencies: []
+
   # 仿真模块
   sunray_simulator:
     description: "Gazebo仿真模块，包含仿真环境、仿真工具、仿真插件、仿真启动文件等"
@@ -140,7 +147,7 @@ groups:
   # 地面机器人控制系统
   ugv:
     description: "地面机器人控制系统，包含地面机器人控制节点，地面机器人外部定位，地面机器人控制驱动"
-    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
+    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot", "p2117_ros", "vrpn_client_ros", "sunray_tutorial"]
     
   # # 完整多机系统（不含地面机器人）
   # all:

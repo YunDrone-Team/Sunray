@@ -1,0 +1,19 @@
+<launch>
+  <node pkg="oradar_lidar" type="oradar_scan" name="oradar_scan" respawn="false" output="screen">
+
+    <param name="device_model" type="string"   value="MS200"/>				
+    <param name="frame_id"     type="string"   value="laser_frame"/>  <!--Configure Lidar coordinate system name-->
+    <param name="scan_topic"   type="string"   value="MS200/scan" />  <!--Configure Laserscan topic name--> 
+    <param name="port_name"    type="string"   value="/dev/ttyUSB0"/> <!--Configure the name of the Lidar serial port. Default value is "/dev/ttyUSB0"-->
+    <param name="baudrate"     type="int"      value="230400"/>		    <!--Configure Lidar serial baud rate. Default value is "230400"-->
+    <param name="angle_min"    type="double"   value="0.0" /> 	      <!--Configure minimum angle, unit degree, value range [0, 360]. Default value is "0"-->
+    <param name="angle_max"    type="double"   value="360.0"/>   	    <!--Configure maximum angle, unit degree, value range [0, 360]. Default value is "360"-->
+    <param name="range_min"    type="double"   value="0.05" />    	  <!--Minimum distance, in meters, Default value is "0.05"-->
+    <param name="range_max"    type="double"   value="20.0" />    	  <!--Maximum distance, in meters, Default value is "20.0"-->
+    <param name="clockwise"    type="bool"     value="false"/>    	  <!--Configure the direction of the point cloud. True is clockwise, and false is counterclockwise. Default value is "false"-->
+    <param name="motor_speed"  type="int"      value="10" />      	  <!--Lidar speed, unit: Hz, value range: 5~15Hz. Default value is "10Hz"-->
+  
+  </node>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find oradar_lidar)/rviz/oradar_scan.rviz" />
+</launch>
