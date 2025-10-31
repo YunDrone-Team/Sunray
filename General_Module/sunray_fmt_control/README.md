@@ -13,20 +13,26 @@
 
 1. 编译功能包：
    ```bash
-    在sunray目录下，运行./build_fmt_control.sh
+    在Sunray目录下，运行./build.sh，选择编译sunray_fmt_control功能包
    ```
-2. 在scripts_fmt_exp运行示例脚本：
+2. 在scripts_exp目录下运行示例脚本：
    ```bash
-   ./demo_takeoff_hover
-   ./demo_block_pos.sh
-   ./demo_circle.sh
+   ./demo_takeoff_hover_land_fmt.sh # 起飞、悬停、降落
+   ./demo_block_pos_fmt.sh # 方形轨迹
+   ./demo_circle_fmt.sh # 圆周轨迹
+   ./demo_hexayon_fmt.sh # 六边形轨迹
    ```
 3. 查看控制话题：
    ```bash
    rostopic list
-
+   ```
 ## 目录结构
-- src/  cpp脚本
+- src/  fmt_control控制节点，fmt_externalFusion外部点位节点
+- test/  测试脚本
 - README.md 说明文档
 - package.xml/CMakeLists.txt ROS包配置
 - launch/  启动文件
+
+## 注意事项
+- 确保无人机已连接到 ROS 系统，且已启动 mavros 节点
+- 示例脚本中默认使用无人机 ID 1，若需修改，请在脚本中修改uav_id参数
