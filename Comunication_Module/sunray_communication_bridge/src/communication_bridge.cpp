@@ -582,35 +582,35 @@ pid_t communication_bridge::OrderCourse(std::string orderStr)
     return pid;
 }
 
-void communication_bridge::executiveDemo(std::string orderStr)
-{
-    pid_t pid = fork();
-    if (pid == -1)
-    {
-        perror("fork failed");
-        // return EXIT_FAILURE;
-        return;
-    }else if (pid == 0){
-        // 子进程
-        // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
-        // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
-        // 而是需要将它们放在一个bash -c参数中
-        //std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
-        std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh &&";
-        temp += orderStr;
-        // std::cout << "executiveDemo： " << temp << std::endl;
-        const char *command = temp.c_str();
-        execlp("bash", "bash", "-c", command, (char *)NULL);
-        // 如果execlp返回，说明执行失败
-        perror("execlp failed");
-        _exit(EXIT_FAILURE);
-    }else{
-        // 父进程
-        int status;
-        demoPID = pid;
-        printf("This is the parent process. Child PID: %d\n", pid);
-    }
-}
+// void communication_bridge::executiveDemo(std::string orderStr)
+// {
+//     pid_t pid = fork();
+//     if (pid == -1)
+//     {
+//         perror("fork failed");
+//         // return EXIT_FAILURE;
+//         return;
+//     }else if (pid == 0){
+//         // 子进程
+//         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
+//         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
+//         // 而是需要将它们放在一个bash -c参数中
+//         //std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
+//         std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh &&";
+//         temp += orderStr;
+//         // std::cout << "executiveDemo： " << temp << std::endl;
+//         const char *command = temp.c_str();
+//         execlp("bash", "bash", "-c", command, (char *)NULL);
+//         // 如果execlp返回，说明执行失败
+//         perror("execlp failed");
+//         _exit(EXIT_FAILURE);
+//     }else{
+//         // 父进程
+//         int status;
+//         demoPID = pid;
+//         printf("This is the parent process. Child PID: %d\n", pid);
+//     }
+// }
 
 void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
 {

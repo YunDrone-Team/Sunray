@@ -102,7 +102,7 @@ private:
 
     void TCPServerCallBack(ReceivedParameter readData);
     void UDPCallBack(ReceivedParameter readData);
-    void executiveDemo(std::string orderStr);
+    // void executiveDemo(std::string orderStr);
     bool SynchronizationUAVState(UAVState Data);
     bool SynchronizationPX4State(DataFrame dataFrame);
     bool SynchronizationUGVState(UGVState Data);
