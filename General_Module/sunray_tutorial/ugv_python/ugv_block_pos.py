@@ -90,6 +90,8 @@ class SquareDemo:
         rospy.loginfo("First state received. Starting trajectory.")
 
     #==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
+        rospy.loginfo_throttle(1.0,"UGV 准备就绪...")
+        rospy.sleep(2.0)
         # 发送第一个目标点
         self.publish_waypoint()
         
