@@ -9,7 +9,14 @@ modules:
     source_path: "General_Module/sunray_common"
     build_path: "build/sunray_common"
     dependencies: []
-    
+
+  # UAV 控制模块
+  sunray_uav_control:
+    description: "无人机控制模块，包含外部定位、无人机控制等"
+    source_path: "General_Module/sunray_uav_control"
+    build_path: "build/sunray_uav_control"
+    dependencies: ["sunray_common"]
+
   sunray_tutorial:
     description: "无人机控制接口示例代码模块，包括起飞降落、航点追踪、方形轨迹、圆形轨迹、六边形轨迹等示例代码"
     source_path: "General_Module/sunray_tutorial"
@@ -27,13 +34,6 @@ modules:
     description: "通信桥接模块，包括机载电脑与Sunray地面站通信、无人机/车间通信"
     source_path: "Comunication_Module/sunray_communication_bridge"
     build_path: "build/sunray_communication_bridge"
-    dependencies: ["sunray_common"]
-
-  # UAV 控制模块
-  sunray_uav_control:
-    description: "无人机控制模块，包含外部定位、无人机控制等"
-    source_path: "General_Module/sunray_uav_control"
-    build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
     
   vrpn_client_ros:

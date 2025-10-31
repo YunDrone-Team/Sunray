@@ -394,6 +394,7 @@ void ExternalFusion::show_px4_state()
     // 无人机的位置和姿态
     if (external_source != sunray_msgs::ExternalOdom::GPS && external_source != sunray_msgs::ExternalOdom::RTK)
     {
+        Logger::print_color(int(LogColor::cyan), "-------- PX4反馈的local_position");
         // 无GPS模式的情况：本地位置
         Logger::print_color(int(LogColor::green), "无人机位置[X Y Z]:",
                             px4_state.position[0],
@@ -415,8 +416,7 @@ void ExternalFusion::show_px4_state()
     {
 
         // GPS模式的情况：经纬度（全局位置）
-        Logger::print_color(int(LogColor::blue), "-------- GPS状态");
-        
+        Logger::print_color(int(LogColor::cyan), "-------- GPS状态");
         // 检查GPS数据是否已初始化（初始值为-1）
         if (px4_state.gps_status == -1 || px4_state.satellites == -1) 
         {
@@ -502,26 +502,39 @@ void ExternalFusion::show_px4_state()
             
             Logger::print_color(int(LogColor::green), "GPS坐标[纬度 经度]:", 
                                lat_str, "°N,", lon_str, "°E");
-            Logger::print_color(int(LogColor::green), "GPS高度(椭球):", 
+            Logger::print_color(int(LogColor::green), "GPS高度(椭球)(/mavros/global_position/global.altitude):", 
                                alt_ellipsoid_str, "m");
-            Logger::print_color(int(LogColor::cyan), "GPS高度(海拔AMSL):", 
+            Logger::print_color(int(LogColor::cyan), "GPS高度(海拔AMSL)(mavros/gpsstatus/gps1/raw.alt):", 
                                alt_amsl_str, "m");
             
             // 计算并显示geoid高度差
             double geoid_height = px4_state.altitude - px4_state.altitude_amsl;
             char geoid_str[32];
             snprintf(geoid_str, sizeof(geoid_str), "%.2f", geoid_height);
-            Logger::print_color(int(LogColor::yellow), 
-                               "大地水准面高度差:", geoid_str, "m");
-            
+            // Logger::print_color(int(LogColor::yellow), 
+                            //    "大地水准面高度差:", geoid_str, "m");
+            Logger::print_color(int(LogColor::cyan), "-------- PX4反馈的local_position");
             // 显示本地位置（ENU坐标系，相对于起飞点）
             Logger::print_color(int(LogColor::green), "本地位置[X Y Z]:",
                                 px4_state.position[0], "m,",
                                 px4_state.position[1], "m,",
                                 px4_state.position[2], "m (相对起飞点)");
+            Logger::print_color(int(LogColor::green), "无人机速度[X Y Z]:",
+                                px4_state.velocity[0],
+                                px4_state.velocity[1],
+                                px4_state.velocity[2],
+                                "[m/s]");
+            Logger::print_color(int(LogColor::green), "无人机姿态[X Y Z]:",
+                                px4_state.attitude[0] / M_PI * 180,
+                                px4_state.attitude[1] / M_PI * 180,
+                                px4_state.attitude[2] / M_PI * 180,
+                                "[deg]");
+
+
         }
     }
-
+    // 外部定位信息
+    Logger::print_color(int(LogColor::cyan), "-------- PX4内部控制器期望值");
     // 期望位置和姿态
     Logger::print_color(int(LogColor::green), "位置期望值[X Y Z]:",
                         px4_state.pos_setpoint[0],

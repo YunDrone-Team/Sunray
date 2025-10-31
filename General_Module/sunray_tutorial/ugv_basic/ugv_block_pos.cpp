@@ -44,7 +44,6 @@ public:
         cmd_pub = nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix, 10);
         state_sub = nh.subscribe("/ugv" + std::to_string(ugv_id) + "/sunray_ugv/ugv_state", 10, &SquareDemo::stateCallback, this);
 
-    /*==================================== 轨迹控制关键代码段 BEGIN ====================================*/
         // 定义四边形四个顶点（边长2米）
         waypoints = {
             {0.5, 0.0}, // 点1
@@ -52,7 +51,6 @@ public:
             {0.0, 0.5}, // 点3
             {0.0, 0.0}  // 点4（回到起点）
         };
-    /*==================================== 轨迹控制关键代码段 END ======================================*/
         
         ROS_INFO("UGV Square Demo initialized for UGV %d", ugv_id);
     }
@@ -115,8 +113,7 @@ public:
             rate.sleep();
         }
         ROS_INFO("First state received. Starting trajectory.");
-
-    /*==================================== 轨迹控制关键代码段 BEGIN (二次开发) ====================================*/
+        
         // 初始发布第一个目标点
         publishWaypoint();
         
@@ -177,8 +174,7 @@ public:
             
             rate.sleep();
         }
-    /*==================================== 轨迹控制关键代码段 END (二次开发) ======================================*/
-
+        
         // 发送停止指令
         sunray_msgs::UGVControlCMD stop_cmd;
         stop_cmd.cmd = sunray_msgs::UGVControlCMD::HOLD;
@@ -186,42 +182,6 @@ public:
         ROS_INFO("Trajectory finished. Sending HOLD command.");
         
         // 确保停止指令被发送
-        ros::Duration(1.0).sleep();
-    }
-
-    // 另一种控制逻辑：每个顶点只发送一次指令，不判断是否到达，定时切换目标点
-    void run_timed_waypoints()
-    {
-        ros::Rate rate(10); // 10Hz控制频率
-        ROS_INFO("Waiting for first state update...");
-        while (ros::ok() && !state_received) {
-            ros::spinOnce();
-            rate.sleep();
-        }
-        ROS_INFO("First state received. Starting timed trajectory.");
-        double point_duration = 5.0; // 每个点停留5秒
-        for (size_t i = 0; i < waypoints.size(); ++i)
-        {
-            double target_x = waypoints[i].first;
-            double target_y = waypoints[i].second;
-            sunray_msgs::UGVControlCMD ugv_cmd;
-            ugv_cmd.cmd = sunray_msgs::UGVControlCMD::POS_CONTROL_ENU;
-            ugv_cmd.desired_pos[0] = target_x;
-            ugv_cmd.desired_pos[1] = target_y;
-            ugv_cmd.desired_yaw = 0.0;
-            cmd_pub.publish(ugv_cmd);
-            ROS_INFO("Timed waypoint %zu: (%.1f, %.1f)", i+1, target_x, target_y);
-            ros::Time start_time = ros::Time::now();
-            while (ros::ok() && (ros::Time::now() - start_time).toSec() < point_duration)
-            {
-                ros::spinOnce();
-                rate.sleep();
-            }
-        }
-        sunray_msgs::UGVControlCMD stop_cmd;
-        stop_cmd.cmd = sunray_msgs::UGVControlCMD::HOLD;
-        cmd_pub.publish(stop_cmd);
-        ROS_INFO("Timed trajectory finished. Sending HOLD command.");
         ros::Duration(1.0).sleep();
     }
 };

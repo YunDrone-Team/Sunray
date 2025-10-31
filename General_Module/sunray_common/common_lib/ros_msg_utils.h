@@ -84,7 +84,9 @@ using namespace sunray_logger;
 #include <mavros_msgs/CommandLong.h>
 #include <mavros_msgs/CommandHome.h>
 #include <mavros_msgs/GPSRAW.h>
-
+#include <mavros_msgs/ParamGet.h>
+#include <mavros_msgs/ParamSet.h>
+#include <mavros_msgs/ParamValue.h>
 // nav_msgs
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
