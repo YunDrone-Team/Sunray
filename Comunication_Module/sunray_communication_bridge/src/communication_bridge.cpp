@@ -19,6 +19,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
     nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
+    nh.param<bool>("PX4StateTransmitEnabled", PX4StateTransmitEnabled, false);          // 【参数】是否启用PX4状态s数据传输
+    nh.param<int>("PX4StateFrameRate", PX4StateFrameRate, 30); // 【参数】PX4状态数据传输帧数
+
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
     // CASE2（真机）:只有一台无人车的时候 ugv_id =本机ID   ugv_experiment_num=1 ugv_simulation_num=0，不提及的默认都为0
@@ -43,6 +46,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + uav_name + std::to_string(i);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站
             uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
+            // 【订阅】PX4状态 
+            if(PX4StateTransmitEnabled)
+                px4State_sub.push_back(nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1, boost::bind(&communication_bridge::PX4StateCallBack, this, _1, i)));
             // 【订阅】无人机航点状态 
             uav_waypointState_sub.push_back(nh.subscribe<sunray_msgs::WayPointState>(topic_prefix + "/sunray/uav_waypoint_state", 1, boost::bind(&communication_bridge::uav_waypointState_cb, this, _1, i)));
             // 【发布】无人机控制指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
@@ -75,6 +81,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体
             uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
+            // 【订阅】PX4状态 
+            if(PX4StateTransmitEnabled)
+                px4State_sub.push_back(nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1, boost::bind(&communication_bridge::PX4StateCallBack, this, _1, uav_id)));
             // 【订阅】无人机航点状态 
             uav_waypointState_sub.push_back(nh.subscribe<sunray_msgs::WayPointState>(topic_prefix + "/sunray/uav_waypoint_state", 1, boost::bind(&communication_bridge::uav_waypointState_cb, this, _1, uav_id)));
             // 【发布】无人机控制指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
@@ -109,6 +118,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + uav_name + std::to_string(i);
             // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
             uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1))));
+            // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
+            px4State_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/px4_state", 1))));
         }
 
         // 无人机Sunray和其他Sunray（包括无人机和车）之间的通信（此部分仅针对真机）
@@ -148,6 +159,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     UpdateCPUUsageRateTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateComputerStatus, this);
     // 【定时器】 定时发送无人机航点状态到地面站 
     UAVWaypointStateTimer= nh.createTimer(ros::Duration(0.3), &communication_bridge::UpdateWaypointState, this);
+    // 【定时器】 定时发送无人机PX4状态到地面站和其智能体 
+    if(PX4StateTransmitEnabled)
+        PX4StateTimer= nh.createTimer(ros::Duration(1.0/PX4StateFrameRate), &communication_bridge::sendPX4StateData, this);
 
     //  初始化CPU数据
     prevData = readCpuData();
@@ -269,6 +283,39 @@ uint8_t communication_bridge::getPX4ModeEnum(std::string modeStr)
     return back;
 }
 
+std::string communication_bridge::getPX4ModeString(uint8_t modeEnum)
+{
+    switch (modeEnum)
+    {
+        case PX4ModeType::ManualType:
+            return "MANUAL";
+        case PX4ModeType::StabilizedType:
+            return "STABILIZED";
+        case PX4ModeType::AcroType:
+            return "ACRO";
+        case PX4ModeType::RattitudeType:
+            return "RATTITUDE";
+        case PX4ModeType::AltitudeType:
+            return "ALTCTL";
+        case PX4ModeType::OffboardType:
+            return "OFFBOARD";
+        case PX4ModeType::PositionType:
+            return "POSCTL";
+        case PX4ModeType::HoldType:
+            return "HOLD";
+        case PX4ModeType::MissionType:
+            return "MISSION";
+        case PX4ModeType::ReturnType:
+            return "RETURN";
+        case PX4ModeType::FollowMeType:
+            return "FOLLOW ME";
+        case PX4ModeType::PrecisionLandType:
+            return "PRECISION LAND";
+        default:
+            return "UNKNOWN"; // 未知枚举值返回默认字符串
+    }
+}
+
 void communication_bridge::UDPCallBack(ReceivedParameter readData)
 {
     int send_result;
@@ -336,6 +383,15 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
         if (uav_id == readData.dataFrame.robot_ID || is_simulation)
             return;
         SynchronizationUAVState(readData.dataFrame.data.uavState);
+        break;
+    }
+    case MessageID::PX4StateMessageID: // 无人机PX4状态 - PX4State（#3）
+    {
+        // std::cout << " case MessageID::StateMessageID: " << (int)readData.data.state.uavID << std::endl;
+        // 如果是仿真模式，直接返回；如果是真机模式，则判断ID是否匹配
+        if (uav_id == readData.dataFrame.robot_ID || is_simulation)
+            return;
+        SynchronizationPX4State(readData.dataFrame);
         break;
     }
     case MessageID::UGVStateMessageID:// 无人车状态 - UGVState（#20）
@@ -421,36 +477,77 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
     //     printf("This is the parent process. Child PID: %d\n", pid);
 
     // return pid;
-    pid_t pid = fork();
+
+/****************************************** */
+
+    // pid_t pid = fork();
+    // if (pid == -1)
+    //     perror("fork failed");
+    // else if (pid == 0)
+    // {
+    //     std::string cdCommand = "cd " + getSunrayPath() + filePath;
+    //     std::cout << " 路径1："<< getSunrayPath()<<std::endl;
+    //     std::cout << " 路径2："<< cdCommand<<std::endl;
+    //     std::string fullCommand = cdCommand + " && ./" + scriptStr ;
+    //     std::cout << " 路径3："<< fullCommand<<std::endl;
+
+    //     // 构建打开新终端并执行命令的字符串
+    //     std::string terminalCommand;
+    //     // 先检查XDG_CURRENT_DESKTOP变量
+    //     const char* display = std::getenv("XDG_CURRENT_DESKTOP");
+    
+    //     if (display != nullptr && display[0] != '\0') 
+    //         terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
+    //     else
+    //         terminalCommand = fullCommand;
+        
+    //     const char *command = terminalCommand.c_str();
+        
+    //     //printf("执行命令: %s\n", command);
+    //     execlp("bash", "bash", "-c", command, (char *)NULL);
+
+    //     // 如果execlp返回，说明执行失败
+    //     perror("OrderCourse Error!");
+    //     _exit(EXIT_FAILURE);
+
+    // }else{
+    //     printf("This is the parent process. Child PID: %d\n", pid);
+    //  }
+
+    // return pid;
+
+     pid_t pid = fork();
     if (pid == -1)
         perror("fork failed");
     else if (pid == 0)
     {
         std::string cdCommand = "cd " + getSunrayPath() + filePath;
+        // 核心改动：用 bash -ic 执行，自动加载 ~/.bashrc，无需在脚本里加 source
         std::string fullCommand = cdCommand + " && ./" + scriptStr;
-
-        // 构建打开新终端并执行命令的字符串
         std::string terminalCommand;
-        // 先检查XDG_CURRENT_DESKTOP变量
         const char* display = std::getenv("XDG_CURRENT_DESKTOP");
     
         if (display != nullptr && display[0] != '\0') 
-            terminalCommand = "gnome-terminal -- bash -c \"" + fullCommand + "; exec bash\"";
+        {
+            // 关键：bash -ic 强制交互式，自动加载 ~/.bashrc
+            terminalCommand = "gnome-terminal -- bash -ic \"" + fullCommand + "; exec bash\"";
+        }
         else
-            terminalCommand = fullCommand;
+        {
+            // 非图形界面也用 bash -ic 加载环境
+            terminalCommand = "bash -ic \"" + fullCommand + "\"";
+        }
         
         const char *command = terminalCommand.c_str();
-        
-        //printf("执行命令: %s\n", command);
         execlp("bash", "bash", "-c", command, (char *)NULL);
 
-        // 如果execlp返回，说明执行失败
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-
-    }else{
+    }
+    else
+    {
         printf("This is the parent process. Child PID: %d\n", pid);
-     }
+    }
 
     return pid;
 }
@@ -498,8 +595,8 @@ void communication_bridge::executiveDemo(std::string orderStr)
         // 注意：这里的命令字符串需要仔细构造，以确保它能在bash中正确执行
         // 另外，cd命令也需要在同一个shell中执行，所以我们不能简单地用&&连接命令
         // 而是需要将它们放在一个bash -c参数中
-
-        std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
+        //std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh && ";
+        std::string temp = "bash -c \"cd /home/yundrone/Sunray && . devel/setup.sh &&";
         temp += orderStr;
         // std::cout << "executiveDemo： " << temp << std::endl;
         const char *command = temp.c_str();
@@ -864,11 +961,13 @@ bool communication_bridge::SynchronizationUAVState(UAVState Data)
     msg.uav_id = Data.uav_id;
     msg.connected = Data.connected;
     msg.armed = Data.armed;
-    msg.mode = Data.mode;
+    msg.mode = getPX4ModeString(Data.mode);
     msg.landed_state = Data.landed_state;
     msg.battery_state = Data.battery_state;
     msg.battery_percentage = Data.battery_percentage;
     msg.location_source = Data.location_source;
+    msg.vio_start=Data.vio_start;
+    msg.algo_status=Data.algo_status;
     msg.odom_valid = Data.odom_valid;
     msg.position[0] = Data.position[0];
     msg.position[1] = Data.position[1];
@@ -918,6 +1017,103 @@ bool communication_bridge::SynchronizationUAVState(UAVState Data)
 
     it->second.publish(msg);
     return true;
+}
+
+bool communication_bridge::SynchronizationPX4State(DataFrame dataFrame)
+{
+    auto it = px4State_pub.find(dataFrame.robot_ID);
+
+    if (it == px4State_pub.end())
+    {
+        std::cout << "UAV" + std::to_string(dataFrame.robot_ID) + " /sunray/px4_state topic Publisher not found!" << std::endl;
+        return false;
+    }
+
+    sunray_msgs::PX4State msg;
+    msg.header.stamp = ros::Time::now();
+
+    msg.connected = dataFrame.data.px4State.connected;
+    msg.armed = dataFrame.data.px4State.armed;
+    msg.mode = getPX4ModeString(dataFrame.data.px4State.mode);
+    msg.landed_state = dataFrame.data.px4State.landed_state;
+
+    msg.battery_state = dataFrame.data.px4State.battery_state;
+    msg.battery_percentage = dataFrame.data.px4State.battery_percentage;
+    msg.external_odom.external_source=dataFrame.data.px4State.external_source;
+    msg.external_odom.odom_valid=dataFrame.data.px4State.odom_valid;
+    msg.external_odom.fusion_success=dataFrame.data.px4State.fusion_success;
+
+    msg.external_odom.position[0]=dataFrame.data.px4State.originalPosition[0];
+    msg.external_odom.position[1]=dataFrame.data.px4State.originalPosition[1];
+    msg.external_odom.position[2]=dataFrame.data.px4State.originalPosition[2];
+
+    msg.external_odom.velocity[0]=dataFrame.data.px4State.originalVelocity[0];
+    msg.external_odom.velocity[1]=dataFrame.data.px4State.originalVelocity[1];
+    msg.external_odom.velocity[2]=dataFrame.data.px4State.originalVelocity[2];
+
+    msg.external_odom.attitude[0]=dataFrame.data.px4State.originalAttitude[0];
+    msg.external_odom.attitude[1]=dataFrame.data.px4State.originalAttitude[1];
+    msg.external_odom.attitude[2]=dataFrame.data.px4State.originalAttitude[2];
+
+    msg.external_odom.attitude_q.w=dataFrame.data.px4State.originalAttitude_q[0];
+    msg.external_odom.attitude_q.x=dataFrame.data.px4State.originalAttitude_q[1];
+    msg.external_odom.attitude_q.y=dataFrame.data.px4State.originalAttitude_q[2];
+    msg.external_odom.attitude_q.z=dataFrame.data.px4State.originalAttitude_q[3];
+
+    msg.external_odom.vio_start=dataFrame.data.px4State.vio_start;
+    msg.external_odom.algo_status=dataFrame.data.px4State.algo_status;
+
+    msg.position[0]=dataFrame.data.px4State.position[0];
+    msg.position[1]=dataFrame.data.px4State.position[1];
+    msg.position[2]=dataFrame.data.px4State.position[2];
+
+    msg.velocity[0]=dataFrame.data.px4State.velocity[0];
+    msg.velocity[1]=dataFrame.data.px4State.velocity[1];
+    msg.velocity[2]=dataFrame.data.px4State.velocity[2];
+
+    msg.attitude[0]=dataFrame.data.px4State.attitude[0];
+    msg.attitude[1]=dataFrame.data.px4State.attitude[1];
+    msg.attitude[2]=dataFrame.data.px4State.attitude[2];
+
+    msg.attitude_q.w=dataFrame.data.px4State.attitude_q[0];
+    msg.attitude_q.x=dataFrame.data.px4State.attitude_q[1];
+    msg.attitude_q.y=dataFrame.data.px4State.attitude_q[2];
+    msg.attitude_q.z=dataFrame.data.px4State.attitude_q[3];
+
+    msg.attitude_rate[0]=dataFrame.data.px4State.attitude_rate[0];
+    msg.attitude_rate[1]=dataFrame.data.px4State.attitude_rate[1];
+    msg.attitude_rate[2]=dataFrame.data.px4State.attitude_rate[2];
+
+    msg.satellites = dataFrame.data.px4State.satellites;
+    msg.gps_status = dataFrame.data.px4State.gps_status;
+    msg.gps_service = dataFrame.data.px4State.gps_service;
+    msg.latitude = dataFrame.data.px4State.latitude;
+    msg.longitude = dataFrame.data.px4State.longitude;
+    msg.altitude = dataFrame.data.px4State.altitude;
+    msg.altitude_amsl = dataFrame.data.px4State.altitude_amsl;
+
+    msg.pos_setpoint[0]=dataFrame.data.px4State.pos_setpoint[0];
+    msg.pos_setpoint[1]=dataFrame.data.px4State.pos_setpoint[1];
+    msg.pos_setpoint[2]=dataFrame.data.px4State.pos_setpoint[2];
+
+    msg.vel_setpoint[0]=dataFrame.data.px4State.vel_setpoint[0];
+    msg.vel_setpoint[1]=dataFrame.data.px4State.vel_setpoint[1];
+    msg.vel_setpoint[2]=dataFrame.data.px4State.vel_setpoint[2];
+
+    msg.att_setpoint[0]=dataFrame.data.px4State.att_setpoint[0];
+    msg.att_setpoint[1]=dataFrame.data.px4State.att_setpoint[1];
+    msg.att_setpoint[2]=dataFrame.data.px4State.att_setpoint[2];
+
+    msg.q_setpoint.w=dataFrame.data.px4State.q_setpoint[0];
+    msg.q_setpoint.x=dataFrame.data.px4State.q_setpoint[1];
+    msg.q_setpoint.y=dataFrame.data.px4State.q_setpoint[2];
+    msg.q_setpoint.z=dataFrame.data.px4State.q_setpoint[3];
+
+    msg.thrust_setpoint = dataFrame.data.px4State.thrust_setpoint;
+
+    it->second.publish(msg);
+    return true;
+
 }
 
 void communication_bridge::CheckChildProcessCallBack(const ros::TimerEvent &e)
@@ -1129,7 +1325,29 @@ void communication_bridge::uav_waypointState_cb(const sunray_msgs::WayPointState
     }
     waypointStateArry[index]=*msg;
 } 
-    
+
+void communication_bridge::sendPX4StateData(const ros::TimerEvent &e)
+{
+
+    if (is_simulation)
+    {
+        // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
+        for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+        {
+            if(i<0 || i>=MAX_AGENT_NUM)
+                return;
+            px4StateData[i-1].seq=MessageID::PX4StateMessageID;
+            SendUdpDataToAllOnlineGroundStations(px4StateData[i-1]);
+        }
+    } else{
+            if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
+                return;
+            px4StateData[uav_id-1].seq=MessageID::PX4StateMessageID;
+            SendUdpDataToAllOnlineGroundStations(px4StateData[uav_id-1]);
+    }   
+  
+}
+
 void communication_bridge::UpdateWaypointState(const ros::TimerEvent &e)
 {
 
@@ -1263,11 +1481,11 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
     uavStateData[index].data.uavState.viobotStateSize = msg->algo_status.size();
     msg->algo_status.copy(uavStateData[index].data.uavState.algo_status, msg->algo_status.size());
 
-    std::string mode = msg->mode;
-    if (mode.length() > 15)
-        mode = mode.substr(0, 15);
-    else if (mode.length() < 15)
-        mode.append(15 - mode.length(), ' ');
+    // std::string mode = msg->mode;
+    // if (mode.length() > 15)
+    //     mode = mode.substr(0, 15);
+    // else if (mode.length() < 15)
+    //     mode.append(15 - mode.length(), ' ');
 
     // 本节点 --UDP--> 其他无人机 无人机状态信息组播链路发送
     if (uav_id > 0 && !is_simulation && uav_id == robot_id)
@@ -1278,6 +1496,102 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
 
     uavStateData[index].seq=MessageID::UAVStateMessageID;
     SendUdpDataToAllOnlineGroundStations(uavStateData[index]);
+}
+
+void communication_bridge::PX4StateCallBack(const sunray_msgs::PX4State::ConstPtr &msg, int robot_id)
+{
+    int index = robot_id - 1;
+    if(index>=MAX_AGENT_NUM)
+        return;
+
+    px4StateData[index].data.px4State.init();
+    px4StateData[index].robot_ID = robot_id;
+    px4StateData[index].data.px4State.connected = msg->connected;
+    px4StateData[index].data.px4State.armed = msg->armed;
+    px4StateData[index].data.px4State.mode = getPX4ModeEnum(msg->mode);
+    px4StateData[index].data.px4State.landed_state= msg->landed_state;
+    px4StateData[index].data.px4State.battery_state = msg->battery_state;
+    px4StateData[index].data.px4State.battery_percentage = msg->battery_percentage;
+
+    px4StateData[index].data.px4State.external_source = msg->external_odom.external_source;
+    px4StateData[index].data.px4State.odom_valid = msg->external_odom.odom_valid;
+    px4StateData[index].data.px4State.fusion_success = msg->external_odom.fusion_success;
+
+    px4StateData[index].data.px4State.originalPosition[0] = msg->external_odom.position[0];
+    px4StateData[index].data.px4State.originalPosition[1] = msg->external_odom.position[1];
+    px4StateData[index].data.px4State.originalPosition[2] = msg->external_odom.position[2];
+
+    px4StateData[index].data.px4State.originalVelocity[0] = msg->external_odom.velocity[0];
+    px4StateData[index].data.px4State.originalVelocity[1] = msg->external_odom.velocity[1];
+    px4StateData[index].data.px4State.originalVelocity[2] = msg->external_odom.velocity[2];
+
+    px4StateData[index].data.px4State.originalAttitude[0] = msg->external_odom.attitude[0];
+    px4StateData[index].data.px4State.originalAttitude[1] = msg->external_odom.attitude[1];
+    px4StateData[index].data.px4State.originalAttitude[2] = msg->external_odom.attitude[2];
+
+    px4StateData[index].data.px4State.originalAttitude_q[0] = msg->external_odom.attitude_q.w;
+    px4StateData[index].data.px4State.originalAttitude_q[1] = msg->external_odom.attitude_q.x;
+    px4StateData[index].data.px4State.originalAttitude_q[2] = msg->external_odom.attitude_q.y;
+    px4StateData[index].data.px4State.originalAttitude_q[3] = msg->external_odom.attitude_q.z;
+
+    px4StateData[index].data.px4State.vio_start = msg->external_odom.vio_start;
+
+    px4StateData[index].data.px4State.viobotStateSize = msg->external_odom.algo_status.size();
+    msg->external_odom.algo_status.copy(px4StateData[index].data.px4State.algo_status, msg->external_odom.algo_status.size());
+
+    px4StateData[index].data.px4State.position[0] = msg->position[0];
+    px4StateData[index].data.px4State.position[1] = msg->position[1];
+    px4StateData[index].data.px4State.position[2] = msg->position[2];
+
+    px4StateData[index].data.px4State.velocity[0] = msg->velocity[0];
+    px4StateData[index].data.px4State.velocity[1] = msg->velocity[1];
+    px4StateData[index].data.px4State.velocity[2] = msg->velocity[2];
+
+    px4StateData[index].data.px4State.attitude[0] = msg->attitude[0];
+    px4StateData[index].data.px4State.attitude[1] = msg->attitude[1];
+    px4StateData[index].data.px4State.attitude[2] = msg->attitude[2];
+
+    px4StateData[index].data.px4State.attitude_q[0] = msg->attitude_q.w;
+    px4StateData[index].data.px4State.attitude_q[1] = msg->attitude_q.x;
+    px4StateData[index].data.px4State.attitude_q[2] = msg->attitude_q.y;
+    px4StateData[index].data.px4State.attitude_q[3] = msg->attitude_q.z;
+
+    px4StateData[index].data.px4State.attitude_rate[0] = msg->attitude_rate[0];
+    px4StateData[index].data.px4State.attitude_rate[1] = msg->attitude_rate[1];
+    px4StateData[index].data.px4State.attitude_rate[2] = msg->attitude_rate[2];
+
+    px4StateData[index].data.px4State.satellites = msg->satellites;
+    px4StateData[index].data.px4State.gps_status = msg->gps_status;
+    px4StateData[index].data.px4State.gps_service = msg->gps_service;
+
+    px4StateData[index].data.px4State.latitude = msg->latitude;
+    px4StateData[index].data.px4State.longitude = msg->longitude;
+    px4StateData[index].data.px4State.altitude = msg->altitude;
+    px4StateData[index].data.px4State.altitude_amsl = msg->altitude_amsl;
+
+    px4StateData[index].data.px4State.pos_setpoint[0] = msg->pos_setpoint[0];
+    px4StateData[index].data.px4State.pos_setpoint[1] = msg->pos_setpoint[1];
+    px4StateData[index].data.px4State.pos_setpoint[2] = msg->pos_setpoint[2];
+
+    px4StateData[index].data.px4State.vel_setpoint[0] = msg->vel_setpoint[0];
+    px4StateData[index].data.px4State.vel_setpoint[1] = msg->vel_setpoint[1];
+    px4StateData[index].data.px4State.vel_setpoint[2] = msg->vel_setpoint[2];
+
+    px4StateData[index].data.px4State.att_setpoint[0] = msg->att_setpoint[0];
+    px4StateData[index].data.px4State.att_setpoint[1] = msg->att_setpoint[1];
+    px4StateData[index].data.px4State.att_setpoint[2] = msg->att_setpoint[2];
+
+    px4StateData[index].data.px4State.q_setpoint[0] = msg->q_setpoint.w;
+    px4StateData[index].data.px4State.q_setpoint[1] = msg->q_setpoint.x;
+    px4StateData[index].data.px4State.q_setpoint[2] = msg->q_setpoint.y;
+    px4StateData[index].data.px4State.q_setpoint[3] = msg->q_setpoint.z;
+
+    px4StateData[index].data.px4State.thrust_setpoint = msg->thrust_setpoint;
+
+
+    px4StateData[index].seq=MessageID::PX4StateMessageID;
+    udpSocket->sendUDPMulticastData(codec.coder(px4StateData[uav_id-1]), udp_port); 
+
 }
 
 void communication_bridge::formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg)

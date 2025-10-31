@@ -95,6 +95,92 @@ struct UAVState
 
 };
 
+//无人机PX4状态 - PX4State（#3）
+struct PX4State
+{
+    bool     connected;
+    bool     armed;
+    uint8_t  mode;
+    uint8_t  landed_state;
+    float    battery_state;
+    float    battery_percentage;
+    uint8_t  external_source;
+    bool     odom_valid;
+    bool     fusion_success;
+    float    originalPosition[3];
+    float    originalVelocity[3];
+    float    originalAttitude[3];
+    float    originalAttitude_q[4];
+    bool     vio_start;
+    uint16_t viobotStateSize;
+    char     algo_status[300];
+    float    position[3];
+    float    velocity[3];
+    float    attitude[3];
+    float    attitude_q[4];
+    float    attitude_rate[3];
+    uint8_t  satellites;
+    uint8_t  gps_status;
+    uint8_t  gps_service;
+    double   latitude;
+    double   longitude;
+    double   altitude;
+    double   altitude_amsl;
+    float    pos_setpoint[3];
+    float    vel_setpoint[3];
+    float    att_setpoint[3];
+    float    q_setpoint[4];
+    float    thrust_setpoint;
+
+    void init()
+    {
+        connected=false;
+        armed=false;
+        mode=0;
+        landed_state=0;
+        battery_state=0;
+        battery_percentage=0;
+        external_source=0;
+        odom_valid=0;
+        fusion_success=0;
+        vio_start=false;
+        viobotStateSize=0;
+        satellites=0;
+        gps_status=0;
+        gps_service=0;
+        latitude=0;
+        longitude=0;
+        altitude=0;
+        altitude_amsl=0;
+        thrust_setpoint=0;
+        for(int i=0;i<3;++i)
+        {
+            originalPosition[i]=0;
+            originalVelocity[i]=0;
+            originalAttitude[i]=0;
+            originalAttitude_q[i]=0;
+
+            position[i]=0;
+            velocity[i]=0;
+            attitude[i]=0;
+            attitude_q[i]=0;
+            attitude_rate[i]=0;
+            pos_setpoint[i]=0;
+            vel_setpoint[i]=0;
+            att_setpoint[i]=0;
+            q_setpoint[i]=0;
+        }
+
+        originalAttitude_q[3]=0;
+        attitude_q[3]=0;
+        q_setpoint[3]=0;
+
+
+
+    }
+
+};
+
 //无人车状态 - UGVState（#20）
 struct UGVState
 {
@@ -353,7 +439,7 @@ struct UAVSetup
 };
 
 //航点 - WaypointData（#104）
-#define MAX_WAYPOINTS 20
+#define MAX_WAYPOINTS 100
 struct WaypointData
 {
     bool start;
@@ -504,6 +590,7 @@ union Payload
 {
     HeartbeatData heartbeat;            // 无人机心跳包 - HeartbeatData（#1）
     UAVState uavState;                  // 无人机状态 - UAVState（#2）
+    PX4State px4State;                  // 无人机PX4状态 - PX4State（#3）
     UAVControlCMD uavControlCMD;        // 无人机控制指令 - UAVControlCMD（#102）
     UAVSetup uavSetup;                  // 无人机设置指令 - UAVSetup（#103）
     WaypointData waypointData;          // 无人机航点 - WaypointData（#104）

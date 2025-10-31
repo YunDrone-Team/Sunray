@@ -5,7 +5,7 @@
         <param name="frame_width" type="int" value="640"/>
         <param name="frame_height" type="int" value="480"/>
         <param name="fps" type="int" value="30"/>
-        <param name="rtsp_url" type="string" value="rtsp://192.168.20.14:8554/live"/>
+        <param name="rtsp_url" type="string" value="rtsp://192.168.20.113:8554/live"/>
         <param name="topic_name" type="string" value="$(arg topic)"/>
     </node>
 </launch>
