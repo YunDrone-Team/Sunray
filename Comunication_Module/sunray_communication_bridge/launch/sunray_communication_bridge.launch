@@ -16,6 +16,9 @@
     <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致 -->
     <arg name="udp_ground_port" default="9696" />   <!-- 目标地面站端口，用于和地面站通信，要和地面站监听端口一致 -->
    
+    <arg name="PX4StateTransmitEnabled" default="true" />   <!-- 是否启用PX4状态信息传输 -->
+    <arg name="PX4StateFrameRate" default="30" />            <!-- PX4状态传输帧数 -->
+
     <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
         <param name="uav_experiment_num" value="$(arg uav_experiment_num)" />
         <param name="uav_simulation_num" value="$(arg uav_simulation_num)" />
@@ -30,5 +33,7 @@
         <param name="ugv_name" value="$(arg ugv_name)" />
         <param name="is_simulation" value="$(arg is_simulation)" />
         <param name="multiClientSwitch" value="$(arg multiClientSwitch)" />
+        <param name="PX4StateTransmitEnabled" value="$(arg PX4StateTransmitEnabled)" />
+        <param name="PX4StateFrameRate" value="$(arg PX4StateFrameRate)" />
     </node>
 </launch>

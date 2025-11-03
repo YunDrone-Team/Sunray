@@ -224,6 +224,92 @@ void Codec::decoderWaypointStatePayload(std::vector<uint8_t>& dataFrame,DataFram
 
 }
 
+void Codec::decoderPX4StatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    PX4State& data = dataFrameStruct.data.px4State;
+    data.init();
+
+    data.connected = static_cast<uint8_t>(dataFrame[0]);
+    data.armed = static_cast<uint8_t>(dataFrame[1]);
+    data.mode = static_cast<uint8_t>(dataFrame[2]);
+    data.landed_state = static_cast<uint8_t>(dataFrame[3]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 4);  // 移除4个字节
+
+    uint8tArrayToFloat(dataFrame, data.battery_state);
+    uint8tArrayToFloat(dataFrame, data.battery_percentage);
+
+    data.external_source = static_cast<uint8_t>(dataFrame[0]);
+    data.odom_valid = static_cast<uint8_t>(dataFrame[1]);
+    data.fusion_success = static_cast<uint8_t>(dataFrame[2]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);  // 移除3个字节
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.originalPosition[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.originalVelocity[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.originalAttitude[i]);
+
+    for (int i = 0; i < 4; ++i)
+        uint8tArrayToFloat(dataFrame, data.originalAttitude_q[i]);
+
+    data.vio_start = static_cast<uint8_t>(dataFrame[0]);
+    data.viobotStateSize = static_cast<uint16_t>(dataFrame[1]);
+    data.viobotStateSize |= (static_cast<uint16_t>(dataFrame[2]) << 8);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);  // 移除3个字节
+
+    // 读取viobot算法状态
+    for (uint16_t j = 0; j < data.viobotStateSize; ++j)
+        data.algo_status[j] = static_cast<char>(dataFrame[j]);
+    data.algo_status[data.viobotStateSize] = '\0';  //添加终止符
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.viobotStateSize);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.position[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.velocity[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude[i]);
+
+    for (int i = 0; i < 4; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude_q[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.attitude_rate[i]);
+
+    data.satellites = static_cast<uint8_t>(dataFrame[0]);
+    data.gps_status = static_cast<uint8_t>(dataFrame[1]);
+    data.gps_service = static_cast<uint8_t>(dataFrame[2]);
+    dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 3);  // 移除3个字节
+
+    uint8tArrayToDouble(dataFrame, data.latitude);
+    uint8tArrayToDouble(dataFrame, data.longitude);
+    uint8tArrayToDouble(dataFrame, data.altitude);
+    uint8tArrayToDouble(dataFrame, data.altitude_amsl);
+
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.pos_setpoint[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.vel_setpoint[i]);
+
+    for (int i = 0; i < 3; ++i)
+        uint8tArrayToFloat(dataFrame, data.att_setpoint[i]);
+
+    for (int i = 0; i < 4; ++i)
+        uint8tArrayToFloat(dataFrame, data.q_setpoint[i]);
+
+    uint8tArrayToFloat(dataFrame, data.thrust_setpoint);
+
+
+
+}
+
 void Codec::decoderViobotSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
     ViobotSwitch& data = dataFrameStruct.data.viobotSwitchData;
@@ -716,6 +802,10 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload 航点状态数据反序列化*/
         decoderWaypointStatePayload(undecodedData,decoderData);
         break;
+    case MessageID::PX4StateMessageID:
+        /*Payload PX4状态数据反序列化*/
+        decoderPX4StatePayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
@@ -743,7 +833,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::UAVStateMessageID: case MessageID::UGVStateMessageID:
     case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
     case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
-    case MessageID::WaypointStateMessageID:
+    case MessageID::WaypointStateMessageID:case MessageID::PX4StateMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -1106,6 +1196,99 @@ void Codec::coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& co
      floatCopyToUint8tArray(payload,data.yaw);
  }
 
+ void Codec::coderPX4StatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     PX4State data=codelessData.data.px4State;
+     payload.push_back(static_cast<uint8_t>(data.connected));
+     payload.push_back(static_cast<uint8_t>(data.armed));
+     payload.push_back(static_cast<uint8_t>(data.mode));
+     payload.push_back(static_cast<uint8_t>(data.landed_state));
+     floatCopyToUint8tArray(payload,data.battery_state);
+     floatCopyToUint8tArray(payload,data.battery_percentage);
+     payload.push_back(static_cast<uint8_t>(data.external_source));
+     payload.push_back(static_cast<uint8_t>(data.odom_valid));
+     payload.push_back(static_cast<uint8_t>(data.fusion_success));
+
+     floatCopyToUint8tArray(payload,data.originalPosition[0]);
+     floatCopyToUint8tArray(payload,data.originalPosition[1]);
+     floatCopyToUint8tArray(payload,data.originalPosition[2]);
+
+     floatCopyToUint8tArray(payload,data.originalVelocity[0]);
+     floatCopyToUint8tArray(payload,data.originalVelocity[1]);
+     floatCopyToUint8tArray(payload,data.originalVelocity[2]);
+
+     floatCopyToUint8tArray(payload,data.originalAttitude[0]);
+     floatCopyToUint8tArray(payload,data.originalAttitude[1]);
+     floatCopyToUint8tArray(payload,data.originalAttitude[2]);
+
+     floatCopyToUint8tArray(payload,data.originalAttitude_q[0]);
+     floatCopyToUint8tArray(payload,data.originalAttitude_q[1]);
+     floatCopyToUint8tArray(payload,data.originalAttitude_q[2]);
+     floatCopyToUint8tArray(payload,data.originalAttitude_q[3]);
+
+     payload.push_back(static_cast<uint8_t>(data.vio_start));
+
+     for (int i = 0; i < (int)sizeof(uint16_t); i++)
+         payload.push_back(static_cast<uint8_t>((data.viobotStateSize >> (i * 8)) & 0xFF));
+
+     if(payload.capacity()<data.viobotStateSize+205)
+         payload.reserve(data.viobotStateSize+205);
+
+     for(int j=0;j<data.viobotStateSize;++j)
+         payload.push_back(static_cast<uint8_t>(data.algo_status[j]));
+
+     floatCopyToUint8tArray(payload,data.position[0]);
+     floatCopyToUint8tArray(payload,data.position[1]);
+     floatCopyToUint8tArray(payload,data.position[2]);
+
+     floatCopyToUint8tArray(payload,data.velocity[0]);
+     floatCopyToUint8tArray(payload,data.velocity[1]);
+     floatCopyToUint8tArray(payload,data.velocity[2]);
+
+     floatCopyToUint8tArray(payload,data.attitude[0]);
+     floatCopyToUint8tArray(payload,data.attitude[1]);
+     floatCopyToUint8tArray(payload,data.attitude[2]);
+
+     floatCopyToUint8tArray(payload,data.attitude_q[0]);
+     floatCopyToUint8tArray(payload,data.attitude_q[1]);
+     floatCopyToUint8tArray(payload,data.attitude_q[2]);
+     floatCopyToUint8tArray(payload,data.attitude_q[3]);
+
+     floatCopyToUint8tArray(payload,data.attitude_rate[0]);
+     floatCopyToUint8tArray(payload,data.attitude_rate[1]);
+     floatCopyToUint8tArray(payload,data.attitude_rate[2]);
+
+     payload.push_back(static_cast<uint8_t>(data.satellites));
+     payload.push_back(static_cast<uint8_t>(data.gps_status));
+     payload.push_back(static_cast<uint8_t>(data.gps_service));
+
+     doubleCopyToUint8tArray(payload,data.latitude);
+     doubleCopyToUint8tArray(payload,data.longitude);
+     doubleCopyToUint8tArray(payload,data.altitude);
+     doubleCopyToUint8tArray(payload,data.altitude_amsl);
+
+     floatCopyToUint8tArray(payload,data.pos_setpoint[0]);
+     floatCopyToUint8tArray(payload,data.pos_setpoint[1]);
+     floatCopyToUint8tArray(payload,data.pos_setpoint[2]);
+
+     floatCopyToUint8tArray(payload,data.vel_setpoint[0]);
+     floatCopyToUint8tArray(payload,data.vel_setpoint[1]);
+     floatCopyToUint8tArray(payload,data.vel_setpoint[2]);
+
+     floatCopyToUint8tArray(payload,data.att_setpoint[0]);
+     floatCopyToUint8tArray(payload,data.att_setpoint[1]);
+     floatCopyToUint8tArray(payload,data.att_setpoint[2]);
+
+     floatCopyToUint8tArray(payload,data.q_setpoint[0]);
+     floatCopyToUint8tArray(payload,data.q_setpoint[1]);
+     floatCopyToUint8tArray(payload,data.q_setpoint[2]);
+     floatCopyToUint8tArray(payload,data.q_setpoint[3]);
+
+     floatCopyToUint8tArray(payload,data.thrust_setpoint);
+
+
+ }
+
 
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
@@ -1221,6 +1404,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::WaypointStateMessageID:
         /*Payload 航点状态数据序列化*/
         coderWaypointStatePayload(PayloadData,codelessData);
+        break;
+    case MessageID::PX4StateMessageID:
+        /*Payload 无人机PX4状态数据序列化*/
+        coderPX4StatePayload(PayloadData,codelessData);
         break;
     default:break;
     }
