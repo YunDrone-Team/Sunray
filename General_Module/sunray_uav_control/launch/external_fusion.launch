@@ -3,7 +3,7 @@
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="0" />
     <arg name="uav_name" default="uav" />
-    <arg name="position_topic" default="/sunray/odometry" />
+    <arg name="position_topic" default="/Odometry" />
     <arg name="enable_rviz" default="false" />
     <arg name="enable_range_sensor" default="false" />
     <!-- 是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4 -->
