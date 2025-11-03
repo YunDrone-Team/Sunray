@@ -39,8 +39,8 @@ float32[3] attitude_rate            ## 角速率，单位[rad/s]
 uint8 satellites                 ## GPS卫星数量
 
 ## 无人机全局定位信息（GPS状态） - 来自~/mavros/global_position/global
-uint8 gps_status                 ## GPS状态
-uint8 gps_service                ## GPS服务
+uint8 gps_status                 ## GPS状态 -1：无法定位 0：普通定位 1：SBAS增强（WAAS, EGNOS） 2：GBAS增强
+uint8 gps_service                ## GPS服务 1：美国GPS 2：俄罗斯GLONASS 4：中国北斗 8：欧盟Galileo
 float64 latitude                 ## 纬度，单位：[°]
 float64 longitude                ## 经度，单位：[°]
 float64 altitude                 ## 椭球高度，单位：[m]（WGS84椭球面）
