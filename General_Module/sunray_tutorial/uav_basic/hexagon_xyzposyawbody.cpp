@@ -77,6 +77,8 @@ int main(int argc, char **argv)
 
     // 以上: 无人机已成功起飞，进入任务模式
 
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================*/
+
     // 定义六边型的顶点,并导入容器储存
     std::tuple<double, double, double> vertex = std::make_tuple(1, 0, 0);
     float yaw;
@@ -116,6 +118,8 @@ int main(int argc, char **argv)
         control_cmd_pub.publish(uav_cmd);
         ros::Duration(2).sleep();
     }
+
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ======================================*/
 
     Logger::print_color(int(LogColor::green), node_name, "Wait 5 sec and then send Land cmd...");
     ros::Duration(5.0).sleep();

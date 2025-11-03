@@ -146,6 +146,8 @@ void generate_commands()
             ROS_INFO("Initial move completed. Starting circular motion.");
         }
     }
+
+    //==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
     else
     {
         // 圆周运动阶段
@@ -182,7 +184,8 @@ void generate_commands()
         ugv_cmd.desired_vel[0] = vx;
         ugv_cmd.desired_vel[1] = vy;
     }
-
+    //==================================== 轨迹控制关键代码段 END ====================================
+    
     ugv_cmd.desired_yaw = 0.0; // 保持当前朝向
     cmd_pub.publish(ugv_cmd);
 

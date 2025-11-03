@@ -7,7 +7,7 @@
   <arg name="odom_frame_id"  default="odom_combined"/>
 
   <!-- turn on lidar开启雷达  -->
-  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_lidar.launch" />
+  <include file="$(find oradar_lidar)/launch/ms200_scan.launch" />
 
   <!-- 启动APP一键保存地图功能  -->
   <node pkg="world_canvas_msgs" type="save" name="save_map" />

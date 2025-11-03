@@ -131,7 +131,7 @@ def main():
         return points
 
     all_points = []
-    num_segments = 20  # 每条边分成10段
+    num_segments = 10  # 每条边分成10段
     for i in range(len(vertices)-1):
         p1 = vertices[i]
         p2 = vertices[i+1]
@@ -139,31 +139,30 @@ def main():
         all_points.extend(interpolate_points(p1, p2, num_segments))
     all_points.append(vertices[-1])
 
-    # 依次飞往所有离散点（前瞄点方式，轨迹更平滑）
-    lookahead_idx = 0
-    lookahead_dist = 0.25  # 距离阈值，越小越精确但易抖动，越大越顺滑
-    while not rospy.is_shutdown() and lookahead_idx < len(all_points):
-        # 计算当前前瞄点索引（确保不超出数组范围）
-        lookahead_idx = min(lookahead_idx, len(all_points)-1)
-        target = all_points[lookahead_idx]
-        uav_cmd.cmd = UAVControlCMD.XyzPos
-        uav_cmd.desired_pos = list(target)
-        control_cmd_pub.publish(uav_cmd)
+    # 依次飞往所有离散点
+    for point in all_points:
+        rospy.loginfo(f'go to point: {point}')
+        while not rospy.is_shutdown():
+            # 检查是否收到停止指令，如果收到则降落
+            if stop_flag:
+                rospy.loginfo('Land UAV now.')
+                uav_cmd.cmd = UAVControlCMD.Land
+                control_cmd_pub.publish(uav_cmd)
+                rospy.sleep(0.5)
+                break
 
-        # 判断是否到达当前目标点，达到则切换到下一个点
-        if (abs(uav_state.position[0] - target[0]) < lookahead_dist and
-            abs(uav_state.position[1] - target[1]) < lookahead_dist and
-            abs(uav_state.position[2] - target[2]) < lookahead_dist):
-            lookahead_idx += 1
-
-        # 检查是否收到停止指令
-        if stop_flag:
-            rospy.loginfo('Land UAV now.')
-            uav_cmd.cmd = UAVControlCMD.Land
+            # 发送位置指令
+            uav_cmd.cmd = UAVControlCMD.XyzPos
+            uav_cmd.desired_pos = list(point)
             control_cmd_pub.publish(uav_cmd)
-            rospy.sleep(0.5)
-            break
-        rate.sleep()
+
+            # 判断是否到达目标点
+            if (abs(uav_state.position[0] - point[0]) < 0.15 and
+                abs(uav_state.position[1] - point[1]) < 0.15 and
+                abs(uav_state.position[2] - point[2]) < 0.15):
+                rospy.sleep(0.5)
+                break
+            rate.sleep()
     #==================================== 轨迹控制关键代码段 END (二次开发)======================================
 
     #降落无人机

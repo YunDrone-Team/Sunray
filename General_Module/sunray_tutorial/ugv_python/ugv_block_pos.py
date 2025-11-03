@@ -16,12 +16,14 @@ class SquareDemo:
         self.current_state = None
         self.waypoint_start_time = rospy.Time.now()
 
-        # 定义四边形四个顶点（边长2米）
+        # 定义四边形四个顶点（边长1米）
         self.waypoints = [
-            (0.5, 0.0),
-            (0.5, 0.5),
-            (0.0, 0.5),
-            (0.0, 0.0)
+            ( 0.5, -0.5),  #点1
+            ( 0.5,  0.5),  #点2
+            (-0.5,  0.5),  #点3
+            (-0.5, -0.5),  #点4
+            ( 0.5, -0.5),  #回到点1
+            ( 0.0,  0.0)   #回到起点
         ]
 
         topic_prefix = f"/ugv{self.ugv_id}/sunray_ugv/ugv_control_cmd"
@@ -90,7 +92,7 @@ class SquareDemo:
         rospy.loginfo("First state received. Starting trajectory.")
 
     #==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
-        rospy.loginfo_throttle(1.0,"UGV 准备就绪...")
+        rospy.loginfo_throttle(1.0,"UGV准备就绪")
         rospy.sleep(2.0)
         # 发送第一个目标点
         self.publish_waypoint()

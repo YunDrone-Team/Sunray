@@ -44,13 +44,18 @@ public:
         cmd_pub = nh.advertise<sunray_msgs::UGVControlCMD>(topic_prefix, 10);
         state_sub = nh.subscribe("/ugv" + std::to_string(ugv_id) + "/sunray_ugv/ugv_state", 10, &SquareDemo::stateCallback, this);
 
+    /*==================================== 轨迹控制关键代码段 BEGIN ====================================*/
         // 定义四边形四个顶点（边长2米）
         waypoints = {
-            {0.5, 0.0}, // 点1
-            {0.5, 0.5}, // 点2
-            {0.0, 0.5}, // 点3
-            {0.0, 0.0}  // 点4（回到起点）
+            { 0.5, -0.5}, // 点1
+            { 0.5,  0.5}, // 点2
+            {-0.5,  0.5}, // 点3
+            {-0.5, -0.5}, // 点4
+            { 0.5, -0.5}, // 回到点1
+            { 0.0,  0.0}   // 回到起点
+
         };
+    /*==================================== 轨迹控制关键代码段 END ======================================*/
         
         ROS_INFO("UGV Square Demo initialized for UGV %d", ugv_id);
     }
@@ -114,6 +119,7 @@ public:
         }
         ROS_INFO("First state received. Starting trajectory.");
         
+    //==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================
         // 初始发布第一个目标点
         publishWaypoint();
         
@@ -174,6 +180,7 @@ public:
             
             rate.sleep();
         }
+    /*==================================== 轨迹控制关键代码段 END (二次开发) ======================================*/
         
         // 发送停止指令
         sunray_msgs::UGVControlCMD stop_cmd;

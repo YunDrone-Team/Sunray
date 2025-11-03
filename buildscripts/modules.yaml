@@ -16,6 +16,13 @@ modules:
     source_path: "General_Module/sunray_uav_control"
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
+  
+  #FMT无人机控制模块
+  sunray_fmt_control:
+    description: "FMT无人机控制模块，包含FMT无人机控制节点"
+    source_path: "General_Module/sunray_fmt_control"
+    build_path: "build/sunray_fmt_control"
+    dependencies: ["sunray_common"]
 
   sunray_tutorial:
     description: "无人机控制接口示例代码模块，包括起飞降落、航点追踪、方形轨迹、圆形轨迹、六边形轨迹等示例代码"
@@ -66,6 +73,12 @@ modules:
     description: "轮趣无人车驱动包"
     source_path: "External_Module/turn_on_wheeltec_robot"
     build_path: "build/turn_on_wheeltec_robot"
+    dependencies: []
+
+  oradar_lidar:
+    description: "ms200激光雷达驱动包"
+    source_path: "External_Module/oradar_lidar"
+    build_path: "build/oradar_lidar"
     dependencies: []
 
   # 仿真模块
@@ -170,6 +183,11 @@ groups:
     description: "默认使用这个组，包含无人机飞行控制，仿真环境，仿真工具，仿真插件，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流，编队控制"
     modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_gimbal", "sunray_media", "ego_planner", "sunray_formation"]
     
+  # FMT无人机飞行控制系统
+  fmt:
+    description: "FMT无人机飞行控制系统，包含FMT无人机飞行控制节点，通信桥接，示例代码"
+    modules: ["sunray_common", "vrpn_client_ros", "sunray_communication_bridge", "sunray_fmt_control", "sunray_tutorial","sunray_gimbal","sunray_formation"]
+
   viobot:
     description: "VIOBOT无人机飞行控制系统，包含无人机飞行控制，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流"
     modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_media", "ego_planner", "sunray_detection"]
@@ -198,7 +216,7 @@ groups:
   # 地面机器人控制系统
   ugv:
     description: "地面机器人控制系统，包含地面机器人控制节点，地面机器人外部定位，地面机器人控制驱动"
-    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot"]
+    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot", "oradar_lidar", "sunray_tutorial"]
 
   swarm_uav:
     description: "“智群·Sunray”集群控制代码包，包含无人机飞行控制，通信桥接，无人机控制节点，集群控制，ORCA"

@@ -73,6 +73,8 @@ int main(int argc, char **argv)
 
     ros::Duration(5.0).sleep();
 
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发）=====================================*/
+
     // 定义正方形的顶点,并导入容器储存
     std::vector<std::tuple<double, double, double>> vertices = 
     {
@@ -112,6 +114,8 @@ int main(int argc, char **argv)
             rate.sleep();
         }
     }
+    
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ======================================*/
 
     Logger::print_color(int(LogColor::green), node_name, "Wait 5 sec and then send Land cmd...");
     ros::Duration(5.0).sleep();

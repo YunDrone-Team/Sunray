@@ -73,6 +73,8 @@ int main(int argc, char **argv)
 
     ros::Duration(5.0).sleep();
 
+    /*==================================== 轨迹控制关键代码段 BEGIN（二次开发） ====================================*/
+
     // 定义圆心位置及圆半径
     double center_x = 0;
     double center_y = 0;
@@ -143,6 +145,8 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    /*==================================== 轨迹控制关键代码段 END（二次开发） ======================================*/
 
     // 发布悬停指令
     Logger::print_color(int(LogColor::green), node_name, "Send UAV Hover cmd.");

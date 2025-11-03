@@ -5,7 +5,7 @@
 	<node pkg="turn_on_wheeltec_robot" type="wheeltec_robot_node" name="wheeltec_robot_$(arg ugv_id)" output="screen">
 		<remap from="/cmd_vel"           to="/$(arg ugv_name)$(arg ugv_id)/cmd_vel"/>
 		<remap from="/PowerVoltage"      to="/ugv$(arg ugv_id)/PowerVoltage"/>
-		<param name="usart_port_name"    type="string" value="/dev/ttyCH343USB0"/>  
+		<param name="usart_port_name"    type="string" value="/dev/ttyUSB0"/>  
 		<param name="serial_baud_rate"   type="int"    value="115200"/>
 	</node>
 </launch>
