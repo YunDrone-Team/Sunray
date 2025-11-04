@@ -44,6 +44,7 @@ catkin_package(
 ###########
 include_directories(
   include
+  utils
   uav_control/pos_controller
   externalFusion
   mavlink
@@ -68,6 +69,14 @@ add_library(RvizGoalBridge utils/RvizGoalBridge.cpp)
 add_executable(rviz_goal_bridge_node utils/rviz_goal_bridge_node.cpp)
 add_dependencies(rviz_goal_bridge_node sunray_control_gencpp)
 target_link_libraries(rviz_goal_bridge_node RvizGoalBridge ${catkin_LIBRARIES})
+
+## PX4参数管理器
+add_library(PX4ParamManager utils/PX4ParamManager.cpp)
+target_link_libraries(PX4ParamManager ${catkin_LIBRARIES})
+
+add_executable(px4_param_test_class utils/px4_param_test_class.cpp)
+add_dependencies(px4_param_test_class sunray_control_gencpp)
+target_link_libraries(px4_param_test_class PX4ParamManager ${catkin_LIBRARIES})
 
 ## 外部定位
 add_library(externalFusion externalFusion/externalFusion.cpp)
