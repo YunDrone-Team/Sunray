@@ -120,7 +120,7 @@ struct PX4State
     float    attitude_q[4];
     float    attitude_rate[3];
     uint8_t  satellites;
-    uint8_t  gps_status;
+    int8_t  gps_status;
     uint8_t  gps_service;
     double   latitude;
     double   longitude;
