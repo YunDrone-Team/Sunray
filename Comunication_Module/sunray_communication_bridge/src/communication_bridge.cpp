@@ -19,8 +19,11 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
     nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
-    nh.param<bool>("PX4StateTransmitEnabled", PX4StateTransmitEnabled, false);          // 【参数】是否启用PX4状态s数据传输
-    nh.param<int>("PX4StateFrameRate", PX4StateFrameRate, 30); // 【参数】PX4状态数据传输帧数
+    nh.param<bool>("PX4StateTransmitEnabled", PX4StateTransmitEnabled, false);          // 【参数】是否启用PX4状态数据传输
+    nh.param<int>("PX4StateFrameRate", PX4StateFrameRate, 30);                          // 【参数】PX4状态数据传输帧数
+
+    nh.param<bool>("UAVStateTransmitEnabled", UAVStateTransmitEnabled, true);          // 【参数】是否启用无人机状态数据传输
+    nh.param<int>("UAVStateFrameRate", UAVStateFrameRate, 30);                         // 【参数】无人机状态数据传输帧数
 
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
@@ -45,7 +48,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             //  无人机名字 = 无人机名字前缀 + 无人机ID
             std::string topic_prefix = "/" + uav_name + std::to_string(i);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站
-            uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
+            if(UAVStateTransmitEnabled)
+                uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, i)));
             // 【订阅】PX4状态 
             if(PX4StateTransmitEnabled)
                 px4State_sub.push_back(nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1, boost::bind(&communication_bridge::PX4StateCallBack, this, _1, i)));
@@ -80,7 +84,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             //  无人机名字 = 无人机名字前缀 + 无人机ID
             std::string topic_prefix = "/" + uav_name + std::to_string(uav_id);
             // 【订阅】无人机状态 uav_control_node --ROS topic--> 本节点 --UDP--> 地面站/其他Sunray智能体
-            uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
+            if(UAVStateTransmitEnabled)
+                uav_state_sub.push_back(nh.subscribe<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1, boost::bind(&communication_bridge::uav_state_cb, this, _1, uav_id)));
             // 【订阅】PX4状态 
             if(PX4StateTransmitEnabled)
                 px4State_sub.push_back(nh.subscribe<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1, boost::bind(&communication_bridge::PX4StateCallBack, this, _1, uav_id)));
@@ -159,9 +164,12 @@ void communication_bridge::init(ros::NodeHandle &nh)
     UpdateCPUUsageRateTimer= nh.createTimer(ros::Duration(1), &communication_bridge::UpdateComputerStatus, this);
     // 【定时器】 定时发送无人机航点状态到地面站 
     UAVWaypointStateTimer= nh.createTimer(ros::Duration(0.3), &communication_bridge::UpdateWaypointState, this);
-    // 【定时器】 定时发送无人机PX4状态到地面站和其智能体 
+    // 【定时器】 定时发送无人机PX4状态到地面站 
     if(PX4StateTransmitEnabled)
         PX4StateTimer= nh.createTimer(ros::Duration(1.0/PX4StateFrameRate), &communication_bridge::sendPX4StateData, this);
+    // 【定时器】 定时发送无人机状态到地面站
+    if(UAVStateTransmitEnabled)
+        UAVStateTimer= nh.createTimer(ros::Duration(1.0/UAVStateFrameRate), &communication_bridge::sendUAVStateData, this);
 
     //  初始化CPU数据
     prevData = readCpuData();
@@ -1326,6 +1334,28 @@ void communication_bridge::uav_waypointState_cb(const sunray_msgs::WayPointState
     waypointStateArry[index]=*msg;
 } 
 
+void communication_bridge::sendUAVStateData(const ros::TimerEvent &e)
+{
+
+ if (is_simulation)
+    {
+        // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
+        for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+        {
+            if(i<0 || i>=MAX_AGENT_NUM)
+                return;
+            px4StateData[i-1].seq=MessageID::UAVStateMessageID;
+            SendUdpDataToAllOnlineGroundStations(uavStateData[i-1]);
+        }
+    } else{
+            if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
+                return;
+            px4StateData[uav_id-1].seq=MessageID::UAVStateMessageID;
+            SendUdpDataToAllOnlineGroundStations(uavStateData[uav_id-1]);
+    }   
+
+}
+
 void communication_bridge::sendPX4StateData(const ros::TimerEvent &e)
 {
 
@@ -1494,8 +1524,7 @@ void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &m
         int back = udpSocket->sendUDPMulticastData(codec.coder(uavStateData[index]), udp_port);
     }
 
-    uavStateData[index].seq=MessageID::UAVStateMessageID;
-    SendUdpDataToAllOnlineGroundStations(uavStateData[index]);
+    
 }
 
 void communication_bridge::PX4StateCallBack(const sunray_msgs::PX4State::ConstPtr &msg, int robot_id)

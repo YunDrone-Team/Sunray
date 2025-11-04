@@ -84,6 +84,7 @@ private:
     void UpdateComputerStatus(const ros::TimerEvent &e);
     void UpdateWaypointState(const ros::TimerEvent &e);
     void sendPX4StateData(const ros::TimerEvent &e);
+    void sendUAVStateData(const ros::TimerEvent &e);
 
 
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
@@ -148,6 +149,9 @@ private:
     bool PX4StateTransmitEnabled; // PX4状态传输开关
     int PX4StateFrameRate; // PX4状态传输帧数
 
+    bool UAVStateTransmitEnabled;// UAV状态传输开关
+    int UAVStateFrameRate;// UAV状态传输帧数
+
     std::vector<ros::Subscriber> uav_state_sub;
     std::vector<ros::Subscriber> px4State_sub;
     std::vector<ros::Subscriber> ugv_state_sub;
@@ -177,6 +181,7 @@ private:
     ros::Timer UpdateCPUUsageRateTimer;
     ros::Timer UAVWaypointStateTimer;
     ros::Timer PX4StateTimer;
+    ros::Timer UAVStateTimer;
 
 
     CpuData prevData;
