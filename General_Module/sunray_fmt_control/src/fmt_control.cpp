@@ -734,7 +734,7 @@ void FMTControl::handle_land_control() {
     
     local_setpoint.position.x = flight_params.land_pos[0];
     local_setpoint.position.y = flight_params.land_pos[1];
-    local_setpoint.position.z = flight_params.land_pos[2];
+    //local_setpoint.position.z = flight_params.land_pos[2];
     local_setpoint.velocity.z = -flight_params.land_speed;
     local_setpoint.yaw = flight_params.land_yaw;
     system_params.type_mask = TypeMask::XYZ_POS_VEL_YAW;

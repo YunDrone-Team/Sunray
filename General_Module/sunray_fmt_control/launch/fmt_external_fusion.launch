@@ -2,8 +2,8 @@
     <!-- 外部定位源类型 -->
     <!-- ODOM = 0, POSE = 1, GAZEBO = 2, MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
     <arg name="uav_id" default="1" />
-    <arg name="external_source" default="0" />
-    <arg name="uav_name" default="uav" />
+    <arg name="external_source" default="3" />
+    <arg name="uav_name" default="fmt" />
     <arg name="position_topic" default="/Odometry" />
     <arg name="enable_range_sensor" default="false" />
     <arg name="server" default="192.168.20.15"/>

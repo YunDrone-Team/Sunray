@@ -1,6 +1,6 @@
 <launch>
     <arg name="uav_id" default="1"/>
-    <arg name="uav_name" default="uav"/>
+    <arg name="uav_name" default="fmt"/>
     <arg name="ip" default="192.168.20.129" />
     <group ns="$(arg uav_name)$(arg uav_id)">
         <arg name="fcu_url" default="/dev/ttyUSB0:921600" />
