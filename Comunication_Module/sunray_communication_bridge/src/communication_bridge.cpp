@@ -202,7 +202,12 @@ void communication_bridge::init(ros::NodeHandle &nh)
 
     // 变量 - 是否与地面站建立连接
     station_connected = false;
-    
+
+    //适配地面站版本
+    Versions="V2.19.0";
+    std::cout << "适配地面站版本："<< Versions<< std::endl;
+    std::cout << "版本说明：版本号第一个数字一样，第二个数字大于或等于为适配版本 "<< std::endl;
+
 
 }
 
