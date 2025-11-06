@@ -122,6 +122,9 @@ add_executable(simple_obstacle_avoidance advanced/simple_obstacle_avoidance.cpp)
 add_dependencies(simple_obstacle_avoidance sunray_tutorial_gencpp)
 target_link_libraries(simple_obstacle_avoidance ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
+add_executable(simple_obstacle_avoidance_d435i advanced/simple_obstacle_avoidance_d435i.cpp)
+add_dependencies(simple_obstacle_avoidance_d435i sunray_tutorial_gencpp)
+target_link_libraries(simple_obstacle_avoidance_d435i ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py

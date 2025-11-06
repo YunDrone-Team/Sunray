@@ -13,5 +13,6 @@
     <param name="clockwise"    type="bool"     value="false"/>    	  <!--Configure the direction of the point cloud. True is clockwise, and false is counterclockwise. Default value is "false"-->
     <param name="motor_speed"  type="int"      value="10" />      	  <!--Lidar speed, unit: Hz, value range: 5~15Hz. Default value is "10Hz"-->
   </node>
+<node pkg="tf" type="static_transform_publisher" name="laser_frame_alias" args="0.04 0.028 0 0 0 0 base_link /laser_frame 100" />
 
 </launch>
