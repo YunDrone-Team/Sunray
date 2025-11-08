@@ -576,6 +576,9 @@ void ExternalFusion::show_px4_state()
     case sunray_msgs::ExternalOdom::GPS:
         Logger::print_color(int(LogColor::green), "外部定位源: [ GPS ]");
         break;
+    case sunray_msgs::ExternalOdom::RTK:
+        Logger::print_color(int(LogColor::green), "外部定位源: [ RTK ]");
+        break;
     default:
         Logger::print_color(int(LogColor::red), "外部定位源: [ UNKNOWN ]");
         break;

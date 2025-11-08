@@ -13,7 +13,7 @@
 #include "MovingAverageFilter.h"
 #include "mavlink_control.h"
 
-#define ODOM_TIMEOUT 0.3
+#define ODOM_TIMEOUT 0.5
 #define DISTANCE_SENSOR_TIMEOUT 0.3
 #define AVERAGE_COUNT 200
 
@@ -39,6 +39,7 @@ public:
     tf2::Quaternion q_rot;                               // 旋转四元数
     double rot_roll, rot_pitch, rot_yaw;                 // 初始Viobot放置的角度
     bool calculation_done{false};                        // 偏转角计算是否完成
+    mavros_msgs::GPSRAW gps_raw;
 
     bool get_new_external_pos{false}; // 是否收到新的外部定位数据
 
@@ -60,6 +61,7 @@ public:
     mavlink_odometry_t get_mavlink_msg();
     void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
+    void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);
 
     sunray_msgs::ExternalOdom GetExternalOdom()
     {
@@ -75,7 +77,7 @@ private:
     ros::Subscriber viobot_imu_sub;
     ros::Subscriber viobot_odom_sub;
     ros::Subscriber viobot_algo_status_sub;
-    ros::Subscriber px4_pose_sub, px4_att_sub;
+    ros::Subscriber px4_pose_sub, px4_att_sub, px4_gps_raw_sub;
 
     // ROS话题发布句柄
     ros::Publisher viobot_algo_ctrl_pub;
@@ -178,9 +180,10 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     // 定位源：RTK模式下，无需开启外部定位
     case sunray_msgs::ExternalOdom::RTK:
         // RTK不属于外部定位源，不开启外部定位融合
-        enable_external_fusion = false;
-        external_odom.odom_valid = true;
-        Logger::info("RTK mode enabled, external odometry marked as valid");
+        enable_external_fusion = true;
+        // 【订阅】无人机GPS经纬度（原始） - 飞控 -> mavros -> 本节点
+        px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(uav_name + "/mavros/gpsstatus/gps1/raw", 10, &ExternalPosition::px4_gps_raw_callback, this);
+        Logger::info("RTK mode enabled");
         break;
     // 定位源：VINS-Fusion
     case sunray_msgs::ExternalOdom::VINS:
@@ -252,12 +255,59 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     external_odom.algo_status = "disable";
 }
 
+// 无人机gps原始数据回调函数
+void ExternalPosition::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg)
+{
+    gps_raw = *msg;
+    get_new_external_pos = true;
+
+    // origin是原点的经纬度，target是目标点的经纬度
+    // 输入经纬度单位为度，高度单位为米
+    // 经度范围：-180°到180°（东经为正，西经为负）
+    // 纬度范围：-90°到90°（北纬为正，南纬为负）
+    LLH_Coord origin, target;
+    // result是转换得到的ENU坐标系坐标（原点为origin，ENU为方向）
+    ENU_Coord result;
+
+    // 设置初始点坐标（北京天安门）
+    origin.lat = 47.3977421;
+    origin.lon = 8.54559350;
+    origin.alt = 487.90;
+
+    // 设置目标点坐标（附近某个点）
+    target.lat = (double)gps_raw.lat/1e7;
+    target.lon = (double)gps_raw.lon/1e7;
+    target.alt = (double)gps_raw.alt/1e3;
+
+    // 计算ENU坐标
+    calculate_enu_coordinates(&origin, &target, &result);
+
+    // external_odom赋值
+    external_odom.header.stamp = ros::Time::now();
+    external_odom.position[0] = result.x;
+    external_odom.position[1] = result.y;
+    external_odom.position[2] = result.z;
+    external_odom.velocity[0] = 0.0;
+    external_odom.velocity[1] = 0.0;
+    external_odom.velocity[2] = 0.0;
+    external_odom.attitude[0] = 0.0;
+    external_odom.attitude[1] = 0.0;
+    external_odom.attitude[2] = msg->yaw;
+
+    Eigen::Vector3d att;
+    att << external_odom.attitude[0], external_odom.attitude[1], external_odom.attitude[2];
+    Eigen::Quaterniond q_des = quaternion_from_rpy(att);
+    external_odom.attitude_q.x = q_des.x();
+    external_odom.attitude_q.y = q_des.y();
+    external_odom.attitude_q.z = q_des.z();
+    external_odom.attitude_q.w = q_des.w();
+}
+
 // 定时器回调函数
 void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
 {
     // GPS/RTK模式下，不需要外部定位融合，直接标记为有效
-    if (external_odom.external_source == sunray_msgs::ExternalOdom::GPS ||
-        external_odom.external_source == sunray_msgs::ExternalOdom::RTK)
+    if (external_odom.external_source == sunray_msgs::ExternalOdom::GPS)
     {
         external_odom.odom_valid = true;
         external_odom.fusion_success = true;
