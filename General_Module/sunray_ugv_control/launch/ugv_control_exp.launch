@@ -63,6 +63,7 @@
         <param name="occupancy_topic" value="$(arg occupancy_topic)" />
     </node>
 
+    <node pkg="tf" type="static_transform_publisher" name="base_link_alias" args="0 0 0 0 0 0 /$(arg ugv_name)$(arg ugv_id)/base_link base_link 100" />
     <!-- 启动 vrpn_client_ros -->
     <include file="$(find sunray_ugv_control)/launch/sunray_vrpn.launch" if="$(eval location_source == 1)">
         <arg name="server" value="$(arg server)"/>

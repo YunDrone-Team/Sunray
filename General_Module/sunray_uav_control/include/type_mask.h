@@ -99,6 +99,15 @@ namespace TypeMask
         mavros_msgs::PositionTarget::IGNORE_AFZ |
         mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
 
+    uint16_t XY_POS_Z_VEL_YAW =
+        mavros_msgs::PositionTarget::IGNORE_PZ  |
+        mavros_msgs::PositionTarget::IGNORE_VX  |
+        mavros_msgs::PositionTarget::IGNORE_VY  |
+        mavros_msgs::PositionTarget::IGNORE_AFX |
+        mavros_msgs::PositionTarget::IGNORE_AFY |
+        mavros_msgs::PositionTarget::IGNORE_AFZ |
+        mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+
     uint16_t XYZ_POS_VEL_YAWRATE =
         mavros_msgs::PositionTarget::IGNORE_AFX |
         mavros_msgs::PositionTarget::IGNORE_AFY |

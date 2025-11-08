@@ -19,6 +19,9 @@
     <arg name="PX4StateTransmitEnabled" default="false" />   <!-- 是否启用PX4状态信息传输 -->
     <arg name="PX4StateFrameRate" default="30" />            <!-- PX4状态传输帧数 -->
 
+    <arg name="UAVStateTransmitEnabled" default="true" />   <!-- 是否启用无人机状态信息传输 -->
+    <arg name="UAVStateFrameRate" default="30" />           <!-- 无人机状态传输帧数 -->
+
     <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
         <param name="uav_experiment_num" value="$(arg uav_experiment_num)" />
         <param name="uav_simulation_num" value="$(arg uav_simulation_num)" />
@@ -35,5 +38,7 @@
         <param name="multiClientSwitch" value="$(arg multiClientSwitch)" />
         <param name="PX4StateTransmitEnabled" value="$(arg PX4StateTransmitEnabled)" />
         <param name="PX4StateFrameRate" value="$(arg PX4StateFrameRate)" />
+        <param name="UAVStateTransmitEnabled" value="$(arg UAVStateTransmitEnabled)" />
+        <param name="UAVStateFrameRate" value="$(arg UAVStateFrameRate)" />
     </node>
 </launch>

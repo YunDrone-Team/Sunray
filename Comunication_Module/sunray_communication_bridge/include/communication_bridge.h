@@ -84,15 +84,13 @@ private:
     void UpdateComputerStatus(const ros::TimerEvent &e);
     void UpdateWaypointState(const ros::TimerEvent &e);
     void sendPX4StateData(const ros::TimerEvent &e);
-
-
+    void sendUAVStateData(const ros::TimerEvent &e);
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
     void UpdateUDPMulticast(const ros::TimerEvent &e);
 
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
     void uav_waypointState_cb(const sunray_msgs::WayPointState::ConstPtr &msg, int robot_id);
-
     void PX4StateCallBack(const sunray_msgs::PX4State::ConstPtr &msg, int robot_id);
 
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
@@ -123,6 +121,7 @@ private:
     double getMemoryUsage(); // 获取内存使用率
     std::vector<double> getCpuTemperatures(); // 获取CPU温度
 
+    string Versions;//适配地满站版本
     bool is_simulation;
     uint32_t last_time_stamp;
     int uav_experiment_num;
@@ -131,22 +130,20 @@ private:
     int uav_id;
     int ugv_id;
     int ugv_simulation_num;
-
     string tcp_port;
     int udp_port;
     int udp_ground_port;
-
     string uav_name;
     string ugv_name;
-
     string tcp_ip;
     string udp_ip;
     pid_t demoPID = -1;
     bool station_connected; // 心跳包状态
     bool multiClientSwitch; // 多客户端开关
-
     bool PX4StateTransmitEnabled; // PX4状态传输开关
     int PX4StateFrameRate; // PX4状态传输帧数
+    bool UAVStateTransmitEnabled;// UAV状态传输开关
+    int UAVStateFrameRate;// UAV状态传输帧数
 
     std::vector<ros::Subscriber> uav_state_sub;
     std::vector<ros::Subscriber> px4State_sub;
@@ -161,12 +158,10 @@ private:
     std::map<int,ros::Publisher> ugv_controlCMD_pub;
     std::map<int,ros::Publisher> uav_goal_pub;
     std::map<int,ros::Publisher> ugv_goal_pub;
-
     std::map<int,ros::Publisher> uav_waypoint_pub;
     ros::Subscriber  formation_sub;
     ros::Publisher  formation_pub;
     ros::Publisher  viobotSwitch_pub;
-
     ros::Subscriber FACMap_sub;
     ros::Subscriber FACState_sub;
 
@@ -177,7 +172,7 @@ private:
     ros::Timer UpdateCPUUsageRateTimer;
     ros::Timer UAVWaypointStateTimer;
     ros::Timer PX4StateTimer;
-
+    ros::Timer UAVStateTimer;
 
     CpuData prevData;
     TCPServer tcpServer;
@@ -189,10 +184,8 @@ private:
     DataFrame uavStateData[MAX_AGENT_NUM];
     DataFrame ugvStateData[MAX_AGENT_NUM]; 
     DataFrame px4StateData[MAX_AGENT_NUM];
-
     DataFrame uavOnlineNodeData[MAX_AGENT_NUM];
     DataFrame ugvOnlineNodeData[MAX_AGENT_NUM]; 
-
     DataFrame FACMapSendData;   // FACMap数据
 
     const float EPS = 0.0005f;  // 3位小数的精度阈值：0.0005（确保四舍五入到千分位后相等）
@@ -201,11 +194,9 @@ private:
     std::mutex _mutexTCPServer; // 互斥锁
     std::mutex _mutexTCPLinkState; // 互斥锁
 
-
     std::map<string, pid_t> nodeMap;
     // std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
     std::unordered_map<std::string, int> GSIPHash; // 存储所有已连接的IP地址
-
 
     
 };

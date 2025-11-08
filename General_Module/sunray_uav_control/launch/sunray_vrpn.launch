@@ -19,6 +19,7 @@
       # Must either specify refresh frequency > 0.0, or a list of trackers to create
       refresh_tracker_frequency: 1.0
       trackers:
+      - fmt1
       - uav1
       - uav2
       - uav3

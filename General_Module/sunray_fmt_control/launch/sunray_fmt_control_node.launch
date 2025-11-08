@@ -1,6 +1,6 @@
 <launch>
     <arg name="uav_id" default="1" />
-    <arg name="uav_name" default="uav" />
+    <arg name="uav_name" default="fmt" />
     <arg name="x_min" default="-20.0" />
     <arg name="x_max" default="20.0" />
     <arg name="y_min" default="-20.0" />
@@ -11,9 +11,9 @@
     <arg name="land_end_time" default="1.0" />
     <arg name="land_end_speed" default="0.3" />
     <arg name="takeoff_height" default="1.0" />
-    <arg name="takeoff_speed" default="0.4" />
+    <arg name="takeoff_speed" default="0.3" />
     <arg name="disarm_height" default="0.2" />
-    <arg name="land_speed" default="0.2" />
+    <arg name="land_speed" default="0.3" />
     <arg name="home_x" default="0.0" />
     <arg name="home_y" default="0.0" />
     <arg name="home_z" default="0.0" />

@@ -32,4 +32,6 @@
 		<param name="ugv_id" value="$(arg ugv_id)" />
 		<param name="ugv_name" value="$(arg ugv_name)" />
 
+	</node>
+	
 </launch>

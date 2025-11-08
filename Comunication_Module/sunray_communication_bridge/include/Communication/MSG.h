@@ -146,7 +146,7 @@ struct PX4State
         vio_start=false;
         viobotStateSize=0;
         satellites=0;
-        gps_status=0;
+        gps_status=-1;
         gps_service=0;
         latitude=0;
         longitude=0;
