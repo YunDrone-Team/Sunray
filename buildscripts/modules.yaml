@@ -10,14 +10,14 @@ modules:
     build_path: "build/sunray_common"
     dependencies: []
 
-  # UAV 控制模块
+  # UAV 与 FMT 控制模块
   sunray_uav_control:
     description: "无人机控制模块，包含外部定位、无人机控制等"
     source_path: "General_Module/sunray_uav_control"
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
   
-  #FMT无人机控制模块
+  
   sunray_fmt_control:
     description: "FMT无人机控制模块，包含FMT无人机控制节点"
     source_path: "General_Module/sunray_fmt_control"
@@ -186,7 +186,7 @@ groups:
   # FMT无人机飞行控制系统
   fmt:
     description: "FMT无人机飞行控制系统，包含FMT无人机飞行控制节点，通信桥接，示例代码"
-    modules: ["sunray_common", "vrpn_client_ros", "sunray_communication_bridge", "sunray_fmt_control", "sunray_tutorial","sunray_gimbal","sunray_formation"]
+    modules: ["sunray_common", "vrpn_client_ros", "sunray_communication_bridge", "sunray_fmt_control","ddynamic_reconfigure","realsense2_camera", "sunray_tutorial","sunray_gimbal","sunray_formation"]
 
   viobot:
     description: "VIOBOT无人机飞行控制系统，包含无人机飞行控制，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流"
@@ -216,7 +216,7 @@ groups:
   # 地面机器人控制系统
   ugv:
     description: "地面机器人控制系统，包含地面机器人控制节点，地面机器人外部定位，地面机器人控制驱动"
-    modules: ["sunray_common", "sunray_ugv_control", "turn_on_wheeltec_robot", "oradar_lidar", "sunray_tutorial"]
+    modules: ["sunray_common","sunray_communication_bridge","vrpn_client_ros", "sunray_ugv_control", "turn_on_wheeltec_robot", "oradar_lidar", "sunray_tutorial"]
 
   swarm_uav:
     description: "“智群·Sunray”集群控制代码包，包含无人机飞行控制，通信桥接，无人机控制节点，集群控制，ORCA"

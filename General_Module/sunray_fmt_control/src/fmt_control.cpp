@@ -644,7 +644,8 @@ void FMTControl::handle_cmd_control() {
                 // 机体系需要单独做转换
                 if (control_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYawBody ||
                     control_cmd.cmd == sunray_msgs::UAVControlCMD::XyzVelYawBody ||
-                    control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawBody) {
+                    control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawBody ||
+                    control_cmd.cmd == sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody) {
                     // Body系的需要转换到NED下
                     set_default_local_setpoint();
                     double body_pos[2] = {control_cmd.desired_pos[0], control_cmd.desired_pos[1]};
@@ -665,6 +666,7 @@ void FMTControl::handle_cmd_control() {
                     local_setpoint.velocity.z = control_cmd.desired_vel[2];
                     
                     local_setpoint.yaw = control_cmd.desired_yaw + fmt_state.attitude[2];
+                    local_setpoint.yaw_rate = control_cmd.desired_yaw_rate;
                     
                     // 设置控制模式
                     system_params.type_mask = moveModeMap[control_cmd.cmd];
@@ -737,7 +739,7 @@ void FMTControl::handle_land_control() {
     //local_setpoint.position.z = flight_params.land_pos[2];
     local_setpoint.velocity.z = -flight_params.land_speed;
     local_setpoint.yaw = flight_params.land_yaw;
-    system_params.type_mask = TypeMask::XYZ_POS_VEL_YAW;
+    system_params.type_mask = TypeMask::XY_POS_Z_VEL_YAW;
     
     // 当无人机位置低于指定高度时，自动上锁
     if (fmt_state.position[2] < flight_params.home_pos[2] + flight_params.disarm_height) {

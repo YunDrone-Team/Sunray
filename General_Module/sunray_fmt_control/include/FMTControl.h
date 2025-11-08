@@ -125,7 +125,8 @@ private:
             {sunray_msgs::UAVControlCMD::PosVelAccYawrate, TypeMask::POS_VEL_ACC_YAWRATE},
             {sunray_msgs::UAVControlCMD::XyzPosYawBody, TypeMask::XYZ_POS_YAW},
             {sunray_msgs::UAVControlCMD::XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
-            {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW}};
+            {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW},
+            {sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody, TypeMask::XY_VEL_Z_POS_YAWRATE}};
 
     // 添加string的映射
     std::map<int, std::string> moveModeMapStr =
@@ -146,6 +147,7 @@ private:
             {sunray_msgs::UAVControlCMD::XyzPosYawBody, "XyzPosYawBody"},
             {sunray_msgs::UAVControlCMD::XyzVelYawBody, "XyzVelYawBody"},
             {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, "XyVelZPosYawBody"},
+            {sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody, "XyVelZPosYawrateBody"},
             {sunray_msgs::UAVControlCMD::GlobalPos, "GlobalPos"},
             {sunray_msgs::UAVControlCMD::CTRL_XyzPos, "CTRL_XyzPos"},
             {sunray_msgs::UAVControlCMD::CTRL_Traj, "CTRL_Traj"},

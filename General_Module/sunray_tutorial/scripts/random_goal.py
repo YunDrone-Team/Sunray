@@ -12,25 +12,27 @@ def send_random_targets():
     pub = rospy.Publisher('/goal_1', PoseStamped, queue_size=10)
     
     # 设置循环频率（单位：Hz），可根据需要调整
-    rate = rospy.Rate(0.1)  
+    rate = rospy.Rate(0.05)  
     
     # 构建消息模板
     msg = PoseStamped()
     msg.header.frame_id = ""  
-    msg.pose.position.z = 1.0
+    msg.pose.position.z = 0.8
     msg.pose.orientation.w = 1.0
     msg.pose.orientation.x = 0.0
     msg.pose.orientation.y = 0.0
     msg.pose.orientation.z = 0.0
     
     rospy.loginfo("开始发布随机目标点...")
+    rospy.loginfo("等待2秒...")
+    rospy.sleep(2.0)  # 等待2秒，确保发布者连接成功
     
     try:
         while not rospy.is_shutdown():
             
             # 生成-2.5到2.5之间的随机x和y
-            x = random.uniform(-2.0, 2.0)
-            y = random.uniform(-2.0, 2.0)
+            x = random.uniform(-1.5, 1.5)
+            y = random.uniform(-1.5, 1.5)
             
             # 更新消息内容
             msg.header.stamp = rospy.Time.now()  # 更新时间戳

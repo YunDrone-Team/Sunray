@@ -427,6 +427,7 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         double vx = 0.0;       // X方向速度（前进/后退）
+        double vy = 0.0;       // Y方向速度
         double yaw_rate = 0.0; // 偏航角速度（转向）
         // 处理深度图像，检测障碍物
         SimpleObstacleInfo obstacle_info = process_depth_image_simple();
@@ -517,6 +518,7 @@ int main(int argc, char **argv)
                     } else {
                         // 面向目标且前方畅通，正常前进
                         vx = forward_vel;
+                        vy = 0.0; 
                         yaw_rate = 0.0;
                     }
                     break;
@@ -526,6 +528,7 @@ int main(int argc, char **argv)
                 {
                     // 执行避障转向
                     vx = 0.0; // 停止前进
+                    vy = 0.0;
                     yaw_rate = avoid_direction * rotate_speed;
                     
                     // 如果前方畅通且已避障一定时间，进入清除障碍状态
@@ -543,10 +546,12 @@ int main(int argc, char **argv)
                     if (ros::Time::now() - state_change_time < ros::Duration(roll_time))
                     {
                         vx = 0.0;
+                        vy = avoid_direction * 0.2;
                         yaw_rate = avoid_direction * rotate_speed;
                     }
                     else {
                         vx = forward_vel;  // 前进
+                        vy = 0.0;
                         yaw_rate = 0.0;
                     }
                     
@@ -588,6 +593,7 @@ int main(int argc, char **argv)
                     } else {
                         // 继续转向目标
                         vx = 0.0;
+                        vy = 0.0;
                         
                         double target_yaw = calculate_target_yaw();
                         double current_yaw = uav_state.attitude[2];
@@ -606,7 +612,7 @@ int main(int argc, char **argv)
             uav_cmd.header.stamp = ros::Time::now();
             uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody;     // 机体坐标系XY速度，Z位置，偏航角速率控制
             uav_cmd.desired_vel[0] = vx;                                        // X方向速度（机体前进方向）
-            uav_cmd.desired_vel[1] = 0.0;                                       // Y方向速度（机体左右方向，这里始终为0）
+            uav_cmd.desired_vel[1] = vy;                                       // Y方向速度（机体左右方向，这里始终为0）
             uav_cmd.desired_pos[2] = flight_height - uav_state.position[2];     // Z方向位置（保持飞行高度）
             uav_cmd.desired_yaw_rate = yaw_rate;                                // 期望偏航角速率
             control_cmd_pub.publish(uav_cmd);
