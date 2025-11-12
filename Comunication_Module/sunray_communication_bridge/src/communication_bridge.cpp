@@ -1342,23 +1342,22 @@ void communication_bridge::uav_waypointState_cb(const sunray_msgs::WayPointState
 void communication_bridge::sendUAVStateData(const ros::TimerEvent &e)
 {
 
- if (is_simulation)
+    if (is_simulation)
     {
         // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
             if(i<0 || i>=MAX_AGENT_NUM)
                 return;
-            px4StateData[i-1].seq=MessageID::UAVStateMessageID;
+            uavStateData[i-1].seq=MessageID::UAVStateMessageID;
             SendUdpDataToAllOnlineGroundStations(uavStateData[i-1]);
         }
     } else{
-            if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
-                return;
-            px4StateData[uav_id-1].seq=MessageID::UAVStateMessageID;
-            SendUdpDataToAllOnlineGroundStations(uavStateData[uav_id-1]);
-    }   
-
+        if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
+            return;
+        uavStateData[uav_id-1].seq=MessageID::UAVStateMessageID;
+        SendUdpDataToAllOnlineGroundStations(uavStateData[uav_id-1]);
+    }      
 }
 
 void communication_bridge::sendPX4StateData(const ros::TimerEvent &e)
