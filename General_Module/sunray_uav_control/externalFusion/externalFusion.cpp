@@ -318,12 +318,10 @@ void ExternalFusion::px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstP
 void ExternalFusion::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg)
 {
     gps_raw = *msg;
-
-    px4_state.satellites = gps_raw.satellites_visible;
-    
-    // 获取AMSL海拔高度（从GPS原始数据）
-    // GPSRAW.alt单位是毫米(mm)，需要转换为米(m)
+    px4_state.latitude_raw = (double)gps_raw.lat / 1e7;
+    px4_state.longitude_raw = (double)gps_raw.lon / 1e7;
     px4_state.altitude_amsl = gps_raw.alt / 1000.0;
+    px4_state.satellites = gps_raw.satellites_visible;    
 }
 
 // 回调函数：接收PX4的姿态设定值
@@ -412,9 +410,8 @@ void ExternalFusion::show_px4_state()
                             px4_state.attitude[2] / M_PI * 180,
                             "[deg]");
     }
-    else
+    else if (external_source == sunray_msgs::ExternalOdom::GPS)
     {
-
         // GPS模式的情况：经纬度（全局位置）
         Logger::print_color(int(LogColor::cyan), "-------- GPS状态");
         // 检查GPS数据是否已初始化（初始值为-1）
@@ -529,8 +526,128 @@ void ExternalFusion::show_px4_state()
                                 px4_state.attitude[1] / M_PI * 180,
                                 px4_state.attitude[2] / M_PI * 180,
                                 "[deg]");
-
-
+        }
+    }
+    else if (external_source == sunray_msgs::ExternalOdom::RTK)
+    {
+        // RTK模式的情况：显示GPS原始数据
+        Logger::print_color(int(LogColor::cyan), "-------- GPS状态（RTK模式显示原始数据）");
+        // 检查GPS原始数据是否已初始化（通过卫星数判断，初始值为-1或255）
+        if (px4_state.satellites == -1 || px4_state.satellites == 255) 
+        {
+            Logger::print_color(int(LogColor::yellow), "GPS原始数据尚未接收，等待GPS原始数据话题...");
+        } 
+        else 
+        {
+            // GPS原始数据已接收，正常显示
+            
+            // 定位质量（使用GPSRAW消息中的fix_type）
+            std::string gps_fix_str;
+            int color_status;
+            // fix_type（uint8）：GPS定位类型（来自GPSRAW消息）
+            // GPS_FIX_TYPE_NO_GPS = 0：无GPS连接
+            // GPS_FIX_TYPE_NO_FIX = 1：无定位信息
+            // GPS_FIX_TYPE_2D_FIX = 2：2D定位
+            // GPS_FIX_TYPE_3D_FIX = 3：3D定位
+            // GPS_FIX_TYPE_DGPS = 4：DGPS/SBAS增强定位
+            // GPS_FIX_TYPE_RTK_FLOATR = 5：RTK浮点解
+            // GPS_FIX_TYPE_RTK_FIXEDR = 6：RTK固定解
+            // GPS_FIX_TYPE_STATIC = 7：静态固定（通常用于基站）
+            // GPS_FIX_TYPE_PPP = 8：PPP定位
+            uint8_t fix_type = gps_raw.fix_type;
+            if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_NO_GPS) 
+            {
+                gps_fix_str = "无GPS连接";
+                color_status = int(LogColor::red);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_NO_FIX) 
+            {
+                gps_fix_str = "无定位";
+                color_status = int(LogColor::red);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_2D_FIX) 
+            {
+                gps_fix_str = "2D定位";
+                color_status = int(LogColor::yellow);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_3D_FIX) 
+            {
+                gps_fix_str = "3D定位";
+                color_status = int(LogColor::green);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_DGPS) 
+            {
+                gps_fix_str = "DGPS/SBAS增强";
+                color_status = int(LogColor::green);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_RTK_FLOATR) 
+            {
+                gps_fix_str = "RTK浮点解";
+                color_status = int(LogColor::green);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_RTK_FIXEDR) 
+            {
+                gps_fix_str = "RTK固定解";
+                color_status = int(LogColor::green);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_STATIC) 
+            {
+                gps_fix_str = "静态固定";
+                color_status = int(LogColor::green);
+            } 
+            else if (fix_type == mavros_msgs::GPSRAW::GPS_FIX_TYPE_PPP) 
+            {
+                gps_fix_str = "PPP定位";
+                color_status = int(LogColor::green);
+            } 
+            else 
+            {
+                gps_fix_str = "未知状态";
+                color_status = int(LogColor::yellow);
+            }
+            
+            // 卫星系统信息（GPSRAW消息不包含此信息，并且RTK模式走vision融合，因此显示未知）
+            std::string gps_service_str = "未知";
+            
+            Logger::print_color(color_status, 
+                               "GPS定位:", gps_fix_str,
+                               "  卫星系统:", gps_service_str,
+                               "  可见卫星:", (int)px4_state.satellites);
+            
+            // 卫星数告警
+            if (px4_state.satellites < 6) 
+            {
+                Logger::print_color(int(LogColor::yellow), 
+                                   "警告: 卫星数不足 (", (int)px4_state.satellites, " < 6)");
+            }
+            
+            // 格式化GPS坐标（使用原始数据）
+            char lat_str[32], lon_str[32], alt_amsl_str[32];
+            snprintf(lat_str, sizeof(lat_str), "%.7f", px4_state.latitude_raw);
+            snprintf(lon_str, sizeof(lon_str), "%.7f", px4_state.longitude_raw);
+            snprintf(alt_amsl_str, sizeof(alt_amsl_str), "%.2f", px4_state.altitude_amsl);
+            
+            Logger::print_color(int(LogColor::green), "GPS原始坐标[纬度 经度]:", 
+                               lat_str, "°N,", lon_str, "°E");
+            Logger::print_color(int(LogColor::cyan), "GPS原始高度(海拔AMSL):", 
+                               alt_amsl_str, "m");
+            
+            Logger::print_color(int(LogColor::cyan), "-------- PX4反馈的local_position");
+            // 显示本地位置（ENU坐标系，相对于起飞点）
+            Logger::print_color(int(LogColor::green), "本地位置[X Y Z]:",
+                                px4_state.position[0], "m,",
+                                px4_state.position[1], "m,",
+                                px4_state.position[2], "m (相对起飞点)");
+            Logger::print_color(int(LogColor::green), "无人机速度[X Y Z]:",
+                                px4_state.velocity[0],
+                                px4_state.velocity[1],
+                                px4_state.velocity[2],
+                                "[m/s]");
+            Logger::print_color(int(LogColor::green), "无人机姿态[X Y Z]:",
+                                px4_state.attitude[0] / M_PI * 180,
+                                px4_state.attitude[1] / M_PI * 180,
+                                px4_state.attitude[2] / M_PI * 180,
+                                "[deg]");
         }
     }
     // 外部定位信息
@@ -594,7 +711,7 @@ void ExternalFusion::show_px4_state()
             }
             else
             {
-                Logger::print_color(int(LogColor::green), "定位源状态: [ 有效 ]", "飞控融合成功: [ 失败 ]");
+                Logger::print_color(int(LogColor::green), "定位源状态: [ 有效 ]", "飞控融合状态: [ 失败 ]");
             }
         }
         else

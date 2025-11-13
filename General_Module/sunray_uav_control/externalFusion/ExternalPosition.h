@@ -31,6 +31,9 @@ public:
     std::string uart_name;
     int baudrate;
     std::string source_topic{""}; // 外部定位数据来源话题
+    
+    // RTK模式：ENU坐标转换原点参数（可通过launch文件配置）
+    LLH_Coord rtk_origin;  // RTK模式原点坐标（经纬度+高度）
 
     // VIOBOT相关参数
     bool tilted;                                         // 是否倾斜放置
@@ -102,6 +105,10 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose"); // 【参数】外部定位数据来源
     nh.param<bool>("enable_range_sensor", enable_range_sensor, false);            // 【参数】是否使用距离传感器数据
     nh.param<bool>("use_vision_pose", use_vision_pose, true);                     // 【参数】是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
+    // RTK模式：ENU坐标转换原点参数（可通过launch文件配置）
+    nh.param<double>("rtk_origin_lat", rtk_origin.lat, 47.3977421);  // 【参数】RTK模式原点纬度，单位：[°]
+    nh.param<double>("rtk_origin_lon", rtk_origin.lon, 8.54559350);  // 【参数】RTK模式原点经度，单位：[°]
+    nh.param<double>("rtk_origin_alt", rtk_origin.alt, 488.00);      // 【参数】RTK模式原点高度，单位：[m]
 
     // 初始化外部定位状态
     external_odom.header.stamp = ros::Time::now();
@@ -269,10 +276,8 @@ void ExternalPosition::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr 
     // result是转换得到的ENU坐标系坐标（原点为origin，ENU为方向）
     ENU_Coord result;
 
-    // 设置初始点坐标（北京天安门）
-    origin.lat = 47.3977421;
-    origin.lon = 8.54559350;
-    origin.alt = 487.90;
+    // 设置初始点坐标（从参数服务器读取，可在launch文件中配置）
+    origin = rtk_origin;
 
     // 设置目标点坐标（附近某个点）
     target.lat = (double)gps_raw.lat/1e7;
@@ -306,7 +311,7 @@ void ExternalPosition::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr 
 // 定时器回调函数
 void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
 {
-    // GPS/RTK模式下，不需要外部定位融合，直接标记为有效
+    // GPS模式下，不需要外部定位融合，直接标记为有效
     if (external_odom.external_source == sunray_msgs::ExternalOdom::GPS)
     {
         external_odom.odom_valid = true;

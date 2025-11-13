@@ -48,7 +48,10 @@ uint8 gps_service                ## GPS服务: 1：美国GPS  2：俄罗斯GLONA
 float64 latitude                 ## 纬度，单位：[°]
 float64 longitude                ## 经度，单位：[°]
 float64 altitude                 ## 椭球高度，单位：[m]（WGS84椭球面）
-float64 altitude_amsl            ## 海拔高度，单位：[m]（平均海平面）
+
+float64 latitude_raw                 ## 纬度，单位：[°] gps原始数据
+float64 longitude_raw                ## 经度，单位：[°] gps原始数据
+float64 altitude_amsl            ## 海拔高度，单位：[m]（平均海平面）gps原始数据
 
 ## PX4中无人机的位置/速度/加速度设定值 - 来自~/mavros/setpoint_raw/target_local
 float32[3] pos_setpoint             ## 位置控制设定值，单位：[m]  

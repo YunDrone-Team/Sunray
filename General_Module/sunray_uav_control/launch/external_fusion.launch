@@ -11,6 +11,10 @@
     <arg name="server" default="192.168.20.15"/>
     <arg name="tilted" default="false"/>
     
+    <!-- RTK模式：ENU坐标转换原点参数（仅在RTK模式下使用） -->
+    <arg name="rtk_origin_lat" default="47.3977420" />  <!-- 原点纬度，单位：[°] -->
+    <arg name="rtk_origin_lon" default="8.54559400" />  <!-- 原点经度，单位：[°] -->
+    <arg name="rtk_origin_alt" default="488.01" />      <!-- 原点高度，单位：[m] -->
 
     <!-- 启动 external_fusion_node-->
     <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
@@ -21,6 +25,10 @@
         <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
         <param name="use_vision_pose" value="$(arg use_vision_pose)" />
         <param name="tilted" value="$(arg tilted)" />
+        <!-- RTK模式：ENU坐标转换原点参数 -->
+        <param name="rtk_origin_lat" value="$(arg rtk_origin_lat)" />
+        <param name="rtk_origin_lon" value="$(arg rtk_origin_lon)" />
+        <param name="rtk_origin_alt" value="$(arg rtk_origin_alt)" />
     </node>
 
     <!-- 启动 vrpn_client_ros -->
