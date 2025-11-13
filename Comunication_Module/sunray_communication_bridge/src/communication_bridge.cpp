@@ -204,7 +204,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     station_connected = false;
 
     //适配地面站版本
-    Versions="V2.19.0";
+    Versions="V3.0.0";
     std::cout << "适配地面站版本："<< Versions<< std::endl;
     std::cout << "使用的地面站版本号需满足：第一个数字与适配版本一致，第二个数字大于或等于适配版本。 "<< std::endl;
 
@@ -1600,6 +1600,9 @@ void communication_bridge::PX4StateCallBack(const sunray_msgs::PX4State::ConstPt
     px4StateData[index].data.px4State.latitude = msg->latitude;
     px4StateData[index].data.px4State.longitude = msg->longitude;
     px4StateData[index].data.px4State.altitude = msg->altitude;
+
+     px4StateData[index].data.px4State.latitude_raw = msg->latitude_raw;
+    px4StateData[index].data.px4State.longitude_raw = msg->longitude_raw;
     px4StateData[index].data.px4State.altitude_amsl = msg->altitude_amsl;
 
     px4StateData[index].data.px4State.pos_setpoint[0] = msg->pos_setpoint[0];

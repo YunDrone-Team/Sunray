@@ -80,8 +80,6 @@ public:
     void decoderWaypointStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码航点状态数据Payload帧
     void decoderPX4StatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码PX4状态数据Payload帧
 
-
-
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
 
     void floatArrayCopyToUint8tArray(std::vector<uint8_t>& data,std::vector<float>& value);//std::vector<float>数据加入std::vector<uint8_t>

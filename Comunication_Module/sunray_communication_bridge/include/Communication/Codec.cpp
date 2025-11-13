@@ -289,6 +289,9 @@ void Codec::decoderPX4StatePayload(std::vector<uint8_t>& dataFrame,DataFrame& da
     uint8tArrayToDouble(dataFrame, data.latitude);
     uint8tArrayToDouble(dataFrame, data.longitude);
     uint8tArrayToDouble(dataFrame, data.altitude);
+
+    uint8tArrayToDouble(dataFrame, data.latitude_raw);
+    uint8tArrayToDouble(dataFrame, data.longitude_raw);
     uint8tArrayToDouble(dataFrame, data.altitude_amsl);
 
 
@@ -1265,6 +1268,9 @@ void Codec::coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& co
      doubleCopyToUint8tArray(payload,data.latitude);
      doubleCopyToUint8tArray(payload,data.longitude);
      doubleCopyToUint8tArray(payload,data.altitude);
+
+     doubleCopyToUint8tArray(payload,data.latitude_raw);
+     doubleCopyToUint8tArray(payload,data.longitude_raw);
      doubleCopyToUint8tArray(payload,data.altitude_amsl);
 
      floatCopyToUint8tArray(payload,data.pos_setpoint[0]);

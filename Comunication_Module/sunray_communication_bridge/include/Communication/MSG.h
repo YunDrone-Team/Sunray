@@ -125,6 +125,8 @@ struct PX4State
     double   latitude;
     double   longitude;
     double   altitude;
+    double   latitude_raw;
+    double   longitude_raw;
     double   altitude_amsl;
     float    pos_setpoint[3];
     float    vel_setpoint[3];
@@ -151,6 +153,8 @@ struct PX4State
         latitude=0;
         longitude=0;
         altitude=0;
+        latitude_raw=0;
+        longitude_raw=0;
         altitude_amsl=0;
         thrust_setpoint=0;
         for(int i=0;i<3;++i)
