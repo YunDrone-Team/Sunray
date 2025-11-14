@@ -203,7 +203,7 @@ void generate_commands()
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ugv_circular_motion");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     // 注册信号处理函数
     signal(SIGINT, signalHandler);

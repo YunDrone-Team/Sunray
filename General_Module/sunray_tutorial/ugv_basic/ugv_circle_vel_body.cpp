@@ -17,7 +17,7 @@ private:
     double target_duration; // 总运行时间（两圈）
 
 public:
-    CircularBodyControl() : linear_speed(0.5), circle_radius(1.0), motion_completed(false)
+    CircularBodyControl() : nh("~"), linear_speed(0.5), circle_radius(1.0), motion_completed(false)
     {
         // 参数初始化
         nh.param<int>("ugv_id", ugv_id, 1);

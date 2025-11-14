@@ -186,7 +186,7 @@ groups:
   # FMT无人机飞行控制系统
   fmt:
     description: "FMT无人机飞行控制系统，包含FMT无人机飞行控制节点，通信桥接，示例代码"
-    modules: ["sunray_common", "vrpn_client_ros", "sunray_communication_bridge", "sunray_fmt_control","ddynamic_reconfigure","realsense2_camera", "sunray_tutorial","sunray_gimbal","sunray_formation"]
+    modules: ["sunray_common", "vrpn_client_ros", "sunray_communication_bridge", "sunray_fmt_control", "sunray_tutorial"]
 
   viobot:
     description: "VIOBOT无人机飞行控制系统，包含无人机飞行控制，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流"

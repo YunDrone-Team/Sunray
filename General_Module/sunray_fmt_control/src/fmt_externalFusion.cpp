@@ -97,6 +97,11 @@ void FMTExternalFusion::init(ros::NodeHandle &nh)
     // 【服务】FMT数据流设置
     fmt_stream_rate_client = nh.serviceClient<mavros_msgs::StreamRate>(uav_name + "/mavros/set_stream_rate");
 
+    // 【发布】无人机轨迹，用于仿真环境下的可视化
+    uav_trajectory_pub = nh.advertise<nav_msgs::Path>(uav_name + "/sunray/uav_trajectory", 1);
+    // 【发布】无人机MESH图标，用于仿真环境下的可视化
+    uav_mesh_pub = nh.advertise<visualization_msgs::Marker>(uav_name + "/sunray/uav_mesh", 1);
+
     // 【定时器】当FMT需要外部定位输入时，定时更新和发布到mavros/vision_pose/pose
     if (enable_vision_pose)
     {
@@ -126,6 +131,8 @@ void FMTExternalFusion::init(ros::NodeHandle &nh)
 
     // 定时器任务 - 发布FMT状态
     timer_pub_fmt_state = nh.createTimer(ros::Duration(0.01), &FMTExternalFusion::timer_pub_fmt_state_cb, this);
+    // 定时器任务 - RVIZ可视化发布
+    time_rviz_pub = nh.createTimer(ros::Duration(0.1), &FMTExternalFusion::timer_rviz, this);
 
     // FMT无人机状态 - 初始化
     init_fmt_state();
@@ -279,6 +286,77 @@ void FMTExternalFusion::timer_pub_fmt_state_cb(const ros::TimerEvent &event)
             err_msg.insert(1);
         }
     }
+}
+
+void FMTExternalFusion::timer_rviz(const ros::TimerEvent &event)
+{
+    // 如果无人机的odom的状态无效，则停止发布
+    if (!ext_pos.external_odom.odom_valid)
+    {
+        return;
+    }
+
+    // 发布无人机运动轨迹，用于rviz显示
+    geometry_msgs::PoseStamped uav_pos;
+    uav_pos.header.stamp = ros::Time::now();
+    uav_pos.header.frame_id = "world";
+    uav_pos.pose.position.x = fmt_state.position[0];
+    uav_pos.pose.position.y = fmt_state.position[1];
+    uav_pos.pose.position.z = fmt_state.position[2];
+    uav_pos.pose.orientation = fmt_state.attitude_q;
+    uav_pos_vector.insert(uav_pos_vector.begin(), uav_pos);
+    // 轨迹滑窗
+    if (uav_pos_vector.size() > TRAJECTORY_WINDOW)
+    {
+        uav_pos_vector.pop_back();
+    }
+    nav_msgs::Path uav_trajectory;
+    uav_trajectory.header.stamp = ros::Time::now();
+    uav_trajectory.header.frame_id = "world";
+    uav_trajectory.poses = uav_pos_vector;
+    uav_trajectory_pub.publish(uav_trajectory);
+
+    // 发布无人机MESH，用于rviz显示
+    visualization_msgs::Marker rviz_mesh;
+    rviz_mesh.header.frame_id = "world";
+    rviz_mesh.header.stamp = ros::Time::now();
+    rviz_mesh.ns = "mesh";
+    rviz_mesh.id = 0;
+    rviz_mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
+    rviz_mesh.action = visualization_msgs::Marker::ADD;
+    rviz_mesh.pose.position.x = fmt_state.position[0];
+    rviz_mesh.pose.position.y = fmt_state.position[1];
+    rviz_mesh.pose.position.z = fmt_state.position[2];
+    rviz_mesh.pose.orientation = fmt_state.attitude_q;
+    rviz_mesh.scale.x = 1.0;
+    rviz_mesh.scale.y = 1.0;
+    rviz_mesh.scale.z = 1.0;
+    rviz_mesh.color.a = 1.0;
+    // 根据uav_id生成对应的颜色
+    rviz_mesh.color.r = static_cast<float>((uav_id * 123) % 256) / 255.0;
+    rviz_mesh.color.g = static_cast<float>((uav_id * 456) % 256) / 255.0;
+    rviz_mesh.color.b = static_cast<float>((uav_id * 789) % 256) / 255.0;
+    rviz_mesh.mesh_use_embedded_materials = false;
+    rviz_mesh.mesh_resource = std::string("package://sunray_uav_control/meshes/uav.mesh");
+    uav_mesh_pub.publish(rviz_mesh);
+
+    // 发布TF用于RVIZ显示（用于sensor显示）
+    static tf2_ros::TransformBroadcaster broadcaster;
+    geometry_msgs::TransformStamped tfs;
+    //  世界坐标系
+    tfs.header.frame_id = "world";
+    tfs.header.stamp = ros::Time::now();
+    //  局部坐标系（如传感器坐标系）
+    tfs.child_frame_id = uav_name + "/base_link";
+    //  坐标系相对信息设置，局部坐标系相对于世界坐标系的坐标（偏移量）
+    tfs.transform.translation.x = fmt_state.position[0];
+    tfs.transform.translation.y = fmt_state.position[1];
+    tfs.transform.translation.z = fmt_state.position[2];
+    tfs.transform.rotation.x = fmt_state.attitude_q.x;
+    tfs.transform.rotation.y = fmt_state.attitude_q.y;
+    tfs.transform.rotation.z = fmt_state.attitude_q.z;
+    tfs.transform.rotation.w = fmt_state.attitude_q.w;
+    broadcaster.sendTransform(tfs);
 }
 
 // 回调函数：FMT状态

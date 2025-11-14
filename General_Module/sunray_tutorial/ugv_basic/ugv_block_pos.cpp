@@ -26,6 +26,7 @@ private:
 
 public:
     SquareDemo() : 
+        nh("~"),
         current_waypoint(0), 
         tolerance(0.1), 
         first_waypoint_sent(false),

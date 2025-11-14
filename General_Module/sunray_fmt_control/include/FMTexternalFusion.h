@@ -13,6 +13,7 @@ using namespace std;
 using namespace sunray_logger;
 
 #define FMT_TIMEOUT 2.0       // FMT状态超时
+#define TRAJECTORY_WINDOW 50  // 轨迹滑窗大小
 
 // 滑动平均滤波器
 class MovingAverageFilter
@@ -274,8 +275,10 @@ private:
     int uav_id;                                         // 无人机编号
     int external_source;                                // 外部定位数据来源
     std::set<int> err_msg;                              // 错误消息集合
+    std::vector<geometry_msgs::PoseStamped> uav_pos_vector; // 无人机轨迹容器,用于rviz显示
     ros::Time fmt_state_time;                           // FMT状态时间戳
     ros::Timer timer_pub_fmt_state;                     // 定时器 - 发布FMT状态
+    ros::Timer time_rviz_pub;                           // 定时器 - RVIZ可视化发布
     ros::Timer timer_pub_vision_pose;                   // 定时器 - 发布vision_pose   
     bool enable_vision_pose{true};                      // 是否发布vision_pose
     geometry_msgs::PoseStamped vision_pose;                 // vision_pose消息
@@ -297,6 +300,8 @@ private:
 
     // 发布节点
     ros::Publisher uav_odom_pub;                        // 【发布】无人机里程计
+    ros::Publisher uav_trajectory_pub;                 // 【发布】无人机轨迹
+    ros::Publisher uav_mesh_pub;                       // 【发布】无人机MESH图标
     ros::Publisher vision_pose_pub;                     // 【发布】vision_pose
     ros::Publisher fmt_state_pub;                       // 【发布】FMT综合状态
 
@@ -333,6 +338,7 @@ public:
     void timer_pub_vision_pose_cb(const ros::TimerEvent &event);
     // 定时器回调函数
     void timer_pub_fmt_state_cb(const ros::TimerEvent &event);
+    void timer_rviz(const ros::TimerEvent &event);
 };
 
 FMTExternalFusion::~FMTExternalFusion()
