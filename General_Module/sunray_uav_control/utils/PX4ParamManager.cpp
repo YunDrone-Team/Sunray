@@ -69,6 +69,11 @@ bool PX4ParamManager::readParam(const std::string& paramId, mavros_msgs::ParamVa
     mavros_msgs::ParamGet px4ParamGet;
     px4ParamGet.request.param_id = paramId;
     px4ParamGet.response.success = false;
+    if (!paramGetClient.waitForExistence(ros::Duration(0.5)))
+    {
+        Logger::print_color(int(LogColor::red), "参数读取服务不可用（超时）", paramId);
+        return false;
+    }
     if (paramGetClient.call(px4ParamGet))
     {
         if (!px4ParamGet.response.success)
@@ -115,6 +120,11 @@ bool PX4ParamManager::setParam(const std::string& paramId, int64_t value)
     px4ParamSet.request.value.integer = value;
     px4ParamSet.request.value.real = 0;
     px4ParamSet.response.success = false;
+    if (!paramSetClient.waitForExistence(ros::Duration(0.5)))
+    {
+        Logger::print_color(int(LogColor::red), "参数设置服务不可用（超时）", paramId);
+        return false;
+    }
     if (paramSetClient.call(px4ParamSet))
     {
         if (!px4ParamSet.response.success)
@@ -136,6 +146,11 @@ bool PX4ParamManager::setParam(const std::string& paramId, int64_t value)
 
 bool PX4ParamManager::setParam(const std::string& paramId, double value)
 {
+    if (!paramSetClient.waitForExistence(ros::Duration(0.5)))
+    {
+        Logger::print_color(int(LogColor::red), "参数设置服务不可用（超时）", paramId);
+        return false;
+    }
     mavros_msgs::ParamValue paramValueOld;
     if (!readParam(paramId, paramValueOld))
     {
@@ -147,6 +162,7 @@ bool PX4ParamManager::setParam(const std::string& paramId, double value)
     px4ParamSet.request.value.integer = 0;
     px4ParamSet.request.value.real = value;
     px4ParamSet.response.success = false;
+    
     if (paramSetClient.call(px4ParamSet))
     {
         if (!px4ParamSet.response.success)
