@@ -7,6 +7,7 @@ enum MessageID
     HeartbeatMessageID              = 1,
     UAVStateMessageID               = 2,
     PX4StateMessageID               = 3,
+    PX4ParameterMessageID           = 4,
     UGVStateMessageID               = 20,
     NodeMessageID                   = 30,
     AgentComputerStatusMessageID    = 31,

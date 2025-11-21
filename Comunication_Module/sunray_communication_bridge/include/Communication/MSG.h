@@ -185,6 +185,32 @@ struct PX4State
 
 };
 
+//无人机PX4飞控参数 - PX4Parameter（#4）
+struct PX4Parameter
+{
+    double   MPC_XY_VEL_MAX;
+    double   MPC_Z_VEL_MAX_UP;
+    double   MPC_Z_VEL_MAX_DN;
+    double   MPC_XY_P;
+    double   MPC_TILTMAX_AIR;
+    double   MPC_THR_HOVER;
+    int64_t  MAV_0_RATE;
+    int64_t  EKF2_HGT_REF;
+
+    void init()
+    {
+        MPC_XY_VEL_MAX=0;
+        MPC_Z_VEL_MAX_UP=0;
+        MPC_Z_VEL_MAX_DN=0;
+        MPC_XY_P=0;
+        MPC_TILTMAX_AIR=0;
+        MPC_THR_HOVER=0;
+        MAV_0_RATE=-1;
+        EKF2_HGT_REF=-1;
+    }
+};
+
+
 //无人车状态 - UGVState（#20）
 struct UGVState
 {
@@ -595,6 +621,7 @@ union Payload
     HeartbeatData heartbeat;            // 无人机心跳包 - HeartbeatData（#1）
     UAVState uavState;                  // 无人机状态 - UAVState（#2）
     PX4State px4State;                  // 无人机PX4状态 - PX4State（#3）
+    PX4Parameter px4Parameter;          // 无人机PX4飞控参数 - PX4Parameter（#4）
     UAVControlCMD uavControlCMD;        // 无人机控制指令 - UAVControlCMD（#102）
     UAVSetup uavSetup;                  // 无人机设置指令 - UAVSetup（#103）
     WaypointData waypointData;          // 无人机航点 - WaypointData（#104）

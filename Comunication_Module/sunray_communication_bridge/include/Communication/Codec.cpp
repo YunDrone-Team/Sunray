@@ -55,6 +55,15 @@ void Codec::floatCopyToUint8tArray(std::vector<uint8_t>& data,float& value)
         data.push_back(floatBytes[j]);
 }
 
+void Codec::int64CopyToUint8tArray (std::vector<uint8_t>& data, int64_t& value)
+{
+   // 将 int64_t 类型数据的地址转换为 uint8_t 指针
+    uint8_t* bytePtr = reinterpret_cast<uint8_t*>(&value);
+    //int64_t 固定为 8 个字节，遍历 8 次
+    for (size_t i = 0; i < sizeof (int64_t); ++i)
+        data.push_back (bytePtr [i]);
+}
+
 void Codec::uint8tArrayToDouble(std::vector<uint8_t>& data, double& value)
 {
     if (data.size() < sizeof(double))
@@ -68,7 +77,17 @@ void Codec::uint8tArrayToDouble(std::vector<uint8_t>& data, double& value)
     data.erase(data.begin(), data.begin() + sizeof(double));
 }
 
-
+void Codec::uint8tArrayToInt64 (std::vector<uint8_t>& data, int64_t& value)
+{
+    if (data.size () < sizeof (int64_t))
+    {
+        std::cerr << "Error: The vector size is less than sizeof (int64_t)" << std::endl;return;
+    }
+    // 将 vector 中的字节复制到 int64_t 的内存空间
+    std::memcpy (&value, data.data (), sizeof (int64_t));
+    // 移除已经处理过的字节
+    data.erase (data.begin (), data.begin () + sizeof (int64_t));
+}
 
 void Codec::uint8tArrayToFloat(std::vector<uint8_t>& data, float& value)
 {
@@ -309,7 +328,22 @@ void Codec::decoderPX4StatePayload(std::vector<uint8_t>& dataFrame,DataFrame& da
 
     uint8tArrayToFloat(dataFrame, data.thrust_setpoint);
 
+}
 
+void Codec::decoderPX4ParameterPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    PX4Parameter& data = dataFrameStruct.data.px4Parameter;
+    data.init();
+
+    uint8tArrayToDouble(dataFrame, data.MPC_XY_VEL_MAX);
+    uint8tArrayToDouble(dataFrame, data.MPC_Z_VEL_MAX_UP);
+    uint8tArrayToDouble(dataFrame, data.MPC_Z_VEL_MAX_DN);
+    uint8tArrayToDouble(dataFrame, data.MPC_XY_P);
+    uint8tArrayToDouble(dataFrame, data.MPC_TILTMAX_AIR);
+    uint8tArrayToDouble(dataFrame, data.MPC_THR_HOVER);
+
+    uint8tArrayToInt64(dataFrame, data.MAV_0_RATE);
+    uint8tArrayToInt64(dataFrame, data.EKF2_HGT_REF);
 
 }
 
@@ -809,6 +843,10 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload PX4状态数据反序列化*/
         decoderPX4StatePayload(undecodedData,decoderData);
         break;
+    case MessageID::PX4ParameterMessageID:
+        /*Payload 无人机PX4飞控参数数据反序列化*/
+        decoderPX4ParameterPayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
@@ -837,6 +875,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
     case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
     case MessageID::WaypointStateMessageID:case MessageID::PX4StateMessageID:
+    case MessageID::PX4ParameterMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -1295,6 +1334,19 @@ void Codec::coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& co
 
  }
 
+void Codec::coderPX4ParameterPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    PX4Parameter data=codelessData.data.px4Parameter;
+    doubleCopyToUint8tArray(payload,data.MPC_XY_VEL_MAX);
+    doubleCopyToUint8tArray(payload,data.MPC_Z_VEL_MAX_UP);
+    doubleCopyToUint8tArray(payload,data.MPC_Z_VEL_MAX_DN);
+    doubleCopyToUint8tArray(payload,data.MPC_XY_P);
+    doubleCopyToUint8tArray(payload,data.MPC_TILTMAX_AIR);
+    doubleCopyToUint8tArray(payload,data.MPC_THR_HOVER);
+    int64CopyToUint8tArray(payload,data.MAV_0_RATE);
+    int64CopyToUint8tArray(payload,data.EKF2_HGT_REF);
+
+}
 
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
@@ -1414,6 +1466,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::PX4StateMessageID:
         /*Payload 无人机PX4状态数据序列化*/
         coderPX4StatePayload(PayloadData,codelessData);
+        break;
+    case MessageID::PX4ParameterMessageID:
+        /*Payload 无人机PX4飞控参数数据序列化*/
+        coderPX4ParameterPayload(PayloadData,codelessData);
         break;
     default:break;
     }

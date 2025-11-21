@@ -59,6 +59,7 @@ public:
     void coderViobotSwitchPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderWaypointStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderPX4StatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderPX4ParameterPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
 
 
     void decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人机状态Payload帧
@@ -79,14 +80,19 @@ public:
     void decoderViobotSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码Viobot算法开关数据Payload帧
     void decoderWaypointStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码航点状态数据Payload帧
     void decoderPX4StatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码PX4状态数据Payload帧
+    void decoderPX4ParameterPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码无人机PX4飞控参数数据Payload帧
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
 
     void floatArrayCopyToUint8tArray(std::vector<uint8_t>& data,std::vector<float>& value);//std::vector<float>数据加入std::vector<uint8_t>
     void floatCopyToUint8tArray(std::vector<uint8_t>& data,float& value);//float数据加入std::vector<uint8_t>
     void doubleCopyToUint8tArray(std::vector<uint8_t>& data,double& value);//double数据加入std::vector<uint8_t>
+    void int64CopyToUint8tArray (std::vector<uint8_t>& data, int64_t& value);
+
     void uint8tArrayToFloat(std::vector<uint8_t>& data, float& value);
     void uint8tArrayToDouble(std::vector<uint8_t>& data, double& value);
+    void uint8tArrayToInt64 (std::vector<uint8_t>& data, int64_t& value);
+
 
     uint16_t PackBytesLE( uint8_t high,uint8_t low);// 将两个8位无符号整数按小端字节序组合成一个16位无符号整数
 
@@ -117,6 +123,7 @@ private:
         MessageID::ViobotSwitchMessageID,
         MessageID::WaypointStateMessageID,
         MessageID::PX4StateMessageID,
+        MessageID::PX4ParameterMessageID,
 
     };
 

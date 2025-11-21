@@ -62,6 +62,7 @@ file(GLOB COMMUNICATION_SRCS "include/Communication/*.cpp")
 # ${COMMUNICATION_SRCS}将找到的.cpp文件添加到项目中
 add_library(${PROJECT_NAME}
   src/communication_bridge.cpp
+  src/PX4ParamManager.cpp 
   ${COMMUNICATION_SRCS}
 )
 

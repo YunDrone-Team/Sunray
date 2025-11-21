@@ -63,6 +63,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             uav_waypoint_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::WayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
             // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
             uav_goal_pub.insert(std::make_pair(i, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(i), 1))));
+            // 【管理】MAVROS 参数服务客户端，无人机px4飞控参数
+            uavPX4ParamMap.insert(std::make_pair(i, PX4ParamManager(nh, topic_prefix+"/mavros")));
+            
         }
 
         // 无人车Sunray与地面站之间的通信（此部分仅针对仿真）
@@ -99,6 +102,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::WayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
             // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
             uav_goal_pub.insert(std::make_pair(uav_id, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(uav_id), 1))));
+            // 【管理】MAVROS 参数服务客户端，无人机px4飞控参数
+            uavPX4ParamMap.insert(std::make_pair(uav_id, PX4ParamManager(nh, topic_prefix+"/mavros")));
         }
 
         // 无人车Sunray和地面站之间的通信（此部分仅针对真机）
@@ -170,6 +175,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // 【定时器】 定时发送无人机状态到地面站
     if(UAVStateTransmitEnabled)
         UAVStateTimer= nh.createTimer(ros::Duration(1.0/UAVStateFrameRate), &communication_bridge::sendUAVStateData, this);
+    // 【定时器】 定时发送无人机PX4参数到地面站
+    UAVPX4ParamTimer= nh.createTimer(ros::Duration(1.0), &communication_bridge::UpdateUAVPx4Param, this);
+
 
     //  初始化CPU数据
     prevData = readCpuData();
@@ -1149,6 +1157,98 @@ void communication_bridge::UpdateUDPMulticast(const ros::TimerEvent &e)
         udpSocket->UpdateMulticast();
 }
 
+
+void communication_bridge::UpdateUAVPx4Param(const ros::TimerEvent &e)
+{
+    DataFrame sendDataFrame;
+    
+    if (is_simulation)
+    {
+        // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
+        for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
+        {
+            auto it = uavPX4ParamMap.find(i);
+            if (it == uavPX4ParamMap.end())
+                continue;
+
+            sendDataFrame.data.px4Parameter.init();
+            sendDataFrame.robot_ID=i;
+            sendDataFrame.seq=MessageID::PX4ParameterMessageID;
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_XY_VEL_MAX",sendDataFrame.data.px4Parameter.MPC_XY_VEL_MAX))
+                continue;
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_Z_VEL_MAX_UP",sendDataFrame.data.px4Parameter.MPC_Z_VEL_MAX_UP))
+                continue;
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_Z_VEL_MAX_DN",sendDataFrame.data.px4Parameter.MPC_Z_VEL_MAX_DN))
+                continue; 
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_XY_P",sendDataFrame.data.px4Parameter.MPC_XY_P))
+                continue;
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_TILTMAX_AIR",sendDataFrame.data.px4Parameter.MPC_TILTMAX_AIR))
+                continue;  
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_THR_HOVER",sendDataFrame.data.px4Parameter.MPC_THR_HOVER))
+                continue;
+            if(!getUAVPX4Param(sendDataFrame,it->second,"EKF2_HGT_REF",sendDataFrame.data.px4Parameter.EKF2_HGT_REF))
+                continue;      
+            if(!getUAVPX4Param(sendDataFrame,it->second,"MAV_0_RATE",sendDataFrame.data.px4Parameter.MAV_0_RATE))
+                continue;
+                         
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+        }
+    }else{
+            if (uav_experiment_num > 0 && uav_id>=0 )
+            {
+                auto it = uavPX4ParamMap.find(uav_id);
+                if (it == uavPX4ParamMap.end())
+                    return;
+                sendDataFrame.data.px4Parameter.init();
+                sendDataFrame.robot_ID=uav_id;
+                sendDataFrame.seq=MessageID::PX4ParameterMessageID;
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_XY_VEL_MAX",sendDataFrame.data.px4Parameter.MPC_XY_VEL_MAX))
+                    return;
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_Z_VEL_MAX_UP",sendDataFrame.data.px4Parameter.MPC_Z_VEL_MAX_UP))
+                    return;
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_Z_VEL_MAX_DN",sendDataFrame.data.px4Parameter.MPC_Z_VEL_MAX_DN))
+                    return; 
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_XY_P",sendDataFrame.data.px4Parameter.MPC_XY_P))
+                    return;
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_TILTMAX_AIR",sendDataFrame.data.px4Parameter.MPC_TILTMAX_AIR))
+                    return;  
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MPC_THR_HOVER",sendDataFrame.data.px4Parameter.MPC_THR_HOVER))
+                    return;
+                if(!getUAVPX4Param(sendDataFrame,it->second,"EKF2_HGT_REF",sendDataFrame.data.px4Parameter.EKF2_HGT_REF))
+                    return; 
+                if(!getUAVPX4Param(sendDataFrame,it->second,"MAV_0_RATE",sendDataFrame.data.px4Parameter.MAV_0_RATE))
+                    return;
+                              
+                SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+  
+            }
+
+    }
+}
+
+bool communication_bridge::getUAVPX4Param(DataFrame dataFrame,PX4ParamManager& maager,std::string param,double& value)
+{
+    mavros_msgs::ParamValue getValue;
+    if(!maager.getParamValue(param,getValue))
+    {
+        SendUdpDataToAllOnlineGroundStations(dataFrame);
+        return false;
+    }
+    value=getValue.real; 
+    return true;
+}
+
+bool communication_bridge::getUAVPX4Param(DataFrame dataFrame,PX4ParamManager& maager,std::string param,int64_t& value)
+{
+    mavros_msgs::ParamValue getValue;
+    if(!maager.getParamValue(param,getValue))
+    {
+        SendUdpDataToAllOnlineGroundStations(dataFrame);
+        return false;
+    }
+    value=getValue.integer; 
+    return true;
+}
 
 void communication_bridge::UpdateROSNodeInformation(const ros::TimerEvent &e)
 {

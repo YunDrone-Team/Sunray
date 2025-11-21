@@ -16,6 +16,8 @@
 #include "sunray_msgs/algo_ctrl.h"
 #include "sunray_msgs/WayPoint.h"
 #include "sunray_msgs/PX4State.h"
+#include "PX4ParamManager.h"
+
 #include "std_msgs/String.h"
 
 #include <tf/LinearMath/Quaternion.h>
@@ -87,6 +89,9 @@ private:
     void sendUAVStateData(const ros::TimerEvent &e);
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
     void UpdateUDPMulticast(const ros::TimerEvent &e);
+    void UpdateUAVPx4Param(const ros::TimerEvent &e);
+    bool getUAVPX4Param(DataFrame dataFrame,PX4ParamManager& maager,std::string param,double& value);
+    bool getUAVPX4Param(DataFrame dataFrame,PX4ParamManager& maager,std::string param,int64_t& value);
 
     void uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id);
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
@@ -165,6 +170,8 @@ private:
     ros::Subscriber FACMap_sub;
     ros::Subscriber FACState_sub;
 
+    std::map<int,PX4ParamManager> uavPX4ParamMap;
+
     ros::Timer HeartbeatTimer;
     ros::Timer CheckChildProcessTimer;
     ros::Timer UpdateROSNodeInformationTimer;
@@ -173,6 +180,7 @@ private:
     ros::Timer UAVWaypointStateTimer;
     ros::Timer PX4StateTimer;
     ros::Timer UAVStateTimer;
+    ros::Timer UAVPX4ParamTimer;
 
     CpuData prevData;
     TCPServer tcpServer;
