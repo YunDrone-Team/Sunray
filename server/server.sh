@@ -1,34 +1,60 @@
 #! /bin/bash
 
-# 网络就绪检查函数（不依赖公网）
+# 网络就绪检查函数（不依赖公网，分行打印详细检测结果）
 check_network() {
     echo "正在检查本地网络连接..."
     
-    local max_attempts=180  # 最大尝试次数
+    local max_attempts=180  # 最大尝试次数（3分钟）
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
         # 检查是否有至少一个非环回网络接口处于运行状态
         local active_interfaces=$(ip link show | grep -v LOOPBACK | grep -c "state UP")
-        
         # 检查是否有默认网关
         local default_gateway=$(ip route show default | wc -l)
-        
         # 检查是否获取到IP地址（非环回）
         local ip_address=$(ip -4 addr show | grep -v LOOPBACK | grep -oP '(?<=inet\s)\d+(\.\d+){3}/\d+' | wc -l)
         
-        # 如果有活动接口、默认网关和IP地址，则认为网络就绪
-        if [ $active_interfaces -gt 0 ] && [ $default_gateway -gt 0 ] && [ $ip_address -gt 0 ]; then
-            echo "本地网络连接已就绪！"
+        # 打印当前检测轮次
+        echo -e "\n===== 第 $attempt 次检测 ====="
+        local all_ready=true
+        
+        # 逐个判断检测项，分行打印状态
+        if [ $active_interfaces -gt 0 ]; then
+            echo "✅ 活动网络接口：正常（非环回接口UP数量：$active_interfaces）"
+        else
+            echo "❌ 活动网络接口：未就绪（无运行中的非环回接口）"
+            all_ready=false
+        fi
+        
+        if [ $default_gateway -gt 0 ]; then
+            echo "✅ 默认网关：正常（已获取 $default_gateway 个默认网关）"
+        else
+            echo "❌ 默认网关：未就绪（未获取到默认网关）"
+            all_ready=false
+        fi
+        
+        if [ $ip_address -gt 0 ]; then
+            echo "✅ IPv4地址：正常（已获取 $ip_address 个非环回IPv4地址）"
+        else
+            echo "❌ IPv4地址：未就绪（未获取到非环回IPv4地址）"
+            all_ready=false
+        fi
+        
+        # 如果所有条件都满足，则网络就绪
+        if $all_ready; then
+            echo -e "\n🎉 本地网络连接已就绪！"
             return 0
         fi
         
-        echo "本地网络未就绪，等待中... ($attempt/$max_attempts)"
+        # 未就绪，等待下一轮检测
+        echo "----------------------------------------"
+        echo "本地网络未就绪，等待中...（剩余尝试次数：$((max_attempts - attempt))）"
         attempt=$((attempt + 1))
-        sleep 1  # 改为每次间隔1秒
+        sleep 1
     done
     
-    echo "错误：等待本地网络超时！"
+    echo -e "\n❌ 错误：等待本地网络超时！（已尝试 $max_attempts 次）"
     return 1
 }
 

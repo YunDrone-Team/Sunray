@@ -175,7 +175,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // 【定时器】 定时发送无人机状态到地面站
     if(UAVStateTransmitEnabled)
         UAVStateTimer= nh.createTimer(ros::Duration(1.0/UAVStateFrameRate), &communication_bridge::sendUAVStateData, this);
-    // 【定时器】 定时发送无人机PX4参数到地面站
+    // 【定时器】 定时发送无人机PX4飞控参数到地面站
     UAVPX4ParamTimer= nh.createTimer(ros::Duration(1.0), &communication_bridge::UpdateUAVPx4Param, this);
 
 
