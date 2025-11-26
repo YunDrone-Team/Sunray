@@ -19,11 +19,13 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<int>("udp_port", udp_port, 9696);               // 【参数】UDP机载端口（绑定监听端口），要和组播目标端口（udp_ground_port）要一致
     nh.param<int>("udp_ground_port", udp_ground_port, 9999); // 【参数】组播目标端口，用于机间通信
 
-    nh.param<bool>("PX4StateTransmitEnabled", PX4StateTransmitEnabled, false);          // 【参数】是否启用PX4状态数据传输
-    nh.param<int>("PX4StateFrameRate", PX4StateFrameRate, 30);                          // 【参数】PX4状态数据传输帧数
+    nh.param<bool>("PX4StateTransmitEnabled", PX4StateTransmitEnabled, false);         // 【参数】是否启用PX4状态数据传输
+    nh.param<int>("PX4StateFrameRate", PX4StateFrameRate, 30);                         // 【参数】PX4状态数据传输帧数
 
     nh.param<bool>("UAVStateTransmitEnabled", UAVStateTransmitEnabled, true);          // 【参数】是否启用无人机状态数据传输
     nh.param<int>("UAVStateFrameRate", UAVStateFrameRate, 30);                         // 【参数】无人机状态数据传输帧数
+
+    nh.param<bool>("PX4ParamTransmitEnabled", PX4ParamTransmitEnabled, false);         // 【参数】是否启用PX4参数传输
 
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
@@ -176,7 +178,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
     if(UAVStateTransmitEnabled)
         UAVStateTimer= nh.createTimer(ros::Duration(1.0/UAVStateFrameRate), &communication_bridge::sendUAVStateData, this);
     // 【定时器】 定时发送无人机PX4飞控参数到地面站
-    UAVPX4ParamTimer= nh.createTimer(ros::Duration(1.0), &communication_bridge::UpdateUAVPx4Param, this);
+    if(PX4ParamTransmitEnabled)
+        UAVPX4ParamTimer= nh.createTimer(ros::Duration(1.0), &communication_bridge::UpdateUAVPx4Param, this);
 
 
     //  初始化CPU数据

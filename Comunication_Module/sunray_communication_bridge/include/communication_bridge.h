@@ -148,6 +148,7 @@ private:
     bool PX4StateTransmitEnabled; // PX4状态传输开关
     int PX4StateFrameRate; // PX4状态传输帧数
     bool UAVStateTransmitEnabled;// UAV状态传输开关
+    bool PX4ParamTransmitEnabled;// PX4参数传输开关 
     int UAVStateFrameRate;// UAV状态传输帧数
 
     std::vector<ros::Subscriber> uav_state_sub;
