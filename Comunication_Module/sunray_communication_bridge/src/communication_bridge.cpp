@@ -131,7 +131,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
             // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
             uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1))));
             // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
-            px4State_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/px4_state", 1))));
+            px4State_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1))));
         }
 
         // 无人机Sunray和其他Sunray（包括无人机和车）之间的通信（此部分仅针对真机）
