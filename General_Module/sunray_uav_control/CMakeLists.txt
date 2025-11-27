@@ -22,6 +22,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 
+# 查找 GeographicLib
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GeographicLib REQUIRED geographiclib)
+
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
@@ -52,6 +56,7 @@ include_directories(
   mavlink/include/mavlink/include/mavlink/v2.0/c_library_v2/
   ${catkin_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../sunray_common/common_lib
+  ${GeographicLib_INCLUDE_DIRS}
 )
 
 ###############################
@@ -80,7 +85,7 @@ target_link_libraries(px4_param_test_class PX4ParamManager ${catkin_LIBRARIES})
 
 ## 外部定位
 add_library(externalFusion externalFusion/externalFusion.cpp)
-target_link_libraries(externalFusion ${catkin_LIBRARIES})
+target_link_libraries(externalFusion ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
 
 add_executable(external_fusion_node 
   externalFusion/external_fusion_node.cpp
@@ -88,7 +93,7 @@ add_executable(external_fusion_node
   mavlink/autopilot_interface.cpp
   mavlink/serial_port.cpp)
 add_dependencies(external_fusion_node sunray_control_gencpp)
-target_link_libraries(external_fusion_node ${catkin_LIBRARIES})
+target_link_libraries(external_fusion_node ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(external_fusion_node externalFusion)
 
 ## 遥控器输入模块

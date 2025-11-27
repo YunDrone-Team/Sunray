@@ -12,6 +12,7 @@
 #include "ros_msg_utils.h"
 #include "MovingAverageFilter.h"
 #include "mavlink_control.h"
+#include <GeographicLib/LocalCartesian.hpp>
 
 #define ODOM_TIMEOUT 0.5
 #define DISTANCE_SENSOR_TIMEOUT 0.3
@@ -34,6 +35,8 @@ public:
     
     // RTK模式：ENU坐标转换原点参数（可通过launch文件配置）
     LLH_Coord rtk_origin;  // RTK模式原点坐标（经纬度+高度）
+    GeographicLib::LocalCartesian geoConverter;  // GeographicLib 坐标转换器
+    bool geoConverterInitialized{false};  // 坐标转换器是否已初始化
 
     // VIOBOT相关参数
     bool tilted;                                         // 是否倾斜放置
@@ -268,30 +271,34 @@ void ExternalPosition::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr 
     gps_raw = *msg;
     get_new_external_pos = true;
 
-    // origin是原点的经纬度，target是目标点的经纬度
+    // 使用 GeographicLib::LocalCartesian 进行经纬海拔高到ENU坐标系的转换
     // 输入经纬度单位为度，高度单位为米
     // 经度范围：-180°到180°（东经为正，西经为负）
     // 纬度范围：-90°到90°（北纬为正，南纬为负）
-    LLH_Coord origin, target;
-    // result是转换得到的ENU坐标系坐标（原点为origin，ENU为方向）
-    ENU_Coord result;
+    
+    // 初始化坐标转换器
+    if (!geoConverterInitialized)
+    {
+        geoConverter.Reset(rtk_origin.lat, rtk_origin.lon, rtk_origin.alt);
+        geoConverterInitialized = true;
+        ROS_INFO("GeographicLib LocalCartesian initialized with origin: lat=%.7f, lon=%.7f, alt=%.2f",
+                 rtk_origin.lat, rtk_origin.lon, rtk_origin.alt);
+    }
 
-    // 设置初始点坐标（从参数服务器读取，可在launch文件中配置）
-    origin = rtk_origin;
+    // 获取当前GPS位置
+    double current_lat = (double)gps_raw.lat / 1e7;
+    double current_lon = (double)gps_raw.lon / 1e7;
+    double current_alt = (double)gps_raw.alt / 1e3;
 
-    // 设置目标点坐标（附近某个点）
-    target.lat = (double)gps_raw.lat/1e7;
-    target.lon = (double)gps_raw.lon/1e7;
-    target.alt = (double)gps_raw.alt/1e3;
-
-    // 计算ENU坐标
-    calculate_enu_coordinates(&origin, &target, &result);
+    // 使用 GeographicLib 计算ENU坐标
+    double enu_x, enu_y, enu_z;
+    geoConverter.Forward(current_lat, current_lon, current_alt, enu_x, enu_y, enu_z);
 
     // external_odom赋值
     external_odom.header.stamp = ros::Time::now();
-    external_odom.position[0] = result.x;
-    external_odom.position[1] = result.y;
-    external_odom.position[2] = result.z;
+    external_odom.position[0] = enu_x;
+    external_odom.position[1] = enu_y;
+    external_odom.position[2] = enu_z;
     external_odom.velocity[0] = 0.0;
     external_odom.velocity[1] = 0.0;
     external_odom.velocity[2] = 0.0;
