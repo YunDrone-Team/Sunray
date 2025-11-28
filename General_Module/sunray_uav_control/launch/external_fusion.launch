@@ -10,6 +10,9 @@
     <arg name="use_vision_pose" default="true" />
     <arg name="server" default="192.168.20.15"/>
     <arg name="tilted" default="false"/>
+
+    <!-- RTK模式：原点设置方式 -->
+    <arg name="rtk_origin_mode" default="0" />  <!-- 原点设置模式: 0=launch文件, 1=地面站设置 -->
     
     <!-- RTK模式：ENU坐标转换原点参数（仅在RTK模式下使用） -->
     <arg name="rtk_origin_lat" default="47.3977420" />  <!-- 原点纬度，单位：[°] -->
@@ -25,6 +28,8 @@
         <param name="enable_range_sensor" value="$(arg enable_range_sensor)" />
         <param name="use_vision_pose" value="$(arg use_vision_pose)" />
         <param name="tilted" value="$(arg tilted)" />
+        <!-- RTK模式：原点设置方式 -->
+        <param name="rtk_origin_mode" value="$(arg rtk_origin_mode)" />
         <!-- RTK模式：ENU坐标转换原点参数 -->
         <param name="rtk_origin_lat" value="$(arg rtk_origin_lat)" />
         <param name="rtk_origin_lon" value="$(arg rtk_origin_lon)" />

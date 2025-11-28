@@ -13,6 +13,7 @@
 #include "MovingAverageFilter.h"
 #include "mavlink_control.h"
 #include <GeographicLib/LocalCartesian.hpp>
+#include "sunray_msgs/RTKOrigin.h"
 
 #define ODOM_TIMEOUT 0.5
 #define DISTANCE_SENSOR_TIMEOUT 0.3
@@ -33,10 +34,16 @@ public:
     int baudrate;
     std::string source_topic{""}; // 外部定位数据来源话题
     
-    // RTK模式：ENU坐标转换原点参数（可通过launch文件配置）
+    // RTK模式：ENU坐标转换原点配置
+    // 原点设置模式: 0=LAUNCH_FILE(从launch读取,立即生效), 1=GROUND_STATION(等待地面站Topic设置)
+    enum class RTKOriginMode { LAUNCH_FILE = 0, GROUND_STATION = 1 };
+    RTKOriginMode rtk_origin_mode{RTKOriginMode::LAUNCH_FILE};  // 原点设置模式
     LLH_Coord rtk_origin;  // RTK模式原点坐标（经纬度+高度）
     GeographicLib::LocalCartesian geoConverter;  // GeographicLib 坐标转换器
     bool geoConverterInitialized{false};  // 坐标转换器是否已初始化
+    
+    // 设置RTK原点
+    bool setRTKOrigin(double lat, double lon, double alt, const std::string& source);
 
     // VIOBOT相关参数
     bool tilted;                                         // 是否倾斜放置
@@ -68,6 +75,7 @@ public:
     void px4_pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
     void px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg);
     void px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &msg);
+    void globalRTKOriginCallback(const sunray_msgs::RTKOrigin::ConstPtr &msg);  // 全局RTK原点回调
 
     sunray_msgs::ExternalOdom GetExternalOdom()
     {
@@ -84,6 +92,7 @@ private:
     ros::Subscriber viobot_odom_sub;
     ros::Subscriber viobot_algo_status_sub;
     ros::Subscriber px4_pose_sub, px4_att_sub, px4_gps_raw_sub;
+    ros::Subscriber global_rtk_origin_sub;  // 全局RTK原点订阅（所有无人机共用）
 
     // ROS话题发布句柄
     ros::Publisher viobot_algo_ctrl_pub;
@@ -108,7 +117,10 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
     nh.param<string>("position_topic", source_topic, "/uav1/sunray/gazebo_pose"); // 【参数】外部定位数据来源
     nh.param<bool>("enable_range_sensor", enable_range_sensor, false);            // 【参数】是否使用距离传感器数据
     nh.param<bool>("use_vision_pose", use_vision_pose, true);                     // 【参数】是否使用vision_pose话题至PX4，false:直接使用Mavlink发送外部定位数据到PX4
-    // RTK模式：ENU坐标转换原点参数（可通过launch文件配置）
+    // RTK模式：ENU坐标转换原点参数
+    int rtk_origin_mode_int;
+    nh.param<int>("rtk_origin_mode", rtk_origin_mode_int, 0);  // 【参数】RTK原点设置模式: 0=launch文件, 1=地面站设置
+    rtk_origin_mode = static_cast<RTKOriginMode>(rtk_origin_mode_int);
     nh.param<double>("rtk_origin_lat", rtk_origin.lat, 47.3977421);  // 【参数】RTK模式原点纬度，单位：[°]
     nh.param<double>("rtk_origin_lon", rtk_origin.lon, 8.54559350);  // 【参数】RTK模式原点经度，单位：[°]
     nh.param<double>("rtk_origin_alt", rtk_origin.alt, 488.00);      // 【参数】RTK模式原点高度，单位：[m]
@@ -193,7 +205,18 @@ void ExternalPosition::init(ros::NodeHandle &nh, int external_source = 0)
         enable_external_fusion = true;
         // 【订阅】无人机GPS经纬度（原始） - 飞控 -> mavros -> 本节点
         px4_gps_raw_sub = nh.subscribe<mavros_msgs::GPSRAW>(uav_name + "/mavros/gpsstatus/gps1/raw", 10, &ExternalPosition::px4_gps_raw_callback, this);
-        Logger::info("RTK mode enabled");
+        // 【订阅】全局RTK原点 - 地面站 -> 本节点（所有无人机订阅同一话题）
+        global_rtk_origin_sub = nh.subscribe<sunray_msgs::RTKOrigin>("/sunray/global_rtk_origin", 1, &ExternalPosition::globalRTKOriginCallback, this);
+        
+        // 根据模式初始化原点
+        if (rtk_origin_mode == RTKOriginMode::LAUNCH_FILE)
+        {
+            setRTKOrigin(rtk_origin.lat, rtk_origin.lon, rtk_origin.alt, "launch_file");
+        }
+        else
+        {
+            Logger::info("RTK mode: waiting for ground station to set origin via /sunray/global_rtk_origin");
+        }
         break;
     // 定位源：VINS-Fusion
     case sunray_msgs::ExternalOdom::VINS:
@@ -276,13 +299,19 @@ void ExternalPosition::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr 
     // 经度范围：-180°到180°（东经为正，西经为负）
     // 纬度范围：-90°到90°（北纬为正，南纬为负）
     
-    // 初始化坐标转换器
+    // 如果原点未初始化
     if (!geoConverterInitialized)
     {
-        geoConverter.Reset(rtk_origin.lat, rtk_origin.lon, rtk_origin.alt);
-        geoConverterInitialized = true;
-        ROS_INFO("GeographicLib LocalCartesian initialized with origin: lat=%.7f, lon=%.7f, alt=%.2f",
-                 rtk_origin.lat, rtk_origin.lon, rtk_origin.alt);
+        if (rtk_origin_mode == RTKOriginMode::LAUNCH_FILE)
+        {
+            // LAUNCH_FILE模式：使用launch文件配置的原点
+            setRTKOrigin(rtk_origin.lat, rtk_origin.lon, rtk_origin.alt, "launch_file");
+        }
+        else
+        {
+            // GROUND_STATION模式：等待地面站设置，暂不转换坐标
+            return;
+        }
     }
 
     // 获取当前GPS位置
@@ -323,6 +352,14 @@ void ExternalPosition::timer_send_external_pos_cb(const ros::TimerEvent &event)
     {
         external_odom.odom_valid = true;
         external_odom.fusion_success = true;
+        return;
+    }
+
+    // RTK模式下，如果原点未初始化，不发布vision_pose
+    if (external_odom.external_source == sunray_msgs::ExternalOdom::RTK && !geoConverterInitialized)
+    {
+        external_odom.odom_valid = false;
+        external_odom.fusion_success = false;
         return;
     }
 
@@ -674,5 +711,41 @@ void ExternalPosition::px4_att_callback(const sensor_msgs::Imu::ConstPtr &msg)
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
     px4_yaw = yaw;
+}
+
+// 设置RTK原点
+bool ExternalPosition::setRTKOrigin(double lat, double lon, double alt, const std::string& source)
+{
+    // 参数校验
+    if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
+    {
+        Logger::print_color(int(LogColor::red), "Invalid RTK origin: lat=", lat, ", lon=", lon);
+        return false;
+    }
+    
+    // 更新原点坐标
+    rtk_origin.lat = lat;
+    rtk_origin.lon = lon;
+    rtk_origin.alt = alt;
+    
+    // 重置坐标转换器
+    geoConverter.Reset(lat, lon, alt);
+    geoConverterInitialized = true;
+    
+    ROS_INFO("[%s] RTK origin set by [%s]: lat=%.7f, lon=%.7f, alt=%.2f", 
+             uav_name.c_str(), source.c_str(), lat, lon, alt);
+    
+    return true;
+}
+
+// 全局RTK原点回调函数（地面站发布，所有无人机接收）
+void ExternalPosition::globalRTKOriginCallback(const sunray_msgs::RTKOrigin::ConstPtr &msg)
+{
+    // 无论当前是什么模式，收到地面站的原点设置都会生效
+    // 即使是 LAUNCH_FILE 模式，也可以通过地面站覆盖原点
+    if (setRTKOrigin(msg->latitude, msg->longitude, msg->altitude, "ground_station"))
+    {
+        Logger::print_color(int(LogColor::green), uav_name, " received global RTK origin from ground station");
+    }
 }
 #endif

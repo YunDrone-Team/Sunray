@@ -42,6 +42,7 @@ add_message_files(
   LinktrackNode2.msg
   LinktrackNodeframe2.msg
   Competion.msg
+  RTKOrigin.msg
 )
 
 add_message_files(
