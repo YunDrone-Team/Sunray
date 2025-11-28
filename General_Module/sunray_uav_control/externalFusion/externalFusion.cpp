@@ -300,7 +300,7 @@ void ExternalFusion::px4_gps_state_callback(const sensor_msgs::NavSatFix::ConstP
     // STATUS_FIX = 0：普通定位。
     // STATUS_SBAS_FIX = 1：带卫星增强系统（如WAAS, EGNOS）的定位。
     // STATUS_GBAS_FIX = 2：带地面增强系统（如GBAS）的定位。
-    px4_state.gps_status = msg->status.status;
+    // px4_state.gps_status = msg->status.status;
 
     // service（uint16）：表示使用的卫星系统，使用位掩码（bitmask）表示。
     // SERVICE_GPS = 1：美国GPS。
@@ -321,6 +321,8 @@ void ExternalFusion::px4_gps_raw_callback(const mavros_msgs::GPSRAW::ConstPtr &m
     px4_state.latitude_raw = (double)gps_raw.lat / 1e7;
     px4_state.longitude_raw = (double)gps_raw.lon / 1e7;
     px4_state.altitude_amsl = gps_raw.alt / 1000.0;
+
+    px4_state.gps_status = gps_raw.fix_type;
     px4_state.satellites = gps_raw.satellites_visible;    
 }
 
