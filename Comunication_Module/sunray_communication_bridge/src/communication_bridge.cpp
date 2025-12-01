@@ -217,9 +217,41 @@ void communication_bridge::init(ros::NodeHandle &nh)
     //适配地面站版本
     Versions="V3.0.0";
     std::cout << "适配地面站版本："<< Versions<< std::endl;
-    std::cout << "使用的地面站版本号需满足：第一个数字与适配版本一致，第二个数字大于或等于适配版本。 "<< std::endl;
+    std::cout << "地面站版本需满足：第一个数字与适配版本一致，第二个数字大于或等于适配版本;"<< std::endl;
 
 
+}
+
+communication_bridge::communication_bridge() 
+{
+
+}
+
+
+communication_bridge::~communication_bridge()
+{
+    tcpServer.Close();
+    for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it)
+    {
+        std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
+        pid_t temp = it->second;
+        if(temp<= 0)
+            continue;
+        if (kill(temp, SIGTERM) != 0)
+            perror("kill failed!");
+        else
+            printf("Sent SIGTERM to child process %d\n", temp);
+        
+    }
+    nodeMap.clear();
+    const char* display = std::getenv("XDG_CURRENT_DESKTOP");
+    if (display == nullptr || display[0] == '\0') 
+   	    system("tmux kill-session -t sunray_tmux");
+}
+
+bool communication_bridge::isFloatEqual3Decimals(float a, float b) 
+{
+    return std::fabs(a - b) < EPS;
 }
 
 void communication_bridge::TCPLinkState(bool state, std::string IP)
@@ -1439,6 +1471,7 @@ void communication_bridge::uav_waypointState_cb(const sunray_msgs::WayPointState
         ROS_ERROR("Invalid robot_id: %d, index out of range", robot_id);
         return;
     }
+    UAVWaypointStateTopicLatest[robot_id]=true;
     waypointStateArry[index]=*msg;
 } 
 
@@ -1450,37 +1483,74 @@ void communication_bridge::sendUAVStateData(const ros::TimerEvent &e)
         // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
-            if(i<0 || i>=MAX_AGENT_NUM)
+            if(i<=0 || i>=MAX_AGENT_NUM)
                 return;
+            if(UAVStateTopicLatest.count(i) == 0 )
+                continue;
+            else{
+                if(UAVStateTopicLatest.at(i)==false)
+                    continue;
+            }    
+
             uavStateData[i-1].seq=MessageID::UAVStateMessageID;
             SendUdpDataToAllOnlineGroundStations(uavStateData[i-1]);
+            UAVStateTopicLatest[i]=false;
+
         }
     } else{
-        if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
+        if(uav_id<=0 || uav_id>=MAX_AGENT_NUM)
             return;
+
+        if(UAVStateTopicLatest.count(uav_id) == 0 )
+                return;
+        else{
+            if(UAVStateTopicLatest.at(uav_id)==false)
+                return;
+        }  
+
         uavStateData[uav_id-1].seq=MessageID::UAVStateMessageID;
         SendUdpDataToAllOnlineGroundStations(uavStateData[uav_id-1]);
+        UAVStateTopicLatest[uav_id]=false;
+
     }      
 }
 
 void communication_bridge::sendPX4StateData(const ros::TimerEvent &e)
 {
-
     if (is_simulation)
     {
         // 无人机Sunray与地面站之间的通信（此部分仅针对仿真）
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
-            if(i<0 || i>=MAX_AGENT_NUM)
+            if(i<=0 || i>=MAX_AGENT_NUM)
                 return;
+
+            if(PX4StateTopicLatest.count(i) == 0 )
+                continue;
+            else{
+                if(PX4StateTopicLatest.at(i)==false)
+                    continue;
+            }    
+
             px4StateData[i-1].seq=MessageID::PX4StateMessageID;
             SendUdpDataToAllOnlineGroundStations(px4StateData[i-1]);
+            PX4StateTopicLatest[i]=false;
         }
     } else{
             if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
                 return;
+
+            if(PX4StateTopicLatest.count(uav_id) == 0 )
+                return;
+            else{
+                if(PX4StateTopicLatest.at(uav_id)==false)
+                    return;
+            } 
+
             px4StateData[uav_id-1].seq=MessageID::PX4StateMessageID;
             SendUdpDataToAllOnlineGroundStations(px4StateData[uav_id-1]);
+            PX4StateTopicLatest[uav_id]=false;
+
     }   
   
 }
@@ -1496,11 +1566,19 @@ void communication_bridge::UpdateWaypointState(const ros::TimerEvent &e)
     {
         for (int i = uav_id; i < uav_id + uav_simulation_num; i++)
         {
-            if(i<0 || i>=MAX_AGENT_NUM)
+            if(i<=0 || i>=MAX_AGENT_NUM)
             {
                 ROS_ERROR("Invalid robot_id: %d, index out of range", i);
                 return;
             }
+
+            if(UAVWaypointStateTopicLatest.count(i) == 0 )
+                continue;
+            else{
+                if(UAVWaypointStateTopicLatest.at(i)==false)
+                    continue;
+            }    
+
             sendDataFrame.data.waypointState.wp_state = waypointStateArry[i-1].wp_state;
             sendDataFrame.data.waypointState.wp_index = waypointStateArry[i-1].wp_index;
             sendDataFrame.data.waypointState.wp_num = waypointStateArry[i-1].wp_num;
@@ -1513,17 +1591,25 @@ void communication_bridge::UpdateWaypointState(const ros::TimerEvent &e)
 
             sendDataFrame.robot_ID=i;
             SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+            UAVWaypointStateTopicLatest[i]=false;
         }
 
         
     }else{
         if (uav_experiment_num > 0 && uav_id>=0 )
         {
-            if(uav_id<0 || uav_id>=MAX_AGENT_NUM)
+            if(uav_id<=0 || uav_id>=MAX_AGENT_NUM)
             {
                 ROS_ERROR("Invalid robot_id: %d, index out of range", uav_id);
                 return;
             }
+            if(UAVWaypointStateTopicLatest.count(uav_id) == 0 )
+                return;
+            else{
+                if(UAVWaypointStateTopicLatest.at(uav_id)==false)
+                    return;
+            }    
+
             sendDataFrame.data.waypointState.wp_state = waypointStateArry[uav_id-1].wp_state;
             sendDataFrame.data.waypointState.wp_index = waypointStateArry[uav_id-1].wp_index;
             sendDataFrame.data.waypointState.wp_num = waypointStateArry[uav_id-1].wp_num;
@@ -1536,6 +1622,8 @@ void communication_bridge::UpdateWaypointState(const ros::TimerEvent &e)
 
             sendDataFrame.robot_ID=uav_id;
             SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+            UAVWaypointStateTopicLatest[uav_id]=false;
+
         }
     }
 
@@ -1544,6 +1632,8 @@ void communication_bridge::UpdateWaypointState(const ros::TimerEvent &e)
 // UAVState回调函数 - 将读取到的数据按照id顺序存储在uavStateData数组中
 void communication_bridge::uav_state_cb(const sunray_msgs::UAVState::ConstPtr &msg, int robot_id)
 {
+    UAVStateTopicLatest[robot_id]=true;
+
     int index = robot_id - 1;
     uavStateData[index].data.uavState.init();
     uavStateData[index].robot_ID = robot_id;
@@ -1639,6 +1729,7 @@ void communication_bridge::PX4StateCallBack(const sunray_msgs::PX4State::ConstPt
     int index = robot_id - 1;
     if(index>=MAX_AGENT_NUM)
         return;
+    PX4StateTopicLatest[robot_id]=true;
 
     px4StateData[index].data.px4State.init();
     px4StateData[index].robot_ID = robot_id;

@@ -48,36 +48,14 @@ struct CpuData {
 class communication_bridge
 {
 public:
-    communication_bridge() {};
+    communication_bridge();
 
-    ~communication_bridge()
-    {
-        tcpServer.Close();
-        for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it)
-        {
-            std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
-            pid_t temp = it->second;
-            if(temp<= 0)
-                continue;
-            if (kill(temp, SIGTERM) != 0)
-                perror("kill failed!");
-            else
-                printf("Sent SIGTERM to child process %d\n", temp);
-            
-        }
-        nodeMap.clear();
-        const char* display = std::getenv("XDG_CURRENT_DESKTOP");
-        if (display == nullptr || display[0] == '\0') 
-       	    system("tmux kill-session -t sunray_tmux");
-    };
+    ~communication_bridge();
 
     void init(ros::NodeHandle &nh);
-
     // 辅助函数：比较两个浮点数是否在3位小数精度内相等
-    bool isFloatEqual3Decimals(float a, float b) 
-    {
-        return std::fabs(a - b) < EPS;
-    }
+    bool isFloatEqual3Decimals(float a, float b);
+
 private:
     void sendMsgCb(const ros::TimerEvent &e);
     void sendHeartbeatPacket(const ros::TimerEvent &e);
@@ -150,6 +128,10 @@ private:
     bool UAVStateTransmitEnabled;// UAV状态传输开关
     bool PX4ParamTransmitEnabled;// PX4参数传输开关 
     int UAVStateFrameRate;// UAV状态传输帧数
+
+    std::map<int,bool>  UAVWaypointStateTopicLatest;// UAV航点状态话题是否为最新
+    std::map<int,bool>  PX4StateTopicLatest;// PX4状态话题是否为最新
+    std::map<int,bool>  UAVStateTopicLatest;// UAV状态话题是否为最新   
 
     std::vector<ros::Subscriber> uav_state_sub;
     std::vector<ros::Subscriber> px4State_sub;
