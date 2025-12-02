@@ -102,7 +102,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
             uav_setup_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
             // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::WayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
-            // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> 
+            // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> waypoint_mission_node
             uav_goal_pub.insert(std::make_pair(uav_id, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(uav_id), 1))));
             // 【管理】MAVROS 参数服务客户端，无人机px4飞控参数
             uavPX4ParamMap.insert(std::make_pair(uav_id, PX4ParamManager(nh, topic_prefix+"/mavros")));
@@ -145,6 +145,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             ugv_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1))));
         }
     }
+
+    // 【发布】RTK原点设置  地面站 --TCP--> 本节点 --ROS topic--> external_fusion_node
+    RTKOrigin_pub=nh.advertise<sunray_msgs::RTKOrigin>("/sunray/global_rtk_origin",1);
 
     //初始化FAC地图数据
     FACMapSendData.data.FACMap.init(); 
@@ -848,6 +851,16 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         it->second.publish(waypoint_msg);
         break;
     }
+    case MessageID::RTKOriginMessageID:// RTK原点设置- RTKOrigin（#106）
+    {
+        sunray_msgs::RTKOrigin msg;
+        msg.header.stamp = ros::Time::now();
+        msg.latitude = readData.dataFrame.data.rtkOrigin.latitude;
+        msg.longitude = readData.dataFrame.data.rtkOrigin.longitude;
+        msg.altitude = readData.dataFrame.data.rtkOrigin.altitude;
+        RTKOrigin_pub.publish(msg);
+        break;
+    }
     case MessageID::UGVControlCMDMessageID:// 无人车控制指令 - UGVControlCMD （#120）
     {
 
@@ -928,7 +941,7 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         
         break;   
     }  
-    case MessageID::ViobotSwitchMessageID:
+    case MessageID::ViobotSwitchMessageID://Viobot算法开关- ViobotSwitch（#105）
     {
         sunray_msgs::algo_ctrl sendMSG;
         sendMSG.header.seq = 0;

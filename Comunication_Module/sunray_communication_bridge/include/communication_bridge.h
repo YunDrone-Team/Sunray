@@ -16,6 +16,7 @@
 #include "sunray_msgs/algo_ctrl.h"
 #include "sunray_msgs/WayPoint.h"
 #include "sunray_msgs/PX4State.h"
+#include "sunray_msgs/RTKOrigin.h"
 #include "PX4ParamManager.h"
 
 #include "std_msgs/String.h"
@@ -150,6 +151,7 @@ private:
     ros::Subscriber  formation_sub;
     ros::Publisher  formation_pub;
     ros::Publisher  viobotSwitch_pub;
+    ros::Publisher  RTKOrigin_pub;
     ros::Subscriber FACMap_sub;
     ros::Subscriber FACState_sub;
 

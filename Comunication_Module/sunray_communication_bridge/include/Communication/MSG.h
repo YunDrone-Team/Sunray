@@ -513,6 +513,21 @@ struct ViobotSwitch
 
 };
 
+//RTK原点设置- RTKOrigin（#106）
+struct RTKOrigin
+{
+    double latitude;
+    double longitude;
+    double altitude;
+
+    void init()
+    {
+        latitude=0;
+        longitude=0;
+        altitude=0;
+    }
+};
+
 //无人车控制指令 - UGVControlCMD（#120）
 struct UGVControlCMD
 {
@@ -637,7 +652,8 @@ union Payload
     AgentComputerStatus computerStatus; // 智能体电脑状态 -AgentComputerStatus（#31）
     FACMapData FACMap;                  // FAC赛地图数据 -FACMapData（#32）
     FACCompetitionState FACState;       // FAC比赛状态 -FACCompetitionState（#33）
-    ViobotSwitch    viobotSwitchData;   // Viobot算法开关 - ViobotSwitch（#105）
+    ViobotSwitch viobotSwitchData;      // Viobot算法开关 - ViobotSwitch（#105）
+    RTKOrigin rtkOrigin;                // RTK原点设置- RTKOrigin（#106）
     WaypointState waypointState;        // 航点状态 -WaypointState（#34）
 };
 

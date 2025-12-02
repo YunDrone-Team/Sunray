@@ -347,6 +347,16 @@ void Codec::decoderPX4ParameterPayload(std::vector<uint8_t>& dataFrame,DataFrame
 
 }
 
+ void Codec::decoderRTKOriginPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+ {
+     RTKOrigin& data = dataFrameStruct.data.rtkOrigin;
+     data.init();
+
+     uint8tArrayToDouble(dataFrame, data.latitude);
+     uint8tArrayToDouble(dataFrame, data.longitude);
+     uint8tArrayToDouble(dataFrame, data.altitude);
+ }
+
 void Codec::decoderViobotSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
     ViobotSwitch& data = dataFrameStruct.data.viobotSwitchData;
@@ -847,6 +857,10 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload 无人机PX4飞控参数数据反序列化*/
         decoderPX4ParameterPayload(undecodedData,decoderData);
         break;
+    case MessageID::RTKOriginMessageID:
+        /*Payload RTK原点设置数据反序列化*/
+        decoderRTKOriginPayload(undecodedData,decoderData);
+        break;
     default:break;
     }
     return true;
@@ -867,7 +881,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::UGVControlCMDMessageID:case MessageID::UAVSetupMessageID:
     case MessageID::DemoMessageID:case MessageID::ScriptMessageID:
     case MessageID::WaypointMessageID:case MessageID::GoalMessageID:
-    case MessageID::ViobotSwitchMessageID:
+    case MessageID::ViobotSwitchMessageID:case MessageID::RTKOriginMessageID:
         //TCP帧头 0xac43
         codelessData.head=PackBytesLE(0xac,0x43);
         break;
@@ -1348,6 +1362,15 @@ void Codec::coderPX4ParameterPayload(std::vector<uint8_t>& payload,DataFrame& co
 
 }
 
+
+void Codec::coderRTKOriginPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    RTKOrigin data=codelessData.data.rtkOrigin;
+    doubleCopyToUint8tArray(payload,data.latitude);
+    doubleCopyToUint8tArray(payload,data.longitude);
+    doubleCopyToUint8tArray(payload,data.altitude);
+}
+
 void Codec::coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     AgentComputerStatus data=codelessData.data.computerStatus;
@@ -1470,6 +1493,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::PX4ParameterMessageID:
         /*Payload 无人机PX4飞控参数数据序列化*/
         coderPX4ParameterPayload(PayloadData,codelessData);
+        break;
+    case MessageID::RTKOriginMessageID:
+        /*Payload RTK原点设置数据序列化*/
+        coderRTKOriginPayload(PayloadData,codelessData);
         break;
     default:break;
     }

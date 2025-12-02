@@ -60,6 +60,7 @@ public:
     void coderWaypointStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderPX4StatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderPX4ParameterPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderRTKOriginPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
 
 
     void decoderUAVStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& state);//解码无人机状态Payload帧
@@ -81,6 +82,7 @@ public:
     void decoderWaypointStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码航点状态数据Payload帧
     void decoderPX4StatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码PX4状态数据Payload帧
     void decoderPX4ParameterPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码无人机PX4飞控参数数据Payload帧
+    void decoderRTKOriginPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码RTK原点设置数据Payload帧
 
     uint64_t getTimestamp();//获得uint64_t类型的时间戳
 
@@ -124,7 +126,7 @@ private:
         MessageID::WaypointStateMessageID,
         MessageID::PX4StateMessageID,
         MessageID::PX4ParameterMessageID,
-
+        MessageID::RTKOriginMessageID,
     };
 
 };

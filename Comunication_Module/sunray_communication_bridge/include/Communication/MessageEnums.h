@@ -21,6 +21,7 @@ enum MessageID
     UAVSetupMessageID               = 103,
     WaypointMessageID               = 104,
     ViobotSwitchMessageID           = 105,
+    RTKOriginMessageID              = 106,
     UGVControlCMDMessageID          = 120,
     SearchMessageID                 = 200,
     ACKMessageID                    = 201,
