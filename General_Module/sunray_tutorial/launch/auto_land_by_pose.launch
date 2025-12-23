@@ -4,7 +4,7 @@
     <!-- 是否程序运行时自动起飞 -->
     <arg name="auto_takeoff" default="true"/>
     <!-- 自动起飞高度 -->
-    <arg name="height" default="2.5"/>
+    <arg name="height" default="1.8"/>
     <!-- 水平误差阈值与垂直误差阈值  无人机与目标点距离小于error_xy且者高度小于error_z 或 相对高度低于0.2m时进入最后一阶段的降落-->
 	<arg name="error_xy" default="0.05" />
     <arg name="error_z" default="0.25" />

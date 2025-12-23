@@ -7,7 +7,7 @@
     <arg name="y_max" default="20.0" />
     <arg name="z_min" default="-20.0" />
     <arg name="z_max" default="20.0" />
-    <arg name="land_type" default="0" />
+    <arg name="land_type" default="1" />
     <arg name="land_end_time" default="1.0" />
     <arg name="land_end_speed" default="0.3" />
     <arg name="Takeoff_height" default="0.6" />

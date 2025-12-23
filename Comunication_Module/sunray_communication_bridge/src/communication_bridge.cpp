@@ -1402,7 +1402,7 @@ void communication_bridge::SendUdpDataToAllOnlineGroundStations(DataFrame data)
     {
         if(multiClientSwitch)
         {
-            if(data.seq == MessageID::UAVStateMessageID)
+            if(data.seq == MessageID::UAVStateMessageID || data.seq == MessageID::UGVStateMessageID )  
             {
                 int multiSendBack = udpSocket->sendUDPData(codec.coder(data), ip.first, 12310+(data.robot_ID-1));
                 if (multiSendBack < 0)
@@ -2131,7 +2131,9 @@ void communication_bridge::UpdateComputerStatus(const ros::TimerEvent &e)
         {
             sendDataFrame.robot_ID=i+100;
             SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+
         }
+
     }else{
         if (uav_experiment_num > 0 && uav_id>=0 )
         {
