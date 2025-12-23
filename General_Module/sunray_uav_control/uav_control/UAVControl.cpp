@@ -1035,12 +1035,18 @@ void UAVControl::return_to_home()
         system_params.type_mask = TypeMask::XYZ_POS_YAW;
     }
 
-    // 达到home点上方后，且速度降低后开始降落
-    if ((px4_state.position[0] - flight_params.home_pos[0]) < 0.15 &&
-        (px4_state.position[1] - flight_params.home_pos[1]) < 0.15 &&
+    // 达到home点上方后，且速度降低、偏航角到位后开始降落
+    // 计算偏航角误差，处理角度环绕问题
+    double yaw_error = px4_state.attitude[2] - flight_params.home_yaw;
+    while (yaw_error > M_PI) yaw_error -= 2 * M_PI;
+    while (yaw_error < -M_PI) yaw_error += 2 * M_PI;
+
+    if (abs(px4_state.position[0] - flight_params.home_pos[0]) < 0.15 &&
+        abs(px4_state.position[1] - flight_params.home_pos[1]) < 0.15 &&
         abs(px4_state.velocity[0]) < 0.1 &&
         abs(px4_state.velocity[1]) < 0.1 &&
-        abs(px4_state.velocity[2]) < 0.1)
+        abs(px4_state.velocity[2]) < 0.1 &&
+        abs(yaw_error) < 0.1)  // 偏航角误差小于约5.7度
     {
         set_land();
     }
