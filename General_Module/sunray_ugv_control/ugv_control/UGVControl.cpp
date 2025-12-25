@@ -726,6 +726,7 @@ void UGVControl::battery_cb(const std_msgs::Float32::ConstPtr &msg)
     // 记录获取电池（从驱动）的时间，用于判断驱动是否正常
     get_battery_time = ros::Time::now();
     ugv_state.connected = true;
+    ugv_state.battery_percentage = msg->data / 12.6 * 100;
     ugv_state.battery_state = msg->data;
 }
 
