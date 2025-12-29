@@ -19,13 +19,13 @@
 	<arg name="planning_horizon" default="5.0"/>
 
 	<!-- 局部坐标系下的点云话题 -->
-    <arg name="local_pointcloud_topic" default="/livox/pointcloud2"/>
+    <!-- <arg name="local_pointcloud_topic" default="/livox/pointcloud2"/> -->
 
     <!-- 转换出来的世界坐标系下的点云话题 -->
-    <arg name="global_pointcloud_topic" default="/uav1/livox_world"/>
+    <arg name="global_pointcloud_topic" default="/sunray/pointCloud"/>
 
 	<!-- topic of your odometry such as VIO or LIO -->
-    <arg name="odom_topic" default="/Odometry" />
+    <arg name="odom_topic" default="/sunray/odometry" />
 	
 	<!-- 相机及深度信息仿真中没有使用，此处可忽略(真机中使用) -->
 	<arg name="camera_pose_topic" default="pcl_render_node/camera_pose"/>
@@ -180,16 +180,16 @@
     </node>
 
     <!-- 如果使用mid360且数据格式不为pointcloud的话需要进行转换 -->
-    <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include>
+    <!-- <include file="$(find sunray_planner_utils)/launch/livox2point.launch"></include> -->
 
 	<!-- 点云转换为世界坐标系（EGO订阅的点云必须是全局坐标系的） -->
-    <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
+    <!-- <node name="point_cloud_transform_1" pkg="sunray_planner_utils" type="point_cloud_transform" output="screen">
         <param name="input_point_topic" value="$(arg local_pointcloud_topic)" />
         <param name="output_point_topic" value="$(arg global_pointcloud_topic)" />
         <param name="odom_topic" value="$(arg odom_topic)" />
         <param name="frame_id" value="world" />
         <param name="child_frame_id" value="uav1/base_link" />
-    </node>
+    </node> -->
 
     <!-- 监听move_base_simple/goal (rviz中的2D Nav Goal) 将其转为多个平行的目标点发送到ego中的每个规划器-->
     <arg name="goal_topic" default="/goal"/>
