@@ -12,7 +12,7 @@
     <arg name="tilted" default="false"/>
 
     <!-- RTK模式：原点设置方式 -->
-    <arg name="rtk_origin_mode" default="0" />  <!-- 原点设置模式: 0=launch文件, 1=地面站设置 -->
+    <arg name="rtk_origin_mode" default="1" />  <!-- 原点设置模式: 0=launch文件, 1=地面站设置 -->
     
     <!-- RTK模式：ENU坐标转换原点参数（仅在RTK模式下使用） -->
     <arg name="rtk_origin_lat" default="47.3977420" />  <!-- 原点纬度，单位：[°] -->

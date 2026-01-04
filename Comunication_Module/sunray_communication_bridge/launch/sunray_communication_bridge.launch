@@ -16,7 +16,7 @@
     <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致 -->
     <arg name="udp_ground_port" default="9696" />   <!-- 目标地面站端口，用于和地面站通信，要和地面站监听端口一致 -->
    
-    <arg name="PX4StateTransmitEnabled" default="false" />   <!-- 是否启用PX4状态信息传输 -->
+    <arg name="PX4StateTransmitEnabled" default="true" />   <!-- 是否启用PX4状态信息传输 -->
     <arg name="PX4StateFrameRate" default="30" />            <!-- PX4状态传输帧数 -->
     <arg name="UAVStateTransmitEnabled" default="true" />    <!-- 是否启用无人机状态信息传输 -->
     <arg name="UAVStateFrameRate" default="30" />            <!-- 无人机状态传输帧数 -->
