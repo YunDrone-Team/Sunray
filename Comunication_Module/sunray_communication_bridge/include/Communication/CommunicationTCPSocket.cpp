@@ -13,6 +13,7 @@
 
 CommunicationTCPSocket::CommunicationTCPSocket()
 {
+    std::cout << "----------------TCP初始化----------------- "<<std::endl;
     _sock = INVALID_SOCKET;
     ipSocketMap.clear();
     connectIP.clear();
@@ -144,12 +145,12 @@ SOCKET CommunicationTCPSocket::InitSocket() //初始化Socket
         if (INVALID_SOCKET == _sock)
         {
             //套接字错误
-            std::cout << "TCP初始化套接字错误 "<<_sock<<std::endl;
+            std::cout << "[失败] TCP初始化 Socket: "<<_sock<<std::endl;
             sigTCPError(errno);
         }
         else {
             //套接字正常
-            std::cout << "TCP初始化套接字正常 "<<_sock<<std::endl;
+            std::cout << "[成功] TCP初始化 Socket: "<<_sock<<std::endl;
             /*设置SO_REUSEADDR SO_REUSEADDR套接字选项允许在同一本地地址和端口上启动监听套接字，
              * 即使之前的套接字仍在TIME_WAIT状态。这对于快速重启服务器特别有用，因为它可以避免等待TIME_WAIT状态结束。*/
             int reuse = 1;
@@ -172,14 +173,14 @@ int CommunicationTCPSocket::Listen(int n)
     if (SOCKET_ERROR == ret)
     {
         //监听网络端口失败
-        std::cout << "TCP监听网络端口失败 "<<_sock<<std::endl;
+        std::cout << "[失败] TCP监听网络端口号: "<<n<<" Socket: "<<_sock<<std::endl;
         sigTCPError(errno);
-    }
-    else {
+    }else {
         //监听网络端口成功
-        std::cout << "TCP监听网络端口成功 "<<_sock<<std::endl;
-
+        std::cout << "[成功] TCP监听网络端口号: "<<n<<" Socket: "<<_sock<<std::endl;
     }
+    std::cout << "------------------------------------------ "<<std::endl;
+
     return ret;
 }
 
@@ -204,7 +205,8 @@ SocketIP CommunicationTCPSocket::Accept(uint16_t* linuxPort,unsigned short* winP
     std::string AccIp(inet_ntoa(clientAddr.sin_addr));
     if (INVALID_SOCKET == cSock)
     {
-        std::cout << "TCP接收客户端链接失败 "<<cSock<<std::endl;
+        std::cout << "[失败] TCP接收客户端连接，客户端IP: "<<std::string(AccIp)<<" Socket:"<<cSock<<std::endl;
+
         sigTCPError(errno);
 
         //接收客户端链接失败
@@ -212,10 +214,8 @@ SocketIP CommunicationTCPSocket::Accept(uint16_t* linuxPort,unsigned short* winP
         if (it != ipSocketMap.end()) {
             ipSocketMap.erase(AccIp);
         }
-    }
-    else
-    {
-        std::cout << "TCP接收客户端连接成功 "<<cSock<<std::endl;
+    }else{
+        std::cout << "[成功] TCP接收客户端连接，客户端IP: "<<std::string(AccIp)<<" Socket:"<<cSock<<std::endl;
 
        //接收客户端连接成功
 //        auto it = ipSocketMap.find(AccIp);
@@ -659,12 +659,12 @@ int CommunicationTCPSocket::Bind( unsigned short port,const char* ip) //绑定IP
     if (SOCKET_ERROR == ret)
     {
         //绑定端口号失败，端口号占用之类的原因
-        std::cout << "TCP绑定端口号失败 "<<_sock<<" "<<port<<" "<<ip<<std::endl;
+        std::cout << "[失败] TCP绑定端口号: "<<port<<" Socket: "<<_sock<<std::endl;
         sigTCPError(errno);
     }
     else {
         //绑定端口号成功
-        std::cout << "TCP绑定端口号成功"<<std::endl;
+        std::cout << "[成功] TCP绑定端口号: "<<port<<" Socket: "<<_sock<<std::endl;
     }
     return ret;
 }

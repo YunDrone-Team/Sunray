@@ -219,9 +219,15 @@ void communication_bridge::init(ros::NodeHandle &nh)
 
     //适配地面站版本
     Versions="V3.0.0";
-    std::cout << "适配地面站版本："<< Versions<< std::endl;
-    std::cout << "地面站版本需满足：第一个数字与适配版本一致，第二个数字大于或等于适配版本;"<< std::endl;
+    // std::cout << "适配地面站版本："<< Versions<< std::endl;
+    // std::cout << "地面站版本需满足：第一个数字与适配版本一致，第二个数字大于或等于适配版本;"<< std::endl;
 
+    std::cout << "--------------地面站版本信息--------------" << std::endl;
+    std::cout << "[适配地面站版本]：" << Versions << std::endl;
+    std::cout << "[版本要求]：地面站版本需满足以下条件：" << std::endl;
+    std::cout << "1.主版本号（第一个数字）与适配版本完全一致" << std::endl;
+    std::cout << "2.次版本号（第二个数字）大于或等于适配版本" << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
 
 }
 
@@ -602,10 +608,8 @@ pid_t communication_bridge::executeScript(std::string scriptStr, std::string fil
 
         perror("OrderCourse Error!");
         _exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("This is the parent process. Child PID: %d\n", pid);
+    }else{
+        printf("[启动脚本] 进程PID: %d\n", pid);
     }
 
     return pid;
