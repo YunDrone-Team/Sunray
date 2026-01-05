@@ -126,6 +126,10 @@ add_executable(simple_obstacle_avoidance_d435i advanced/simple_obstacle_avoidanc
 add_dependencies(simple_obstacle_avoidance_d435i sunray_tutorial_gencpp)
 target_link_libraries(simple_obstacle_avoidance_d435i ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
+add_executable(search_target_and_send_to_ugv advanced/search_target_and_send_to_ugv.cpp)
+add_dependencies(search_target_and_send_to_ugv sunray_tutorial_gencpp)
+target_link_libraries(search_target_and_send_to_ugv ${catkin_LIBRARIES})
+
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

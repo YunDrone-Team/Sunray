@@ -72,7 +72,12 @@ public:
                 cmd_value.yaw = 0;
             }
 
-            if (msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
+            // CTRL_Traj - 使用自定义姿态控制器进行轨迹跟踪（始终使用该模式，不受速度是否为0影响）
+            if (control_type == 3)
+            {
+                uav_cmd.cmd = sunray_msgs::UAVControlCMD::CTRL_Traj;
+            }
+            else if (msg->velocity.x == 0 && msg->velocity.y == 0 && msg->velocity.z == 0)
             {
                 uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
             }
@@ -97,17 +102,19 @@ public:
                 {
                     return;
                 }
-                uav_cmd.desired_pos[0] = cmd_value.x;
-                uav_cmd.desired_pos[1] = cmd_value.y;
-                uav_cmd.desired_pos[2] = cmd_value.z;
-                uav_cmd.desired_vel[0] = cmd_value.vx;
-                uav_cmd.desired_vel[1] = cmd_value.vy;
-                uav_cmd.desired_vel[2] = cmd_value.vz;
-                uav_cmd.desired_acc[0] = cmd_value.ax;
-                uav_cmd.desired_acc[1] = cmd_value.ay;
-                uav_cmd.desired_acc[2] = cmd_value.az;
-                uav_cmd.desired_yaw = cmd_value.yaw;
             }
+
+            // 赋值期望位置、速度、加速度、偏航角
+            uav_cmd.desired_pos[0] = cmd_value.x;
+            uav_cmd.desired_pos[1] = cmd_value.y;
+            uav_cmd.desired_pos[2] = cmd_value.z;
+            uav_cmd.desired_vel[0] = cmd_value.vx;
+            uav_cmd.desired_vel[1] = cmd_value.vy;
+            uav_cmd.desired_vel[2] = cmd_value.vz;
+            uav_cmd.desired_acc[0] = cmd_value.ax;
+            uav_cmd.desired_acc[1] = cmd_value.ay;
+            uav_cmd.desired_acc[2] = cmd_value.az;
+            uav_cmd.desired_yaw = cmd_value.yaw;
             if (last_uav_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYaw && uav_cmd.cmd == sunray_msgs::UAVControlCMD::XyzPosYaw)
             {
                 last_uav_cmd = uav_cmd;
