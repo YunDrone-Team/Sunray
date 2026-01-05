@@ -1,7 +1,6 @@
 <launch>
     <arg name="uav_num" default="5"/>
-    <arg name="launch-prefix" default="" />
-    <node pkg="sunray_uav_control" type="terminal_control" name="terminal_control" output="screen" launch-prefix="$(arg launch-prefix)">
+    <node pkg="sunray_uav_control" type="terminal_control" name="terminal_control" output="screen">
         <param name="uav_num" value="$(arg uav_num)" />
     </node>
 </launch>

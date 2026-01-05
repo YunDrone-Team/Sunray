@@ -1,5 +1,7 @@
 <launch>
-    <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
+    <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, Mini viobot = 7 -->
+    <!-- VINS输出的里程计为完整的里程计信息，包含位置xyz+姿态四元数+速度xyz+角速度，因此VINS可以直接使用ODOM入口，即设置为0 -->
+    <!-- TODO: Mini viobot输出里程计需要进行修改 -->
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="0" />
     <arg name="uav_name" default="uav" />
@@ -10,8 +12,7 @@
     <arg name="use_vision_pose" default="true" />
     <arg name="server" default="192.168.20.15"/>
     <arg name="tilted" default="false"/>
-    <!-- 添加launch-prefix 用于一键脚本中新开终端 -->
-    <arg name="launch-prefix" default="" />
+
     <!-- RTK模式：原点设置方式 -->
     <arg name="rtk_origin_mode" default="1" />  <!-- 原点设置模式: 0=launch文件, 1=地面站设置 -->
     
@@ -21,7 +22,7 @@
     <arg name="rtk_origin_alt" default="488.01" />      <!-- 原点高度，单位：[m] -->
 
     <!-- 启动 external_fusion_node-->
-    <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen" launch-prefix="$(arg launch-prefix)">
+    <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="external_source" value="$(arg external_source)" />
         <param name="uav_name" value="$(arg uav_name)" />

@@ -93,10 +93,6 @@ public:
                 {
                     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
                 }
-                else if (control_type == 3)
-                {
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::CTRL_XyzPos;
-                }
                 else
                 {
                     return;
