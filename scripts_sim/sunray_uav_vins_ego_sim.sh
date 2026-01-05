@@ -8,6 +8,7 @@
 # 注意事项：
 #      - 请根据电脑性能调整gazebo的gui参数，以确保仿真流畅运行。
 
+# 启动ROS核心和仿真环境,注意下面四行之间不能有空行以及注释，这是由gnome-terminal的语法限制的
 gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
 --tab -e 'bash -c "sleep 2.0; roslaunch sunray_simulator sunray_sim_vins.launch gui:=false rviz_enable:=true; exec bash"' \
 --tab -e 'bash -c "sleep 2.0; roslaunch vins vins_start.launch; exec bash"' \
