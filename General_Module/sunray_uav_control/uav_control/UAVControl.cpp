@@ -20,7 +20,6 @@ void UAVControl::init(ros::NodeHandle &nh)
     // 【参数】飞行相关参数
     nh.param<float>("flight_params/Takeoff_height", flight_params.takeoff_height, 1.0); // 【参数】默认起飞高度
     nh.param<int>("flight_params/land_type", flight_params.land_type, 0);               // 【参数】降落类型 【0:到达指定高度后锁桨 1:使用px4 auto.land】
-    nh.param<float>("flight_params/Disarm_height", flight_params.disarm_height, 0.2);   // 【参数】降落时自动上锁高度
     nh.param<float>("flight_params/Land_speed", flight_params.land_speed, 0.2);         // 【参数】降落速度
     nh.param<float>("flight_params/land_end_time", flight_params.land_end_time, 1.0);   // 【参数】降落最后一阶段时间
     nh.param<float>("flight_params/land_end_speed", flight_params.land_end_speed, 0.3); // 【参数】降落最后一阶段速度
@@ -939,61 +938,73 @@ void UAVControl::handle_land_control()
     if (!px4_state.armed)
     {
         system_params.control_mode = Control_Mode::INIT;
+        flight_params.set_land_pos = false;
         Logger::warning("Landing finished!");
+        return;
     }
 
     // 降落模式1：使用AUTO.LAND飞行模式进行降落
     // AUTO.LAND：PX4内部的飞行模式，无人机原地降落，降落的速度和逻辑由PX4内部的控制逻辑决定
     if (flight_params.land_type == 1)
     {
-        Logger::warning("Land in AUTO.LAND mode!");
         if (px4_state.mode != "AUTO.LAND")
         {
+            Logger::warning("Land in AUTO.LAND mode!");
             set_px4_flight_mode("AUTO.LAND");
         }
-        else
-        {
-            return;
-        }
+        return;
     }
 
     // 降落模式2：
-    // 第一次进入的时候设置降落位置：降落位置设置为当前点下方(地面高度选择为home_pos的高度），偏航角为当前偏航角
-    // 首先使用XYZ_POS_VEL_YAW移动模式向下移动到指定高度（flight_params.disarm_height）
-    // 然后使用XYZ_VEL_YAW移动模式向下移动一段时间（flight_params.land_end_time）后，直接上锁
+    // 第一次进入时设置降落的XY位置和偏航角
+    // 使用XY位置控制 + Z速度控制，持续下降直到检测到着陆状态
     if (!flight_params.set_land_pos)
     {
         Logger::warning("Set Land Position Done!");
         system_params.last_land_time = ros::Time(0);
-        set_default_local_setpoint();
+        system_params.low_velocity_start_time = ros::Time(0);
         flight_params.land_pos[0] = px4_state.position[0];
         flight_params.land_pos[1] = px4_state.position[1];
-        flight_params.land_pos[2] = flight_params.home_pos[2];
         flight_params.land_yaw = px4_state.attitude[2];
         flight_params.set_land_pos = true;
-
-        local_setpoint.position.x = flight_params.land_pos[0];
-        local_setpoint.position.y = flight_params.land_pos[1];
-        local_setpoint.position.z = flight_params.land_pos[2];
-        local_setpoint.velocity.z = -flight_params.land_speed;
-        local_setpoint.yaw = flight_params.land_yaw;
-        system_params.type_mask = TypeMask::XYZ_POS_VEL_YAW;
     }
 
-    // 当无人机位置低于指定高度时，自动上锁
-    if (px4_state.position[2] < flight_params.home_pos[2] + flight_params.disarm_height)
+    // 着陆检测：PX4 landed_state 或 速度接近零持续1秒
+    bool velocity_low = fabs(px4_state.velocity[0]) < 0.1 &&
+                        fabs(px4_state.velocity[1]) < 0.1 &&
+                        fabs(px4_state.velocity[2]) < 0.1;
+
+    if (velocity_low)
+    {
+        if (system_params.low_velocity_start_time == ros::Time(0))
+        {
+            system_params.low_velocity_start_time = ros::Time::now();
+        }
+    }
+    else
+    {
+        system_params.low_velocity_start_time = ros::Time(0);
+    }
+
+    bool landed_by_velocity = system_params.low_velocity_start_time != ros::Time(0) &&
+                              (ros::Time::now() - system_params.low_velocity_start_time).toSec() > 1.0;
+
+    // 检测到着陆状态，进入最终降落阶段
+    if (px4_state.landed_state == sunray_msgs::PX4State::LANDED_STATE_ON_GROUND || landed_by_velocity)
     {
         if (system_params.last_land_time == ros::Time(0))
         {
             system_params.last_land_time = ros::Time::now();
         }
-        // 到达指定高度后向下移动land_end_time 防止其直接锁桨掉落
+        // 着陆后继续下压land_end_time秒，防止误判后直接锁桨掉落
         set_default_local_setpoint();
         if ((ros::Time::now() - system_params.last_land_time).toSec() < flight_params.land_end_time)
         {
+            local_setpoint.position.x = flight_params.land_pos[0];
+            local_setpoint.position.y = flight_params.land_pos[1];
             local_setpoint.velocity.z = -flight_params.land_end_speed;
             local_setpoint.yaw = flight_params.land_yaw;
-            system_params.type_mask = TypeMask::XYZ_VEL_YAW;
+            system_params.type_mask = TypeMask::XY_POS_Z_VEL_YAW;
         }
         else
         {
@@ -1001,7 +1012,20 @@ void UAVControl::handle_land_control()
             emergencyStop();
             system_params.control_mode = Control_Mode::INIT;
             flight_params.set_land_pos = false;
+            return;
         }
+    }
+    else
+    {
+        // 正常降落阶段：XY位置保持，Z轴以固定速度下降
+        // 重置着陆计时，防止弹起后再落下时计时错误
+        system_params.last_land_time = ros::Time(0);
+        set_default_local_setpoint();
+        local_setpoint.position.x = flight_params.land_pos[0];
+        local_setpoint.position.y = flight_params.land_pos[1];
+        local_setpoint.velocity.z = -flight_params.land_speed;
+        local_setpoint.yaw = flight_params.land_yaw;
+        system_params.type_mask = TypeMask::XY_POS_Z_VEL_YAW;
     }
 
     setpoint_local_pub(system_params.type_mask, local_setpoint);
@@ -1103,6 +1127,8 @@ void UAVControl::set_land()
     // 当前模式不是降落模式，且要处于RC_CONTROL或CMD_CONTROL模式才会进入降落模式
     if (system_params.control_mode != Control_Mode::LAND_CONTROL && (system_params.control_mode == Control_Mode::RC_CONTROL || system_params.control_mode == Control_Mode::CMD_CONTROL))
     {
+        // 重置降落状态，确保使用当前位置作为降落点
+        flight_params.set_land_pos = false;
         system_params.control_mode = Control_Mode::LAND_CONTROL;
     }
 }
@@ -1260,7 +1286,6 @@ void UAVControl::show_ctrl_state()
             }
             else
             {
-                Logger::print_color(int(LogColor::green), "Land disarm_height:", flight_params.disarm_height, "[ m ]");
                 Logger::print_color(int(LogColor::green), "Land_POS [X Y Z]:",
                                     flight_params.land_pos[0],
                                     flight_params.land_pos[1],
@@ -1380,7 +1405,6 @@ void UAVControl::printf_params()
     Logger::print_color(int(LogColor::green), "uav_id: [", uav_id, "]");
     Logger::print_color(int(LogColor::green), "flight_params.takeoff_height: [", flight_params.takeoff_height, "]");
     Logger::print_color(int(LogColor::green), "flight_params.land_type: [", flight_params.land_type, "]");
-    Logger::print_color(int(LogColor::green), "flight_params.disarm_height: [", flight_params.disarm_height, "]");
     Logger::print_color(int(LogColor::green), "flight_params.land_speed: [", flight_params.land_speed, "]");
     Logger::print_color(int(LogColor::green), "flight_params.land_end_time: [", flight_params.land_end_time, "]");
     Logger::print_color(int(LogColor::green), "flight_params.home_pos[0]: [", flight_params.home_pos[0], "]");

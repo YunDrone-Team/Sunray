@@ -8,11 +8,10 @@
     <arg name="z_min" default="-20.0" />
     <arg name="z_max" default="20.0" />
     <arg name="land_type" default="1" />
-    <arg name="land_end_time" default="1.0" />
+    <arg name="land_end_time" default="0.05" />
     <arg name="land_end_speed" default="0.3" />
     <arg name="Takeoff_height" default="0.6" />
-    <arg name="Disarm_height" default="0.2" />
-    <arg name="Land_speed" default="0.1" />
+    <arg name="Land_speed" default="0.5" />
     <arg name="home_x" default="0.0" />
     <arg name="home_y" default="0.0" />
     <arg name="home_z" default="0.0" />
@@ -31,7 +30,6 @@
         <!-- 降落模式 1：调用px4 auto.land 其他：指定高度锁桨 -->
         <param name="flight_params/Takeoff_height" value="$(arg Takeoff_height)" />
         <param name="flight_params/land_type" value="$(arg land_type)" />
-        <param name="flight_params/Disarm_height" value="$(arg Disarm_height)" />
         <param name="flight_params/Land_speed" value="$(arg Land_speed)" />
         <!-- 降落最后一阶段需要的时间和速度 -->
         <param name="flight_params/land_end_time" value="$(arg land_end_time)" />

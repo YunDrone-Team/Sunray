@@ -11,7 +11,6 @@ flight_params:
   land_end_time: 1.0
   land_end_speed: 0.3
   Takeoff_height: 0.6
-  Disarm_height: 0.2
   Land_speed: 0.2
   home_x: 0.0
   home_y: 0.0

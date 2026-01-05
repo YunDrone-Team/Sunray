@@ -5,7 +5,6 @@ uav_name: "uav"
 # 无人机飞行参数
 flight_params:
   Takeoff_height: 1.0   ## 起飞高度
-  Disarm_height: 0.2    ## 降落时自动上锁高度
   Land_speed: 0.2       ## 降落速度
   land_end_time: 1.0    ## 降落最后一阶段时间
   land_end_speed: 0.3   ## 降落最后一阶段速度
