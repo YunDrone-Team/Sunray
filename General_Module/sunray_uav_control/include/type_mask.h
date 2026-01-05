@@ -120,6 +120,34 @@ namespace TypeMask
     uint16_t POS_VEL_ACC_YAWRATE =
         mavros_msgs::PositionTarget::IGNORE_YAW;
 
+    uint16_t XYZ_ACC =
+        mavros_msgs::PositionTarget::IGNORE_PX |
+        mavros_msgs::PositionTarget::IGNORE_PY |
+        mavros_msgs::PositionTarget::IGNORE_PZ |
+        mavros_msgs::PositionTarget::IGNORE_VX |
+        mavros_msgs::PositionTarget::IGNORE_VY |
+        mavros_msgs::PositionTarget::IGNORE_VZ |
+        mavros_msgs::PositionTarget::IGNORE_YAW |
+        mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+
+    uint16_t XYZ_ACC_YAW =
+        mavros_msgs::PositionTarget::IGNORE_PX |
+        mavros_msgs::PositionTarget::IGNORE_PY |
+        mavros_msgs::PositionTarget::IGNORE_PZ |
+        mavros_msgs::PositionTarget::IGNORE_VX |
+        mavros_msgs::PositionTarget::IGNORE_VY |
+        mavros_msgs::PositionTarget::IGNORE_VZ |
+        mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+
+    uint16_t XYZ_ACC_YAWRATE =
+        mavros_msgs::PositionTarget::IGNORE_PX |
+        mavros_msgs::PositionTarget::IGNORE_PY |
+        mavros_msgs::PositionTarget::IGNORE_PZ |
+        mavros_msgs::PositionTarget::IGNORE_VX |
+        mavros_msgs::PositionTarget::IGNORE_VY |
+        mavros_msgs::PositionTarget::IGNORE_VZ |
+        mavros_msgs::PositionTarget::IGNORE_YAW;
+
     uint16_t NONE_TYPE =
         mavros_msgs::PositionTarget::IGNORE_PX |
         mavros_msgs::PositionTarget::IGNORE_PY |

@@ -17,7 +17,6 @@ private:
     {
         float takeoff_height;                        // 【参数】默认起飞高度
         int land_type = 0;                           // 【参数】降落类型【0:到达指定高度后锁桨 1:使用px4 auto.land】
-        float disarm_height;                         // 【参数】降落时自动上锁高度
         float land_speed;                            // 【参数】降落速度
         float land_end_time;                         // 【参数】降落最后一阶段时间
         float land_end_speed;                        // 【参数】降落最后一阶段速度
@@ -61,7 +60,7 @@ private:
         int safety_state;         // 安全标志，0代表正常，其他代表不正常
         ros::Time last_land_time; // 进入降落最后一阶段的时间戳
         ros::Time last_rc_time;   // 上一个rc控制时间点
-        
+        ros::Time low_velocity_start_time; // 低速检测开始时间
     };
     SystemParams system_params;
 
@@ -113,6 +112,9 @@ private:
         {sunray_msgs::UAVControlCMD::XyzVelYawBody, "XyzVelYawBody"},
         {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, "XyVelZPosYawBody"},
         {sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody, "XyVelZPosYawrateBody"},
+        {sunray_msgs::UAVControlCMD::XyzAcc, "XyzAcc"},
+        {sunray_msgs::UAVControlCMD::XyzAccYaw, "XyzAccYaw"},
+        {sunray_msgs::UAVControlCMD::XyzAccYawrate, "XyzAccYawrate"},
         {sunray_msgs::UAVControlCMD::GlobalPos, "GlobalPos"},
         {sunray_msgs::UAVControlCMD::Point, "Point"},
         {sunray_msgs::UAVControlCMD::CTRL_XyzPos, "CTRL_XyzPos"},
@@ -143,7 +145,10 @@ private:
         {sunray_msgs::UAVControlCMD::XyzPosYawBody, TypeMask::XYZ_POS_YAW},
         {sunray_msgs::UAVControlCMD::XyzVelYawBody, TypeMask::XYZ_VEL_YAW},
         {sunray_msgs::UAVControlCMD::XyVelZPosYawBody, TypeMask::XY_VEL_Z_POS_YAW},
-        {sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody, TypeMask::XY_VEL_Z_POS_YAWRATE}
+        {sunray_msgs::UAVControlCMD::XyVelZPosYawrateBody, TypeMask::XY_VEL_Z_POS_YAWRATE},
+        {sunray_msgs::UAVControlCMD::XyzAcc, TypeMask::XYZ_ACC},
+        {sunray_msgs::UAVControlCMD::XyzAccYaw, TypeMask::XYZ_ACC_YAW},
+        {sunray_msgs::UAVControlCMD::XyzAccYawrate, TypeMask::XYZ_ACC_YAWRATE}
     };
 
     // 绑定特殊指令对应的实现函数（用于执行不同的特殊指令）
