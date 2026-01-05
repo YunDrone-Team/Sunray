@@ -138,8 +138,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: -9999
-        Min Value: 9999
+        Max Value: 1.9199999570846558
+        Min Value: 0.5199999809265137
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -156,7 +156,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.10000000149011612
       Style: Flat Squares
       Topic: /drone_0_ego_planner_node/grid_map/occupancy
       Unreliable: false
@@ -191,7 +191,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.326122283935547
+      Distance: 11.962747573852539
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -207,9 +207,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.1453980803489685
+      Pitch: 0.4553975760936737
       Target Frame: <Fixed Frame>
-      Yaw: 3.615403890609741
+      Yaw: 4.0554070472717285
     Saved: ~
 Window Geometry:
   Displays:

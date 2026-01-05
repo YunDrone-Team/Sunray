@@ -8,15 +8,15 @@
 # 注意事项：
 #      - 请根据电脑性能调整gazebo的gui参数，以确保仿真流畅运行。
 
+gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch sunray_simulator sunray_sim_vins.launch gui:=false rviz_enable:=true; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch vins vins_start.launch; exec bash"' \
+--tab -e 'bash -c "sleep 2.0; roslaunch sunray_planner_utils sunray_vins_ego.launch; exec bash"' \
 
-# 启动ros节点
-gnome-terminal --window -- bash -c "roscore; exec bash"
+# 启动控制节点
+gnome-terminal --window -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control terminal_control.launch; exec bash"' \
+--tab -e 'bash -c "sleep 8.0; roslaunch sunray_uav_control sunray_control_node.launch; exec bash"' \
+--tab -e 'bash -c "sleep 8.0; roslaunch sunray_uav_control external_fusion.launch external_source:=0 position_topic:=/vins_estimator/odometry; exec bash"' \
 
-# 启动一个无人机仿真环境，启动控制节点
-gnome-terminal --window -- bash -c "sleep 2.0; roslaunch sunray_simulator sunray_sim_vins.launch gui:=false enable_control:=true rviz_enable:=true; exec bash"
 
-# 启动vins 
-gnome-terminal --window -- bash -c "sleep 2.0; roslaunch vins vins_start.launch; exec bash"
 
-# 启动ego
-gnome-terminal --window -- bash -c "sleep 5.0; roslaunch sunray_planner_utils sunray_vins_ego.launch; exec bash"
