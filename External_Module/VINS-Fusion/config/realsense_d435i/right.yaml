@@ -1,0 +1,20 @@
+%YAML:1.0
+---
+model_type: PINHOLE
+camera_name: camera
+image_width: 640
+image_height: 480
+distortion_parameters:
+   k1: 0.0
+   k2: 0.0
+   p1: 0.0
+   p2: 0.0
+projection_parameters:
+   # 对应 ROS 消息 K 矩阵中的 fx (索引0) 和 fy (索引4)
+   # 对应数值：319.9348449707031
+   fx: 319.9348449707031
+   fy: 319.9348449707031
+   # 对应 ROS 消息 K 矩阵中的 cx (索引2) 和 cy (索引5)
+   # 对应数值：cx: 320.0, cy: 240.0
+   cx: 320.0
+   cy: 240.0
