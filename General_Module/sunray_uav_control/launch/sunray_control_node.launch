@@ -22,9 +22,9 @@
     <arg name="check_cmd_timeout" default="false" />
     <arg name="cmd_timeout" default="5.0" />
     <arg name="use_offset" default="false" />
-
+    <arg name="launch-prefix" default="" />
     <!-- 启动 uav_control_node -->
-    <node name="uav_control" pkg="sunray_uav_control" type="uav_control_node" output="screen">
+    <node name="uav_control" pkg="sunray_uav_control" type="uav_control_node" output="screen" launch-prefix="$(arg launch-prefix)">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="uav_name" value="$(arg uav_name)" />
         <!-- 起飞高度 | 降落第一阶段高度 | 降落速度 -->

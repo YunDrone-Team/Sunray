@@ -10,7 +10,8 @@
     <arg name="use_vision_pose" default="true" />
     <arg name="server" default="192.168.20.15"/>
     <arg name="tilted" default="false"/>
-
+    <!-- 添加launch-prefix 用于一键脚本中新开终端 -->
+    <arg name="launch-prefix" default="" />
     <!-- RTK模式：原点设置方式 -->
     <arg name="rtk_origin_mode" default="1" />  <!-- 原点设置模式: 0=launch文件, 1=地面站设置 -->
     
@@ -20,7 +21,7 @@
     <arg name="rtk_origin_alt" default="488.01" />      <!-- 原点高度，单位：[m] -->
 
     <!-- 启动 external_fusion_node-->
-    <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen">
+    <node name="external_fusion" pkg="sunray_uav_control" type="external_fusion_node" output="screen" launch-prefix="$(arg launch-prefix)">
         <param name="uav_id" value="$(arg uav_id)" />
         <param name="external_source" value="$(arg external_source)" />
         <param name="uav_name" value="$(arg uav_name)" />

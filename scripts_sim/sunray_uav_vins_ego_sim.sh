@@ -19,4 +19,4 @@ gnome-terminal --window -- bash -c "sleep 2.0; roslaunch sunray_simulator sunray
 gnome-terminal --window -- bash -c "sleep 2.0; roslaunch vins vins_start.launch; exec bash"
 
 # 启动ego
-gnome-terminal --window -- bash -c "sleep 5.0; roslaunch ego_planner single_run_in_exp.launch; exec bash"
+gnome-terminal --window -- bash -c "sleep 5.0; roslaunch sunray_planner_utils sunray_vins_ego.launch; exec bash"
