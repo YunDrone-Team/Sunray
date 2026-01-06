@@ -198,6 +198,10 @@ namespace ego_planner
     bool use_distinctive_trajs;
     int drone_id; // single drone: drone_id <= -1, swarm: drone_id >= 0
 
+    /* 2D planning parameters */
+    bool fix_height_;      // 是否固定高度进行2D规划
+    double fixed_height_;  // 固定的高度值
+
     /* processing time */
     double time_search_ = 0.0;
     double time_optimize_ = 0.0;

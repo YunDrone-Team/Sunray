@@ -32,6 +32,9 @@ namespace ego_planner
     nh.param("manager/use_distinctive_trajs", pp_.use_distinctive_trajs, false);
     // 无人机ID
     nh.param("manager/drone_id", pp_.drone_id, -1);
+    // 2D规划参数
+    nh.param("manager/fix_height", pp_.fix_height_, false);
+    nh.param("manager/fixed_height", pp_.fixed_height_, 0.5);
 
     node_name = "[planner_manager_uav" + std::to_string(pp_.drone_id)+"] -- ";
 
@@ -333,6 +336,18 @@ namespace ego_planner
     }
 
     t_refine = ros::Time::now() - t_start;
+
+    // 2D规划：强制把轨迹的z值固定为指定高度
+    if (pp_.fix_height_)
+    {
+      Eigen::MatrixXd fixed_ctrl_pts = pos.getControlPoint();
+      for (int i = 0; i < fixed_ctrl_pts.cols(); i++)
+      {
+        fixed_ctrl_pts(2, i) = pp_.fixed_height_;  // 固定z轴
+      }
+      pos = UniformBspline(fixed_ctrl_pts, 3, ts);
+      pos.setPhysicalLimits(pp_.max_vel_, pp_.max_acc_, pp_.feasibility_tolerance_);
+    }
 
     // save planned results
     updateTrajInfo(pos, ros::Time::now());
