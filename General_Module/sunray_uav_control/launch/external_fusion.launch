@@ -1,5 +1,7 @@
 <launch>
-    <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, VINS = 7 -->
+    <!-- ODOM = 0, POSE = 1, GAZEBO = 2,  MOCAP = 3, VIOBOT = 4, GPS = 5, RTK = 6, Mini viobot = 7 -->
+    <!-- VINS输出的里程计为完整的里程计信息，包含位置xyz+姿态四元数+速度xyz+角速度，因此VINS可以直接使用ODOM入口，即设置为0 -->
+    <!-- TODO: Mini viobot输出里程计需要进行修改 -->
     <arg name="uav_id" default="1" />
     <arg name="external_source" default="0" />
     <arg name="uav_name" default="uav" />
