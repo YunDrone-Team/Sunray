@@ -23,10 +23,12 @@ void UAVControl::init(ros::NodeHandle &nh)
     nh.param<float>("flight_params/Land_speed", flight_params.land_speed, 0.2);         // 【参数】降落速度
     nh.param<float>("flight_params/land_end_time", flight_params.land_end_time, 1.0);   // 【参数】降落最后一阶段时间
     nh.param<float>("flight_params/land_end_speed", flight_params.land_end_speed, 0.3); // 【参数】降落最后一阶段速度
+    nh.param<float>("flight_params/land_kp", flight_params.land_kp, 1.0);               // 【参数】降落XY位置控制增益
+    nh.param<float>("flight_params/land_max_vel_xy", flight_params.land_max_vel_xy, 0.5); // 【参数】降落XY最大速度限制
     nh.param<double>("flight_params/home_x", flight_params.home_pos[0], 0.0);            // 【参数】默认home点 在起飞后运行程序时需要
     nh.param<double>("flight_params/home_y", flight_params.home_pos[1], 0.0);            // 【参数】默认home点 在起飞后运行程序时需要
     nh.param<double>("flight_params/home_z", flight_params.home_pos[2], 0.0);            // 【参数】默认home点 在起飞后运行程序时需要
-    flight_params.set_home = true;
+    flight_params.set_home = false;
     flight_params.home_yaw = 0.0;
     flight_params.hover_pos.setZero();
     flight_params.hover_yaw = 0.0;
@@ -198,10 +200,10 @@ void UAVControl::px4_state_callback(const sunray_msgs::PX4State::ConstPtr &msg)
     // 每一次解锁时，将无人机的解锁位置设置为home点
     if (!px4_state.armed && msg->armed)
     {
-        flight_params.home_pos[0] = px4_state.position[0];
-        flight_params.home_pos[1] = px4_state.position[1];
-        flight_params.home_pos[2] = px4_state.position[2];
-        flight_params.home_yaw = px4_state.attitude[2];
+        flight_params.home_pos[0] = msg->position[0];
+        flight_params.home_pos[1] = msg->position[1];
+        flight_params.home_pos[2] = msg->position[2];
+        flight_params.home_yaw = msg->attitude[2];
         flight_params.set_home = true;
         Logger::info("Home position set to: ", flight_params.home_pos[0], flight_params.home_pos[1], flight_params.home_pos[2]);
     }
@@ -995,16 +997,17 @@ void UAVControl::handle_land_control()
         if (system_params.last_land_time == ros::Time(0))
         {
             system_params.last_land_time = ros::Time::now();
+            Logger::warning("Landed detected, stopping XY control");
         }
         // 着陆后继续下压land_end_time秒，防止误判后直接锁桨掉落
         set_default_local_setpoint();
         if ((ros::Time::now() - system_params.last_land_time).toSec() < flight_params.land_end_time)
         {
-            local_setpoint.position.x = flight_params.land_pos[0];
-            local_setpoint.position.y = flight_params.land_pos[1];
+            local_setpoint.velocity.x = 0.0;
+            local_setpoint.velocity.y = 0.0;
             local_setpoint.velocity.z = -flight_params.land_end_speed;
             local_setpoint.yaw = flight_params.land_yaw;
-            system_params.type_mask = TypeMask::XY_POS_Z_VEL_YAW;
+            system_params.type_mask = TypeMask::XYZ_VEL_YAW;
         }
         else
         {
@@ -1017,15 +1020,19 @@ void UAVControl::handle_land_control()
     }
     else
     {
-        // 正常降落阶段：XY位置保持，Z轴以固定速度下降
-        // 重置着陆计时，防止弹起后再落下时计时错误
         system_params.last_land_time = ros::Time(0);
         set_default_local_setpoint();
-        local_setpoint.position.x = flight_params.land_pos[0];
-        local_setpoint.position.y = flight_params.land_pos[1];
+        float vel_x = flight_params.land_kp * (flight_params.land_pos[0] - px4_state.position[0]);
+        float vel_y = flight_params.land_kp * (flight_params.land_pos[1] - px4_state.position[1]);
+        // 限幅
+        vel_x = std::max(-flight_params.land_max_vel_xy, std::min(flight_params.land_max_vel_xy, vel_x));
+        vel_y = std::max(-flight_params.land_max_vel_xy, std::min(flight_params.land_max_vel_xy, vel_y));
+
+        local_setpoint.velocity.x = vel_x;
+        local_setpoint.velocity.y = vel_y;
         local_setpoint.velocity.z = -flight_params.land_speed;
         local_setpoint.yaw = flight_params.land_yaw;
-        system_params.type_mask = TypeMask::XY_POS_Z_VEL_YAW;
+        system_params.type_mask = TypeMask::XYZ_VEL_YAW;
     }
 
     setpoint_local_pub(system_params.type_mask, local_setpoint);
@@ -1065,12 +1072,12 @@ void UAVControl::return_to_home()
     while (yaw_error > M_PI) yaw_error -= 2 * M_PI;
     while (yaw_error < -M_PI) yaw_error += 2 * M_PI;
 
-    if (abs(px4_state.position[0] - flight_params.home_pos[0]) < 0.15 &&
-        abs(px4_state.position[1] - flight_params.home_pos[1]) < 0.15 &&
-        abs(px4_state.velocity[0]) < 0.1 &&
-        abs(px4_state.velocity[1]) < 0.1 &&
-        abs(px4_state.velocity[2]) < 0.1 &&
-        abs(yaw_error) < 0.1)  // 偏航角误差小于约5.7度
+    if (fabs(px4_state.position[0] - flight_params.home_pos[0]) < 0.15 &&
+        fabs(px4_state.position[1] - flight_params.home_pos[1]) < 0.15 &&
+        fabs(px4_state.velocity[0]) < 0.1 &&
+        fabs(px4_state.velocity[1]) < 0.1 &&
+        fabs(px4_state.velocity[2]) < 0.1 &&
+        fabs(yaw_error) < 0.2)
     {
         set_land();
     }
