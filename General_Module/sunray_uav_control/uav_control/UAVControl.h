@@ -16,10 +16,12 @@ private:
     struct FlightParams
     {
         float takeoff_height;                        // 【参数】默认起飞高度
-        int land_type = 0;                           // 【参数】降落类型【0:到达指定高度后锁桨 1:使用px4 auto.land】
+        int land_type = 0;                           // 【参数】降落类型【0:使用速度控制降落 1:使用px4 auto.land】
         float land_speed;                            // 【参数】降落速度
         float land_end_time;                         // 【参数】降落最后一阶段时间
         float land_end_speed;                        // 【参数】降落最后一阶段速度
+        float land_kp = 1.0;                         // 【参数】降落XY位置控制增益
+        float land_max_vel_xy = 0.5;                 // 【参数】降落XY最大速度限制
         bool set_home = false;                       // 起飞点是否设置
         Eigen::Vector3d home_pos{0.0, 0.0, 0.0};     // 【参数】起飞点
         float home_yaw = 0.0;                        // 起飞点航向

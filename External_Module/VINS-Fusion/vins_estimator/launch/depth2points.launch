@@ -1,0 +1,17 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="depth2cloud" 
+        args="load depth_image_proc/point_cloud_xyz nodelet_manager" output="screen">
+    <remap from="image_rect" to="/camera/depth/image_raw"/>
+    <remap from="camera_info" to="/camera/depth/camera_info"/>
+    <remap from="points" to="/camera/depth/points"/>
+  </node>
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen">
+    <param name="resolution" value="0.05" />
+    <param name="frame_id" type="string" value="world" />
+    <param name="sensor_model/max_range" value="5.0" />
+    <remap from="cloud_in" to="/camera/depth/points" />
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" 
+      args="0 0 0 1.57 3.14 1.57 camera_link camera/d435i_link 100" />
+</launch>
