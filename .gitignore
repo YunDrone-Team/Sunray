@@ -114,3 +114,4 @@ tmp/
 # Configuration and state files
 .sunray_last_build_selection
 .claude
+CLAUDE.md

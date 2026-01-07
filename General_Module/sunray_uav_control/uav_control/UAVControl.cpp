@@ -1080,7 +1080,9 @@ void UAVControl::return_to_home()
         fabs(yaw_error) < 0.2)
     {
         set_land();
+        return;
     }
+    setpoint_local_pub(system_params.type_mask, local_setpoint);
 }
 
 // 高级模式-航点模式的实现函数
