@@ -880,7 +880,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::HeartbeatMessageID:case MessageID::UAVControlCMDMessageID:
     case MessageID::UGVControlCMDMessageID:case MessageID::UAVSetupMessageID:
     case MessageID::DemoMessageID:case MessageID::ScriptMessageID:
-    case MessageID::WaypointMessageID:case MessageID::GoalMessageID:
+    case MessageID::WaypointMessageID:
     case MessageID::ViobotSwitchMessageID:case MessageID::RTKOriginMessageID:
         //TCP帧头 0xac43
         codelessData.head=PackBytesLE(0xac,0x43);
@@ -902,6 +902,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
         codelessData.head=PackBytesLE(0xfd,0x32);
         break;
     case MessageID::FormationMessageID: case MessageID::GroundFormationMessageID:
+    case MessageID::GoalMessageID:
         //TCP和UDP共用帧头 不带回复回复：0xcc90
         codelessData.head=PackBytesLE(0xcc,0x90);
         break;

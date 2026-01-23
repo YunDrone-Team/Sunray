@@ -26,6 +26,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<int>("UAVStateFrameRate", UAVStateFrameRate, 30);                         // 【参数】无人机状态数据传输帧数
 
     nh.param<bool>("PX4ParamTransmitEnabled", PX4ParamTransmitEnabled, false);         // 【参数】是否启用PX4参数传输
+    nh.param<bool>("UGVGoalMulticastEnabled", UGVGoalMulticastEnabled, false);         // 【参数】是否启用UGV规划点组播开关
 
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
@@ -40,6 +41,7 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // CASE5（仿真）:3台无人机、2台无人车
     // uav_id =1   uav_experiment_num=0 uav_simulation_num=3
     // ugv_id =1   ugv_experiment_num=0 ugv_simulation_num=2
+
 
     // 仿真模式
     if (is_simulation)
@@ -130,8 +132,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + uav_name + std::to_string(i);
             // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
             uav_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UAVState>(topic_prefix + "/sunray/uav_state", 1))));
-            // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
-            px4State_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1))));
+            // 【发布】无人机状态 其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点 
+            px4State_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::PX4State>(topic_prefix + "/sunray/px4_state", 1))));            
         }
 
         // 无人机Sunray和其他Sunray（包括无人机和车）之间的通信（此部分仅针对真机）
@@ -143,6 +145,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + ugv_name + std::to_string(i);
             // 【发布】无人车状态  其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
             ugv_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1))));
+            // 【订阅】无人机规划点数据  
+            if(UGVGoalMulticastEnabled)
+                ugv_goal_sub.push_back(nh.subscribe<geometry_msgs::PoseStamped>("/goal_"+std::to_string(i), 1, boost::bind(&communication_bridge::goal_cb, this, _1, i)));
         }
     }
 
@@ -216,6 +221,35 @@ void communication_bridge::init(ros::NodeHandle &nh)
 
     // 变量 - 是否与地面站建立连接
     station_connected = false;
+
+    std::cout << std::boolalpha; // 让bool类型打印为true/false，更直观
+    std::cout << "--------------通信包配置参数--------------" << std::endl;
+    
+    // 基础模式参数（2个参数合并为1行，用 | 分隔，控制单行长度）
+    std::cout << "[基础模式]" << std::endl;
+    std::cout << "  - 仿真模式(is_simulation)：" << is_simulation << " | 多客户端开关(multiClientSwitch)：" << multiClientSwitch << std::endl;
+    
+    // 无人机相关参数（每2个参数合并为1行，格式统一，无单行过长）
+    std::cout << "[无人机配置]" << std::endl;
+    std::cout << "  - 真机数量(uav_exp)：" << uav_experiment_num << " | 仿真数量(uav_sim)：" << uav_simulation_num << std::endl;
+    std::cout << "  - 本机ID(uav_id)：" << (int)uav_id << "    | 话题前缀(uav_name)：" << uav_name << std::endl;
+    
+    // 无人车相关参数（同无人机，每2个参数合并为1行）
+    std::cout << "[无人车配置]" << std::endl;
+    std::cout << "  - 真机数量(ugv_exp)：" << ugv_experiment_num << " | 仿真数量(ugv_sim)：" << ugv_simulation_num << std::endl;
+    std::cout << "  - 本机ID(ugv_id)：" << (int)ugv_id << "    | 话题前缀(ugv_name)：" << ugv_name << std::endl;
+    
+    // 通信端口参数（前2个合并为1行，最后1个单独成行，保证格式整齐）
+    std::cout << "[通信端口]" << std::endl;
+    std::cout << "  - TCP绑定(tcp_port)：" << tcp_port << " | UDP机载(udp_port)：" << udp_port << std::endl;
+    std::cout << "  - UDP组播(udp_ground_port)：" << udp_ground_port << std::endl;
+    
+    // 数据传输参数（每2个参数合并为1行，格式统一）
+    std::cout << "[传输配置]" << std::endl;
+    std::cout << "  - PX4状态(使能/帧率)：" << PX4StateTransmitEnabled << "/" << PX4StateFrameRate << " | 无人机状态(使能/帧率)：" << UAVStateTransmitEnabled << "/" << UAVStateFrameRate << std::endl;
+    std::cout << "  - PX4参数传输使能：" << PX4ParamTransmitEnabled << "       | UGV规划点组播使能：" << UGVGoalMulticastEnabled << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
+
 
     //适配地面站版本
     Versions="V3.0.0";
@@ -475,6 +509,33 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
         formation_pub.publish(sendMSG);
         break;   
     }     
+    case MessageID::GoalMessageID:// 规划点- Goal（#204）
+    {    
+        if(!UGVGoalMulticastEnabled)
+           return;
+
+        if(readData.dataFrame.robot_ID!=ugv_id)
+            return;
+        auto it = ugv_goal_pub.find(ugv_id);
+        if (it == ugv_goal_pub.end())
+        {
+            std::cout << "Goal UGV" + std::to_string(ugv_id) + " topic Publisher not found!" << std::endl;
+            break;
+        }      
+        geometry_msgs::PoseStamped sendMSG;
+        sendMSG.header.stamp = ros::Time::now();
+        sendMSG.header.frame_id = "world";
+        sendMSG.pose.orientation.x = 0;
+        sendMSG.pose.orientation.y = 0;
+        sendMSG.pose.orientation.z = 0;
+        sendMSG.pose.orientation.w = 1;
+        sendMSG.pose.position.x = readData.dataFrame.data.goal.positionX;
+        sendMSG.pose.position.y = readData.dataFrame.data.goal.positionY;
+        sendMSG.pose.position.z = readData.dataFrame.data.goal.positionZ;
+        it->second.publish(sendMSG);
+    
+        break;   
+    }  
     default:
         break;
     }
@@ -1875,6 +1936,25 @@ void communication_bridge::FACState_cb(const std_msgs::String::ConstPtr &msg)
     msg->data.copy(facStateData.data.FACState.stateStr, msg->data.size());
     SendUdpDataToAllOnlineGroundStations(facStateData);
 }
+
+void communication_bridge::goal_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int robot_id)
+{
+    if(robot_id==ugv_id)
+        return;
+
+    DataFrame sendData;
+    sendData.robot_ID=robot_id;
+    sendData.seq=MessageID::GoalMessageID;
+    sendData.data.goal.init();
+    sendData.data.goal.positionX=msg->pose.position.x;
+    sendData.data.goal.positionY=msg->pose.position.y;
+    sendData.data.goal.positionZ=msg->pose.position.z;
+    // sendData.data.goal.yaw=tf::getYaw(msg->pose.orientation);
+
+    int back = udpSocket->sendUDPMulticastData(codec.coder(sendData), udp_port);
+
+}
+
 
 // 比较结构体与msg数据（精确到3位小数）
 bool communication_bridge::isFACMapEqual3Decimals(const FACMapData& mapData, const sunray_msgs::Competion::ConstPtr& msg) {

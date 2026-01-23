@@ -76,6 +76,8 @@ private:
     void ugv_state_cb(const sunray_msgs::UGVState::ConstPtr &msg, int robot_id);
     void uav_waypointState_cb(const sunray_msgs::WayPointState::ConstPtr &msg, int robot_id);
     void PX4StateCallBack(const sunray_msgs::PX4State::ConstPtr &msg, int robot_id);
+    void goal_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int robot_id);
+
 
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
     void FACMap_cb(const sunray_msgs::Competion::ConstPtr &msg);
@@ -129,6 +131,8 @@ private:
     bool UAVStateTransmitEnabled;// UAV状态传输开关
     bool PX4ParamTransmitEnabled;// PX4参数传输开关 
     int UAVStateFrameRate;// UAV状态传输帧数
+    bool UGVGoalMulticastEnabled;//UGV规划点组播开关
+
 
     std::map<int,bool>  UAVWaypointStateTopicLatest;// UAV航点状态话题是否为最新
     std::map<int,bool>  PX4StateTopicLatest;// PX4状态话题是否为最新
@@ -138,6 +142,7 @@ private:
     std::vector<ros::Subscriber> px4State_sub;
     std::vector<ros::Subscriber> ugv_state_sub;
     std::vector<ros::Subscriber> uav_waypointState_sub;
+    std::vector<ros::Subscriber> ugv_goal_sub;
 
     std::map<int,ros::Publisher> control_cmd_pub;
     std::map<int,ros::Publisher> uav_setup_pub;
