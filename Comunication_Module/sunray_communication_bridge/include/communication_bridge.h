@@ -77,6 +77,7 @@ private:
     void uav_waypointState_cb(const sunray_msgs::WayPointState::ConstPtr &msg, int robot_id);
     void PX4StateCallBack(const sunray_msgs::PX4State::ConstPtr &msg, int robot_id);
     void goal_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int robot_id);
+    void QRCodeCoord_cb(const geometry_msgs::PointStamped::ConstPtr &msg);
 
 
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
@@ -157,8 +158,11 @@ private:
     ros::Publisher  formation_pub;
     ros::Publisher  viobotSwitch_pub;
     ros::Publisher  RTKOrigin_pub;
+    ros::Publisher  QRCodeCoord_pub;
     ros::Subscriber FACMap_sub;
     ros::Subscriber FACState_sub;
+    ros::Subscriber FQRCodeCoord_sub;
+
 
     std::map<int,PX4ParamManager> uavPX4ParamMap;
 

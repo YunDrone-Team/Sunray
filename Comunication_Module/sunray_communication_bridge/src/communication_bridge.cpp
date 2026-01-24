@@ -102,9 +102,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             control_cmd_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVControlCMD>(topic_prefix + "/sunray/uav_control_cmd", 1))));
             // 【发布】无人机设置指令 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
             uav_setup_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::UAVSetup>(topic_prefix + "/sunray/setup", 1))));
-            // 【发布】无人机航点数据 地面站 --TCP--> 本节点 --ROS topic--> uav_control_node
+            // 【发布】无人机航点数据 地面站 --TCP--> 本节点 
             uav_waypoint_pub.insert(std::make_pair(uav_id, (nh.advertise<sunray_msgs::WayPoint>(topic_prefix + "/sunray/uav_waypoint", 1))));
-            // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 --ROS topic--> waypoint_mission_node
+            // 【发布】无人机规划点数据 地面站 --TCP--> 本节点 
             uav_goal_pub.insert(std::make_pair(uav_id, (nh.advertise<geometry_msgs::PoseStamped>("/goal_"+std::to_string(uav_id), 1))));
             // 【管理】MAVROS 参数服务客户端，无人机px4飞控参数
             uavPX4ParamMap.insert(std::make_pair(uav_id, PX4ParamManager(nh, topic_prefix+"/mavros")));
@@ -145,10 +145,16 @@ void communication_bridge::init(ros::NodeHandle &nh)
             std::string topic_prefix = "/" + ugv_name + std::to_string(i);
             // 【发布】无人车状态  其他Sunray智能体 --UDP--> 本节点 --ROS topic--> 本机其他节点
             ugv_state_pub.insert(std::make_pair(i, (nh.advertise<sunray_msgs::UGVState>(topic_prefix + "/sunray_ugv/ugv_state", 1))));
-            // 【订阅】无人机规划点数据  
+            // 【订阅】无人车规划点组播  
             if(UGVGoalMulticastEnabled)
                 ugv_goal_sub.push_back(nh.subscribe<geometry_msgs::PoseStamped>("/goal_"+std::to_string(i), 1, boost::bind(&communication_bridge::goal_cb, this, _1, i)));
         }
+
+        
+         // 【订阅】二维码坐标  
+        FQRCodeCoord_sub=nh.subscribe<geometry_msgs::PointStamped>("/uav/target_global_position", 1, boost::bind(&communication_bridge::QRCodeCoord_cb, this,_1));
+         // 【发布】二维码坐标 
+        QRCodeCoord_pub=nh.advertise<geometry_msgs::PointStamped>("/target_global_position", 1);
     }
 
     // 【发布】RTK原点设置  地面站 --TCP--> 本节点 --ROS topic--> external_fusion_node
@@ -536,6 +542,20 @@ void communication_bridge::UDPCallBack(ReceivedParameter readData)
     
         break;   
     }  
+    case MessageID::QRCodeCoordMessageID:// 二维码坐标- QRCodeCoord（#205）
+    {    
+       
+        geometry_msgs::PointStamped sendMSG;
+        sendMSG.header.stamp = ros::Time::now();
+        sendMSG.header.frame_id = "world";
+
+        sendMSG.point.x = readData.dataFrame.data.QRCodePoiont.x;
+        sendMSG.point.y = readData.dataFrame.data.QRCodePoiont.y;
+        sendMSG.point.z = readData.dataFrame.data.QRCodePoiont.z;
+        QRCodeCoord_pub.publish(sendMSG);
+    
+        break;   
+    }
     default:
         break;
     }
@@ -1954,6 +1974,22 @@ void communication_bridge::goal_cb(const geometry_msgs::PoseStamped::ConstPtr &m
     int back = udpSocket->sendUDPMulticastData(codec.coder(sendData), udp_port);
 
 }
+
+void communication_bridge::QRCodeCoord_cb(const geometry_msgs::PointStamped::ConstPtr &msg)
+{
+    DataFrame sendData;
+    sendData.robot_ID=1;
+    sendData.seq=MessageID::QRCodeCoordMessageID;
+    sendData.data.QRCodePoiont.init();
+    sendData.data.QRCodePoiont.x=msg->point.x;
+    sendData.data.QRCodePoiont.y=msg->point.y;
+    sendData.data.QRCodePoiont.y=msg->point.y;
+
+    for(int i=0;i<5;i++)
+        udpSocket->sendUDPMulticastData(codec.coder(sendData), udp_port);
+
+}
+
 
 
 // 比较结构体与msg数据（精确到3位小数）

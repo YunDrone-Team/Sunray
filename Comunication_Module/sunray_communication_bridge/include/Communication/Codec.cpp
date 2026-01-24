@@ -143,6 +143,17 @@ void Codec::decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFr
 
 }
 
+void Codec::decoderQRCodeCoordPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    QRCodeCoord& data = dataFrameStruct.data.QRCodePoiont;
+    data.init();
+
+    uint8tArrayToDouble(dataFrame, data.x);
+    uint8tArrayToDouble(dataFrame, data.y);
+    uint8tArrayToDouble(dataFrame, data.z);
+}
+
+
 void Codec::decoderAgentComputerStatusPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
     AgentComputerStatus& data = dataFrameStruct.data.computerStatus;
@@ -829,6 +840,10 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload规划点数据反序列化*/
         decoderGoalPayload(undecodedData,decoderData);
         break;
+    case MessageID::QRCodeCoordMessageID:
+        /*Payload二维码坐标数据反序列化*/
+        decoderQRCodeCoordPayload(undecodedData,decoderData);
+        break;
     case MessageID::AgentComputerStatusMessageID:
         /*Payload智能体电脑状态数据反序列化*/
         decoderAgentComputerStatusPayload(undecodedData,decoderData);
@@ -889,7 +904,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::NodeMessageID:case MessageID::AgentComputerStatusMessageID:
     case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
     case MessageID::WaypointStateMessageID:case MessageID::PX4StateMessageID:
-    case MessageID::PX4ParameterMessageID:
+    case MessageID::PX4ParameterMessageID:case MessageID::QRCodeCoordMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -1217,6 +1232,14 @@ void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
 
 }
 
+ void Codec::coderQRCodeCoordPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     QRCodeCoord data=codelessData.data.QRCodePoiont;
+     doubleCopyToUint8tArray(payload,data.x);
+     doubleCopyToUint8tArray(payload,data.y);
+     doubleCopyToUint8tArray(payload,data.z);
+ }
+
 void Codec::coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     FACCompetitionState data=codelessData.data.FACState;
@@ -1466,6 +1489,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::GoalMessageID:
         /*Payload规划点数据序列化*/
         coderGoalPayload(PayloadData,codelessData);
+        break;
+    case MessageID::QRCodeCoordMessageID:
+        /*Payload二维码坐标数据序列化*/
+        coderQRCodeCoordPayload(PayloadData,codelessData);
         break;
     case MessageID::AgentComputerStatusMessageID:
         /*Payload智能体电脑状态数据序列化*/

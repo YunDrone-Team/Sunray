@@ -28,6 +28,7 @@ enum MessageID
     DemoMessageID                   = 202,
     ScriptMessageID                 = 203,
     GoalMessageID                   = 204,
+    QRCodeCoordMessageID            = 205,
 
 };
 

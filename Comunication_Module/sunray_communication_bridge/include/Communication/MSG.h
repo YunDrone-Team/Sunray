@@ -630,6 +630,22 @@ struct Goal
     }
 };
 
+//二维码坐标- QRCodeCoord（#205）
+struct QRCodeCoord
+{
+
+    double x;
+    double y;
+    double z;
+
+    void init()
+    {
+        x=0;
+        y=0;
+        z=0;
+    }
+};
+
 // 有效数据部分联合体，用于传递有效数据
 union Payload
 {
@@ -655,6 +671,7 @@ union Payload
     ViobotSwitch viobotSwitchData;      // Viobot算法开关 - ViobotSwitch（#105）
     RTKOrigin rtkOrigin;                // RTK原点设置- RTKOrigin（#106）
     WaypointState waypointState;        // 航点状态 -WaypointState（#34）
+    QRCodeCoord QRCodePoiont;           // 二维码坐标- QRCodeCoord（#205）
 };
 
 //整个数据帧
