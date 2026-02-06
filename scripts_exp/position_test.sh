@@ -1,1 +1,0 @@
-roslaunch sunray_uav_control positioning_accuracy.launch record_time:=15

@@ -1,3 +1,0 @@
-<launch>
-    <node name="missioncmd_pub" pkg="sunray_formation" type="missioncmd_pub" output="screen"></node>
-</launch>

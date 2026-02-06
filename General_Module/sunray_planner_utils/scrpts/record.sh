@@ -1,1 +1,0 @@
-rosbag record -O map.bag /Odometry  /cloud_registered
