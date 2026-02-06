@@ -1,0 +1,19 @@
+<launch>
+  <!--选择cartogapher算法时不开启滤波节点-->
+  <arg name="is_cartographer" default="false"/>
+  <!-- Robot pose ekf 拓展卡尔曼滤波-->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" unless="$(arg is_cartographer)">
+    <param name="output_frame" value="odom_combined"/>
+    <param name="base_footprint_frame" value="base_footprint"/>
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="2.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+    <remap from="imu_data" to="imu" />
+  </node>
+
+</launch>
+
+
+

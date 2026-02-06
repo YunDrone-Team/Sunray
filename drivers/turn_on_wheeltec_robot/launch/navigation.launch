@@ -1,0 +1,31 @@
+
+<launch>
+ <!-- 开启机器人底层相关节点 同时开启导航功能-->
+ <include file="$(find turn_on_wheeltec_robot)/launch/turn_on_wheeltec_robot.launch">
+    <arg name="navigation"  default="true"/>
+ </include>
+ <!-- turn on lidar开启雷达  -->
+ <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_lidar.launch" />
+
+ <!-- 设置需要用于导航的地图  -->
+ <arg name="map_file" default="$(find turn_on_wheeltec_robot)/map/WHEELTEC.yaml"/>
+ <node name="map_server_for_test" pkg="map_server" type="map_server" args="$(arg map_file)">
+ </node>
+
+ <!-- 开启用于导航的自适应蒙特卡洛定位amcl-->
+ <include file="$(find turn_on_wheeltec_robot)/launch/include/amcl.launch" />
+
+ <!-- MarkerArray功能节点> -->
+ <node name='send_mark' pkg="turn_on_wheeltec_robot" type="send_mark.py">
+ </node>
+
+  <!-- move_base节点检测 -->
+ <node name='node_detection' pkg="turn_on_wheeltec_robot" type="node_ping.py">
+ 	<param name="node_name" type="string" value="/move_base"/>
+ </node>
+ 
+</launch>
+
+
+
+

@@ -1,0 +1,16 @@
+<launch>
+    <node name="rtsp_push_node" pkg="sunray_media" type="rtsp_push_node" output="screen">
+        <param name="frame_width" type="int" value="640"/>
+        <param name="frame_height" type="int" value="480"/>
+        <param name="fps" type="int" value="30"/>
+        <param name="rtsp_url" type="string" value="rtsp://192.168.25.164:8554/live"/>
+        <param name="topic_name" type="string" value="/usb_cam/image_raw"/>
+    </node>
+
+    <!-- 启动图像解压桥 -->
+    <node name="decompress_bridge" pkg="sunray_gimbal" type="decompress_bridge.py" output="screen" respawn="true">
+        <param name="input_topic" value="/camera/video_stream"/>
+        <param name="output_topic" value="/usb_cam/image_raw"/>
+    </node>
+
+</launch>

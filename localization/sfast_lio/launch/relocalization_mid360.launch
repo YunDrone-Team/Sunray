@@ -1,0 +1,26 @@
+<launch>
+
+	<arg name="rviz_enable" default="false" />
+	<arg name="fastlio_enable" default="false" />
+
+	<rosparam command="load" file="$(find sfast_lio)/config/mid360.yaml" />
+
+	<param name="feature_extract_enable" type="bool" value="0"/>
+	<param name="point_filter_num" type="int" value="3"/>
+	<param name="max_iteration" type="int" value="3" />
+	<param name="filter_size_surf" type="double" value="0.5" />
+	<param name="filter_size_map" type="double" value="0.5" />
+    <param name="init_method" type="int" value="0" />
+
+    <node pkg="sfast_lio" type="relocalization_lio" name="relocalization_lio" output="screen" />
+    <node pkg="sfast_lio" type="eva_traj" name="eva_traj" output="screen" />
+
+	<group if="$(arg fastlio_enable)">
+        <include file="$(find fast_lio)/launch/mapping_mid360.launch" />
+	</group>
+
+	<group if="$(arg rviz_enable)">
+	    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find sfast_lio)/rviz_cfg/relocalization_mid360.rviz" />
+	</group>
+
+</launch>

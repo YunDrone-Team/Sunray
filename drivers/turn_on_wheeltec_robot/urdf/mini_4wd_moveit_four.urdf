@@ -1,0 +1,781 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="mini_4wd_four_arm">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.00998807222314777 0.000213256947981716 0.127880687203882"
+        rpy="0 0 0" />
+      <mass
+        value="0.898268631678966" />
+      <inertia
+        ixx="0.00130438362150821"
+        ixy="8.86066834150697E-07"
+        ixz="4.5460309565741E-07"
+        iyy="0.0013098356274382"
+        iyz="1.05280534377215E-07"
+        izz="0.00172801779736849" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="left_front_wheel_link">
+    <inertial>
+      <origin
+        xyz="2.95973599312438E-06 0.0011028125848432 -4.14302203655126E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.0537742719170435" />
+      <inertia
+        ixx="1.99605463502217E-05"
+        ixy="3.79779375277138E-08"
+        ixz="-1.15824420988123E-14"
+        iyy="3.41111974262359E-05"
+        iyz="-1.42693433595493E-14"
+        izz="1.99600030132707E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/left_front_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/left_front_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_front_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0.085391 0.096547 0.033"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_front_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="left_rear_wheel_link">
+    <inertial>
+      <origin
+        xyz="2.9597359931452E-06 0.0011028125848432 -4.14302203655126E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.0537742719170435" />
+      <inertia
+        ixx="1.99605463502217E-05"
+        ixy="3.79779375277148E-08"
+        ixz="-1.15824394001324E-14"
+        iyy="3.41111974262359E-05"
+        iyz="-1.42693432313578E-14"
+        izz="1.99600030132708E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/left_rear_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/left_rear_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_rear_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="-0.087608 0.097011 0.033"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_rear_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="right_front_wheel_link">
+    <inertial>
+      <origin
+        xyz="-2.95974433894841E-06 -0.00110281258482081 4.14302273044065E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.0537742719170435" />
+      <inertia
+        ixx="1.99605463502664E-05"
+        ixy="3.79779458467991E-08"
+        ixz="1.15056825833006E-14"
+        iyy="3.41111974261912E-05"
+        iyz="-1.43313072928203E-14"
+        izz="1.99600030132707E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/right_front_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/right_front_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_front_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0.084872 -0.096869 0.033"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_front_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="right_rear_wheel_link">
+    <inertial>
+      <origin
+        xyz="-2.95974433896923E-06 -0.00110281258482081 4.14302273044065E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.0537742719170435" />
+      <inertia
+        ixx="1.99605463502664E-05"
+        ixy="3.79779458467985E-08"
+        ixz="1.1505680582955E-14"
+        iyy="3.41111974261913E-05"
+        iyz="-1.43313068782114E-14"
+        izz="1.99600030132708E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/right_rear_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/right_rear_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_rear_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="-0.088127 -0.096405 0.033"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_rear_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="link1">
+    <inertial>
+      <origin
+        xyz="7.75205954983704E-10 -0.0187068878492792 0.0525000000000006"
+        rpy="0 0 0" />
+      <mass
+        value="0.0182961255655804" />
+      <inertia
+        ixx="1.62397575138128E-05"
+        ixy="3.59330528671938E-13"
+        ixz="4.52249693620852E-21"
+        iyy="7.56857037469918E-06"
+        iyz="5.99188957327892E-20"
+        izz="1.05132687532751E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint1"
+    type="revolute">
+    <origin
+      xyz="0.097712 0.029688 0.1535"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="link1" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link2">
+    <inertial>
+      <origin
+        xyz="-0.00116494569776043 -0.0234423567529267 0.0206973068371078"
+        rpy="0 0 0" />
+      <mass
+        value="0.0488195362560599" />
+      <inertia
+        ixx="1.97462867733434E-05"
+        ixy="1.45082117414486E-07"
+        ixz="-1.29484666846207E-07"
+        iyy="1.15881140697428E-05"
+        iyz="1.5207195652596E-07"
+        izz="1.21275429251273E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="join2"
+    type="revolute">
+    <origin
+      xyz="0 0.002 0.105"
+      rpy="0 0 0" />
+    <parent
+      link="link1" />
+    <child
+      link="link2" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link3">
+    <inertial>
+      <origin
+        xyz="0.00940216107803504 -0.0267624779524026 0.0320491499984936"
+        rpy="0 0 0" />
+      <mass
+        value="0.0777888341146784" />
+      <inertia
+        ixx="1.88070579775309E-05"
+        ixy="1.43436871558506E-07"
+        ixz="-7.16494718674059E-11"
+        iyy="1.29763198240434E-05"
+        iyz="1.41803265068013E-07"
+        izz="1.69080823048526E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint3"
+    type="revolute">
+    <origin
+      xyz="0.001 0.0005 0.0975"
+      rpy="0 0 0" />
+    <parent
+      link="link2" />
+    <child
+      link="link3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link4">
+    <inertial>
+      <origin
+        xyz="-0.00026492680286927 -0.00369362330436689 0.00436132773245296"
+        rpy="0 0 0" />
+      <mass
+        value="0.00297108566800572" />
+      <inertia
+        ixx="4.07485385419139E-07"
+        ixy="8.42893347344501E-14"
+        ixz="-1.16325456269419E-13"
+        iyy="2.05767246894314E-07"
+        iyz="1.40876829989026E-07"
+        izz="2.13065038138613E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link4.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link4.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint4"
+    type="revolute">
+    <origin
+      xyz="-0.004 -0.0402 0.054"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link4" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link5">
+    <inertial>
+      <origin
+        xyz="0.0108163670337018 -0.00658804624480021 0.0193552136651666"
+        rpy="0 0 0" />
+      <mass
+        value="0.0110869938441037" />
+      <inertia
+        ixx="2.5235634788288E-06"
+        ixy="-2.26734241341459E-13"
+        ixz="-1.42964964466946E-12"
+        iyy="2.26638567960559E-06"
+        iyz="-3.1220771859295E-07"
+        izz="7.09396223568187E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link5.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link5.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint5"
+    type="revolute">
+    <origin
+      xyz="-0.012359 -0.024099 0.025382"
+      rpy="0 0 0" />
+    <parent
+      link="link4" />
+    <child
+      link="link5" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link6">
+    <inertial>
+      <origin
+        xyz="0.00350000383403484 0.00564731558519032 0.00640800976289796"
+        rpy="0 0 0" />
+      <mass
+        value="0.00197604548440531" />
+      <inertia
+        ixx="3.99845023290253E-07"
+        ixy="-9.07924637901812E-14"
+        ixz="-1.15119100004751E-13"
+        iyy="1.95368168459785E-07"
+        iyz="-1.51745831304774E-07"
+        izz="2.07440923057215E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link6.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link6.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint6"
+    type="revolute">
+    <origin
+      xyz="-0.0085 -0.0152 0.054"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link6" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link7">
+    <inertial>
+      <origin
+        xyz="0.0108163673530753 0.00614995361370799 0.0192779484143569"
+        rpy="0 0 0" />
+      <mass
+        value="0.0110869919561475" />
+      <inertia
+        ixx="2.52356011937527E-06"
+        ixy="2.5005026662852E-13"
+        ixz="-1.53253747888116E-12"
+        iyy="2.26639574215186E-06"
+        iyz="3.12169913809363E-07"
+        izz="7.09382731892296E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link7.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link7.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint7"
+    type="revolute">
+    <origin
+      xyz="-0.0078594 0.024471 0.025023"
+      rpy="0 0 0" />
+    <parent
+      link="link6" />
+    <child
+      link="link7" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link8">
+    <inertial>
+      <origin
+        xyz="0.00750000718121582 -0.0127747670306946 0.0120023106456489"
+        rpy="0 0 0" />
+      <mass
+        value="0.00108778506953502" />
+      <inertia
+        ixx="1.71922619588023E-07"
+        ixy="4.96074659533696E-14"
+        ixz="-5.35183074890852E-14"
+        iyy="9.10794072428515E-08"
+        iyz="8.29113514521993E-08"
+        izz="8.24748899495379E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link8.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link8.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint8"
+    type="revolute">
+    <origin
+      xyz="-0.007 -0.060403 0.046647"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link8" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="link9">
+    <inertial>
+      <origin
+        xyz="0.00750000706753878 0.012950649501957 0.011812316238643"
+        rpy="0 0 0" />
+      <mass
+        value="0.00108778506953505" />
+      <inertia
+        ixx="1.71922619588032E-07"
+        ixy="-4.96618537838208E-14"
+        ixz="-5.20519252785958E-14"
+        iyy="8.86285716063884E-08"
+        iyz="-8.30022521497516E-08"
+        izz="8.49257255860086E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link9.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.741176470588235 0.901960784313726 0.956862745098039 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://mini_4wd_four_arm/meshes/link9.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="joint9"
+    type="revolute">
+    <origin
+      xyz="-0.007 0.0050034 0.046647"
+      rpy="0 0 0" />
+    <parent
+      link="link3" />
+    <child
+      link="link9" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-0.8"
+      upper="0.8"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

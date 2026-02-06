@@ -1,0 +1,12 @@
+<launch>
+    <!-- 设置参数 -->
+    <arg name="rtsp_url" default="rtsp://192.168.144.25:8554/main.264" />
+    <arg name="camera_info_path" default="$(find sunray_tutorial)/config/head_camera.yaml" />
+
+    <!-- 节点：图像发布 + 目标追踪 + CameraInfo -->
+    <node name="gimbal_qrtracker" pkg="sunray_gimbal" type="gimbal_qrtracker" output="screen">
+        <param name="rtsp_url" value="$(arg rtsp_url)" />
+        <param name="camera_info_path" value="$(arg camera_info_path)" />
+    </node>
+
+</launch>

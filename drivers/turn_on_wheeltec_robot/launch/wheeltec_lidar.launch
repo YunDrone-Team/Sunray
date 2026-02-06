@@ -1,0 +1,124 @@
+<launch>
+    <arg name="rplidar_mode"  default="ls_M10P_uart" 
+    doc="opt:  ls_M10_uart, ls_M10P_uart, ls_M10P_PLUS_uart, ls_M10_net, ls_M10P_net, ls_M10P_PLUS_net, ls_N10, ls_N10P, ld_14, ld_19, rplidar_A1_A2, rplidar_A3, rplidar_S1"/>
+
+    <!--所有雷达正前方（小车正前方）为0度角方向，扫描角度顺时针方向增加 -->
+    <!--disable_min：多角度屏蔽角度起始值 disable_max：多角度屏蔽角度结束值 ,不开启角度屏蔽默认扫描角度为0°~360° -->
+    <!--Example: disable_min=[40,90]  disable_max=[50,120] 表示雷达扫描时屏蔽40°~50°,90°~120°的区间,可屏蔽单个或多个区间-->
+
+    <!-- 镭神M10 M10P N10 N10P雷达参数 -->
+    <param name="lslidar_driver_node/truncated_mode" value="1"/>    <!--0:不屏蔽角度 1:屏蔽角度-->
+    <rosparam param="lslidar_driver_node/disable_min">[120]</rosparam> <!--角度左值-->
+    <rosparam param="lslidar_driver_node/disable_max">[240]</rosparam> <!--角度右值-->
+    <!-- 镭神M10 M10P N10 N10P雷达参数 -->
+
+    <!--乐动LD-14雷达参数-->
+    <param name="/LD14/flag_parted" type="bool" value="false"/>   <!--false:不屏蔽角度 true:屏蔽角度-->
+    <rosparam param="/LD14/disable_min">[120]</rosparam> <!--角度左值-->
+    <rosparam param="/LD14/disable_max">[240]</rosparam> <!--角度右值-->
+    <!--乐动LD-14雷达参数-->
+
+    <!--乐动LD-19雷达参数-->
+    <param name="/LD19/flag_parted" type="bool" value="false"/>   <!--false:不屏蔽角度 true:屏蔽角度-->
+    <rosparam param="/LD19/disable_min">[120]</rosparam> <!--角度左值-->
+    <rosparam param="/LD19/disable_max">[240]</rosparam> <!--角度右值-->
+    <!--乐动LD-19雷达参数-->
+
+    <!-- 思岚雷达参数 -->
+    <!--单角度分割-->
+    <param name="/rplidarNode/angle_start"         type="double" value="0"  />   <!-- 扫描起始角度-->
+    <param name="/rplidarNode/angle_end"           type="double" value="360"/>   <!-- 扫描结束角度-->
+    <!-- <param name="/rplidarNode/angle_start"         type="double" value="270"/> -->   <!-- A1_moveit扫描起始角度-->
+    <!-- <param name="/rplidarNode/angle_end"           type="double" value="90"/>  -->   <!-- A1_moveit扫描结束角度-->
+    <!--<param name="/rplidarNode/angle_start"         type="double" value="315"/>-->   <!-- A2_moveit扫描起始角度-->
+    <!--<param name="/rplidarNode/angle_end"           type="double" value="135"/>-->   <!-- A2_moveit扫描结束角度-->
+    <!--<param name="/rplidarNode/angle_start"         type="double" value="250"/>-->   <!-- 服务机器人扫描起始角度-->
+    <!--<param name="/rplidarNode/angle_end"           type="double" value="110"/>-->   <!-- 服务机器人扫描结束角度-->
+    <param name="/rplidarNode/distance_min"        type="double" value="0"  /> <!-- 最小扫描距离-->
+    <param name="/rplidarNode/distance_max"        type="double" value="30" /> <!-- 最大扫描距离-->
+    <!--多角度分割-->
+    <param name="/rplidarNode/is_parted"           type="bool"   value="false"/> <!--角度是否分割-->
+    <param name="/rplidarNode/angle1_start"        type="double" value="50"/> <!--第一个屏蔽角度的起始角度-->
+    <param name="/rplidarNode/angle1_end"          type="double" value="70"/> <!--第一个屏蔽角度的结束角度-->
+    <param name="/rplidarNode/angle2_start"        type="double" value="120"/> <!--第二个屏蔽角度的起始角度--> 
+    <param name="/rplidarNode/angle2_end"          type="double" value="240"/> <!--第二个屏蔽角度的结束角度--> 
+    <param name="/rplidarNode/angle3_start"        type="double" value="290"/> <!--第三个屏蔽角度的起始角度-->
+    <param name="/rplidarNode/angle3_end"          type="double" value="310"/> <!--第三个屏蔽角度的结束角度-->
+    <param name="/rplidarNode/angle4_start"        type="double" value="0"/> <!--第四个屏蔽角度的起始角度-->
+    <param name="/rplidarNode/angle4_end"          type="double" value="0"/> <!--第四个屏蔽角度的结束角度-->  
+    <!-- 思岚雷达参数 -->
+   
+    <!-- 启动镭神N10雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_N10')">
+        <include file="$(find lslidar_driver)/launch/lslidar_serial.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="N10"/> 
+    </group>
+
+    <!-- 启动镭神N10P雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_N10P')">
+        <include file="$(find lslidar_driver)/launch/lslidar_serial.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="N10_P"/> 
+    </group>
+
+    <!-- 启动乐动LD-14雷达 -->
+    <group if="$(eval rplidar_mode == 'ld_14')">
+        <include file="$(find ldlidar_14)/launch/ld14.launch"/>
+    </group>
+
+    <!-- 启动乐动LD-19雷达 -->
+    <group if="$(eval rplidar_mode == 'ld_19')">
+        <include file="$(find ldlidar_19)/launch/ld19.launch"/>
+    </group>
+
+    <!-- 启动思岚A1/A2雷达 -->
+    <group if="$(eval rplidar_mode == 'rplidar_A1_A2')">
+        <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+    </group>
+
+    <!-- 启动思岚A3雷达 -->
+    <group if="$(eval rplidar_mode == 'rplidar_A3')">
+        <include file="$(find rplidar_ros)/launch/rplidar_a3.launch"/>
+    </group>
+
+    <!-- 启动思岚S1雷达 -->
+    <group if="$(eval rplidar_mode == 'rplidar_S1')">
+        <include file="$(find rplidar_ros)/launch/rplidar_s1.launch"/>
+    </group>
+
+    <!-- 启动镭神M10_uart雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_M10_uart')">
+        <include file="$(find lslidar_driver)/launch/lslidar_serial.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="M10"/> 
+    </group>
+
+    <!-- 启动镭神M10P_uart雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_M10P_uart')">
+        <include file="$(find lslidar_driver)/launch/lslidar_serial.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="M10_P"/> 
+    </group>
+
+    <!-- 启动镭神M10P_PLUS_uart雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_M10P_PLUS_uart')">
+        <include file="$(find lslidar_driver)/launch/lslidar_serial.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="M10_PLUS"/> 
+    </group>
+
+    <!-- 启动镭神M10_net雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_M10_net')">
+        <include file="$(find lslidar_driver)/launch/lslidar_net.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="M10"/> 
+    </group>
+
+    <!-- 启动镭神M10P_net雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_M10P_net')">
+        <include file="$(find lslidar_driver)/launch/lslidar_net.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="M10_P"/> 
+    </group>
+
+    <!-- 启动镭神M10P_PLUS_net雷达 -->
+    <group if="$(eval rplidar_mode == 'ls_M10P_PLUS_net')">
+        <include file="$(find lslidar_driver)/launch/lslidar_net.launch"/>
+        <param name="lslidar_driver_node/lidar_name" value="M10_PLUS"/> 
+    </group>
+
+</launch>

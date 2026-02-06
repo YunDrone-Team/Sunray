@@ -1,0 +1,78 @@
+#Navigation官方介绍：http://wiki.ros.org/navigation/Tutorials
+#Navigation官方讲解：http://wiki.ros.org/navigation/Tutorials/RobotSetup
+#move_base官方介绍：http://wiki.ros.org/move_base
+
+#设置全局路径规划器
+#base_global_planner: "carrot_planner/CarrotPlanner"
+#base_global_planner: "navfn/NavfnROS" 
+base_global_planner: "global_planner/GlobalPlanner"
+
+#设置局部路径规划器
+#局部路径规划器会在文件【teb_local_planner.launch】、【dwa_local_planner.launch】对应文件内重新设置
+#base_local_planner: "dwa_local_planner/DWAPlannerROS"
+base_local_planner: "teb_local_planner/TebLocalPlannerROS"
+
+#发布机器人速度控制命令话题cmd_vel的频率，单位：Hz
+controller_frequency: 10.0 
+
+#全局路径规划器的规划频率，如果设置为0，仅在设置目标点位置时执行一次，单位：Hz
+planner_frequency: 1.0  
+
+#路径规划失败后，尝试重新规划几次后才执行恢复行为，如果设置为-1，代表无限重试
+max_planning_retries: 1  
+
+#当move_base在不活动状态时,是否关掉代价地图的更新
+shutdown_costmaps: false  
+
+#配置恢复行为
+recovery_behaviors:  
+  #自定义恢复行为名称
+  - name: 'recovery_behavior_1'  
+  #选择恢复行为类型
+    type: 'clear_costmap_recovery/ClearCostmapRecovery'  
+  #自定义恢复行为名称
+  - name: 'recovery_behavior_2'  
+  #选择恢复行为类型
+    type: 'rotate_recovery/RotateRecovery'  
+  #自定义恢复行为名称
+  - name: 'recovery_behavior_3' 
+  #选择恢复行为类型 
+    type: 'move_slow_and_clear/MoveSlowAndClear'  
+ 
+#是否开启恢复行为，这里选择不开启，因为经测试恢复行为用处不大，开启后比较浪费时间。
+recovery_behavior_enabled: false 
+#是否开启恢复行为中控制机器人旋转的恢复行为。注意，此参数仅在move_base使用默认恢复行为时使用。
+clearing_rotation_allowed: false 
+
+#执行恢复行为时，与机器人距离3米外的障碍物会被清除，单位：s。注意，此参数仅在move_base使用默认恢复行为时使用。
+conservative_reset_dist: 3.0
+
+#路径规划无法成功多长时间后，执行恢复行为，单位：s
+planner_patience: 3.0  
+#没有接收到有些控制命令多长时间后，执行恢复行为，单位：s
+controller_patience: 3.0 
+
+#当机器人在运动，但是运动幅度不大于多少时，认为机器人处于振荡状态，单位：m
+oscillation_distance: 0.02  
+#机器人处于振荡状态多久后，执行恢复行为，单位：s
+oscillation_timeout: 10.0 
+
+#设置恢复行为参数
+recovery_behavior_1:
+  #与机器人距离5米外的障碍物会被清除
+  reset_distance: 1.0  
+recovery_behavior_2:
+  #与机器人距离3米外的障碍物会被清除
+  reset_distance: 3.0  
+recovery_behavior_3:
+  #与机器人距离1米外的障碍物会被清除
+  clearing_distance: 5.0
+  #限制恢复行为时机器人的线速度，单位：m/s
+  limited_trans_speed: 0.1  
+  #限制恢复行为时机器人的角速度，单位：rad/s
+  limited_rot_speed: 0.4  
+  #完成该恢复行为机器人必须移动的距离，单位：m
+  limited_distance: 0.3  
+  #对应的局部路径规划器的名称
+  #planner_namespace: “DWAPlannerROS”
+  planner_namespace: TebLocalPlannerROS

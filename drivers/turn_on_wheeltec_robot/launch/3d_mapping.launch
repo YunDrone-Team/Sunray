@@ -1,0 +1,12 @@
+<launch>
+  <!-- 开启机器人2d建图 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/mapping.launch" >
+  	<!-- 关闭rtab提供的定位补偿，使用2D建图进行定位补偿 -->
+  	<arg name="odom_frame_id"  value="odom"/>
+  </include>
+
+  <!-- 开启摄像头 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/wheeltec_camera.launch" />
+  <!-- 开启3d 建图 -->
+  <include file="$(find turn_on_wheeltec_robot)/launch/include/rtabmap_mapping.launch" />
+</launch>

@@ -1,0 +1,23 @@
+#速度平滑功能包官方介绍：http://wiki.ros.org/yocs_velocity_smoother/hydro
+# Example configuration:
+# - velocity limits are around a 10% above the physical limits
+# - acceleration limits are just low enough to avoid jerking
+
+#平滑功能包参数，目前已不启用平滑功能，可以忽略
+
+# Mandatory parameters
+speed_lim_v: 1.5   # Linear velocity limit
+speed_lim_w: 3.14  # mini_akm# Angular velocity limit
+
+accel_lim_v: 0.5 # Linear acceleration limit
+accel_lim_w: 0.3  # mini_akm# Angular acceleration limit
+
+# Optional parameters
+frequency: 30.0   # Output messages rate. The velocity smoother keeps it regardless incoming messages rate, interpolating whenever necessary
+decel_factor: 1.0 # Deceleration/acceleration ratio. Useful to make deceleration more aggressive
+
+# Robot velocity feedback type:
+#  0 - none
+#  1 - odometry
+#  2 - end robot commands
+robot_feedback: 0
