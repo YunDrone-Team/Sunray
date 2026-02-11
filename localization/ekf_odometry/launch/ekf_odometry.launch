@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- IMU EKF Odometry Node -->
+    <node pkg="ekf_odometry" type="ekf_odometry_node" name="ekf_odometry_node" output="screen">
+        
+        <!-- Topic names -->
+        <param name="imu_topic" type="string" value="/livox/imu" />
+        <param name="odom_topic" type="string" value="/Odometry" />
+        <param name="imu_odom_topic" type="string" value="/sunray/ekf_odometry" />
+        
+        <!-- Frame IDs -->
+        <param name="output_frame" type="string" value="world" />
+        <param name="base_frame" type="string" value="base_link" />
+    
+        
+    </node>
+    
+</launch>
