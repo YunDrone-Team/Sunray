@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sunray_log_example</name>
+  <version>0.1.0</version>
+  <description>sunray_log 封装头文件使用示例（定位模块）</description>
+
+  <maintainer email="maintainer@example.com">Sunray</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>nav_msgs</depend>
+
+  <export></export>
+</package>

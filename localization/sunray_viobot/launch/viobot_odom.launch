@@ -1,0 +1,15 @@
+<launch>
+  <!-- Source and destination topic names -->
+  <arg name="sub_topic"          default="/baton/stereo3/odometry" />
+  <arg name="pub_topic"          default="/uav1/sunray/odometry" />
+  <!-- Optional: override frame_id fields in the republished message (leave empty to keep original) -->
+  <arg name="pub_frame_id"       default="" />
+  <arg name="pub_child_frame_id" default="" />
+
+  <node pkg="viobot" type="viobot_odom_node" name="viobot_odom_node" output="screen">
+    <param name="sub_topic"          value="$(arg sub_topic)" />
+    <param name="pub_topic"          value="$(arg pub_topic)" />
+    <param name="pub_frame_id"       value="$(arg pub_frame_id)" />
+    <param name="pub_child_frame_id" value="$(arg pub_child_frame_id)" />
+  </node>
+</launch>
