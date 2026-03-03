@@ -18,6 +18,7 @@ public:
         nh.param<int>("uav_num", uav_num, 3);
         nh.param<int>("goal_type", goal_type, 1);
         nh.param<float>("offset", offset, 1.0);
+        nh.param<int>("offset_direction", offset_direction, 0);  // 0: 垂直偏移, 1: 水平偏移
         nh.param<bool>("use_hight", use_hight, true);
         nh.param<float>("z_height", z_height, 1.0);
         nh.param<std::string>("goal_topic", goal_topic, "goal");
@@ -69,10 +70,19 @@ public:
             float yaw = tf::getYaw(msg->pose.orientation);
             // std::cout << "yaw: " << yaw / 3.14 * 180 << std::endl;
 
-            // 计算目标位置 与当前指向方向垂直
-            // float offset =
-            goal.pose.position.x = x - offset * i * cos(M_PI / 2 - yaw);
-            goal.pose.position.y = y + offset * i * sin(M_PI / 2 - yaw);
+            // 计算目标位置
+            if (offset_direction == 0)
+            {
+                // 垂直偏移：与当前指向方向垂直
+                goal.pose.position.x = x - offset * i * cos(M_PI / 2 - yaw);
+                goal.pose.position.y = y + offset * i * sin(M_PI / 2 - yaw);
+            }
+            else
+            {
+                // 水平偏移：沿当前指向方向
+                goal.pose.position.x = x - offset * i * cos(yaw);
+                goal.pose.position.y = y - offset * i * sin(yaw);
+            }
             goal.pose.position.z = z;
 
             // std::cout << "cos: " << offset * i * cos(M_PI / 2 - yaw) << " sin: " << offset * i * sin(M_PI / 2 - yaw) << std::endl;
@@ -205,6 +215,7 @@ private:
     int uav_num;
     int goal_type;
     float offset;
+    int offset_direction;  // 0: 垂直偏移, 1: 水平偏移
     bool use_hight;
     float z_height;
     std::string goal_topic;

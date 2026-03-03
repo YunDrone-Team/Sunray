@@ -8,6 +8,7 @@ project(sunray_ugv_control)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(octomap_msgs_DIR /home/yundrone/app/octomap_msgs/build/devel/share/octomap_msgs/cmake/octomap_msgsConfig.cmake)
 find_package(octomap_msgs REQUIRED)
@@ -24,6 +25,12 @@ find_package(catkin REQUIRED COMPONENTS
   sunray_msgs
   nav_msgs
   geometry_msgs
+	pcl_conversions
+	sensor_msgs
+	tf2
+  tf2_ros
+  tf2_sensor_msgs
+  sensor_msgs
 )
 
 catkin_package(
@@ -31,7 +38,7 @@ catkin_package(
 #  LIBRARIES ugv_planning
 #  CATKIN_DEPENDS octomap roscpp rospy std_msgs
 #  DEPENDS system_lib
-CATKIN_DEPENDS rospy nav_msgs geometry_msgs
+CATKIN_DEPENDS rospy nav_msgs geometry_msgs tf2 tf2_ros tf2_sensor_msgs sensor_msgs
 )
 
 include_directories(
@@ -59,6 +66,12 @@ target_link_libraries(AstarMap
 add_executable(astar ugv_control/Astar.cpp)
 target_link_libraries(astar ${catkin_LIBRARIES})    
 
+
+add_executable(mocap2odom ugv_control/mocap2odom.cpp)
+target_link_libraries(mocap2odom ${catkin_LIBRARIES})
+
+
+
 add_executable(ugv_terminal_control ugv_control/ugv_terminal_control.cpp)
 target_link_libraries(ugv_terminal_control
     ${catkin_LIBRARIES}
@@ -81,3 +94,13 @@ catkin_install_python(PROGRAMS
   scripts/OccupancyGrid_pgm.py  # 脚本路径
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+
+include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
+
+add_executable(pointcloud_aligner_node ugv_control/pointcloud_aligner_node.cpp)
+target_link_libraries(pointcloud_aligner_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(bridge_node ugv_control/bridge.cpp)
+target_link_libraries(bridge_node ${catkin_LIBRARIES})
+

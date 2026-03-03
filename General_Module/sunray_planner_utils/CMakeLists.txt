@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   laser_geometry
   tf2_eigen
-  # livox_ros_driver2
+  livox_ros_driver2
 )
 
 # 判断是否有livox_ros_driver2包，如果有则添加

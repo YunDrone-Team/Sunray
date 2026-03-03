@@ -569,7 +569,7 @@ int main(int argc, char **argv)
 
     // 【发布】目标全局坐标 (新话题，供无人车使用)
     ros::Publisher target_global_pub = nh.advertise<geometry_msgs::PointStamped>(
-        "/target_global_position", 1);
+        "uav/target_global_position", 1);
 
     // 【发布】目标点给UGV EGO规划器
     // 通过 /move_base_simple/goal 发布，goal2swarm节点会转发到 /goal_1

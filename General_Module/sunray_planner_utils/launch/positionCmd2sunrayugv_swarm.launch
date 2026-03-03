@@ -1,0 +1,8 @@
+<launch>
+  <node name="positionCmd2sunrayugv_node_1" pkg="sunray_planner_utils" type="positionCmd2sunrayugv" output="screen">
+    <param name="cmd_sub_topic" value="/ugv1/pos_cmd"/>
+    <param name="control_pub_topic" value="/ugv1/sunray_ugv/ugv_control_cmd"/>
+    <param name="control_type" value="0"/>
+    <param name="enable_yaw" value="true"/>
+  </node>
+</launch>

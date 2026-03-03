@@ -68,7 +68,10 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <depend>octomap_msgs</depend>
-
+<depend>tf2</depend>
+<depend>tf2_ros</depend>
+<depend>tf2_sensor_msgs</depend>
+<depend>sensor_msgs</depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
