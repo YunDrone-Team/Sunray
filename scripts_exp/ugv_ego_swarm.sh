@@ -12,5 +12,5 @@ gnome-terminal --window -e 'bash -c "sleep 4.0; roslaunch sunray_planner_utils m
 # start ego planner and goal2swarm
 gnome-terminal --window -e 'bash -c "sleep 5.0; roslaunch sunray_planner_utils sunray_ego_ugv_swarm.launch ugv_id:=1; exec bash"' \
 --tab -e 'bash -c "sleep 7.0; roslaunch sunray_planner_utils positionCmd2sunrayugv_swarm.launch; exec bash"' \
---tab -e 'bash -c "sleep 7.0; roslaunch sunray_planner_utils goal2swarm.launch uav_num:=${num} offset:=1.5 goal_topic:=goal use_hight:=false; exec bash"' \
+--tab -e 'bash -c "sleep 7.0; roslaunch sunray_planner_utils goal2swarm_ugv.launch uav_num:=${num} offset:=1.5 goal_topic:=goal use_hight:=false; exec bash"' \
 
