@@ -15,8 +15,8 @@
     <arg name="search_mode" default="0"/>
 
     <!-- 搜索参数 -->
-    <arg name="search_height" default="2.5"/>
-    <arg name="search_radius" default="2.0"/>
+    <arg name="search_height" default="1.8"/>
+    <arg name="search_radius" default="1.0"/>
     <arg name="search_speed" default="0.5"/>
     <arg name="search_circles" default="7"/>
 
