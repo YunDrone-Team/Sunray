@@ -10,6 +10,12 @@ modules:
     build_path: "build/sunray_common"
     dependencies: []
 
+  sunray_150:
+    description: "sunray150的启动仓库"
+    source_path: "sunray150"
+    build_path: "build/sunray150"
+    dependencies: []
+
   # UAV 与 FMT 控制模块
   sunray_uav_control:
     description: "无人机控制模块，包含外部定位、无人机控制等"
