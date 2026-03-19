@@ -130,6 +130,10 @@ add_executable(search_target_and_send_to_ugv advanced/search_target_and_send_to_
 add_dependencies(search_target_and_send_to_ugv sunray_tutorial_gencpp)
 target_link_libraries(search_target_and_send_to_ugv ${catkin_LIBRARIES})
 
+add_executable(search_follow_and_land advanced/search_follow_and_land.cpp)
+add_dependencies(search_follow_and_land sunray_tutorial_gencpp)
+target_link_libraries(search_follow_and_land ${catkin_LIBRARIES})
+
 catkin_install_python(PROGRAMS
 scripts/key_move_car.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

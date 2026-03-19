@@ -1,0 +1,87 @@
+<launch>
+    <!-- UAV基本参数 -->
+    <arg name="uav_id" default="1"/>
+    <arg name="uav_name" default="uav"/>
+
+    <!-- 搜索模式参数 -->
+    <!--
+        search_mode: 搜索模式选择
+        0 = CIRCLE_CURRENT: 以当前位置为圆心画圆搜索
+        1 = CIRCLE_FIXED:   以指定坐标(center_x, center_y)为圆心画圆搜索
+        2 = SPIRAL:         螺旋搜索（从中心向外扩展，默认）
+        3 = GRID:           栅格搜索（蛇形来回扫描）
+    -->
+    <arg name="search_mode" default="3"/>
+
+    <!-- 搜索参数 -->
+    <arg name="search_height" default="2.0"/>
+    <arg name="search_radius" default="1.0"/>
+    <arg name="search_speed" default="1.0"/>
+    <arg name="search_circles" default="9"/>
+    <arg name="max_search_attempts" default="3"/>  <!-- 最大搜索尝试次数 -->
+    <arg name="grid_start_from_right" default="false"/>  <!-- 栅格搜索起始方向：true=从右往左，false=从左往右 -->
+    <arg name="grid_width" default="3.0"/>  <!-- 栅格搜索x方向宽度(米) -->
+    <arg name="grid_height" default="4.0"/>  <!-- 栅格搜索y方向长度(米) -->
+
+    <!-- 指定圆心坐标 (仅在 search_mode=1 或 search_mode=3 时生效) -->
+    <arg name="center_x" default="0.0"/>
+    <arg name="center_y" default="2.0"/>
+
+    <!-- 跟随参数 -->
+    <arg name="k_p_xy" default="1.2"/>
+    <arg name="k_p_z" default="0.5"/>
+    <arg name="k_p_yaw" default="1.0"/>
+    <arg name="max_vel" default="0.5"/>
+    <arg name="max_vel_z" default="0.2"/>
+    <arg name="max_yaw" default="0.4"/>
+    <arg name="follow_height" default="1.5"/>
+
+    <!-- 降落参数 -->
+    <!-- 水平误差阈值与垂直误差阈值 -->
+    <arg name="error_xy" default="0.05"/>
+    <arg name="error_z" default="0.25"/>
+    <!-- 降落高度落差，该值越大降落越快 -->
+    <arg name="drop_height" default="0.5"/>
+    <!-- 最后一段降落速度与时间 -->
+    <arg name="land_vel" default="0.3"/>
+    <arg name="land_time" default="1.5"/>
+    <!-- 目标静止判定时间（秒） -->
+    <arg name="stationary_time" default="3.0"/>
+
+    <!-- 启动搜索-跟随-降落节点 -->
+    <node pkg="sunray_tutorial" type="search_follow_and_land" name="search_follow_and_land_$(arg uav_id)" output="screen">
+        <!-- UAV参数 -->
+        <param name="uav_id" value="$(arg uav_id)"/>
+        <param name="uav_name" value="$(arg uav_name)"/>
+
+        <!-- 搜索参数 -->
+        <param name="search_mode" value="$(arg search_mode)"/>
+        <param name="search_height" value="$(arg search_height)"/>
+        <param name="search_radius" value="$(arg search_radius)"/>
+        <param name="search_speed" value="$(arg search_speed)"/>
+        <param name="search_circles" value="$(arg search_circles)"/>
+        <param name="max_search_attempts" value="$(arg max_search_attempts)"/>
+        <param name="center_x" value="$(arg center_x)"/>
+        <param name="center_y" value="$(arg center_y)"/>
+        <param name="grid_start_from_right" value="$(arg grid_start_from_right)"/>
+        <param name="grid_width" value="$(arg grid_width)"/>
+        <param name="grid_height" value="$(arg grid_height)"/>
+
+        <!-- 跟随参数 -->
+        <param name="k_p_xy" value="$(arg k_p_xy)"/>
+        <param name="k_p_z" value="$(arg k_p_z)"/>
+        <param name="k_p_yaw" value="$(arg k_p_yaw)"/>
+        <param name="max_vel" value="$(arg max_vel)"/>
+        <param name="max_vel_z" value="$(arg max_vel_z)"/>
+        <param name="max_yaw" value="$(arg max_yaw)"/>
+        <param name="follow_height" value="$(arg follow_height)"/>
+
+        <!-- 降落参数 -->
+        <param name="error_xy" value="$(arg error_xy)"/>
+        <param name="error_z" value="$(arg error_z)"/>
+        <param name="drop_height" value="$(arg drop_height)"/>
+        <param name="land_vel" value="$(arg land_vel)"/>
+        <param name="land_time" value="$(arg land_time)"/>
+        <param name="stationary_time" value="$(arg stationary_time)"/>
+    </node>
+</launch>
