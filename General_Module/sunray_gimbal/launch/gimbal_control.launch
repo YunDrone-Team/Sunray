@@ -1,12 +1,12 @@
 <launch>
 
      <!-- 全局参数配置 -->
-    <arg name="gimbal_ip" default="192.168.144.25" />
+    <arg name="gimbal_ip" default="192.168.2.25" />
     <arg name="gimbal_port" default="37260" />
     <arg name="gimbal_fps" default="30" />
     <arg name="frame_width" default="1280" />
     <arg name="frame_height" default="720" />
-    <arg name="rtsp_url" default="rtsp://192.168.144.25:8554/main.264" />
+    <arg name="rtsp_url" default="rtsp://192.168.2.25:8554/main.264" />
 
     <!-- 控制节点 -->
     <node name="gimbal_control_node" pkg="sunray_gimbal" type="gimbal_control.py" output="screen">
