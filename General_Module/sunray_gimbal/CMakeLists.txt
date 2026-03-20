@@ -16,6 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+
+find_package(OpenCV REQUIRED)
+
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
@@ -70,23 +73,23 @@ install(DIRECTORY include/${PROJECT_NAME}/
 )
 
 add_executable(gimbal_target_lock_cpp demo/gimbal_target_lock.cpp)
-target_link_libraries(gimbal_target_lock_cpp ${catkin_LIBRARIES})
+target_link_libraries(gimbal_target_lock_cpp ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(gimbal_scan_keyboard demo/gimbal_scan_keyboard.cpp)
-target_link_libraries(gimbal_scan_keyboard ${catkin_LIBRARIES})
+target_link_libraries(gimbal_scan_keyboard ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(gimbal_angle_photo demo/gimbal_angle_photo.cpp)
-target_link_libraries(gimbal_angle_photo ${catkin_LIBRARIES})
+target_link_libraries(gimbal_angle_photo ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(gimbal_capture_switch demo/gimbal_capture_switch.cpp)
-target_link_libraries(gimbal_capture_switch ${catkin_LIBRARIES})
+target_link_libraries(gimbal_capture_switch ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(gimbal_qrtracker demo/gimbal_qrtracker.cpp)
 target_link_libraries(gimbal_qrtracker ${catkin_LIBRARIES} ${OpenCV_LIBRARIES}
   yaml-cpp)
 
 add_executable(image_saver demo/image_saver.cpp)
-target_link_libraries(image_saver ${catkin_LIBRARIES})
+target_link_libraries(image_saver ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(rtsp_image_publisher demo/rtsp_image_publisher.cpp)
 target_link_libraries(rtsp_image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES}

@@ -1,6 +1,6 @@
 <launch>
     <!-- 设置参数 -->
-    <arg name="rtsp_url" default="rtsp://192.168.144.25:8554/main.264" />
+    <arg name="rtsp_url" default="rtsp://192.168.2.25:8554/main.264" />
     <arg name="camera_info_path" default="$(find sunray_tutorial)/config/head_camera.yaml" />
     
     <!-- RTSP拉流图像发布节点 -->
