@@ -336,13 +336,32 @@ bool search_grid(double start_x, double start_y, double search_height,
 }
 
 // 跟随模式
+double compute_smooth_velocity(double error, double k_p, double max_vel)
+{
+    const double deadband = 0.04;   // 小于该误差时不再修正，减少围绕目标的小幅摆动
+    const double slow_zone = 0.30;  // 接近目标时主动减速，降低过冲
+
+    if (abs(error) < deadband)
+    {
+        return 0.0;
+    }
+
+    double scaled_error = error;
+    if (abs(error) < slow_zone)
+    {
+        scaled_error = error * abs(error) / slow_zone;
+    }
+
+    return min(max(k_p * scaled_error, -max_vel), max_vel);
+}
+
 void follow_target(double k_p_xy, double k_p_z, double k_p_yaw,
                    double max_vel, double max_vel_z, double max_yaw,
                    double follow_height, ros::Publisher &control_cmd_pub)
 {
     // 计算速度指令
-    double x_vel = min(max(target_rel_x * k_p_xy, -max_vel), max_vel);
-    double y_vel = min(max(target_rel_y * k_p_xy, -max_vel), max_vel);
+    double x_vel = compute_smooth_velocity(target_rel_x, k_p_xy, max_vel);
+    double y_vel = compute_smooth_velocity(target_rel_y, k_p_xy, max_vel);
 
     // 修正：target_rel_z是负值（下视相机），所以实际高度 = -target_rel_z
     // 期望高度差 = follow_height - (-target_rel_z) = follow_height + target_rel_z
@@ -682,22 +701,54 @@ int main(int argc, char **argv)
                 // 检查是否丢失目标
                 if ((ros::Time::now() - last_detection_time).toSec() > 1.0)
                 {
-                    Logger::print_color(int(LogColor::yellow), node_name, "Lost target during landing! Rising...");
-                    uav_cmd.header.stamp = ros::Time::now();
-                    uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
-                    uav_cmd.desired_pos[0] = 0;
-                    uav_cmd.desired_pos[1] = 0;
-                    uav_cmd.desired_pos[2] = 0.1;
-                    uav_cmd.desired_yaw = 0;
-                    control_cmd_pub.publish(uav_cmd);
+                    const double lost_time = (ros::Time::now() - last_detection_time).toSec();
+                    const bool close_to_target_before_loss =
+                        abs(target_rel_x) < 2.0 * error_xy &&
+                        abs(target_rel_y) < 2.0 * error_xy;
+                    const bool low_altitude_before_loss = abs(target_rel_z) < 0.6;
 
-                    if ((ros::Time::now() - last_detection_time).toSec() > 5.0)
+                    if (close_to_target_before_loss && low_altitude_before_loss)
                     {
-                        Logger::print_color(int(LogColor::red), node_name, "Landing timeout, emergency land!");
-                        uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
+                        Logger::print_color(int(LogColor::yellow), node_name,
+                                            "Lost target at low altitude, continuing final descent...");
+                        uav_cmd.header.stamp = ros::Time::now();
+                        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzVelYawBody;
+                        uav_cmd.desired_vel[0] = 0.0;
+                        uav_cmd.desired_vel[1] = 0.0;
+                        uav_cmd.desired_vel[2] = -land_vel;
+                        uav_cmd.desired_yaw = 0.0;
                         control_cmd_pub.publish(uav_cmd);
-                        ros::Duration(0.5).sleep();
-                        return 0;
+
+                        if (lost_time > 3.0)
+                        {
+                            Logger::print_color(int(LogColor::yellow), node_name,
+                                                "Blind descent timeout reached, switching to Land command");
+                            uav_cmd.header.stamp = ros::Time::now();
+                            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
+                            control_cmd_pub.publish(uav_cmd);
+                            ros::Duration(0.5).sleep();
+                            return 0;
+                        }
+                    }
+                    else
+                    {
+                        Logger::print_color(int(LogColor::yellow), node_name, "Lost target during landing! Rising...");
+                        uav_cmd.header.stamp = ros::Time::now();
+                        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
+                        uav_cmd.desired_pos[0] = 0;
+                        uav_cmd.desired_pos[1] = 0;
+                        uav_cmd.desired_pos[2] = 0.1;
+                        uav_cmd.desired_yaw = 0;
+                        control_cmd_pub.publish(uav_cmd);
+
+                        if (lost_time > 5.0)
+                        {
+                            Logger::print_color(int(LogColor::red), node_name, "Landing timeout, emergency land!");
+                            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
+                            control_cmd_pub.publish(uav_cmd);
+                            ros::Duration(0.5).sleep();
+                            return 0;
+                        }
                     }
                 }
                 else

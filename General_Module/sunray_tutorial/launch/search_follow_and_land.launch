@@ -28,7 +28,7 @@
     <arg name="center_y" default="2.0"/>
 
     <!-- 跟随参数 -->
-    <arg name="k_p_xy" default="1.2"/>
+    <arg name="k_p_xy" default="1.3"/>
     <arg name="k_p_z" default="0.5"/>
     <arg name="k_p_yaw" default="1.0"/>
     <arg name="max_vel" default="0.5"/>
