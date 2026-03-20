@@ -372,7 +372,6 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
     std::vector<uint8_t> copyData=data;
     while(true)
     {
-//        std::cout << "UDP data size "<<copyData.size()<<std::endl;
         if(copyData.size()<19)
             break;
         int index=findStdVectorComponent(0Xab,0X65,copyData);
@@ -385,6 +384,7 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 //        std::cout << "UDP find head "<<index<<std::endl;
         if( index>=0 )
         {
+
 
             // 定义要复制的范围（例如，从索引2到索引5，但不包括索引5）
             auto start = copyData.begin() + index+2;
@@ -401,29 +401,52 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 //            std::cout << "size: "<<size<<" "<<"data.size(): "<<data.size()<<std::endl;
 
             if(data.size()<size)
+            {
+//                std::cout << "size: "<<size<<" "<<"data.size(): "<<data.size()<<std::endl;
                 break;
+            }
 
             start = copyData.begin() + index;
             end = copyData.begin() + index+size-2;
 
+
+
             std::vector<uint8_t> waitCheckVector(start, end);
-            //std::cout << "UDP准备计算校验和数据的大小： "<<waitCheckVector.size()<<std::endl;
+//            std::cout << "UDP Checksum size: "<<waitCheckVector.size()<<std::endl;
 
 //            uint16_t checksum =codec.getChecksum(waitCheckVector);
             uint16_t checksum=0;
             if(decoderInterfacePtr!=nullptr)
                 checksum=decoderInterfacePtr->getChecksum(waitCheckVector);
 
+
             uint16_t BackChecksum = static_cast<uint16_t>(copyData[index+size-1]) |
                     (static_cast<uint16_t>(copyData[index +size-2]) << 8);
 
             if(checksum!=BackChecksum)
             {
-                //std::cout << "UDP校验和错误 计算的校验和： "<<checksum<<" "<<" 接收到校验和 "<<BackChecksum<<" 下标 "<<index+size-2<<" 校验和第一个字节 "<<(int)copyData[index+size-2]<<" 校验和第二个字节 "<<(int)copyData[index+size-1]<<std::endl;
+//                std::cout << "UDP Checksum error checksum: "<<checksum<<" "<<" BackChecksum "<<BackChecksum<<" index "<<index+size-2<<" first "<<(int)copyData[index+size-2]<<" second "<<(int)copyData[index+size-1]<<std::endl;
+
+//                std::cout << "checksum!=BackChecksum 1 "<<copyData.size()<<"  "<<index<<std::endl;
 
                 //清除帧头
-                copyData.erase(copyData.begin()+index, copyData.begin() + 6);//待测试
-                data.erase(data.begin()+index, data.begin() + 6);
+                if( index>=0 && static_cast<size_t>(index)<copyData.size() && (static_cast<size_t>(index)+size-1) <= copyData.size() )
+                    copyData.erase(copyData.begin()+index, copyData.begin()+static_cast<size_t>(index)+size-1);//待测试
+                else{
+                    copyData.clear();
+                    break;
+                }
+
+
+                if( index>=0 && static_cast<size_t>(index)<data.size() && (static_cast<size_t>(index)+size-1) <= data.size() )
+                    data.erase(data.begin()+index, data.begin()+static_cast<size_t>(index)+size-1);
+                else{
+                    data.clear();
+
+                    break;
+                }
+
+
                 continue;
             }
 
@@ -435,8 +458,20 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
                 decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.dataFrame);
 
             //清除已处理数据
-            data.erase(data.begin()+index, data.begin() +index+size);
-            copyData.erase(copyData.begin()+index, copyData.begin()+index+size);//待测试
+            if( index>=0 && static_cast<size_t>(index)<data.size() && (static_cast<size_t>(index)+size) <= data.size() )
+                data.erase(data.begin()+index, data.begin() +index+size);
+            else{
+                data.clear();
+                break;
+            }
+
+            if( index>=0 && static_cast<size_t>(index)<copyData.size() && (static_cast<size_t>(index)+size) <= copyData.size() )
+                copyData.erase(copyData.begin()+index, copyData.begin()+index+size);
+            else{
+                copyData.clear();
+                break;
+            }
+
             if(readData.dataFrame.seq==MessageID::SearchMessageID)
                 readData.communicationType=CommunicationType::UDPBroadcastCommunicationType;
             readData.port=port;
@@ -472,6 +507,8 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             break;
         }
     }
+
+
 
 }
 
@@ -827,7 +864,7 @@ int CommunicationUDPSocket::sendUDPMulticastData(std::vector<uint8_t> sendData,u
     return sendResult;
 }
 
-int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort)
+int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock,  std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort)
 {
 //    std::cout << "SendDataToTarget socket:  "<<tempSock<<" targetIp "<<targetIp<<" data.size() "<<sendData.size()<<std::endl;
     int sendResult = 0;
@@ -839,15 +876,57 @@ int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<
 #ifdef _WIN32
     target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp.c_str());
     int addrlen = sizeof(target_addr);
-    sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
-                        reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
+//    sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
+//                        reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
 //    std::cout << "SendDataToTarget socket:  "<<tempSock<<" targetIp "<<targetIp<<" sendResult: "<<sendResult<<std::endl;
+
+
+    while (!sendData.empty())
+    {
+           const size_t batchSize = 10;
+           if (sendData.size() > batchSize)
+           {
+               //  1000 个字节
+               std::vector<uint8_t> batch(sendData.begin(), sendData.begin() + batchSize);
+               sendResult = sendto(tempSock, reinterpret_cast<const char*>(batch.data()), static_cast<int>(batch.size()), 0,
+                                   reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
+
+               //  删除1000 个字节
+               sendData.erase(sendData.begin(), sendData.begin() + batchSize);
+           } else {
+               // 处理剩余不足 1000 的部分
+               sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
+                                   reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
+
+               // 清空容器
+               sendData.clear();
+           }
+       }
 
 #else
     target_addr.sin_addr.s_addr = inet_addr(targetIp.c_str());
     unsigned int addrlen = sizeof(target_addr);
     //发送数据
-    sendResult = (int)sendto(tempSock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+//    sendResult = (int)sendto(tempSock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+    while (!sendData.empty())
+    {
+           const size_t batchSize = 10;
+           if (sendData.size() > batchSize)
+           {
+               //  1000 个字节
+               std::vector<uint8_t> batch(sendData.begin(), sendData.begin() + batchSize);
+
+               sendResult = (int)sendto(tempSock, batch.data(), batch.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+               //  删除1000 个字节
+               sendData.erase(sendData.begin(), sendData.begin() + batchSize);
+           } else {
+               // 处理剩余不足 1000 的部分
+               sendResult = (int)sendto(tempSock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+
+               // 清空容器
+               sendData.clear();
+           }
+       }
 #endif
 
 //        unsigned int addrlen = sizeof(target_addr);

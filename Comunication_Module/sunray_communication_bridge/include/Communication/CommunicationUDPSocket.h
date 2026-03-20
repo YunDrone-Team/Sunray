@@ -72,7 +72,7 @@ private:
     bool resetMaxSock();
 
     int SendDataToMulticastTarget(SOCKET tempSock, std::vector<uint8_t> sendData,uint16_t targetPort);
-    int SendDataToTarget(SOCKET tempSock, const std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort);
+    int SendDataToTarget(SOCKET tempSock,  std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort);
 
     static CommunicationUDPSocket* CommunicationPtr;
     std::atomic<bool> UDPReadState;
