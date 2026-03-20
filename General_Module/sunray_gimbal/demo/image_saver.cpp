@@ -64,7 +64,7 @@ char getch()
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
     try {
-        cv::Mat img = cv_bridge::toCvCopy(msg, "bgr8")->image;
+        cv::Mat img = cv_bridge::toCvShare(msg, "bgr8")->image;
         std::lock_guard<std::mutex> lock(image_mutex);
         latest_image = img.clone();
         save_requested = true;
@@ -92,36 +92,26 @@ int main(int argc, char** argv)
     //发布速度控制话题
     gimbal_pub = nh.advertise<geometry_msgs::Vector3>("/sunray/gimbal_set_speed", 10);
 
-    std::string save_dir = "/home/yundrone/saved_images/";  // 替换为你自己的路径
+    std::string save_dir = "/home/robot/saved_images/";  // 替换为你自己的路径
     system(("mkdir -p " + save_dir).c_str()); // 自动创建文件夹
 
     cv::namedWindow("Live Image", cv::WINDOW_NORMAL);
-    
-    ros::Rate rate(60); // 图像显示频率
-    bool firstShow=true;
-    cv::Mat img_copy;
+    ros::Rate rate(30); // 图像显示频率
 
     ROS_INFO("键盘控制：WASD 控制云台方向，空格停止云台转动，F 保存图片");
 
-    while (ros::ok()) 
-    {
+    while (ros::ok()) {
+        cv::Mat img_copy;
+
         {
             std::lock_guard<std::mutex> lock(image_mutex);
-
             if (save_requested && !latest_image.empty()) {
                 img_copy = latest_image.clone();
                 save_requested = false;
             }
-
         }
 
-        if (!img_copy.empty()  )
-        {
-            if ( firstShow ) 
-            {
-                img_copy = cv::Mat::zeros(480, 640, CV_8UC3);
-                firstShow=false;
-            }
+        if (!img_copy.empty()) {
             cv::imshow("Live Image", img_copy);
         }
 
@@ -168,7 +158,6 @@ int main(int argc, char** argv)
 
         ros::spinOnce();
         rate.sleep();
-
     }
 
     cv::destroyWindow("Live Image");
