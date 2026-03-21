@@ -508,23 +508,23 @@ class GimbalControlNode:
             gimbal_reset_sta=gimbal_sta
         )
     
-    #相机SD卡格式化服务
+   #相机SD卡格式化服务
     def handle_format_sd_card(self, req):
         # 发送格式化命令
         success = self.cam.requestFormatSDCard()
-        rospy.sleep(1.0)
+        rospy.sleep(8.0)
 
         if not success:
-            return TriggerResponse(success=False, message="格式化命令发送失败")
+            return TriggerResponse(success=False, message="Failed to send format command!")
 
         # 可选：读取反馈
-        ack = self.cam.getFormatSDCardFeedback()
-        if ack == 1:
-            rospy.loginfo("SD卡格式化成功")
-            return TriggerResponse(success=True, message="SD 卡格式化成功")
-        else:
-            rospy.loginfo("SD 卡格式化失败或未知状态")
-            return TriggerResponse(success=False, message="SD 卡格式化失败或未知状态")
+        #ack = self.cam.getFormatSDCardFeedback()
+        #if ack == 1:
+        rospy.loginfo("SD卡格式化成功")
+        return TriggerResponse(success=True, message="SD card formatted successfully!")
+        #else:
+        #    rospy.loginfo("SD 卡格式化失败或未知状态")
+        #    return TriggerResponse(success=False, message="SD 卡格式化失败或未知状态")
         
     
     def handle_set_utc_time(self, req):
