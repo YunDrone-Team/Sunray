@@ -1,0 +1,143 @@
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { font-family: Arial; }
+
+table {
+    border-collapse: collapse;
+    width: 80%;
+    margin-bottom: 30px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+th {
+    background: #666;
+    color: #fff;
+}
+
+.pass { color: green; }
+.fail { color: red; }
+.error { color: orange; }
+
+/* ===== score 颜色 ===== */
+.score-red { color: red; }
+.score-blue { color: blue; }
+.score-yellow { color: goldenrod; }
+.score-green { color: green; }
+
+.group-title {
+    margin-top: 20px;
+    font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>{{ title }}</h2>
+<p><b>款式:</b> {{ series }}</p>
+<p><b>SN:</b> {{ sn }}</p>
+<p><b>测试时间:</b> {{ start_time }}</p>
+<p><b>测试耗时:</b> {{ duration }}s</p>
+<p><b>测试人员:</b> {{ human }}</p>
+<p><b>测试结论:</b> {{ status }}</p>
+
+<h3>测试结果统计</h3>
+<table>
+<tr>
+    <th>Total</th>
+    <th>Pass</th>
+    <th>Fail</th>
+    <th>Error</th>
+</tr>
+<tr>
+    <td>{{ total }}</td>
+    <td>{{ passed }}</td>
+    <td>{{ failed }}</td>
+    <td>{{ error }}</td>
+</tr>
+</table>
+
+
+<h3>详情</h3>
+
+{% for group in groups %}
+
+<div class="group-title">{{ group.name }}</div>
+
+<table>
+<tr>
+    <th>测试项目</th>
+    <th>测试结果</th>
+    {% if group.name == "功能测试" %}
+    <th>得分</th>
+    {% endif %}
+</tr>
+
+{% for case in group.cases %}
+
+<tr>
+    <td>{{ case.name }}</td>
+    <td class="{{ case.result }}">{{ case.result }}</td>
+
+    {% if group.name == "功能测试" %}
+    <td>
+        {% if case.score is defined %}
+            {% if case.score < 60 %}
+                <span class="score-red">{{ case.score }}</span>
+            {% elif case.score < 75 %}
+                <span class="score-yellow">{{ case.score }}</span>
+            {% elif case.score < 85 %}
+                <span class="score-blue">{{ case.score }}</span>
+            {% else %}
+                <span class="score-green">{{ case.score }}</span>
+            {% endif %}
+        {% else %}
+            -
+        {% endif %}
+    </td>
+    {% endif %}
+</tr>
+
+{% if case.steps is defined and case.steps %}
+
+    {% for step in case.steps %}
+    <tr>
+        <td style="padding-left:40px;">↳ {{ step.name }}</td>
+        <td class="{{ step.result }}">{{ step.result }}</td>
+
+        {% if group.name == "功能测试" %}
+        <td>-</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+
+{% endif %}
+
+{% endfor %}
+
+<tr>
+    <td><b>总计</b></td>
+    <td>
+        Total: {{ group.total }},
+        Pass: {{ group.passed }},
+        Fail: {{ group.failed }},
+        Error: {{ group.error }}
+    </td>
+
+    {% if group.name == "功能测试" %}
+    <td></td>
+    {% endif %}
+</tr>
+
+</table>
+
+{% endfor %}
+
+</body>
+</html>

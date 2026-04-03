@@ -1,0 +1,22 @@
+{
+    "test_info": {
+        "sn": null,
+        "tester": null,
+        "time": null,
+        "duration": null
+    },
+    "hardware_test": {
+        "front_cam": null,
+        "down_cam": null,
+        "battery": null,
+        "battery_voltage": null
+    },
+    "function_test": {
+        "mocap_flight": null,
+        "mocap_score": 100,
+        "waypoint_flight": null,
+        "waypoint_score": 100,
+        "apriltags_landmark": null,
+        "apriltags_score": 100
+    }
+}

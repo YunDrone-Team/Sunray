@@ -1,0 +1,24 @@
+<launch>
+  <arg name="image_view" default="false" />
+
+  <!-- 下视摄像头 -->
+  <node name="cam_down_node" pkg="web_cam" type="web_cam_node" output="screen">
+    <rosparam command="load" file="$(find sunray_test)/config/down_cam.yml"/>
+  </node>
+
+  <!-- 前视摄像头 -->
+  <node name="cam_front_node" pkg="web_cam" type="web_cam_node" output="screen">
+    <rosparam command="load" file="$(find sunray_test)/config/front_cam.yml"/>
+  </node>
+
+  <!-- 可视化 cam0 -->
+  <node if="$(arg image_view)" name="view0" pkg="image_view" type="image_view" output="screen">
+    <remap from="image" to="/cam_down/image_raw"/>
+  </node>
+
+  <!-- 可视化 cam2 -->
+  <node if="$(arg image_view)" name="view2" pkg="image_view" type="image_view" output="screen">
+    <remap from="image" to="/cam_front/image_raw"/>
+  </node>
+
+</launch>

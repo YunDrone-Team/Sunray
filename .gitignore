@@ -103,7 +103,6 @@ buildscripts/tui/third_party/
 
 # Test scripts and directories
 test_*.sh
-*_test/
 testing/
 
 # Temporary files and directories
