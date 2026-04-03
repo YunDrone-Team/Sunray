@@ -128,7 +128,7 @@ def generate_report(
     # ===== 写入文件 =====
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
-        
+
     print(f"报告生成成功：{output_path}")
 
 if __name__ == "__main__":

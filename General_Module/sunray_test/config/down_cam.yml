@@ -40,7 +40,7 @@ framerate: 30                       # Camera polling frequency, Hz (integer)
     # See also the comprehensive node output describing parameter names and feasible values for them to be set up here.
     # It is also possible to have a list of the available control names using v4l2-ctl application from v4l2-util package:
     # v4l2-ctl --device=/dev/video<ID> -L
-intrinsic_controls:                 
+intrinsic_controls:
     focus_auto: true
     exposure_auto_priority: true
     exposure_auto: 3
@@ -63,4 +63,3 @@ intrinsic_controls:
                                     # NOTE: the ROS parameters for the V4L controls supported but listed here would be STILL
                                     # generated, but the values WILL NOT BE USED to set up the camera. To affect these controls
                                     # once you want to do that, their names should me REMOVED from this list!
-

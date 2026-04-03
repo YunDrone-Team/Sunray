@@ -20,4 +20,3 @@ gnome-terminal --window -e 'bash -c "roslaunch sunray_uav_control sunray_mavros_
 
 gnome-terminal --window -e  'bash -c "sleep 2.0; rosrun sunray_test test.py; exec bash"' \
 --tab -e 'bash -c "sleep 5.0; rosrun rqt_image_view rqt_image_view; exec bash"' \
-

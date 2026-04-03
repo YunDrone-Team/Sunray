@@ -279,7 +279,7 @@ def uav_goto_xyz(rate, threshold=0.2, mode="input"): # 指点飞行
         rospy.loginfo("准备下一个目标点")
 
         time.sleep(1)
-    
+
     function_test["waypoint_flight"] = "pass"
 
 
@@ -423,7 +423,7 @@ def generate_report():
         "report_output.py",
         ])
     time.sleep(3)
-    
+
 
 def main():
     global cmd_pub, setup_pub, duration, hardware_test_flag
@@ -487,4 +487,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
