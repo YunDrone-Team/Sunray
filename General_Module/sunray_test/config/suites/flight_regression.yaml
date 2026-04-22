@@ -1,0 +1,26 @@
+name: flight_regression
+description: Reusable flight regression suite without visual landing
+record_rosbag: true
+stop_on_failure: true
+
+steps:
+  - case: front_camera_alive
+    name: 前视相机
+    type: hardware.camera_alive
+    params:
+      topic_key: front_camera
+  - case: battery_voltage
+    name: 电池电压
+    type: hardware.battery_voltage
+    params:
+      topic_key: battery
+  - phase: arm_and_takeoff
+  - case: hover_stability
+    name: 悬停
+    type: flight.hover
+  - case: waypoint_flight
+    name: 指点飞行
+    type: flight.waypoint
+    params:
+      mission_key: waypoint_default
+  - phase: land

@@ -1,0 +1,14 @@
+name: exp
+
+recording:
+  topic_templates:
+    - "/vrpn_client_node_1/uav1/pose"
+    - "/vrpn_client_node_1/uav1/twist"
+
+defaults: {}
+
+topic_overrides:
+  front_camera: "/web_cam_front/image_raw"
+  down_camera: "/web_cam/image_raw"
+
+missions: {}
