@@ -1,0 +1,39 @@
+name: sunray150_basic
+vehicle_type: uav
+
+report:
+  title: Sunray150 测试报告
+
+capabilities:
+  visual_landing: true
+
+topics:
+  front_camera: ""
+  down_camera: ""
+  battery: "/uav{uav_id}/mavros/battery"
+  uav_state: "/uav{uav_id}/sunray/uav_state"
+  uav_control_cmd: "/uav{uav_id}/sunray/uav_control_cmd"
+  uav_setup: "/uav{uav_id}/sunray/setup"
+
+recording:
+  bag_prefix: sunray150_basic
+  topic_templates:
+    - "/uav{uav_id}/mavros/local_position/pose"
+    - "/uav{uav_id}/sunray/uav_state"
+    - "/uav{uav_id}/sunray/uav_control_cmd"
+    - "/uav{uav_id}/sunray/setup"
+    - "/uav{uav_id}/sunray_detect/landmark_detection_ros"
+
+defaults:
+  hardware_check_timeout_s: 5.0
+  battery_pass_threshold_v: 13.8
+  takeoff_target_pos: [0.0, 0.0, 1.2]
+  post_takeoff_settle_time_s: 3.0
+  hover_duration_s: 130.0
+  waypoint_source: list
+  waypoint_reach_radius_m: 0.1
+  waypoint_stable_time_s: 3.0
+  waypoint_hold_time_s: 2.0
+  waypoint_timeout_s: 40.0
+  visual_landing_auto_takeoff: false
+  visual_landing_height_m: 1.5

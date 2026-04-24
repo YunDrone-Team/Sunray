@@ -1,0 +1,43 @@
+hover:
+  weight: 0.35
+  metrics:
+    xy_error_mean:    { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.15 }
+    abs_z_error_mean: { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.15 }
+    xy_error_rmse:    { thresholds: [0.04, 0.10, 0.18, 0.30], weight: 0.15 }
+    z_error_rmse:     { thresholds: [0.04, 0.10, 0.18, 0.30], weight: 0.10 }
+    xy_error_p95:     { thresholds: [0.07, 0.15, 0.25, 0.40], weight: 0.15 }
+    xy_error_max:     { thresholds: [0.10, 0.20, 0.35, 0.50], weight: 0.10 }
+    speed_max:        { thresholds: [0.06, 0.12, 0.20, 0.35], weight: 0.05 }
+    speed_mean:       { thresholds: [0.015, 0.04, 0.08, 0.15], weight: 0.10 }
+    speed_p95:        { thresholds: [0.03, 0.08, 0.15, 0.30], weight: 0.05 }
+
+waypoint:
+  weight: 0.35
+  gates: [reach_success, within_threshold]
+  metrics:
+    hold_xy_mean_m:           { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.20 }
+    hold_xy_p95_m:            { thresholds: [0.05, 0.12, 0.20, 0.35], weight: 0.15 }
+    hold_z_rmse_m:            { thresholds: [0.05, 0.10, 0.18, 0.30], weight: 0.10 }
+    final_xy_error_m:         { thresholds: [0.04, 0.10, 0.18, 0.30], weight: 0.10 }
+    path_efficiency:          { thresholds: [0.90, 0.75, 0.60, 0.40], weight: 0.20, higher_is_better: true }
+    overshoot_distance_m:     { thresholds: [0.05, 0.12, 0.25, 0.40], weight: 0.15 }
+    max_lateral_deviation_m:  { thresholds: [0.10, 0.20, 0.35, 0.50], weight: 0.10 }
+
+visual_landing:
+  weight: 0.30
+  gates: [visual_landing_success, landing_safety_pass, landed_within_target_zone]
+  metrics:
+    final_landing_position_error_m: { thresholds: [0.05, 0.10, 0.15, 0.30], weight: 0.20 }
+    horizontal_alignment_error_m:   { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.10 }
+    final_yaw_alignment_error_deg:  { thresholds: [1.0, 3.0, 8.0, 15.0], weight: 0.10 }
+    target_tracking_continuity_rate: { thresholds: [95, 85, 70, 50], weight: 0.20, higher_is_better: true }
+    target_loss_count:               { thresholds: [0, 1, 3, 5], weight: 0.10 }
+    target_acquisition_time_s:       { thresholds: [0.5, 1.5, 3.0, 5.0], weight: 0.10 }
+    touchdown_window_max_tilt_deg:   { thresholds: [2.0, 5.0, 10.0, 20.0], weight: 0.10 }
+    bounce_rebound_height_m:         { thresholds: [0.0, 0.02, 0.05, 0.10], weight: 0.10 }
+
+grades:
+  - { min: 90, label: 优秀, color: "#17a05d" }
+  - { min: 75, label: 良好, color: "#1166cc" }
+  - { min: 60, label: 及格, color: "#d97a00" }
+  - { min: 0,  label: 不及格, color: "#d14343" }

@@ -1,0 +1,36 @@
+name: sunray150_basic_exp
+display_name: Sunray150 实机环境标品出货测试
+description: 启动 Sunray150 实机测试场景，并执行 basic_acceptance
+
+runner:
+  platform: sunray150_basic
+  environment: exp
+  suite: basic_acceptance
+  uav_id: 1
+
+windows:
+  - title: Sunray Exp Bringup
+    after_launch_delay_s: 0.3
+    tabs:
+      - title: mavros
+        command: roslaunch sunray_uav_control sunray_mavros_exp.launch
+      - title: web_cam
+        delay_s: 5.0
+        command: roslaunch sunray_test web_cam_dual.launch
+      - title: fusion
+        delay_s: 5.0
+        command: roslaunch sunray_uav_control external_fusion.launch external_source:=3
+      - title: control
+        delay_s: 2.0
+        command: roslaunch sunray_uav_control sunray_control_node.launch uav_id:={uav_id}
+      - title: terminal_control
+        delay_s: 2.0
+        command: roslaunch sunray_uav_control terminal_control.launch uav_id:={uav_id}
+      - title: detection
+        delay_s: 2.0
+        command: roslaunch sunray_test detection_dual.launch down_image_topic:=/web_cam/image_raw down_camera_info_topic:=/web_cam/camera_info
+  - title: Sunray Test Runner
+    tabs:
+      - title: run_suite
+        delay_s: 5.0
+        command: rosrun sunray_test run_suite.py {runner_cli}

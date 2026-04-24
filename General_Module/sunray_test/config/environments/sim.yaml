@@ -1,0 +1,13 @@
+name: sim
+
+recording:
+  topic_templates:
+    - "/uav{uav_id}/sunray/gazebo_pose"
+
+defaults: {}
+
+topic_overrides:
+  front_camera: "/uav{uav_id}/monocular_front/image_raw"
+  down_camera: "/uav{uav_id}/monocular_down/image_raw"
+
+missions: {}

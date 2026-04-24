@@ -1,0 +1,36 @@
+name: sunray150_basic_sim
+display_name: Sunray150 仿真环境标品出货测试
+description: 启动 Sunray150 仿真测试场景，并执行 basic_acceptance 套件
+
+runner:
+  platform: sunray150_basic
+  environment: sim
+  suite: basic_acceptance
+  uav_id: 1
+
+windows:
+  - title: Sunray Sim Bringup
+    after_launch_delay_s: 0.3
+    tabs:
+      - title: simulator
+        command: roslaunch sunray_simulator sunray_sim_test_basic.launch
+      - title: rviz
+        delay_s: 1.0
+        command: roslaunch sunray_simulator sim_rviz.launch
+      - title: fusion
+        delay_s: 2.0
+        command: roslaunch sunray_uav_control external_fusion.launch external_source:=2 enable_rviz:=false
+      - title: control
+        delay_s: 3.0
+        command: roslaunch sunray_uav_control sunray_control_node.launch uav_id:={uav_id}
+      - title: terminal_control
+        delay_s: 2.0
+        command: roslaunch sunray_uav_control terminal_control.launch uav_id:={uav_id}
+      - title: detection
+        delay_s: 2.0
+        command: roslaunch sunray_test detection_dual.launch down_image_topic:=/uav{uav_id}/monocular_down/image_raw down_camera_info_topic:=/uav{uav_id}/monocular_down/camera_info
+  - title: Sunray Test Runner
+    tabs:
+      - title: run_suite
+        delay_s: 2.0
+        command: rosrun sunray_test run_suite.py {runner_cli}

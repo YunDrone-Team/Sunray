@@ -1,0 +1,21 @@
+name: hardware_only
+description: Ground-only hardware acceptance checks
+record_rosbag: false
+stop_on_failure: true
+
+steps:
+  - case: front_camera_alive
+    name: 前视相机
+    type: hardware.camera_alive
+    params:
+      topic_key: front_camera
+  - case: down_camera_alive
+    name: 下视相机
+    type: hardware.camera_alive
+    params:
+      topic_key: down_camera
+  - case: battery_voltage
+    name: 电池电压
+    type: hardware.battery_voltage
+    params:
+      topic_key: battery
