@@ -43,8 +43,8 @@ def render_html(payload: Dict[str, Any]) -> str:
             f'<ul class="plain-list">{error_items}</ul>'
             "</div></section>"
         )
-    filtered_config = {key: config.get(key) for key in ("defaults", "topics", "missions") if key in config}
-    config_snapshot_html = render_config_snapshot(filtered_config)
+    filtered_config = {key: config.get(key) for key in ("defaults", "analysis", "topics", "missions") if key in config}
+    config_snapshot_html = render_config_snapshot(filtered_config, str(run_info.get("platform", "")).strip())
     artifacts_html = render_artifacts(artifacts)
     watermark_html = render_watermark_layer("云纵科技")
 
@@ -150,6 +150,38 @@ def render_html(payload: Dict[str, Any]) -> str:
     d.addEventListener('toggle',function(){{
       row.style.display=d.open?'':'none';
     }});
+  }});
+  document.querySelectorAll('.metric-info').forEach(function(info){{
+    var tooltip=info.querySelector('.metric-tooltip');
+    if(!tooltip)return;
+    function positionTooltip(){{
+      tooltip.classList.add('tooltip-fixed');
+      tooltip.classList.remove('tooltip-below');
+      tooltip.style.left='0px';
+      tooltip.style.top='0px';
+      var infoRect=info.getBoundingClientRect();
+      var tipRect=tooltip.getBoundingClientRect();
+      var margin=8;
+      var left=infoRect.left + infoRect.width / 2 - tipRect.width / 2;
+      left=Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+      var top=infoRect.top - tipRect.height - margin;
+      if(top < margin){{
+        top=infoRect.bottom + margin;
+        tooltip.classList.add('tooltip-below');
+      }}
+      tooltip.style.left=left+'px';
+      tooltip.style.top=top+'px';
+    }}
+    function resetTooltip(){{
+      tooltip.classList.remove('tooltip-fixed');
+      tooltip.classList.remove('tooltip-below');
+      tooltip.style.left='';
+      tooltip.style.top='';
+    }}
+    info.addEventListener('mouseenter', positionTooltip);
+    info.addEventListener('mouseleave', resetTooltip);
+    info.addEventListener('focus', positionTooltip);
+    info.addEventListener('blur', resetTooltip);
   }});
   </script>
 </body>

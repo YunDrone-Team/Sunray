@@ -97,7 +97,7 @@ h1 {
   border: 1px solid rgba(217, 226, 239, 0.85);
   border-radius: 22px;
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow: visible;
 }
 .section-header {
   display: flex;
@@ -151,12 +151,18 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
+  overflow: visible;
+  position: relative;
 }
 .kv-item {
+  position: relative;
   padding: 14px 16px;
   background: var(--panel-soft);
   border: 1px solid var(--line);
   border-radius: 16px;
+}
+.kv-item:hover {
+  z-index: 20;
 }
 .kv-key {
   display: block;
@@ -226,6 +232,9 @@ h1 {
   vertical-align: middle;
   flex-shrink: 0;
 }
+.metric-info:hover {
+  z-index: 30;
+}
 .metric-tooltip {
   display: none;
   position: absolute;
@@ -247,6 +256,15 @@ h1 {
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+.metric-tooltip.tooltip-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: auto;
+  transform: none;
+  display: block;
+  z-index: 9999;
+}
 .metric-tooltip::after {
   content: "";
   position: absolute;
@@ -256,11 +274,18 @@ h1 {
   border: 5px solid transparent;
   border-top-color: var(--text);
 }
+.metric-tooltip.tooltip-below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--text);
+}
 .metric-info:hover .metric-tooltip {
   display: block;
 }
 .table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
 }
 table {
   width: 100%;
@@ -284,6 +309,10 @@ th {
   font-size: 13px;
   white-space: nowrap;
   font-weight: 700;
+}
+th:nth-child(5),
+td:nth-child(5) {
+  text-align: center;
 }
 td {
   font-family: var(--mono);
@@ -400,6 +429,7 @@ tr:last-child td {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   border-radius: 18px;
   padding: 18px;
+  overflow: visible;
 }
 .flight-section + .flight-section {
   margin-top: 16px;
@@ -425,6 +455,11 @@ tr:last-child td {
   background: var(--panel-soft);
   border-radius: 16px;
   padding: 16px;
+  overflow: visible;
+  position: relative;
+}
+.flight-card:hover {
+  z-index: 20;
 }
 .flight-card-title {
   font-size: 15px;
@@ -495,6 +530,7 @@ tr:last-child td {
   border-radius: 14px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   padding: 14px 18px 18px;
+  overflow: visible;
 }
 .score-overview {
   display: flex;

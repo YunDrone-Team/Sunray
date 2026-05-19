@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument("--environment", default="sim")
     parser.add_argument("--suite", default="basic_acceptance")
     parser.add_argument("--uav-id", type=int, default=1)
+    parser.add_argument("--external-source", type=int, default=None)
     parser.add_argument("--output-dir", default="")
     parser.add_argument("--sn", default="")
     parser.add_argument("--tester", default="")
@@ -35,6 +36,7 @@ def main():
                 environment=args.environment,
                 suite=args.suite,
                 uav_id=args.uav_id,
+                external_source=args.external_source,
                 output_dir=args.output_dir,
                 sn=args.sn,
                 tester=args.tester,

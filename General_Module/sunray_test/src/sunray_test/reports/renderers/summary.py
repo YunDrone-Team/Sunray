@@ -12,6 +12,7 @@ from sunray_test.reports.renderers.common import (
 SCORE_SECTION_LABELS = {
     "hover": "悬停",
     "waypoint": "航点飞行",
+    "ego_goal": "EGO自主规划",
     "visual_landing": "视觉降落",
 }
 
@@ -64,7 +65,9 @@ def render_summary_cards(summary: Dict[str, Any], pass_rate: float) -> str:
 
 
 def render_score_cards(payload: Dict[str, Any]) -> str:
-    scores = payload.get("flight_metrics", {}).get("scores")
+    run_info = payload.get("run_info", {})
+    flight_metrics = payload.get("flight_metrics", {})
+    scores = flight_metrics.get("scores")
     if not scores:
         return ""
     overall = scores.get("overall", {})
@@ -74,9 +77,8 @@ def render_score_cards(payload: Dict[str, Any]) -> str:
 
     overall_grade = escape(str(overall.get("grade", "-")))
     overall_color = overall.get("grade_color", "#69758a")
-
     sub_cards: List[str] = []
-    for key in ("hover", "waypoint", "visual_landing"):
+    for key in ("hover", "waypoint", "ego_goal", "visual_landing"):
         sec = scores.get(key)
         if not isinstance(sec, dict):
             continue
@@ -173,14 +175,14 @@ def build_stage_timeline(payload: Dict[str, Any]) -> List[Dict[str, str]]:
                     "status": "completed",
                 }
             )
-            target_pos = defaults.get("takeoff_target_pos")
-            target_text = pretty_value(target_pos) if target_pos else "-"
+            target_z = defaults.get("takeoff_target_z_m")
+            target_text = f"{float(target_z):.2f}m" if target_z is not None else "-"
             takeoff_start_time = _find_event_time(event_log, "takeoff_start") or escape(format_time_short(takeoff_phase.get("timestamp", "-")))
             takeoff_end_time = _find_event_time(event_log, "takeoff_end") or escape(format_time_short(takeoff_phase.get("timestamp", "-")))
             stages.append(
                 {
                     "name": "起飞",
-                    "detail": f"目标起飞点 {target_text}",
+                    "detail": f"目标起飞高度 {target_text}",
                     "time": f"{takeoff_start_time} -> {takeoff_end_time}",
                     "status": "completed",
                 }
@@ -189,6 +191,7 @@ def build_stage_timeline(payload: Dict[str, Any]) -> List[Dict[str, str]]:
     stage_case_map = [
         ("悬停", {"hover_stability", "hover"}, "悬停稳定性检查"),
         ("指点飞行", {"waypoint_flight", "waypoint"}, "航点任务执行"),
+        ("自主规划", {"ego_goal_flight", "ego_goal"}, "EGO-Planner 目标点自主规划"),
         ("视觉降落", {"visual_landing"}, "视觉引导降落"),
     ]
     for stage_name, keywords, fallback_detail in stage_case_map:

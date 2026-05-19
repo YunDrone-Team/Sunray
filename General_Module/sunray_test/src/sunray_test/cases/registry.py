@@ -24,7 +24,10 @@ def get_case_class(case_type: str):
 
 
 from sunray_test.cases.flight.hover import HoverCase  # noqa: E402,F401
+from sunray_test.cases.flight.ego_goal import EgoGoalCase  # noqa: E402,F401
 from sunray_test.cases.flight.visual_landing import VisualLandingCase  # noqa: E402,F401
 from sunray_test.cases.flight.waypoint import WaypointMissionCase  # noqa: E402,F401
 from sunray_test.cases.hardware.battery_voltage import BatteryVoltageCase  # noqa: E402,F401
 from sunray_test.cases.hardware.camera_alive import CameraAliveCase  # noqa: E402,F401
+from sunray_test.cases.hardware.lidar_health import LidarHealthCase  # noqa: E402,F401
+from sunray_test.cases.hardware.topic_alive import TopicAliveCase  # noqa: E402,F401

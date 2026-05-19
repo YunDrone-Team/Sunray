@@ -1,0 +1,37 @@
+start_service_name: "start_capture"
+stop_service_name: "stop_capture"
+
+video_device: /dev/video2
+io_method: mmap
+pixel_format: yuyv
+color_format: yuv420p
+create_suspended: false
+full_ffmpeg_log: false
+camera_name: head_camera
+camera_frame_id: head_camera
+camera_transport_suffix: image_raw
+camera_info_url: ""
+image_width: 640
+image_height: 480
+framerate: 30
+
+intrinsic_controls:
+    focus_auto: true
+    exposure_auto_priority: true
+    exposure_auto: 3
+    white_balance_temperature_auto: true
+    power_line_frequency: 1
+    ignore: [
+        brightness,
+        contrast,
+        saturation,
+        gain,
+        sharpness,
+        backlight_compensation,
+        white_balance_temperature,
+        exposure_absolute,
+        pan_absolute,
+        tilt_absolute,
+        focus_absolute,
+        zoom_absolute
+    ]

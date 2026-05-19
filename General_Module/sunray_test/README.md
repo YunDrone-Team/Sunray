@@ -4,7 +4,7 @@
 
 - 按 `platform + environment + suite` 组合生成生效配置
 - 执行硬件检查、起飞/降落 phase、飞行 case
-- 产出 `test_result.json`、`event_log.jsonl`、`report.html`
+- 产出 `test_result.json`、`test_config.json`、`event_log.jsonl`、`report.html`
 - 对飞行数据做分析、评分和 HTML 报告渲染
 
 当前整体分两层：
@@ -21,6 +21,7 @@
 3. 真正执行器：`rosrun sunray_test run_suite.py --platform ... --environment sim|exp --suite ...`
 4. 内部直连入口：`rosrun sunray_test internal_run.py`
 5. 生效配置查看：`rosrun sunray_test show_config.py --platform ... --environment ... --suite ...`
+6. VRPN 服务器地址检查：`rosrun sunray_test vrpn_server_check.py`
 
 测试产物默认输出到 `workspace_root/tests/output/<timestamp>/`。  
 如果需要覆盖输出目录，只通过 `run_suite.py --output-dir ...` 传参，不再在 suite 配置里定义。
@@ -45,11 +46,28 @@ source devel/setup.bash
 
 rosrun sunray_test internal_run.py
 rosrun sunray_test run_suite.py --platform sunray150_basic --environment sim --suite basic_acceptance
+rosrun sunray_test run_suite.py --platform sunray150_lidar --environment exp --suite lidar_acceptance
 rosrun sunray_test run_scenario.py --list
 rosrun sunray_test run_scenario.py --scenario sunray150_basic_sim
+rosrun sunray_test run_scenario.py --scenario sunray150_lidar_exp
 rosrun sunray_test show_config.py --platform sunray150_basic --environment sim --suite flight_regression
+rosrun sunray_test show_config.py --platform sunray150_lidar --environment exp --suite lidar_acceptance
 rosrun sunray_test show_config.py --platform sunray150_basic --environment sim --suite flight_regression --section topics --format yaml
+rosrun sunray_test vrpn_server_check.py
 ```
+
+实机测试也可以从仓库根目录使用人工入口：
+
+```bash
+tests/run_test.sh
+```
+
+当前常用生产测试脚本包括基础款和雷达款：
+
+- `tests/production/sunray150_basic_exp_test.sh`
+- `tests/production/sunray150_basic_sim_test.sh`
+- `tests/production/sunray150_lidar_exp_test.sh`
+- `tests/production/sunray150_lidar_sim_test.sh`
 
 ## 安装和编译
 
@@ -71,7 +89,7 @@ catkin_make --source General_Module/sunray_test --build build/sunray_test
 当前配置按职责拆成几层：
 
 - `platforms`
-  机型默认参数，例如悬停时长、航点阈值、电池阈值、录包 topic 模板
+  机型默认参数，例如起飞高度、悬停时长、航点阈值、电池阈值、录包 topic 模板
 - `environments`
   环境差异，例如 `sim / exp` 的 topic 覆盖和额外录包 topic
 - `suites`
@@ -79,7 +97,7 @@ catkin_make --source General_Module/sunray_test --build build/sunray_test
 - `scenarios`
   场景启动链，描述要拉起哪些 `roslaunch/tab`，以及默认 runner 参数
 - `missions`
-  可复用飞行任务，例如航点列表
+  可复用飞行任务，例如航点列表和 EGO 目标点列表
 - `scoring`
   飞行分析评分规则和等级阈值
 
@@ -89,6 +107,7 @@ catkin_make --source General_Module/sunray_test --build build/sunray_test
 - `suites` 只保存测试顺序和编排必需参数，例如 `mission_key`
 - 如果某个测试项没有在 `suite.steps[].params` 里显式传参，就自动使用 `platform.defaults`
 - `environment` 只覆盖环境差异，不重复写整套默认参数
+- 每次测试输出目录会保存 `test_config.json`，记录本次实际生效的配置快照，便于复盘悬停时间、目标点、判定范围、录包 topic 等参数
 
 ## 配置校验与生效配置查看
 
@@ -125,7 +144,7 @@ rosrun sunray_test show_config.py --platform sunray150_basic --environment sim -
 - `config/scenarios/`
   场景启动配置，例如拉起哪些 launch/tab/延迟和默认 runner 参数
 - `config/missions/`
-  复用飞行任务配置，例如航点序列
+  复用飞行任务配置，例如航点序列和 EGO 目标点
 - `config/cameras/<platform>/`
   实机前视/下视相机驱动配置，例如 `video_device`
 - `config/suites/`
@@ -164,12 +183,44 @@ rosrun sunray_test show_config.py --platform sunray150_basic --environment sim -
 - `reports/renderers/styles.py`
   报告 CSS
 
+当前报告产物仅保留普通 HTML 测试报告 `report.html`。
+
+## 雷达款测试
+
+雷达款平台使用 `sunray150_lidar`，常用套件是 `lidar_acceptance`。典型流程包括：
+
+- 前视/下视相机检测
+- 电池电压检测
+- MID360/Livox 点云和 IMU 健康检查
+- 起飞、悬停、EGO-Planner 自主规划、指点飞行、视觉降落
+- rosbag 记录、评分、HTML 报告生成
+
+实机运行前建议先确认 VRPN 服务器 IP：
+
+```bash
+source devel/setup.bash
+rosrun sunray_test vrpn_server_check.py
+```
+
+该脚本会读取并展示以下 launch 中的 server IP，并支持选择修改其中一个或全部：
+
+- `General_Module/sunray_uav_control/launch/external_fusion.launch`
+- `General_Module/sunray_uav_control/launch/sunray_vrpn.launch`
+
+雷达款实机常用命令：
+
+```bash
+rosrun sunray_test show_config.py --platform sunray150_lidar --environment exp --suite lidar_acceptance
+rosrun sunray_test run_scenario.py --scenario sunray150_lidar_exp
+```
+
 ## 参数修改位置
 
 - 改机型默认 topic / 阈值：`config/platforms/*.yaml`
 - 改 sim / exp 环境差异：`config/environments/*.yaml`
 - 改场景拉起链：`config/scenarios/*.yaml`
 - 改航点任务：`config/missions/*.yaml`
+- 改 EGO 目标点：`config/missions/lidar_ego_goals.yaml`
 - 改测试顺序：`config/suites/*.yaml`
 - 改评分规则：`config/scoring/scoring.yaml`
 - 改实机相机设备号：`config/cameras/<platform>/*.yml`
@@ -201,8 +252,11 @@ rosrun sunray_test show_config.py --platform sunray150_basic --environment sim -
   - `/uav{uav_id}/sunray/uav_control_cmd`
   - `/uav{uav_id}/sunray/setup`
   - `/uav{uav_id}/sunray_detect/landmark_detection_ros`
+- 雷达款会按平台配置追加点云、IMU、EGO 规划和定位相关 topic
 - `sim` 额外追加
   - `/uav{uav_id}/sunray/gazebo_pose`
 - `exp` 额外追加
   - `/vrpn_client_node_1/uav1/pose`
   - `/vrpn_client_node_1/uav1/twist`
+
+飞行分析优先使用 VRPN 数据源；只有没有可用 VRPN 数据时，才回退使用 UAVState / MAVROS 等辅助数据源。

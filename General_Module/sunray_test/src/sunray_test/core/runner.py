@@ -27,6 +27,7 @@ class RunnerArgs:
     environment: str
     suite: str
     uav_id: int
+    external_source: int = None
     output_dir: str = ""
     sn: str = ""
     tester: str = ""
@@ -44,6 +45,7 @@ class TestRunner:
             environment_name=args.environment,
             suite_name=args.suite,
             uav_id=args.uav_id,
+            external_source=args.external_source,
         )
 
         output_root = args.output_dir or os.path.join(
@@ -63,6 +65,7 @@ class TestRunner:
             suite_name=args.suite,
             uav_id=args.uav_id,
             uav_name=uav_name,
+            external_source=args.external_source,
             platform=self.loaded["platform"],
             environment=self.loaded["environment"],
             suite=self.loaded["suite"],
@@ -70,6 +73,7 @@ class TestRunner:
             recording_topics=self.loaded["recording"].get("topic_templates", []),
             missions=self.loaded["missions"],
             defaults=self.loaded["defaults"],
+            analysis=self.loaded["analysis"],
             report=self.loaded["report"],
         )
         self.context.metadata = self._resolve_metadata()
@@ -113,7 +117,151 @@ class TestRunner:
         line = "=" * 72
         print(f"\n{line}\n{message}\n{line}", flush=True)
 
+    def _build_config_section(self) -> Dict[str, Any]:
+        return {
+            "run": {
+                "platform": self.context.platform_name,
+                "environment": self.context.environment_name,
+                "suite": self.context.suite_name,
+                "uav_id": self.context.uav_id,
+                "uav_name": self.context.uav_name,
+                "external_source": self.context.external_source,
+                "output_dir": self.args.output_dir,
+                "sn": self.context.metadata.get("sn", ""),
+                "tester": self.context.metadata.get("tester", ""),
+                "generated_at": datetime.now().isoformat(timespec="seconds"),
+                "sources": {
+                    "platform": os.path.join(
+                        self.package_root,
+                        "config",
+                        "platforms",
+                        f"{self.args.platform}.yaml",
+                    ),
+                    "environment": os.path.join(
+                        self.package_root,
+                        "config",
+                        "environments",
+                        f"{self.args.environment}.yaml",
+                    ),
+                    "suite": os.path.join(
+                        self.package_root,
+                        "config",
+                        "suites",
+                        f"{self.args.suite}.yaml",
+                    ),
+                    "missions_dir": os.path.join(self.package_root, "config", "missions"),
+                },
+            },
+            "parameter_summary": self._build_parameter_summary(),
+            "defaults": self.context.defaults,
+            "analysis": self.context.analysis,
+            "topics": self.context.resolved_topics,
+            "recording": self.loaded.get("recording", {}),
+            "missions": self.context.missions,
+            "steps": self._build_effective_steps_snapshot(),
+            "resolved_files": {
+                "platform": self.context.platform,
+                "environment": self.context.environment,
+                "suite": self.context.suite,
+                "report": self.context.report,
+            },
+        }
+
+    def _build_parameter_summary(self) -> Dict[str, Any]:
+        defaults = self.context.defaults
+        missions = self.context.missions
+        return {
+            "takeoff": {
+                "target_z_m": defaults.get("takeoff_target_z_m"),
+                "reach_radius_m": defaults.get("takeoff_reach_radius_m"),
+                "stable_time_s": defaults.get("takeoff_stable_time_s"),
+                "timeout_s": defaults.get("takeoff_timeout_s"),
+                "command_rate_hz": defaults.get("takeoff_command_rate_hz"),
+                "post_settle_time_s": defaults.get("post_takeoff_settle_time_s"),
+            },
+            "hover": {
+                "duration_s": defaults.get("hover_duration_s"),
+            },
+            "waypoint": {
+                "source": defaults.get("waypoint_source"),
+                "reach_radius_m": defaults.get("waypoint_reach_radius_m"),
+                "stable_time_s": defaults.get("waypoint_stable_time_s"),
+                "hold_time_s": defaults.get("waypoint_hold_time_s"),
+                "timeout_s": defaults.get("waypoint_timeout_s"),
+                "analysis_use_xy_only": defaults.get("waypoint_analysis_use_xy_only"),
+                "missions": {
+                    key: value
+                    for key, value in missions.items()
+                    if "waypoint" in key or (isinstance(value, dict) and "waypoints" in value)
+                },
+            },
+            "ego_goal": {
+                "source": defaults.get("ego_goal_source"),
+                "z_m": defaults.get("ego_goal_z_m"),
+                "reach_radius_m": defaults.get("ego_goal_reach_radius_m"),
+                "stable_time_s": defaults.get("ego_goal_stable_time_s"),
+                "hold_time_s": defaults.get("ego_goal_hold_time_s"),
+                "timeout_s": defaults.get("ego_goal_timeout_s"),
+                "publish_burst_count": defaults.get("ego_goal_publish_burst_count"),
+                "publish_burst_interval_s": defaults.get("ego_goal_publish_burst_interval_s"),
+                "use_xy_only": defaults.get("ego_goal_use_xy_only"),
+                "keepalive_enabled": defaults.get("ego_keepalive_enabled"),
+                "keepalive_rate_hz": defaults.get("ego_keepalive_rate_hz"),
+                "keepalive_stale_timeout_s": defaults.get("ego_keepalive_stale_timeout_s"),
+                "missions": {
+                    key: value
+                    for key, value in missions.items()
+                    if "ego" in key or (isinstance(value, dict) and "goals" in value)
+                },
+            },
+            "visual_landing": {
+                "auto_takeoff": defaults.get("visual_landing_auto_takeoff"),
+                "height_m": defaults.get("visual_landing_height_m"),
+                "target_zone_radius_m": defaults.get("visual_landing_target_zone_radius_m"),
+                "launch_args": {},
+            },
+            "hardware": {
+                "hardware_check_timeout_s": defaults.get("hardware_check_timeout_s"),
+                "battery_pass_threshold_v": defaults.get("battery_pass_threshold_v"),
+            },
+        }
+
+    def _build_effective_steps_snapshot(self):
+        steps = []
+        for index, step in enumerate(self.context.suite.get("steps", []), 1):
+            entry = {
+                "index": index,
+                "raw": step,
+            }
+            if "phase" in step:
+                entry.update(
+                    {
+                        "kind": "phase",
+                        "phase": step["phase"],
+                    }
+                )
+            elif "case" in step:
+                case_cls = get_case_class(step["type"])
+                entry.update(
+                    {
+                        "kind": "case",
+                        "case": step["case"],
+                        "name": step.get("name", step["case"]),
+                        "type": step["type"],
+                        "category": step.get("category", case_cls.category),
+                        "params": step.get("params", {}),
+                        "required_state": step.get("required_state", case_cls.default_required_state),
+                        "resulting_state": step.get("resulting_state", case_cls.default_resulting_state),
+                    }
+                )
+            else:
+                entry["kind"] = "unknown"
+            steps.append(entry)
+        return steps
+
     def _write_outputs(self) -> None:
+        config_section = self._build_config_section()
+
         payload = {
             "run_info": {
                 "platform": self.context.platform_name,
@@ -138,12 +286,7 @@ class TestRunner:
                 "recording_topics": self.context.recording_topics,
             },
             "config": {
-                "platform": self.context.platform_name,
-                "environment": self.context.environment_name,
-                "suite": self.context.suite_name,
-                "defaults": self.context.defaults,
-                "topics": self.context.resolved_topics,
-                "missions": self.context.missions,
+                **config_section,
             },
         }
         self.result_store.write_json(self.context.run_paths.result_json, payload)
@@ -316,7 +459,12 @@ class TestRunner:
                     self.state,
                 )
                 if result.result in {"fail", "error"} and stop_on_failure:
-                    rospy.logwarn("硬件检测失败，中断测试")
+                    rospy.logwarn(
+                        "测试项失败，中断测试: case=%s category=%s result=%s",
+                        result.case_id,
+                        result.category,
+                        result.result,
+                    )
                     self._mark_remaining_cases_failed(
                         current_step_index + 1,
                         f"stopped after case {result.case_id} returned {result.result}",

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -18,6 +19,16 @@ if SRC_ROOT not in sys.path:
 from sunray_test.core.context import package_root_from_file, workspace_root_from_package
 from sunray_test.core.scenario_loader import list_scenarios, load_scenario
 from sunray_test.core.suite_loader import load_config_triplet
+
+
+def _infer_external_source(scenario: Dict[str, object]) -> str:
+    for window in scenario.get("windows", []):
+        for tab in window.get("tabs", []):
+            command = str(tab.get("command", ""))
+            match = re.search(r"(?:^|\s)external_source:=(\d+)(?:\s|$)", command)
+            if match:
+                return match.group(1)
+    return ""
 
 
 def parse_args():
@@ -98,6 +109,9 @@ def _runner_cli_args(runner: Dict[str, object], args) -> List[str]:
         "--uav-id",
         str(runner["uav_id"]),
     ]
+    external_source = str(runner.get("external_source", "")).strip()
+    if external_source:
+        cli_args.extend(["--external-source", external_source])
     output_dir = args.output_dir or str(runner.get("output_dir", "")).strip()
     if output_dir:
         cli_args.extend(["--output-dir", output_dir])
@@ -144,6 +158,10 @@ def main():
         },
     )
     runner = dict(raw_scenario["runner"])
+    if not str(runner.get("external_source", "")).strip():
+        inferred_external_source = _infer_external_source(raw_scenario)
+        if inferred_external_source:
+            runner["external_source"] = inferred_external_source
     if args.platform:
         runner["platform"] = args.platform
     if args.environment:
@@ -161,12 +179,17 @@ def main():
         "environment": runner["environment"],
         "suite": runner["suite"],
         "uav_id": runner["uav_id"],
+        "external_source": runner.get("external_source", ""),
         "uav_name": f"/uav{runner['uav_id']}",
         "workspace_root": workspace_root,
         "package_root": package_root,
     }
     scenario = load_scenario(package_root, raw_name, variables)
     runner = dict(scenario["runner"])
+    if not str(runner.get("external_source", "")).strip():
+        inferred_external_source = _infer_external_source(scenario)
+        if inferred_external_source:
+            runner["external_source"] = inferred_external_source
     runner_cli_args = _runner_cli_args(runner, args)
     variables["runner_cli"] = shlex.join(runner_cli_args)
 
@@ -178,6 +201,7 @@ def main():
         environment_name=str(runner["environment"]),
         suite_name=str(runner["suite"]),
         uav_id=int(runner["uav_id"]),
+        external_source=int(runner["external_source"]) if str(runner.get("external_source", "")).strip() else None,
     )
     terminal = _detect_terminal()
 

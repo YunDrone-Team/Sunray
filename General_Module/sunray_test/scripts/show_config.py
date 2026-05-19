@@ -22,10 +22,23 @@ def parse_args():
     parser.add_argument("--environment", default="sim")
     parser.add_argument("--suite", default="basic_acceptance")
     parser.add_argument("--uav-id", type=int, default=1)
+    parser.add_argument("--external-source", type=int, default=None)
     parser.add_argument(
         "--section",
         default="all",
-        choices=["all", "input", "platform", "environment", "suite", "defaults", "report", "topics", "recording", "missions"],
+        choices=[
+            "all",
+            "input",
+            "platform",
+            "environment",
+            "suite",
+            "defaults",
+            "report",
+            "topics",
+            "recording",
+            "missions",
+            "analysis",
+        ],
     )
     parser.add_argument("--format", default="yaml", choices=["yaml", "json"])
     return parser.parse_args()
@@ -39,6 +52,7 @@ def main():
         environment_name=args.environment,
         suite_name=args.suite,
         uav_id=args.uav_id,
+        external_source=args.external_source,
     )
     data = effective if args.section == "all" else effective[args.section]
     if args.format == "json":

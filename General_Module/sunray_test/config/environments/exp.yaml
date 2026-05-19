@@ -2,13 +2,36 @@ name: exp
 
 recording:
   topic_templates:
-    - "/vrpn_client_node_1/uav1/pose"
-    - "/vrpn_client_node_1/uav1/twist"
+    - "/Odometry"
 
 defaults: {}
+
+analysis:
+  pose_topic: "/uav{uav_id}/mavros/local_position/pose"
+
+external_sources:
+  "3":
+    analysis:
+      pose_topic: "/vrpn_client_node_1/uav{uav_id}/pose"
+      pose_topic_fallbacks:
+        - "/uav{uav_id}/mavros/local_position/pose"
+    recording:
+      topic_templates:
+        - "/vrpn_client_node_1/uav{uav_id}/pose"
+  default:
+    analysis:
+      pose_topic: "/uav{uav_id}/mavros/local_position/pose"
+    recording:
+      topic_templates:
+        - "/uav{uav_id}/mavros/local_position/pose"
+      exclude_topic_templates:
+        - "/vrpn_client_node_1/uav{uav_id}/pose"
+        - "/vrpn_client_node_1/uav{uav_id}/twist"
 
 topic_overrides:
   front_camera: "/web_cam_front/image_raw"
   down_camera: "/web_cam/image_raw"
+  lidar_pointcloud: "/livox/lidar"
+  ego_global_pointcloud: "/cloud_registered"
 
 missions: {}

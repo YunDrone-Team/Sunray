@@ -57,6 +57,29 @@ sys.exit(0 if importlib.util.find_spec(module) else 1)
 PY
 }
 
+source_ros_distribution_environment() {
+  if [[ -f /opt/ros/noetic/setup.bash ]]; then
+    log "Sourcing /opt/ros/noetic/setup.bash"
+    # shellcheck source=/dev/null
+    source /opt/ros/noetic/setup.bash
+  fi
+}
+
+install_apt_packages() {
+  local apt_packages=("$@")
+  if [[ ${#apt_packages[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1 || ! command -v sudo >/dev/null 2>&1; then
+    return 1
+  fi
+
+  log "Installing apt dependencies: ${apt_packages[*]}"
+  sudo apt-get update
+  sudo apt-get install -y "${apt_packages[@]}"
+}
+
 ensure_pip() {
   if python3 -m pip --version >/dev/null 2>&1; then
     return
@@ -74,13 +97,51 @@ ensure_pip() {
 }
 
 install_python_deps() {
+  local apt_packages=()
   local pip_packages=()
 
-  python_module_exists yaml || pip_packages+=("PyYAML")
+  python_module_exists yaml || {
+    apt_packages+=("python3-yaml")
+    pip_packages+=("PyYAML")
+  }
+  python_module_exists numpy || {
+    apt_packages+=("python3-numpy")
+    pip_packages+=("numpy")
+  }
+  python_module_exists pandas || {
+    apt_packages+=("python3-pandas")
+    pip_packages+=("pandas")
+  }
+  python_module_exists rosbag || {
+    apt_packages+=("python3-rosbag")
+  }
+  python_module_exists rospy || {
+    apt_packages+=("python3-rospy")
+  }
+  python_module_exists roslib || {
+    apt_packages+=("python3-roslib")
+  }
 
-  if [[ ${#pip_packages[@]} -eq 0 ]]; then
+  if [[ ${#pip_packages[@]} -eq 0 && ${#apt_packages[@]} -eq 0 ]]; then
     log "Python dependencies already available."
     return
+  fi
+
+  if install_apt_packages "${apt_packages[@]}"; then
+    local missing_after_apt=()
+    python_module_exists yaml || missing_after_apt+=("PyYAML")
+    python_module_exists numpy || missing_after_apt+=("numpy")
+    python_module_exists pandas || missing_after_apt+=("pandas")
+    pip_packages=("${missing_after_apt[@]}")
+    if ! python_module_exists rosbag || ! python_module_exists rospy || ! python_module_exists roslib; then
+      echo "ROS Python modules are still missing after apt install." >&2
+      echo "Please check ROS Noetic installation and source /opt/ros/noetic/setup.bash." >&2
+      exit 1
+    fi
+    if [[ ${#pip_packages[@]} -eq 0 ]]; then
+      log "Python dependencies installed via apt."
+      return
+    fi
   fi
 
   ensure_pip
@@ -93,11 +154,7 @@ source_ros_environment() {
     return
   fi
 
-  if [[ -f /opt/ros/noetic/setup.bash ]]; then
-    log "Sourcing /opt/ros/noetic/setup.bash"
-    # shellcheck source=/dev/null
-    source /opt/ros/noetic/setup.bash
-  fi
+  source_ros_distribution_environment
 
   if ! command -v catkin_make >/dev/null 2>&1; then
     echo "catkin_make not found. Please install/source ROS Noetic first." >&2
@@ -118,6 +175,8 @@ build_sunray_test() {
 
 log "Package root: ${PACKAGE_ROOT}"
 log "Workspace root: ${WORKSPACE_ROOT}"
+
+source_ros_distribution_environment
 
 if [[ "${SKIP_INSTALL}" -eq 0 ]]; then
   install_python_deps

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0.2)
 project(sunray_test)
 
 find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
+  quadrotor_msgs
   rospy
   sensor_msgs
   sunray_msgs
@@ -9,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
   CATKIN_DEPENDS
+  geometry_msgs
+  quadrotor_msgs
   rospy
   sensor_msgs
   sunray_msgs
@@ -17,9 +21,11 @@ catkin_package(
 catkin_install_python(PROGRAMS
   scripts/run_suite.py
   scripts/internal_run.py
+  scripts/livox_mid360_autoconfig.py
   scripts/show_config.py
   scripts/run_scenario.py
   scripts/generate_report.py
+  scripts/vrpn_server_check.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

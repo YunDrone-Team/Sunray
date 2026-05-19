@@ -37,6 +37,41 @@ def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]
     return result
 
 
+def _merge_platform_config(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    merged = deep_merge(base, override)
+    base_recording = base.get("recording", {}) if isinstance(base.get("recording"), dict) else {}
+    override_recording = override.get("recording", {}) if isinstance(override.get("recording"), dict) else {}
+    merged_recording = merged.get("recording", {}) if isinstance(merged.get("recording"), dict) else {}
+
+    if "topic_templates" in base_recording or "topic_templates" in override_recording:
+        merged_recording["topic_templates"] = merge_unique_lists(
+            base_recording.get("topic_templates", []),
+            override_recording.get("topic_templates", []),
+        )
+    if "exclude_topic_templates" in base_recording or "exclude_topic_templates" in override_recording:
+        merged_recording["exclude_topic_templates"] = merge_unique_lists(
+            base_recording.get("exclude_topic_templates", []),
+            override_recording.get("exclude_topic_templates", []),
+        )
+    if merged_recording:
+        merged["recording"] = merged_recording
+    merged.pop("extends", None)
+    return merged
+
+
+def load_platform_config(config_root: str, platform_name: str) -> Dict[str, Any]:
+    platform_path = os.path.join(config_root, "platforms", f"{platform_name}.yaml")
+    _ensure(os.path.isfile(platform_path), f"platform config not found: {platform_path}")
+    platform = load_yaml(platform_path)
+    extends = platform.get("extends")
+    if not extends:
+        return platform
+
+    base_name = _ensure_string(extends, f"{platform_path}.extends")
+    base_platform = load_platform_config(config_root, base_name)
+    return _merge_platform_config(base_platform, platform)
+
+
 def render_template(value: Any, variables: Dict[str, Any]) -> Any:
     if isinstance(value, str):
         return value.format(**variables)
@@ -107,6 +142,17 @@ def _ensure_point_list(value: Any, path: str) -> None:
             _ensure_number(axis_value, f"{point_path}[{axis_index}]")
 
 
+def _ensure_ego_goal_list(value: Any, path: str) -> None:
+    points = _ensure_list(value, path)
+    _ensure(len(points) > 0, f"{path} must not be empty")
+    for index, point in enumerate(points):
+        point_path = f"{path}[{index}]"
+        _ensure(isinstance(point, (list, tuple)), f"{point_path} must be a list or tuple")
+        _ensure(2 <= len(point) <= 3, f"{point_path} must contain 2 or 3 numbers")
+        for axis_index, axis_value in enumerate(point):
+            _ensure_number(axis_value, f"{point_path}[{axis_index}]")
+
+
 def _validate_report_config(report: Any, path: str) -> None:
     if report is None:
         return
@@ -118,12 +164,15 @@ def _validate_report_config(report: Any, path: str) -> None:
 
 def _validate_recording_config(recording: Any, path: str) -> None:
     recording_dict = _ensure_dict(recording, path)
-    _ensure_allowed_keys(recording_dict, path, {"bag_prefix", "topic_templates"})
+    _ensure_allowed_keys(recording_dict, path, {"bag_prefix", "topic_templates", "exclude_topic_templates"})
     if "bag_prefix" in recording_dict:
         _ensure_string(recording_dict["bag_prefix"], f"{path}.bag_prefix")
     if "topic_templates" in recording_dict:
         for index, topic in enumerate(_ensure_list(recording_dict["topic_templates"], f"{path}.topic_templates")):
             _ensure_string(topic, f"{path}.topic_templates[{index}]")
+    if "exclude_topic_templates" in recording_dict:
+        for index, topic in enumerate(_ensure_list(recording_dict["exclude_topic_templates"], f"{path}.exclude_topic_templates")):
+            _ensure_string(topic, f"{path}.exclude_topic_templates[{index}]")
 
 
 def _validate_defaults(defaults: Any, path: str) -> None:
@@ -131,28 +180,64 @@ def _validate_defaults(defaults: Any, path: str) -> None:
     numeric_keys = {
         "hardware_check_timeout_s",
         "battery_pass_threshold_v",
+        "takeoff_reach_radius_m",
+        "takeoff_stable_time_s",
+        "takeoff_timeout_s",
+        "takeoff_command_rate_hz",
         "post_takeoff_settle_time_s",
         "hover_duration_s",
         "waypoint_reach_radius_m",
         "waypoint_stable_time_s",
         "waypoint_hold_time_s",
         "waypoint_timeout_s",
+        "ego_goal_z_m",
+        "ego_goal_reach_radius_m",
+        "ego_goal_stable_time_s",
+        "ego_goal_hold_time_s",
+        "ego_goal_timeout_s",
+        "ego_goal_republish_rate_hz",
+        "ego_goal_publish_burst_count",
+        "ego_goal_publish_burst_interval_s",
         "visual_landing_height_m",
+        "visual_landing_target_zone_radius_m",
     }
     for key in numeric_keys:
         if key in defaults_dict:
             _ensure_number(defaults_dict[key], f"{path}.{key}")
-    if "takeoff_target_pos" in defaults_dict:
-        point = defaults_dict["takeoff_target_pos"]
-        _ensure(isinstance(point, (list, tuple)), f"{path}.takeoff_target_pos must be a list or tuple")
-        _ensure(len(point) >= 3, f"{path}.takeoff_target_pos must contain at least 3 numbers")
-        for index, value in enumerate(point[:3]):
-            _ensure_number(value, f"{path}.takeoff_target_pos[{index}]")
+    for key in ("takeoff_reach_radius_m", "takeoff_timeout_s", "takeoff_command_rate_hz"):
+        if key in defaults_dict:
+            value = _ensure_number(defaults_dict[key], f"{path}.{key}")
+            _ensure(value > 0, f"{path}.{key} must be positive")
+    if "takeoff_stable_time_s" in defaults_dict:
+        value = _ensure_number(defaults_dict["takeoff_stable_time_s"], f"{path}.takeoff_stable_time_s")
+        _ensure(value >= 0, f"{path}.takeoff_stable_time_s must be non-negative")
+    if "ego_goal_publish_burst_count" in defaults_dict:
+        value = _ensure_number(defaults_dict["ego_goal_publish_burst_count"], f"{path}.ego_goal_publish_burst_count")
+        _ensure(value >= 1 and float(value).is_integer(), f"{path}.ego_goal_publish_burst_count must be a positive integer")
+    if "ego_goal_publish_burst_interval_s" in defaults_dict:
+        value = _ensure_number(
+            defaults_dict["ego_goal_publish_burst_interval_s"],
+            f"{path}.ego_goal_publish_burst_interval_s",
+        )
+        _ensure(value >= 0, f"{path}.ego_goal_publish_burst_interval_s must be non-negative")
+    if "takeoff_target_z_m" in defaults_dict:
+        value = _ensure_number(defaults_dict["takeoff_target_z_m"], f"{path}.takeoff_target_z_m")
+        _ensure(value > 0, f"{path}.takeoff_target_z_m must be positive")
     if "waypoint_source" in defaults_dict:
         source = _ensure_string(defaults_dict["waypoint_source"], f"{path}.waypoint_source")
         _ensure(source in {"list", "input"}, f"{path}.waypoint_source must be 'list' or 'input'")
     if "visual_landing_auto_takeoff" in defaults_dict:
         _ensure_bool(defaults_dict["visual_landing_auto_takeoff"], f"{path}.visual_landing_auto_takeoff")
+    if "visual_landing_target_zone_radius_m" in defaults_dict:
+        value = _ensure_number(
+            defaults_dict["visual_landing_target_zone_radius_m"],
+            f"{path}.visual_landing_target_zone_radius_m",
+        )
+        _ensure(value > 0, f"{path}.visual_landing_target_zone_radius_m must be positive")
+    if "waypoint_analysis_use_xy_only" in defaults_dict:
+        _ensure_bool(defaults_dict["waypoint_analysis_use_xy_only"], f"{path}.waypoint_analysis_use_xy_only")
+    if "ego_goal_use_xy_only" in defaults_dict:
+        _ensure_bool(defaults_dict["ego_goal_use_xy_only"], f"{path}.ego_goal_use_xy_only")
 
 
 def _validate_topics(topics: Any, path: str, allow_empty_values: bool) -> None:
@@ -169,11 +254,51 @@ def _validate_capabilities(capabilities: Any, path: str) -> None:
         _ensure_bool(value, f"{path}.{key}")
 
 
+def _validate_lidar_config(lidar: Any, path: str) -> None:
+    lidar_dict = _ensure_dict(lidar, path)
+    _ensure_allowed_keys(
+        lidar_dict,
+        path,
+        {"mid360_auto_check", "mid360_iface", "mid360_config_path", "mid360_timeout_s"},
+    )
+    if "mid360_auto_check" in lidar_dict:
+        _ensure_bool(lidar_dict["mid360_auto_check"], f"{path}.mid360_auto_check")
+    if "mid360_iface" in lidar_dict:
+        _ensure_string(lidar_dict["mid360_iface"], f"{path}.mid360_iface")
+    if "mid360_config_path" in lidar_dict:
+        _ensure_string(lidar_dict["mid360_config_path"], f"{path}.mid360_config_path")
+    if "mid360_timeout_s" in lidar_dict:
+        value = _ensure_number(lidar_dict["mid360_timeout_s"], f"{path}.mid360_timeout_s")
+        _ensure(value > 0, f"{path}.mid360_timeout_s must be positive")
+
+
+def _validate_analysis_config(analysis: Any, path: str) -> None:
+    analysis_dict = _ensure_dict(analysis, path)
+    _ensure_allowed_keys(analysis_dict, path, {"pose_topic", "pose_topic_fallbacks"})
+    if "pose_topic" in analysis_dict:
+        _ensure_string(analysis_dict["pose_topic"], f"{path}.pose_topic", allow_empty=False)
+    if "pose_topic_fallbacks" in analysis_dict:
+        for index, topic in enumerate(_ensure_list(analysis_dict["pose_topic_fallbacks"], f"{path}.pose_topic_fallbacks")):
+            _ensure_string(topic, f"{path}.pose_topic_fallbacks[{index}]", allow_empty=False)
+
+
+def _validate_external_sources_config(external_sources: Any, path: str) -> None:
+    external_sources_dict = _ensure_dict(external_sources, path)
+    for source_key, source_config in external_sources_dict.items():
+        _ensure_string(str(source_key), f"{path}.{source_key}")
+        source_dict = _ensure_dict(source_config, f"{path}.{source_key}")
+        _ensure_allowed_keys(source_dict, f"{path}.{source_key}", {"analysis", "recording"})
+        if "analysis" in source_dict:
+            _validate_analysis_config(source_dict["analysis"], f"{path}.{source_key}.analysis")
+        if "recording" in source_dict:
+            _validate_recording_config(source_dict["recording"], f"{path}.{source_key}.recording")
+
+
 def _validate_platform_config(platform: Dict[str, Any], path: str) -> None:
     _ensure_allowed_keys(
         platform,
         path,
-        {"name", "vehicle_type", "report", "capabilities", "topics", "recording", "defaults"},
+        {"name", "vehicle_type", "report", "capabilities", "lidar", "topics", "recording", "defaults", "analysis"},
         {"name", "vehicle_type", "topics", "recording", "defaults"},
     )
     _ensure_string(platform["name"], f"{path}.name")
@@ -185,13 +310,17 @@ def _validate_platform_config(platform: Dict[str, Any], path: str) -> None:
         _validate_report_config(platform["report"], f"{path}.report")
     if "capabilities" in platform:
         _validate_capabilities(platform["capabilities"], f"{path}.capabilities")
+    if "lidar" in platform:
+        _validate_lidar_config(platform["lidar"], f"{path}.lidar")
+    if "analysis" in platform:
+        _validate_analysis_config(platform["analysis"], f"{path}.analysis")
 
 
 def _validate_environment_config(environment: Dict[str, Any], path: str) -> None:
     _ensure_allowed_keys(
         environment,
         path,
-        {"name", "recording", "defaults", "topic_overrides", "missions"},
+        {"name", "recording", "defaults", "analysis", "external_sources", "topic_overrides", "missions"},
         {"name"},
     )
     _ensure_string(environment["name"], f"{path}.name")
@@ -199,6 +328,10 @@ def _validate_environment_config(environment: Dict[str, Any], path: str) -> None
         _validate_recording_config(environment["recording"], f"{path}.recording")
     if "defaults" in environment:
         _validate_defaults(environment["defaults"], f"{path}.defaults")
+    if "analysis" in environment:
+        _validate_analysis_config(environment["analysis"], f"{path}.analysis")
+    if "external_sources" in environment:
+        _validate_external_sources_config(environment["external_sources"], f"{path}.external_sources")
     if "topic_overrides" in environment:
         _validate_topics(environment["topic_overrides"], f"{path}.topic_overrides", allow_empty_values=False)
     if "missions" in environment:
@@ -213,6 +346,8 @@ def _validate_missions(missions: Dict[str, Any], path: str) -> None:
                 _ensure_string(mission_value["name"], f"{mission_path}.name")
             if "waypoints" in mission_value:
                 _ensure_point_list(mission_value["waypoints"], f"{mission_path}.waypoints")
+            if "goals" in mission_value:
+                _ensure_ego_goal_list(mission_value["goals"], f"{mission_path}.goals")
         elif isinstance(mission_value, list):
             _ensure_point_list(mission_value, mission_path)
         else:
@@ -281,9 +416,65 @@ def _validate_suite_step(
             _ensure_number(params["timeout_s"], f"{path}.params.timeout_s")
         if "pass_threshold_v" in params:
             _ensure_number(params["pass_threshold_v"], f"{path}.params.pass_threshold_v")
+    elif case_type == "hardware.topic_alive":
+        _ensure("topic_key" in params, f"{path}.params.topic_key is required for hardware.topic_alive")
+        if "timeout_s" in params:
+            _ensure_number(params["timeout_s"], f"{path}.params.timeout_s")
+    elif case_type == "hardware.lidar_health":
+        for string_key in ("imu_topic_pattern", "lidar_topic_pattern"):
+            if string_key in params:
+                _ensure_string(params[string_key], f"{path}.params.{string_key}")
+        for number_key in ("timeout_s", "sample_duration_s", "min_rate_hz", "max_gap_s"):
+            if number_key in params:
+                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        for integer_key in ("min_messages", "min_points_per_cloud", "min_valid_clouds"):
+            if integer_key in params:
+                value = _ensure_number(params[integer_key], f"{path}.params.{integer_key}")
+                _ensure(value >= 0 and float(value).is_integer(), f"{path}.params.{integer_key} must be a non-negative integer")
     elif case_type == "flight.hover":
         if "duration_s" in params:
             _ensure_number(params["duration_s"], f"{path}.params.duration_s")
+    elif case_type == "flight.ego_goal":
+        _ensure("mission_key" in params, f"{path}.params.mission_key is required for flight.ego_goal")
+        mission_key = _ensure_string(params["mission_key"], f"{path}.params.mission_key")
+        _ensure(mission_key in merged_missions, f"{path}.params.mission_key references unknown mission: {mission_key}")
+        mission = merged_missions[mission_key]
+        if isinstance(mission, dict):
+            _ensure(
+                "goals" in mission or "waypoints" in mission,
+                f"merged.missions.{mission_key} must define goals or waypoints",
+            )
+            if "goals" in mission:
+                _ensure_ego_goal_list(mission["goals"], f"merged.missions.{mission_key}.goals")
+            if "waypoints" in mission:
+                _ensure_ego_goal_list(mission["waypoints"], f"merged.missions.{mission_key}.waypoints")
+        elif isinstance(mission, list):
+            _ensure_ego_goal_list(mission, f"merged.missions.{mission_key}")
+        else:
+            raise ConfigValidationError(f"merged.missions.{mission_key} must be a mapping or goal list")
+        for string_key in ("goal_topic", "frame_id"):
+            if string_key in params:
+                _ensure_string(params[string_key], f"{path}.params.{string_key}")
+        for number_key in (
+            "z_m",
+            "reach_radius_m",
+            "stable_time_s",
+            "hold_time_s",
+            "timeout_s",
+            "republish_rate_hz",
+            "publish_burst_count",
+            "publish_burst_interval_s",
+        ):
+            if number_key in params:
+                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        if "publish_burst_count" in params:
+            value = _ensure_number(params["publish_burst_count"], f"{path}.params.publish_burst_count")
+            _ensure(value >= 1 and float(value).is_integer(), f"{path}.params.publish_burst_count must be a positive integer")
+        if "publish_burst_interval_s" in params:
+            value = _ensure_number(params["publish_burst_interval_s"], f"{path}.params.publish_burst_interval_s")
+            _ensure(value >= 0, f"{path}.params.publish_burst_interval_s must be non-negative")
+        if "use_xy_only" in params:
+            _ensure_bool(params["use_xy_only"], f"{path}.params.use_xy_only")
     elif case_type == "flight.visual_landing":
         if "launch_file" in params:
             _ensure_string(params["launch_file"], f"{path}.params.launch_file")
@@ -291,6 +482,40 @@ def _validate_suite_step(
             _ensure_bool(params["auto_takeoff"], f"{path}.params.auto_takeoff")
         if "height_m" in params:
             _ensure_number(params["height_m"], f"{path}.params.height_m")
+        if "launch_args" in params:
+            launch_args = _ensure_dict(params["launch_args"], f"{path}.params.launch_args")
+            for key, value in launch_args.items():
+                _ensure_string(key, f"{path}.params.launch_args.{key}")
+                _ensure(isinstance(value, (str, int, float, bool)), f"{path}.params.launch_args.{key} must be a scalar")
+        if "failure_patterns" in params:
+            for index, pattern in enumerate(_ensure_list(params["failure_patterns"], f"{path}.params.failure_patterns")):
+                _ensure_string(pattern, f"{path}.params.failure_patterns[{index}]")
+        if "pre_stop_nodes" in params:
+            for index, node_name in enumerate(_ensure_list(params["pre_stop_nodes"], f"{path}.params.pre_stop_nodes")):
+                _ensure_string(node_name, f"{path}.params.pre_stop_nodes[{index}]")
+    elif case_type == "flight.ego_goal":
+        for string_key in ("goal_topic", "frame_id", "goal_source", "pos_cmd_topic", "control_cmd_topic"):
+            if string_key in params:
+                _ensure_string(params[string_key], f"{path}.params.{string_key}")
+        for number_key in (
+            "z_m",
+            "reach_radius_m",
+            "stable_time_s",
+            "hold_time_s",
+            "timeout_s",
+            "publish_burst_interval_s",
+            "keepalive_rate_hz",
+            "keepalive_stale_timeout_s",
+            "keepalive_zero_velocity_epsilon",
+        ):
+            if number_key in params:
+                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        if "publish_burst_count" in params:
+            value = _ensure_number(params["publish_burst_count"], f"{path}.params.publish_burst_count")
+            _ensure(value >= 1 and float(value).is_integer(), f"{path}.params.publish_burst_count must be a positive integer")
+        for bool_key in ("use_xy_only", "keepalive_enabled"):
+            if bool_key in params:
+                _ensure_bool(params[bool_key], f"{path}.params.{bool_key}")
     elif case_type == "flight.waypoint":
         waypoint_source = params.get("waypoint_source", merged_defaults.get("waypoint_source", "list"))
         waypoint_source = _ensure_string(waypoint_source, f"{path}.params.waypoint_source")
@@ -315,7 +540,7 @@ def _validate_suite_config(
     _ensure_allowed_keys(
         suite,
         path,
-        {"name", "description", "record_rosbag", "stop_on_failure", "report", "steps"},
+        {"name", "description", "record_rosbag", "stop_on_failure", "report", "platform_requirements", "steps"},
         {"name", "steps"},
     )
     _ensure_string(suite["name"], f"{path}.name")
@@ -327,12 +552,42 @@ def _validate_suite_config(
         _ensure_bool(suite["stop_on_failure"], f"{path}.stop_on_failure")
     if "report" in suite:
         _validate_report_config(suite["report"], f"{path}.report")
+    if "platform_requirements" in suite:
+        requirements = _ensure_dict(suite["platform_requirements"], f"{path}.platform_requirements")
+        _ensure_allowed_keys(requirements, f"{path}.platform_requirements", {"capabilities", "topics"})
+        if "capabilities" in requirements:
+            for index, capability in enumerate(_ensure_list(requirements["capabilities"], f"{path}.platform_requirements.capabilities")):
+                _ensure_string(capability, f"{path}.platform_requirements.capabilities[{index}]")
+        if "topics" in requirements:
+            for index, topic_key in enumerate(_ensure_list(requirements["topics"], f"{path}.platform_requirements.topics")):
+                _ensure_string(topic_key, f"{path}.platform_requirements.topics[{index}]")
 
     steps = _ensure_list(suite["steps"], f"{path}.steps")
     _ensure(len(steps) > 0, f"{path}.steps must not be empty")
     for index, step in enumerate(steps):
         step_dict = _ensure_dict(step, f"{path}.steps[{index}]")
         _validate_suite_step(step_dict, f"{path}.steps[{index}]", merged_topics, merged_missions, merged_defaults)
+
+
+def _validate_platform_requirements(suite: Dict[str, Any], platform: Dict[str, Any], topics: Dict[str, Any], path: str) -> None:
+    requirements = suite.get("platform_requirements")
+    if not requirements:
+        return
+
+    requirements_dict = _ensure_dict(requirements, path)
+    required_topics = [str(item) for item in requirements_dict.get("topics", [])]
+    required_capabilities = [str(item) for item in requirements_dict.get("capabilities", [])]
+    capabilities = platform.get("capabilities") or {}
+
+    for topic_key in required_topics:
+        _ensure(topic_key in topics, f"{path}.topics requires missing topic key: {topic_key}")
+        _ensure_string(topics[topic_key], f"resolved.topics.{topic_key}", allow_empty=False)
+
+    for capability in required_capabilities:
+        _ensure(
+            bool(capabilities.get(capability, False)),
+            f"{path}.capabilities requires platform capability '{capability}'",
+        )
 
 
 def validate_config_triplet(
@@ -361,6 +616,7 @@ def validate_config_triplet(
     environment = _ensure_dict(loaded.get("environment"), "resolved.environment")
     suite = _ensure_dict(loaded.get("suite"), "resolved.suite")
     defaults = _ensure_dict(loaded.get("defaults"), "resolved.defaults")
+    analysis = _ensure_dict(loaded.get("analysis"), "resolved.analysis")
     report = _ensure_dict(loaded.get("report"), "resolved.report")
     topics = _ensure_dict(loaded.get("topics"), "resolved.topics")
     missions = _ensure_dict(loaded.get("missions"), "resolved.missions")
@@ -369,11 +625,13 @@ def validate_config_triplet(
     _validate_platform_config(platform, "resolved.platform")
     _validate_environment_config(environment, "resolved.environment")
     _validate_defaults(defaults, "resolved.defaults")
+    _validate_analysis_config(analysis, "resolved.analysis")
     _validate_topics(topics, "resolved.topics", allow_empty_values=False)
     _validate_report_config(report, "resolved.report")
     _validate_recording_config(recording, "resolved.recording")
     _validate_missions(missions, "resolved.missions")
     _validate_suite_config(suite, "resolved.suite", topics, missions, defaults)
+    _validate_platform_requirements(suite, platform, topics, "resolved.suite.platform_requirements")
 
     for required_topic_key in ("uav_state", "uav_control_cmd", "uav_setup"):
         _ensure(required_topic_key in topics, f"resolved.topics is missing required key: {required_topic_key}")
@@ -388,6 +646,7 @@ def show_effective_config(
     environment_name: str,
     suite_name: str,
     uav_id: int,
+    external_source: Optional[int] = None,
 ) -> Dict[str, Any]:
     loaded = load_config_triplet(
         package_root=package_root,
@@ -395,6 +654,7 @@ def show_effective_config(
         environment_name=environment_name,
         suite_name=suite_name,
         uav_id=uav_id,
+        external_source=external_source,
     )
     return {
         "input": {
@@ -403,6 +663,7 @@ def show_effective_config(
             "suite": suite_name,
             "uav_id": uav_id,
             "uav_name": f"/uav{uav_id}",
+            "external_source": external_source,
         },
         "platform": loaded["platform"],
         "environment": loaded["environment"],
@@ -412,6 +673,7 @@ def show_effective_config(
         "topics": loaded["topics"],
         "recording": loaded["recording"],
         "missions": loaded["missions"],
+        "analysis": loaded["analysis"],
     }
 
 
@@ -421,18 +683,17 @@ def load_config_triplet(
     environment_name: str,
     suite_name: str,
     uav_id: int,
+    external_source: Optional[int] = None,
 ) -> Dict[str, Any]:
     config_root = os.path.join(package_root, "config")
-    platform_path = os.path.join(config_root, "platforms", f"{platform_name}.yaml")
     environment_path = os.path.join(config_root, "environments", f"{environment_name}.yaml")
     suite_path = os.path.join(config_root, "suites", f"{suite_name}.yaml")
     mission_dir = os.path.join(config_root, "missions")
 
-    _ensure(os.path.isfile(platform_path), f"platform config not found: {platform_path}")
     _ensure(os.path.isfile(environment_path), f"environment config not found: {environment_path}")
     _ensure(os.path.isfile(suite_path), f"suite config not found: {suite_path}")
 
-    platform = load_yaml(platform_path)
+    platform = load_platform_config(config_root, platform_name)
     environment = load_yaml(environment_path)
     suite = load_yaml(suite_path)
     mission_files = load_yaml_dir(mission_dir)
@@ -441,6 +702,7 @@ def load_config_triplet(
     variables = {
         "uav_id": uav_id,
         "uav_name": uav_name,
+        "external_source": external_source if external_source is not None else "",
         "workspace_root": os.path.abspath(os.path.join(package_root, "..", "..")),
         "package_root": package_root,
     }
@@ -451,8 +713,17 @@ def load_config_triplet(
     resolved_mission_files = render_template(mission_files, variables)
 
     defaults = deep_merge(resolved_platform.get("defaults", {}), resolved_environment.get("defaults", {}))
+    analysis = deep_merge(resolved_platform.get("analysis", {}), resolved_environment.get("analysis", {}))
     report = deep_merge(resolved_platform.get("report", {}), resolved_suite.get("report", {}))
     recording = deep_merge(resolved_platform.get("recording", {}), resolved_environment.get("recording", {}))
+
+    external_source_config: Dict[str, Any] = {}
+    external_sources = resolved_environment.get("external_sources", {})
+    if isinstance(external_sources, dict) and external_source is not None:
+        external_source_config = external_sources.get(str(external_source)) or external_sources.get("default") or {}
+        if isinstance(external_source_config, dict):
+            analysis = deep_merge(analysis, external_source_config.get("analysis", {}))
+            recording = deep_merge(recording, external_source_config.get("recording", {}))
     missions: Dict[str, Any] = {}
     for filename, mission_data in resolved_mission_files.items():
         mission_name = mission_data.get("name", filename) if isinstance(mission_data, dict) else filename
@@ -466,14 +737,26 @@ def load_config_triplet(
     recording_topics = merge_unique_lists(
         resolved_platform.get("recording", {}).get("topic_templates", []),
         resolved_environment.get("recording", {}).get("topic_templates", []),
+        external_source_config.get("recording", {}).get("topic_templates", [])
+        if isinstance(external_source_config, dict)
+        else [],
     )
+    excluded_recording_topics = set(
+        external_source_config.get("recording", {}).get("exclude_topic_templates", [])
+        if isinstance(external_source_config, dict)
+        else []
+    )
+    if excluded_recording_topics:
+        recording_topics = [topic for topic in recording_topics if topic not in excluded_recording_topics]
     recording["topic_templates"] = recording_topics
+    recording.pop("exclude_topic_templates", None)
 
     loaded = {
         "platform": resolved_platform,
         "environment": resolved_environment,
         "suite": resolved_suite,
         "defaults": defaults,
+        "analysis": analysis,
         "report": report,
         "topics": topics,
         "missions": missions,

@@ -1,0 +1,74 @@
+name: lidar_acceptance
+description: Lidar acceptance workflow for Sunray UAV validation
+record_rosbag: true
+stop_on_failure: true
+
+platform_requirements:
+  capabilities:
+    - egoplanner
+  topics:
+    - lidar_pointcloud
+
+steps:
+  - case: front_camera_alive
+    name: 前视相机
+    type: hardware.camera_alive
+    params:
+      topic_key: front_camera
+
+  - case: down_camera_alive
+    name: 下视相机
+    type: hardware.camera_alive
+    params:
+      topic_key: down_camera
+
+  - case: battery_voltage
+    name: 电池电压
+    type: hardware.battery_voltage
+    params:
+      topic_key: battery
+
+  - case: lidar_health_check
+    name: 激光雷达
+    type: hardware.lidar_health
+    params:
+      imu_topic_pattern: livox/imu
+      lidar_topic_pattern: livox/lidar
+      timeout_s: 10.0
+      sample_duration_s: 3.0
+      min_messages: 5
+      min_rate_hz: 8.0
+      max_gap_s: 1.0
+      min_points_per_cloud: 700
+      min_valid_clouds: 3
+
+  - phase: arm_and_takeoff
+
+  - case: hover_stability
+    name: 悬停
+    type: flight.hover
+
+  - case: ego_goal_flight
+    name: EGO-Planner自主规划
+    type: flight.ego_goal
+    params:
+      goal_topic: /move_base_simple/goal
+      frame_id: world
+      mission_key: lidar_ego_goals
+
+  - case: waypoint_flight
+    name: 指点飞行
+    type: flight.waypoint
+    params:
+      mission_key: waypoint_default
+
+  - case: visual_landing
+    name: 视觉降落
+    type: flight.visual_landing
+    params:
+      launch_args:
+        error_xy: 0.07
+        error_z: 0.22
+        land_vel: 0.5
+        last_land_time: 0.9
+        drop_height: 0.1

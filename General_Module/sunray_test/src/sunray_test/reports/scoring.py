@@ -8,6 +8,7 @@ import yaml
 SECTION_KEY_MAP = {
     "悬停指标": "hover",
     "航点飞行指标": "waypoint",
+    "EGO自主规划指标": "ego_goal",
     "视觉降落指标": "visual_landing",
 }
 
@@ -16,6 +17,8 @@ CASE_ID_TO_SECTION = {
     "hover": "hover",
     "waypoint_flight": "waypoint",
     "waypoint": "waypoint",
+    "ego_goal_flight": "ego_goal",
+    "ego_goal": "ego_goal",
     "visual_landing": "visual_landing",
 }
 
@@ -63,6 +66,34 @@ def load_scoring_config(workspace_root: str) -> Optional[Dict[str, Any]]:
         return yaml.safe_load(handle) or None
 
 
+def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _resolve_platform_scoring_config(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> Dict[str, Any]:
+    platform_name = str(payload.get("run_info", {}).get("platform", "")).strip()
+    platform_profiles = scoring_config.get("platform_profiles") or {}
+    profile = platform_profiles.get(platform_name)
+    if not platform_name:
+        raise ValueError("missing run_info.platform for scoring profile")
+    if not isinstance(profile, dict):
+        available = ", ".join(sorted(str(key) for key in platform_profiles.keys())) or "<none>"
+        raise ValueError(f"missing scoring platform profile: {platform_name}; available: {available}")
+
+    effective_config = _deep_merge(
+        {"grades": scoring_config.get("grades", [])},
+        profile,
+    )
+    payload.setdefault("flight_metrics", {})["scoring_profile"] = platform_name
+    return effective_config
+
+
 def _lerp(a: float, b: float, t: float) -> float:
     return a + (b - a) * t
 
@@ -96,6 +127,11 @@ def _score_single_metric(value: Any, thresholds: List[float], higher_is_better: 
 
 def _collect_flat_metrics(section: Dict[str, Any]) -> Dict[str, Any]:
     flat: Dict[str, Any] = {}
+    summary_by_category = section.get("summary_by_category")
+    if isinstance(summary_by_category, dict):
+        for category_metrics in summary_by_category.values():
+            if isinstance(category_metrics, dict):
+                flat.update(category_metrics)
     metrics_by_category = section.get("metrics_by_category")
     if isinstance(metrics_by_category, dict):
         for category_metrics in metrics_by_category.values():
@@ -153,20 +189,41 @@ def _score_waypoint_section(section: Dict[str, Any], section_config: Dict[str, A
     if not waypoints:
         return _score_section(section, section_config)
 
+    flat = _collect_flat_metrics(section)
     gates = section_config.get("gates", [])
+    section_gates = [gate for gate in gates if gate in flat]
+    waypoint_gates = [gate for gate in gates if gate not in flat]
     metric_configs = section_config.get("metrics", {})
+    section_metric_keys = {key for key in metric_configs if key in flat}
+    waypoint_metric_configs = {
+        key: value
+        for key, value in metric_configs.items()
+        if key not in section_metric_keys
+    }
     waypoint_scores: List[Dict[str, Any]] = []
+
+    if section_gates and not _check_gates(flat, section_gates):
+        details = {
+            metric_key: {"value": flat.get(metric_key), "score": 0.0}
+            for metric_key in metric_configs
+        }
+        return {
+            "score": 0.0,
+            "gate_failed": True,
+            "details": details,
+            "waypoint_scores": [],
+        }
 
     for waypoint_data in waypoints:
         waypoint_metrics = waypoint_data.get("metrics", {})
-        if gates and not _check_gates(waypoint_metrics, gates):
+        if waypoint_gates and not _check_gates(waypoint_metrics, waypoint_gates):
             waypoint_scores.append({"score": 0.0, "gate_failed": True, "waypoint": waypoint_data.get("waypoint")})
             continue
 
         weighted_sum = 0.0
         total_weight = 0.0
         details: Dict[str, Any] = {}
-        for metric_key, cfg in metric_configs.items():
+        for metric_key, cfg in waypoint_metric_configs.items():
             value = waypoint_metrics.get(metric_key)
             thresholds = cfg.get("thresholds", [])
             higher_is_better = cfg.get("higher_is_better", False)
@@ -190,8 +247,24 @@ def _score_waypoint_section(section: Dict[str, Any], section_config: Dict[str, A
         )
 
     valid_scores = [item["score"] for item in waypoint_scores if item["score"] is not None]
-    average_score = round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else None
-    summary_details = _score_section(section, section_config)
+    waypoint_average_score = round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else None
+    summary_config = {
+        **section_config,
+        "gates": section_gates,
+        "metrics": {
+            key: value
+            for key, value in metric_configs.items()
+            if key in section_metric_keys
+        },
+    }
+    summary_details = _score_section(section, summary_config)
+    summary_score = summary_details.get("score")
+    if summary_score is not None and waypoint_average_score is not None:
+        average_score = round((float(summary_score) + float(waypoint_average_score)) / 2.0, 1)
+    elif summary_score is not None:
+        average_score = summary_score
+    else:
+        average_score = waypoint_average_score
     return {
         "score": average_score,
         "gate_failed": average_score == 0.0,
@@ -212,6 +285,7 @@ def _grade_for_score(score: Optional[float], grade_config: List[Dict[str, Any]])
 
 
 def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> None:
+    scoring_config = _resolve_platform_scoring_config(payload, scoring_config)
     flight_metrics = payload.get("flight_metrics", {})
     sections = flight_metrics.get("sections", [])
     grade_config = scoring_config.get("grades", [])
@@ -230,7 +304,7 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
                 break
 
     planned_scored_sections: List[str] = []
-    for key in ("hover", "waypoint", "visual_landing"):
+    for key in ("hover", "waypoint", "ego_goal", "visual_landing"):
         if key in case_result_by_section and key in scoring_config:
             planned_scored_sections.append(key)
 
@@ -241,7 +315,7 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
             continue
 
         section_config = scoring_config[config_key]
-        result = _score_waypoint_section(section, section_config) if config_key == "waypoint" else _score_section(section, section_config)
+        result = _score_waypoint_section(section, section_config) if config_key in {"waypoint", "ego_goal"} else _score_section(section, section_config)
 
         case_result = case_result_by_section.get(config_key)
         if case_result and case_result != "pass":
@@ -258,11 +332,14 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
         section_config = scoring_config[config_key]
         score_entry = scores.get(config_key)
         if not isinstance(score_entry, dict):
+            case_result = case_result_by_section.get(config_key, "")
+            if case_result == "pass":
+                continue
             score_entry = {
                 "score": 0.0,
                 "gate_failed": True,
                 "details": {},
-                "forced_by_case_result": case_result_by_section.get(config_key, "fail"),
+                "forced_by_case_result": case_result or "fail",
             }
             label, color = _grade_for_score(score_entry["score"], grade_config)
             score_entry["grade"] = label
@@ -287,6 +364,9 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
     flight_metrics["scores"] = _normalize(scores)
 
     for case in payload.get("cases", []):
+        if case.get("category") == "hardware":
+            case.pop("score", None)
+            continue
         case_id = str(case.get("id", ""))
         config_key = None
         for prefix, key in CASE_ID_TO_SECTION.items():
@@ -298,6 +378,8 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
                 case["score"] = scores[config_key].get("score")
             elif case.get("result") in ("fail", "error"):
                 case["score"] = 0
+        elif config_key and config_key in scoring_config:
+            case.pop("score", None)
         elif case.get("result") == "pass":
             case["score"] = 100
         elif case.get("result") in ("fail", "error"):

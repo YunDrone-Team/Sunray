@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from datetime import datetime
 from typing import List
 
@@ -28,5 +29,23 @@ class RosbagRecorder:
             return
         self._proc.terminate()
         self._proc.wait()
+        self._wait_for_bag_ready()
         rospy.loginfo("rosbag recording stopped")
         self._proc = None
+
+    def _wait_for_bag_ready(self, timeout_s: float = 8.0, stable_checks: int = 3, interval_s: float = 0.2) -> None:
+        if not self.bag_path:
+            return
+
+        deadline = time.time() + timeout_s
+        last_size = None
+        unchanged_count = 0
+        while time.time() < deadline and not rospy.is_shutdown():
+            size = os.path.getsize(self.bag_path) if os.path.isfile(self.bag_path) else 0
+            unchanged_count = unchanged_count + 1 if size > 0 and size == last_size else 0
+            if unchanged_count >= stable_checks:
+                return
+            last_size = size
+            time.sleep(interval_s)
+
+        rospy.logwarn("rosbag file is not stable before report generation: %s", self.bag_path)

@@ -25,6 +25,7 @@ class RunContext:
     suite_name: str
     uav_id: int
     uav_name: str
+    external_source: Any
     platform: Dict[str, Any]
     environment: Dict[str, Any]
     suite: Dict[str, Any]
@@ -32,6 +33,7 @@ class RunContext:
     recording_topics: List[str]
     missions: Dict[str, Any]
     defaults: Dict[str, Any]
+    analysis: Dict[str, Any]
     report: Dict[str, Any]
     metadata: Dict[str, Any] = field(default_factory=dict)
     artifacts: Dict[str, Any] = field(default_factory=dict)

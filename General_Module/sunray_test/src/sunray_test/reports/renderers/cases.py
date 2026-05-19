@@ -15,8 +15,66 @@ from sunray_test.reports.renderers.flight import render_flight_section_content
 TITLE_TO_CASE_PREFIX = {
     "悬停指标": ("hover_stability", "hover"),
     "航点飞行指标": ("waypoint_flight", "waypoint"),
+    "EGO自主规划指标": ("ego_goal_flight", "ego_goal"),
     "视觉降落指标": ("visual_landing",),
 }
+
+
+def _fmt_float(value: Any, digits: int = 2) -> str:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f"{float(value):.{digits}f}"
+    return "-"
+
+
+def _hardware_metrics_for_display(case: Dict[str, Any]) -> Dict[str, Any]:
+    metrics = case.get("metrics", {})
+    if not isinstance(metrics, dict):
+        return {}
+
+    case_id = str(case.get("id", ""))
+    if case_id.startswith("lidar_health"):
+        imu = metrics.get("imu", {}) if isinstance(metrics.get("imu"), dict) else {}
+        lidar = metrics.get("lidar", {}) if isinstance(metrics.get("lidar"), dict) else {}
+        message_count = lidar.get("message_count")
+        valid_cloud_count = lidar.get("valid_cloud_count")
+        return {
+            "imu_topic": metrics.get("imu_topic", "-"),
+            "lidar_topic": metrics.get("lidar_topic", "-"),
+            "imu_rate_hz": _fmt_float(imu.get("rate_hz")),
+            "lidar_rate_hz": _fmt_float(lidar.get("rate_hz")),
+            "max_gap_s": _fmt_float(lidar.get("max_gap_s"), 3),
+            "min_point_count": lidar.get("min_point_count", "-"),
+            "avg_point_count": _fmt_float(lidar.get("avg_point_count")),
+            "valid_clouds": f"{valid_cloud_count}/{message_count}" if valid_cloud_count is not None and message_count else "-",
+        }
+
+    return metrics
+
+
+def _case_metrics_for_display(case: Dict[str, Any]) -> Dict[str, Any]:
+    if case.get("category") == "hardware":
+        return _hardware_metrics_for_display(case)
+    metrics = case.get("metrics", {})
+    return metrics if isinstance(metrics, dict) else {}
+
+
+def _pass_score_threshold(grade_thresholds: List[Dict[str, Any]]) -> float:
+    positive_thresholds = [
+        float(item.get("min", 0))
+        for item in grade_thresholds
+        if isinstance(item, dict) and float(item.get("min", 0)) > 0
+    ]
+    return min(positive_thresholds) if positive_thresholds else 60.0
+
+
+def _display_result(case: Dict[str, Any], grade_thresholds: List[Dict[str, Any]]) -> str:
+    result = normalize_status(case.get("result"))
+    if case.get("category") != "flight" or result != "pass":
+        return result
+    score = case.get("score")
+    if isinstance(score, (int, float)) and not isinstance(score, bool):
+        return "pass" if float(score) >= _pass_score_threshold(grade_thresholds) else "fail"
+    return result
 
 
 def _build_case_flight_map(cases: List[Dict[str, Any]], flight_sections: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -36,8 +94,8 @@ def render_case_rows(cases: List[Dict[str, Any]], flight_sections: List[Dict[str
     case_flight_map = _build_case_flight_map(cases, flight_sections)
     rows: List[str] = []
     for index, case in enumerate(cases, start=1):
-        result = normalize_status(case.get("result"))
-        metrics_html = description_list(case.get("metrics", {}), compact=True)
+        result = _display_result(case, grade_thresholds)
+        metrics_html = description_list(_case_metrics_for_display(case), compact=True)
         case_id = str(case.get("id", ""))
         flight_section = case_flight_map.get(case_id)
         expand_html = ""
@@ -60,7 +118,7 @@ def render_case_rows(cases: List[Dict[str, Any]], flight_sections: List[Dict[str
             f"<td>{index}{expand_html}</td>"
             f"<td><div class=\"case-title\">{escape(case.get('name', case.get('id', '-')))}</div></td>"
             f"<td>{escape(case.get('category', '-'))}</td>"
-            f"<td>{status_badge(case.get('result'))}</td>"
+            f"<td>{status_badge(result)}</td>"
             f"<td>{score_display(case, grade_thresholds)}</td>"
             f"<td><div class=\"case-time\">{escape(format_display_text(case.get('started_at', '-')))} -> {escape(format_display_text(case.get('finished_at', '-')))}</div>{metrics_html}</td>"
             f"<td>{escape(format_duration(case.get('started_at'), case.get('finished_at')))}</td>"

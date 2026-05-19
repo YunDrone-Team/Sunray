@@ -11,10 +11,14 @@
   <buildtool_depend>python3-setuptools</buildtool_depend>
 
   <build_depend>rospy</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>quadrotor_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>sunray_msgs</build_depend>
 
   <exec_depend>rospy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>quadrotor_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>sunray_msgs</exec_depend>
 

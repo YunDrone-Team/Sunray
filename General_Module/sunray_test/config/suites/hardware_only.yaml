@@ -9,13 +9,29 @@ steps:
     type: hardware.camera_alive
     params:
       topic_key: front_camera
+
   - case: down_camera_alive
     name: 下视相机
     type: hardware.camera_alive
     params:
       topic_key: down_camera
+
   - case: battery_voltage
     name: 电池电压
     type: hardware.battery_voltage
     params:
       topic_key: battery
+      
+  - case: lidar_health
+    name: 激光雷达
+    type: hardware.lidar_health
+    params:
+      imu_topic_pattern: livox/imu
+      lidar_topic_pattern: livox/lidar
+      timeout_s: 5.0
+      sample_duration_s: 3.0
+      min_messages: 5
+      min_rate_hz: 2.0
+      max_gap_s: 1.0
+      min_points_per_cloud: 700
+      min_valid_clouds: 3

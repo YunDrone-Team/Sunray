@@ -1,40 +1,113 @@
-hover:
-  weight: 0.35
-  metrics:
-    xy_error_mean:    { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.15 }
-    abs_z_error_mean: { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.15 }
-    xy_error_rmse:    { thresholds: [0.04, 0.10, 0.18, 0.30], weight: 0.15 }
-    z_error_rmse:     { thresholds: [0.04, 0.10, 0.18, 0.30], weight: 0.10 }
-    xy_error_p95:     { thresholds: [0.07, 0.15, 0.25, 0.40], weight: 0.15 }
-    xy_error_max:     { thresholds: [0.10, 0.20, 0.35, 0.50], weight: 0.10 }
-    speed_max:        { thresholds: [0.06, 0.12, 0.20, 0.35], weight: 0.05 }
-    speed_mean:       { thresholds: [0.015, 0.04, 0.08, 0.15], weight: 0.10 }
-    speed_p95:        { thresholds: [0.03, 0.08, 0.15, 0.30], weight: 0.05 }
+platform_profiles:
+  sunray150_basic:
+    hover:
+      weight: 0.35
+      metrics:
+        mean_xy_error:    { thresholds: [0.015, 0.045, 0.120, 0.270], weight: 0.12 }
+        mean_abs_z_error: { thresholds: [0.008, 0.030, 0.090, 0.225], weight: 0.12 }
+        xy_error_rmse:    { thresholds: [0.015, 0.045, 0.135, 0.300], weight: 0.15 }
+        z_error_rmse:     { thresholds: [0.009, 0.038, 0.105, 0.240], weight: 0.10 }
+        xy_error_p95:     { thresholds: [0.030, 0.075, 0.180, 0.375], weight: 0.15 }
+        abs_z_error_p95:  { thresholds: [0.018, 0.060, 0.150, 0.330], weight: 0.10 }
+        xy_error_max:     { thresholds: [0.030, 0.090, 0.225, 0.450], weight: 0.08 }
+        abs_z_error_max:  { thresholds: [0.024, 0.075, 0.180, 0.390], weight: 0.08 }
+        speed_mean:       { thresholds: [0.012, 0.038, 0.090, 0.180], weight: 0.10 }
+        speed_p95:        { thresholds: [0.023, 0.068, 0.150, 0.330], weight: 0.05 }
+        speed_max:        { thresholds: [0.053, 0.105, 0.210, 0.420], weight: 0.05 }
 
-waypoint:
-  weight: 0.35
-  gates: [reach_success, within_threshold]
-  metrics:
-    hold_xy_mean_m:           { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.20 }
-    hold_xy_p95_m:            { thresholds: [0.05, 0.12, 0.20, 0.35], weight: 0.15 }
-    hold_z_rmse_m:            { thresholds: [0.05, 0.10, 0.18, 0.30], weight: 0.10 }
-    final_xy_error_m:         { thresholds: [0.04, 0.10, 0.18, 0.30], weight: 0.10 }
-    path_efficiency:          { thresholds: [0.90, 0.75, 0.60, 0.40], weight: 0.20, higher_is_better: true }
-    overshoot_distance_m:     { thresholds: [0.05, 0.12, 0.25, 0.40], weight: 0.15 }
-    max_lateral_deviation_m:  { thresholds: [0.10, 0.20, 0.35, 0.50], weight: 0.10 }
+    waypoint:
+      weight: 0.35
+      gates: [all_wp_success_flag]
+      metrics:
+        mean_path_efficiency:     { thresholds: [0.95, 0.85, 0.70, 0.50], weight: 0.25, higher_is_better: true }
+        worst_final_xy_error:     { thresholds: [0.040, 0.090, 0.180, 0.320], weight: 0.20 }
+        total_waypoint_time_s:    { thresholds: [30.0, 70.0, 100.0, 145.0], weight: 0.10 }
+        hold_window_p95_xy_error: { thresholds: [0.050, 0.110, 0.220, 0.400], weight: 0.15 }
+        final_abs_z_error:        { thresholds: [0.040, 0.090, 0.180, 0.320], weight: 0.10 }
+        max_speed:                { thresholds: [0.80, 1.50, 2.40, 3.60], weight: 0.05 }
+        overshoot_distance_m:     { thresholds: [0.050, 0.120, 0.250, 0.450], weight: 0.08 }
+        max_lateral_deviation_m:  { thresholds: [0.080, 0.180, 0.350, 0.600], weight: 0.07 }
 
-visual_landing:
-  weight: 0.30
-  gates: [visual_landing_success, landing_safety_pass, landed_within_target_zone]
-  metrics:
-    final_landing_position_error_m: { thresholds: [0.05, 0.10, 0.15, 0.30], weight: 0.20 }
-    horizontal_alignment_error_m:   { thresholds: [0.03, 0.08, 0.15, 0.25], weight: 0.10 }
-    final_yaw_alignment_error_deg:  { thresholds: [1.0, 3.0, 8.0, 15.0], weight: 0.10 }
-    target_tracking_continuity_rate: { thresholds: [95, 85, 70, 50], weight: 0.20, higher_is_better: true }
-    target_loss_count:               { thresholds: [0, 1, 3, 5], weight: 0.10 }
-    target_acquisition_time_s:       { thresholds: [0.5, 1.5, 3.0, 5.0], weight: 0.10 }
-    touchdown_window_max_tilt_deg:   { thresholds: [2.0, 5.0, 10.0, 20.0], weight: 0.10 }
-    bounce_rebound_height_m:         { thresholds: [0.0, 0.02, 0.05, 0.10], weight: 0.10 }
+    ego_goal:
+      weight: 0.35
+      gates: [goal_success, within_threshold]
+      metrics:
+        goal_completion_rate:     { thresholds: [1.00, 1.00, 0.90, 0.75], weight: 0.20, higher_is_better: true }
+        final_xy_error_m:         { thresholds: [0.010, 0.060, 0.160, 0.360], weight: 0.20 }
+        settling_time_s:          { thresholds: [8.0, 18.0, 30.0, 50.0], weight: 0.15 }
+        hold_xy_mean_m:           { thresholds: [0.016, 0.060, 0.180, 0.400], weight: 0.15 }
+        path_efficiency:          { thresholds: [0.65, 0.51, 0.37, 0.24], weight: 0.15, higher_is_better: true }
+        overshoot_distance_m:     { thresholds: [0.040, 0.160, 0.400, 0.800], weight: 0.10 }
+        speed_p95_mps:            { thresholds: [1.00, 1.80, 2.80, 4.40], weight: 0.05 }
+
+    visual_landing:
+      weight: 0.30
+      gates: [visual_landing_success, landing_safety_pass, landed_within_target_zone]
+      metrics:
+        horizontal_alignment_error_m: { thresholds: [0.015, 0.060, 0.150, 0.330], weight: 0.15 }
+        final_landing_position_error_m: { thresholds: [0.015, 0.060, 0.150, 0.375], weight: 0.20 }
+        final_descent_trigger_xy_error_m: { thresholds: [0.020, 0.080, 0.180, 0.400], weight: 0.10 }
+        target_acquisition_time_s: { thresholds: [0.3, 1.5, 3.8, 7.5], weight: 0.10 }
+        target_tracking_continuity_rate: { thresholds: [76, 69, 59, 43], weight: 0.15, higher_is_better: true }
+        target_tracking_continuity_rate_exempt_terminal_loss: { thresholds: [82, 74, 62, 45], weight: 0.10, higher_is_better: true }
+        landing_duration_s: { thresholds: [12.0, 20.0, 32.0, 55.0], weight: 0.10 }
+        landed_within_target_zone: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
+        landing_safety_pass: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
+
+  sunray150_lidar:
+    hover:
+      weight: 0.25
+      metrics:
+        mean_xy_error:    { thresholds: [0.022, 0.060, 0.150, 0.330], weight: 0.12 }
+        mean_abs_z_error: { thresholds: [0.012, 0.040, 0.110, 0.270], weight: 0.12 }
+        xy_error_rmse:    { thresholds: [0.022, 0.060, 0.165, 0.360], weight: 0.15 }
+        z_error_rmse:     { thresholds: [0.014, 0.050, 0.130, 0.300], weight: 0.10 }
+        xy_error_p95:     { thresholds: [0.045, 0.100, 0.230, 0.470], weight: 0.15 }
+        abs_z_error_p95:  { thresholds: [0.026, 0.080, 0.190, 0.400], weight: 0.10 }
+        xy_error_max:     { thresholds: [0.045, 0.120, 0.280, 0.560], weight: 0.08 }
+        abs_z_error_max:  { thresholds: [0.035, 0.100, 0.230, 0.480], weight: 0.08 }
+        speed_mean:       { thresholds: [0.018, 0.052, 0.120, 0.240], weight: 0.10 }
+        speed_p95:        { thresholds: [0.035, 0.090, 0.200, 0.420], weight: 0.05 }
+        speed_max:        { thresholds: [0.080, 0.150, 0.300, 0.550], weight: 0.05 }
+
+    waypoint:
+      weight: 0.25
+      gates: [all_wp_success_flag]
+      metrics:
+        mean_path_efficiency:     { thresholds: [0.92, 0.80, 0.65, 0.45], weight: 0.25, higher_is_better: true }
+        worst_final_xy_error:     { thresholds: [0.060, 0.130, 0.250, 0.420], weight: 0.20 }
+        total_waypoint_time_s:    { thresholds: [36.0, 82.0, 118.0, 165.0], weight: 0.10 }
+        hold_window_p95_xy_error: { thresholds: [0.075, 0.160, 0.310, 0.520], weight: 0.15 }
+        final_abs_z_error:        { thresholds: [0.060, 0.130, 0.250, 0.420], weight: 0.10 }
+        max_speed:                { thresholds: [0.90, 1.70, 2.70, 4.00], weight: 0.05 }
+        overshoot_distance_m:     { thresholds: [0.080, 0.180, 0.350, 0.600], weight: 0.08 }
+        max_lateral_deviation_m:  { thresholds: [0.120, 0.260, 0.480, 0.780], weight: 0.07 }
+
+    ego_goal:
+      weight: 0.25
+      gates: [goal_success, within_threshold]
+      metrics:
+        goal_completion_rate:     { thresholds: [1.00, 1.00, 0.90, 0.75], weight: 0.20, higher_is_better: true }
+        final_xy_error_m:         { thresholds: [0.010, 0.060, 0.160, 0.360], weight: 0.20 }
+        settling_time_s:          { thresholds: [8.0, 18.0, 30.0, 50.0], weight: 0.15 }
+        hold_xy_mean_m:           { thresholds: [0.016, 0.060, 0.180, 0.400], weight: 0.15 }
+        path_efficiency:          { thresholds: [0.65, 0.51, 0.37, 0.24], weight: 0.15, higher_is_better: true }
+        overshoot_distance_m:     { thresholds: [0.040, 0.160, 0.400, 0.800], weight: 0.10 }
+        speed_p95_mps:            { thresholds: [1.00, 1.80, 2.80, 4.40], weight: 0.05 }
+
+    visual_landing:
+      weight: 0.25
+      gates: [visual_landing_success, landing_safety_pass, landed_within_target_zone]
+      metrics:
+        horizontal_alignment_error_m: { thresholds: [0.015, 0.060, 0.150, 0.330], weight: 0.15 }
+        final_landing_position_error_m: { thresholds: [0.015, 0.060, 0.150, 0.375], weight: 0.20 }
+        final_descent_trigger_xy_error_m: { thresholds: [0.020, 0.080, 0.180, 0.400], weight: 0.10 }
+        target_acquisition_time_s: { thresholds: [0.3, 1.5, 3.8, 7.5], weight: 0.10 }
+        target_tracking_continuity_rate: { thresholds: [76, 69, 59, 43], weight: 0.15, higher_is_better: true }
+        target_tracking_continuity_rate_exempt_terminal_loss: { thresholds: [82, 74, 62, 45], weight: 0.10, higher_is_better: true }
+        landing_duration_s: { thresholds: [12.0, 20.0, 32.0, 55.0], weight: 0.10 }
+        landed_within_target_zone: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
+        landing_safety_pass: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
 
 grades:
   - { min: 90, label: 优秀, color: "#17a05d" }
