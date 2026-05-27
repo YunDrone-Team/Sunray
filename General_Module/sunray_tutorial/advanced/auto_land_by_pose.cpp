@@ -209,12 +209,22 @@ int main(int argc, char **argv)
         Logger::print_color(int(LogColor::green), node_name, ": Takeoff UAV successfully!");
 
         Logger::print_color(int(LogColor::blue), ">>>>>>> move to the specified height");
-        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
-        uav_cmd.desired_vel[0] = 0.0;
-        uav_cmd.desired_vel[1] = 0.0;
+        // uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPos;
+        // uav_cmd.desired_vel[0] = 0.0;
+        // uav_cmd.desired_vel[1] = 0.0;
+        // uav_cmd.desired_pos[2] = height;
+        // control_cmd_pub.publish(uav_cmd);
+
+        uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYaw;
+        uav_cmd.desired_pos[0] = uav_state.position[0];
+        uav_cmd.desired_pos[1] = uav_state.position[1];
         uav_cmd.desired_pos[2] = height;
+        uav_cmd.desired_yaw=uav_state.attitude[2];
         control_cmd_pub.publish(uav_cmd);
+
         ros::Duration(2).sleep();
+        last_time = ros::Time::now();
+
     }
 
     ros::Duration(0.5).sleep();
@@ -229,15 +239,25 @@ int main(int argc, char **argv)
         ros::spinOnce();
         ros::Duration(1).sleep();
     }
+    double landing_point_num = 0;
+
     // 等待订阅到目标位置
     while (!tag_flag && ros::ok())
     {
         Logger::print_color(int(LogColor::blue), "wait for tag!!!");
         ros::spinOnce();
+        if ((ros::Time::now() - last_time).toSec() > 10)
+        {
+            Logger::print_color(int(LogColor::blue), "over time!!! Land directly");
+            landing_point_num = 0;
+            uav_cmd.header.stamp = ros::Time::now();
+            uav_cmd.cmd = sunray_msgs::UAVControlCMD::Land;
+            control_cmd_pub.publish(uav_cmd);
+            break;
+        }
         ros::Duration(1).sleep();
     }
 
-    double landing_point_num = 0;
 
     while (ros::ok())
     {
@@ -264,6 +284,7 @@ int main(int argc, char **argv)
                 uav_cmd.desired_vel[2] = -land_v;
                 uav_cmd.desired_yaw = 0;
                 control_cmd_pub.publish(uav_cmd);
+
                 ros::Duration(0.1).sleep();
             }
             Logger::print_color(int(LogColor::blue), "land successfully!!!");
@@ -272,7 +293,7 @@ int main(int argc, char **argv)
             uav_setup_pub.publish(uav_setup);
             break;
         }
-        if (((ros::Time::now() - last_time).toSec()) < 0.5)
+        if (((ros::Time::now() - last_time).toSec()) < 0.5  )
         {
             landing_point_num += 1;
 
@@ -299,6 +320,7 @@ int main(int argc, char **argv)
 
                 // cout << "x_rel: " << x_rel << " y_rel: " << y_rel << " z_rel: " << z_rel << " yaw_rel: " << yaw_rel << endl;
                 control_cmd_pub.publish(uav_cmd);
+
             }
             continue;
         }
@@ -313,18 +335,18 @@ int main(int argc, char **argv)
             break;
         }
         // 如果超过1秒没有收到tag数据则上升并搜索
-        if ((ros::Time::now() - last_time).toSec() > 1)
-        {
-            Logger::print_color(int(LogColor::blue), "lost the tag !!! rising and serching");
-            uav_cmd.header.stamp = ros::Time::now();
-            uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
-            uav_cmd.desired_pos[0] = 0;
-            uav_cmd.desired_pos[1] = 0;
-            uav_cmd.desired_pos[2] = 0.1;
-            uav_cmd.desired_yaw = 0;
-            control_cmd_pub.publish(uav_cmd);
-            continue;
-        }
+        // if ((ros::Time::now() - last_time).toSec() > 1)
+        // {
+        //     Logger::print_color(int(LogColor::blue), "lost the tag !!! rising and serching");
+        //     uav_cmd.header.stamp = ros::Time::now();
+        //     uav_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosYawBody;
+        //     uav_cmd.desired_pos[0] = 0;
+        //     uav_cmd.desired_pos[1] = 0;
+        //     uav_cmd.desired_pos[2] = 0.1;
+        //     uav_cmd.desired_yaw = 0;
+        //     control_cmd_pub.publish(uav_cmd);
+        //     continue;
+        // }
     }
     // 0.5s后结束程序
     ros::Duration(0.5).sleep();
