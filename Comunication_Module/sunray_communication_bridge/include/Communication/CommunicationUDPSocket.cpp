@@ -3,15 +3,24 @@
 CommunicationUDPSocket* CommunicationUDPSocket::CommunicationPtr=nullptr;
 
 
-CommunicationUDPSocket * CommunicationUDPSocket::getInstance()              //获取一个实例
+//CommunicationUDPSocket* CommunicationUDPSocket::getInstance()              //获取一个实例
+//{
+//    if(CommunicationUDPSocket::CommunicationPtr == nullptr)
+//        CommunicationUDPSocket::CommunicationPtr =new CommunicationUDPSocket();
+//    return CommunicationUDPSocket::CommunicationPtr;
+//}
+
+
+// 释放单例内存
+void CommunicationUDPSocket::releaseInstance()
 {
-    if(CommunicationUDPSocket::CommunicationPtr == nullptr)
-        CommunicationUDPSocket::CommunicationPtr =new CommunicationUDPSocket();
-    return CommunicationUDPSocket::CommunicationPtr;
+    if (CommunicationUDPSocket::CommunicationPtr != nullptr) {
+        delete CommunicationUDPSocket::CommunicationPtr;
+        CommunicationUDPSocket::CommunicationPtr = nullptr;
+    }
 }
 
-
-CommunicationUDPSocket::CommunicationUDPSocket()
+CommunicationUDPSocket::CommunicationUDPSocket(): IOContext(),  timer(IOContext),TimeRunning(false)
 {
     std::cout << "----------------UDP初始化----------------- "<<std::endl;
      maxSock=INVALID_SOCKET;
@@ -21,6 +30,19 @@ CommunicationUDPSocket::CommunicationUDPSocket()
      //线程
      std::thread t(std::mem_fn(&CommunicationUDPSocket::OnRun), this);
      t.detach();
+     isCompressionThreadRunning = true;
+     std::thread compressionPointCloudThread(std::mem_fn(&CommunicationUDPSocket::compressionThread), this);
+     compressionPointCloudThread.detach();
+
+     startIOContext();
+
+     sigSendPointCloudData.connect(boost::bind(&CommunicationUDPSocket::onSendPointCloudData,this));
+
+     pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);// 关闭 PCL 所有控制台打印输出
+
+
+     //     startPeriodicTimer(20);
+
 }
 
 std::string CommunicationUDPSocket::wstringToString(const std::wstring& wstr)
@@ -69,8 +91,8 @@ std::vector<NetworkInterface> CommunicationUDPSocket::getNetworkInterfaces()
                 sockaddr_in* addr = (sockaddr_in*)pUnicast->Address.lpSockaddr;
                 iface.ip = inet_ntoa(addr->sin_addr);
 
-                // 检测网卡是否有效（排除回环地址为例）
-                if (/*iface.ip != "127.0.0.1" &&*/!iface.name.empty())
+                // 检测网卡是否有效（排除回环地址）
+                if (/*iface.ip != "127.0.0.1" &&*/!iface.name.empty()&& iface.ip!=filterNetworkCard )
                     interfaces.push_back(iface);
 
             }
@@ -100,7 +122,7 @@ std::vector<NetworkInterface> CommunicationUDPSocket::getNetworkInterfaces()
             iface.ip = std::string(ip);
 
             // 检查网卡是否活动
-            if (isLinuxInterfaceActive(iface.name) && iface.ip != "127.0.0.1" &&!iface.name.empty())
+            if (isLinuxInterfaceActive(iface.name) && iface.ip != "127.0.0.1" &&!iface.name.empty() && iface.ip!=filterNetworkCard)
             {
                 interfaces.push_back(iface);
             }
@@ -150,6 +172,13 @@ bool CommunicationUDPSocket::InitSocket()                                       
 
             }else {
                 tempSock=SocketConfiguration(tempSock);
+#ifdef _WIN32
+                u_long mode = 1;
+                ioctlsocket(tempSock, FIONBIO, &mode);
+#else
+                fcntl(tempSock, F_SETFL, O_NONBLOCK);
+#endif
+
                 if(tempSock!= INVALID_SOCKET)
                 {
                     ipSocketMap[iface.ip]=tempSock;
@@ -173,6 +202,12 @@ bool CommunicationUDPSocket::InitSocket()                                       
                 sigUDPError(errno);
 
             }else {
+#ifdef _WIN32
+                u_long mode = 1;
+                ioctlsocket(defaultSock, FIONBIO, &mode);
+#else
+                fcntl(defaultSock, F_SETFL, O_NONBLOCK);
+#endif
                 defaultSock=SocketConfiguration(defaultSock);
 
             }
@@ -345,6 +380,15 @@ CommunicationUDPSocket::~CommunicationUDPSocket()
     if(decoderInterfacePtr!=nullptr)
         delete decoderInterfacePtr;
 
+    // 1. 先停止循环
+    isCompressionThreadRunning = false;
+
+    // 2. 清空队列，让阻塞的 pop() 立刻返回
+    compressionTaskQueue.clear();
+
+    stop();
+
+
 #ifdef _WIN32
     //清除Windows socket环境
     WSACleanup();
@@ -372,7 +416,6 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
     std::vector<uint8_t> copyData=data;
     while(true)
     {
-//        std::cout << "UDP data size "<<copyData.size()<<std::endl;
         if(copyData.size()<19)
             break;
         int index=findStdVectorComponent(0Xab,0X65,copyData);
@@ -385,6 +428,7 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 //        std::cout << "UDP find head "<<index<<std::endl;
         if( index>=0 )
         {
+
 
             // 定义要复制的范围（例如，从索引2到索引5，但不包括索引5）
             auto start = copyData.begin() + index+2;
@@ -401,29 +445,52 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
 //            std::cout << "size: "<<size<<" "<<"data.size(): "<<data.size()<<std::endl;
 
             if(data.size()<size)
+            {
+//                std::cout << "size: "<<size<<" "<<"data.size(): "<<data.size()<<std::endl;
                 break;
+            }
 
             start = copyData.begin() + index;
             end = copyData.begin() + index+size-2;
 
+
+
             std::vector<uint8_t> waitCheckVector(start, end);
-            //std::cout << "UDP准备计算校验和数据的大小： "<<waitCheckVector.size()<<std::endl;
+//            std::cout << "UDP Checksum size: "<<waitCheckVector.size()<<std::endl;
 
 //            uint16_t checksum =codec.getChecksum(waitCheckVector);
             uint16_t checksum=0;
             if(decoderInterfacePtr!=nullptr)
                 checksum=decoderInterfacePtr->getChecksum(waitCheckVector);
 
+
             uint16_t BackChecksum = static_cast<uint16_t>(copyData[index+size-1]) |
                     (static_cast<uint16_t>(copyData[index +size-2]) << 8);
 
             if(checksum!=BackChecksum)
             {
-                //std::cout << "UDP校验和错误 计算的校验和： "<<checksum<<" "<<" 接收到校验和 "<<BackChecksum<<" 下标 "<<index+size-2<<" 校验和第一个字节 "<<(int)copyData[index+size-2]<<" 校验和第二个字节 "<<(int)copyData[index+size-1]<<std::endl;
+//                std::cout << "UDP Checksum error checksum: "<<checksum<<" "<<" BackChecksum "<<BackChecksum<<" index "<<index+size-2<<" first "<<(int)copyData[index+size-2]<<" second "<<(int)copyData[index+size-1]<<std::endl;
+
+//                std::cout << "checksum!=BackChecksum 1 "<<copyData.size()<<"  "<<index<<std::endl;
 
                 //清除帧头
-                copyData.erase(copyData.begin()+index, copyData.begin() + 6);//待测试
-                data.erase(data.begin()+index, data.begin() + 6);
+                if( index>=0 && static_cast<size_t>(index)<copyData.size() && (static_cast<size_t>(index)+size-1) <= copyData.size() )
+                    copyData.erase(copyData.begin()+index, copyData.begin()+static_cast<size_t>(index)+size-1);//待测试
+                else{
+                    copyData.clear();
+                    break;
+                }
+
+
+                if( index>=0 && static_cast<size_t>(index)<data.size() && (static_cast<size_t>(index)+size-1) <= data.size() )
+                    data.erase(data.begin()+index, data.begin()+static_cast<size_t>(index)+size-1);
+                else{
+                    data.clear();
+
+                    break;
+                }
+
+
                 continue;
             }
 
@@ -435,8 +502,20 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
                 decoderInterfacePtr->decoder(std::vector<uint8_t>(data.begin()+index,data.begin()+index+size),readData.dataFrame);
 
             //清除已处理数据
-            data.erase(data.begin()+index, data.begin() +index+size);
-            copyData.erase(copyData.begin()+index, copyData.begin()+index+size);//待测试
+            if( index>=0 && static_cast<size_t>(index)<data.size() && (static_cast<size_t>(index)+size) <= data.size() )
+                data.erase(data.begin()+index, data.begin() +index+size);
+            else{
+                data.clear();
+                break;
+            }
+
+            if( index>=0 && static_cast<size_t>(index)<copyData.size() && (static_cast<size_t>(index)+size) <= copyData.size() )
+                copyData.erase(copyData.begin()+index, copyData.begin()+index+size);
+            else{
+                copyData.clear();
+                break;
+            }
+
             if(readData.dataFrame.seq==MessageID::SearchMessageID)
                 readData.communicationType=CommunicationType::UDPBroadcastCommunicationType;
             readData.port=port;
@@ -472,6 +551,8 @@ void CommunicationUDPSocket::UDPUnicastManagingData(std::vector<uint8_t>& data,s
             break;
         }
     }
+
+
 
 }
 
@@ -671,6 +752,7 @@ void CommunicationUDPSocket::OnRun()
             }
 
         }
+
     }
     std::cout << "UDP thread termination!"<<std::endl;
 
@@ -827,7 +909,7 @@ int CommunicationUDPSocket::sendUDPMulticastData(std::vector<uint8_t> sendData,u
     return sendResult;
 }
 
-int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort)
+int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock,  std::vector<uint8_t> sendData, std::string targetIp, uint16_t targetPort)
 {
 //    std::cout << "SendDataToTarget socket:  "<<tempSock<<" targetIp "<<targetIp<<" data.size() "<<sendData.size()<<std::endl;
     int sendResult = 0;
@@ -839,15 +921,57 @@ int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<
 #ifdef _WIN32
     target_addr.sin_addr.S_un.S_addr = inet_addr(targetIp.c_str());
     int addrlen = sizeof(target_addr);
-    sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
-                        reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
+//    sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
+//                        reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
 //    std::cout << "SendDataToTarget socket:  "<<tempSock<<" targetIp "<<targetIp<<" sendResult: "<<sendResult<<std::endl;
+
+
+    while (!sendData.empty())
+    {
+           const size_t batchSize = 1000;
+           if (sendData.size() > batchSize)
+           {
+               //  1000 个字节
+               std::vector<uint8_t> batch(sendData.begin(), sendData.begin() + batchSize);
+               sendResult = sendto(tempSock, reinterpret_cast<const char*>(batch.data()), static_cast<int>(batch.size()), 0,
+                                   reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
+
+               //  删除1000 个字节
+               sendData.erase(sendData.begin(), sendData.begin() + batchSize);
+           } else {
+               // 处理剩余不足 1000 的部分
+               sendResult = sendto(tempSock, reinterpret_cast<const char*>(sendData.data()), static_cast<int>(sendData.size()), 0,
+                                   reinterpret_cast<struct sockaddr*>(&target_addr), addrlen);
+
+               // 清空容器
+               sendData.clear();
+           }
+       }
 
 #else
     target_addr.sin_addr.s_addr = inet_addr(targetIp.c_str());
     unsigned int addrlen = sizeof(target_addr);
     //发送数据
-    sendResult = (int)sendto(tempSock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+//    sendResult = (int)sendto(tempSock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+    while (!sendData.empty())
+    {
+           const size_t batchSize = 1000;
+           if (sendData.size() > batchSize)
+           {
+               //  1000 个字节
+               std::vector<uint8_t> batch(sendData.begin(), sendData.begin() + batchSize);
+
+               sendResult = (int)sendto(tempSock, batch.data(), batch.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+               //  删除1000 个字节
+               sendData.erase(sendData.begin(), sendData.begin() + batchSize);
+           } else {
+               // 处理剩余不足 1000 的部分
+               sendResult = (int)sendto(tempSock, sendData.data(), sendData.size(), 0,(struct sockaddr *)&target_addr,addrlen);
+
+               // 清空容器
+               sendData.clear();
+           }
+       }
 #endif
 
 //        unsigned int addrlen = sizeof(target_addr);
@@ -864,9 +988,12 @@ int CommunicationUDPSocket::SendDataToTarget(SOCKET tempSock, const std::vector<
 
 int CommunicationUDPSocket::sendUDPData(std::vector<uint8_t> sendData,std::string targetIp,uint16_t targetPort)              //发送数据接口
 {
+    std::lock_guard<std::mutex> lock(mutexSend);
+
     int sendResult = 0;
 //    std::cout << " ipSocketMap size:  "<<ipSocketMap.size()<<" "<<sendData.size()<<std::endl;
     int temp;
+
     for (const auto& pair : ipSocketMap)
     {
         temp=SendDataToTarget(pair.second,sendData,targetIp,targetPort);
@@ -1047,6 +1174,12 @@ SOCKET CommunicationUDPSocket::SocketConfiguration(SOCKET tempSock)
     }
 
 #else
+    // 新增：设置发送缓冲区（1MB，对应≈1000包）
+    int send_buf = 1024 * 1024; // 1MB
+    if (setsockopt(tempSock, SOL_SOCKET, SO_SNDBUF,(const char*)&send_buf, sizeof(send_buf)) < 0)
+    {
+        perror("setsockopt SO_SNDBUF failed");
+    }
     //广播配置
     int broadcastEnable = 1;
     int result = setsockopt(tempSock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
@@ -1080,6 +1213,8 @@ SOCKET CommunicationUDPSocket::SocketConfiguration(SOCKET tempSock)
         return INVALID_SOCKET;
     }
 #endif
+
+
     return tempSock;
 }
 
@@ -1099,4 +1234,225 @@ void CommunicationUDPSocket::Close(SOCKET tempSock)
         close(tempSock);
 #endif
     }
+}
+
+void CommunicationUDPSocket::startIOContext()
+{
+    if (TimeRunning) return;
+    TimeRunning = true;
+    // 独立线程运行IO事件循环
+    IOThread = std::thread([this]()
+    {
+        // work_guard保证IO线程不退出（即使无异步操作）
+        boost::asio::executor_work_guard<boost::asio::io_context::executor_type> guard(IOContext.get_executor());
+        IOContext.run();
+    });
+}
+
+void CommunicationUDPSocket::startPeriodicTimer(int ms)
+{
+    if (!TimeRunning)
+    {
+        return;
+    }
+
+    timingMsec=ms;
+    // 重置定时器（首次触发延迟=interval_ms，周期=interval_ms）
+    timer.expires_after(std::chrono::milliseconds(timingMsec));
+    //绑定类成员函数作为回调（关键：std::bind + this）
+    timer.async_wait(std::bind(&CommunicationUDPSocket::onTimerCallback,this, std::placeholders::_1));
+}
+
+void CommunicationUDPSocket::startOneShotTimer(int delay_ms)
+{
+       if (!TimeRunning)
+       {
+           return;
+       }
+
+       // 单次定时器：动态创建，仍需绑定io_context_
+       auto one_shot_timer = std::make_shared<boost::asio::steady_timer>(IOContext);
+       one_shot_timer->expires_after(std::chrono::milliseconds(delay_ms));
+       one_shot_timer->async_wait([this, one_shot_timer](const boost::system::error_code& ec) {
+           if (!ec) {
+               this->onSingleTimerCallback();
+           }
+       });
+ }
+
+void CommunicationUDPSocket::stop()
+{
+    TimeRunning = false;
+    // 取消定时器（避免回调异常）
+    timer.cancel();
+    // 停止IO上下文
+    IOContext.stop();
+    // 等待IO线程退出
+    if (IOThread.joinable()) {
+        IOThread.join();
+    }
+
+}
+
+void CommunicationUDPSocket::onTimerCallback(const boost::system::error_code& ec) {
+    if (ec)
+    {
+        if (ec == boost::asio::error::operation_aborted)
+        {
+            std::cout << "周期定时器已取消"<<std::endl;
+        } else {
+            std::cout << "定时器回调异常: %s"<<ec.message().c_str()<<std::endl;
+        }
+        return;
+    }
+    std::cout << "CommunicationUDPSocket::onTimerCallback "<<std::endl;
+
+
+    // 重置定时器，实现周期执行
+    timer.expires_after(std::chrono::milliseconds(timingMsec));
+    timer.async_wait(std::bind(&CommunicationUDPSocket::onTimerCallback,this,std::placeholders::_1));
+}
+
+void CommunicationUDPSocket::onSingleTimerCallback()
+{
+    if (!TimeRunning)
+    {
+        std::cout << "[单次定时器] 触发延迟任务"<<std::endl;
+        return;
+     }
+
+}
+
+
+void CommunicationUDPSocket::onSendPointCloudData()
+{
+    CompressionResult data;
+    if(!compressionDataQueue.pop(data))
+    {
+        std::cout << "读取compressionDataQueue点云数据失败" << std::endl;
+        return;
+    }
+
+    uint16_t fragmentSize=950;
+    int result = static_cast<int>((data.dataSize + fragmentSize-1) / fragmentSize);
+    if(result>=65535)
+    {
+        std::cout << "点云数据大小有问题" << std::endl;
+        return;
+    }
+
+    for(int i=1;i<=(result);++i)
+    {
+        DataFrame sendData;
+        sendData.seq=MessageID::PointCloudDataMessageID;
+        sendData.robot_ID=data.robotID;
+        sendData.data.pointCloudData.init();
+        sendData.data.pointCloudData.totalFragments= static_cast<uint16_t>(result);
+        sendData.data.pointCloudData.fragmentID=i;
+        sendData.data.pointCloudData.fragmentSize=fragmentSize;
+
+        size_t takeSize = std::min(data.compressedData.size(), (size_t)fragmentSize);
+        memcpy(sendData.data.pointCloudData.fragmentData, data.compressedData.data(), takeSize);
+        data.compressedData.erase(data.compressedData.begin(), data.compressedData.begin() + takeSize);
+        int value=sendUDPData(codec.coder(sendData), data.targetIp, data.targetPort);
+        if(value<=0)
+            return;
+    }
+}
+
+
+void CommunicationUDPSocket::pushSendPointCloudDataQueue(pcl::PointCloud<pcl::PointXYZ> pclCloud,uint8_t robotID,std::string targetIp,uint16_t targetPort,float octreeResolution)
+{
+    // 封装为压缩任务，放入队列
+    CompressionTask task;
+    task.cloud = pclCloud;
+    task.octreeResolution = octreeResolution;
+    task.targetIp=targetIp;
+    task.targetPort=targetPort;
+    task.robotID=robotID;
+    compressionTaskQueue.push(task);
+}
+
+std::vector<uint8_t> CommunicationUDPSocket::compressPointCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud,float octreeResolution)
+{
+
+
+    // 校验输入数据
+    if ( cloud.empty())
+        throw std::runtime_error("输入点云为空，无法压缩");
+
+    // 关键点：压缩器模板必须用 PointXYZ
+    pcl::io::OctreePointCloudCompression<pcl::PointXYZ> compressor(
+                pcl::io::MED_RES_ONLINE_COMPRESSION_WITHOUT_COLOR,
+                octreeResolution,
+                false,
+                true,
+                8
+                );
+
+    //深拷贝
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>(cloud) );
+    std::stringstream compressed_stream;
+    compressor.encodePointCloud(cloud_ptr, compressed_stream);
+
+    // 校验压缩结果
+    std::string compressed_str = compressed_stream.str();
+    if (compressed_str.empty())
+        throw std::runtime_error("点云压缩结果为空");
+
+    // 转为 uint8_t 数组
+    std::vector<uint8_t> compressed_data(compressed_str.begin(), compressed_str.end());
+    return compressed_data;
+
+}
+
+
+void CommunicationUDPSocket::compressionThread()
+{
+//    std::cout << "压缩子线程启动" << std::endl;
+
+    while (isCompressionThreadRunning)
+    {
+        CompressionTask task;
+        // 从队列取任务（阻塞，直到有任务/队列停止）
+        if (!compressionTaskQueue.pop(task))
+        {
+            std::cout << "压缩子线程：任务队列为空且已停止，退出" << std::endl;
+            break;
+        }
+
+        CompressionResult result;
+        result.dataSize = task.cloud.size() * sizeof(pcl::PointXYZ);
+
+        try {    
+
+            // 执行压缩
+            result.compressedData = compressPointCloud(task.cloud, task.octreeResolution);
+            result.errorMsg ="";
+            result.targetIp=task.targetIp;
+            result.targetPort=task.targetPort;
+            result.robotID=task.robotID;
+
+//            std::cout << "压缩完成：原始大小 " << result.dataSize/1024 << "KB → 压缩后 "
+//                      << result.compressedData.size()/1024 << "KB | 压缩率："
+//                      << (1.0 - (double)result.compressedData.size()/result.dataSize)*100 << "%" << std::endl;
+        } catch (const std::exception& e) {
+            result.errorMsg = e.what();
+            std::cerr << "压缩失败：" << e.what() << std::endl;
+        }
+
+        // 将结果放入压缩数据队列
+        compressionDataQueue.push(result);
+        sigSendPointCloudData();
+//        IOContext.post( std::bind( &CommunicationUDPSocket::onSendPointCloudData, this ) );
+
+    }
+
+    std::cout << "压缩点云数据子线程已退出" << std::endl;
+}
+
+
+void CommunicationUDPSocket::setFilterNetworkCard(std::string ip)
+{
+    filterNetworkCard=ip;
 }

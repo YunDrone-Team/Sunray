@@ -16,6 +16,7 @@ enum MessageID
     WaypointStateMessageID          = 34,
     FormationMessageID              = 40,
     GroundFormationMessageID        = 41,
+    PointCloudDataMessageID         = 50,
 //    TakeoffMessageID    = 101,
     UAVControlCMDMessageID          = 102,
     UAVSetupMessageID               = 103,
@@ -29,7 +30,8 @@ enum MessageID
     ScriptMessageID                 = 203,
     GoalMessageID                   = 204,
     QRCodeCoordMessageID            = 205,
-
+    PointCloudDataSwitchMessageID   = 206,
+    PointCloudDataStateMessageID    = 207,
 };
 
 // 控制命令宏定义 - 同 UAVControlCMD.msg 中的控制命令枚举

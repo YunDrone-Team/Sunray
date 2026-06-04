@@ -416,6 +416,22 @@ struct Formation
     }
 };
 
+
+//点云数据- PointCloudData（#50）
+struct PointCloudData
+{
+    uint16_t totalFragments;
+    uint16_t fragmentID;
+    uint16_t fragmentSize;
+    char fragmentData[1000];
+    void init()
+    {
+        totalFragments=0;
+        fragmentID=0;
+        fragmentSize=0;
+    }
+};
+
 //无人机控制指令 - UAVControlCMD（#102）
 struct UAVControlCMD
 {
@@ -646,32 +662,56 @@ struct QRCodeCoord
     }
 };
 
+
+//点云数据开关 PointCloudDataSwitch（#206）
+struct PointCloudDataSwitch
+{
+    bool dataSwitch;
+    void init()
+    {
+       dataSwitch=false;
+    }
+};
+
+//点云数据状态 PointCloudDataState（#207）
+struct PointCloudDataState
+{
+    bool dataState;
+    void init()
+    {
+       dataState=false;
+    }
+};
+
 // 有效数据部分联合体，用于传递有效数据
 union Payload
 {
-    HeartbeatData heartbeat;            // 无人机心跳包 - HeartbeatData（#1）
-    UAVState uavState;                  // 无人机状态 - UAVState（#2）
-    PX4State px4State;                  // 无人机PX4状态 - PX4State（#3）
-    PX4Parameter px4Parameter;          // 无人机PX4飞控参数 - PX4Parameter（#4）
-    UAVControlCMD uavControlCMD;        // 无人机控制指令 - UAVControlCMD（#102）
-    UAVSetup uavSetup;                  // 无人机设置指令 - UAVSetup（#103）
-    WaypointData waypointData;          // 无人机航点 - WaypointData（#104）
-    SearchData search;                  // 搜索在线智能体 - SearchData（#200）
-    ACKData ack;                        // 智能体应答 - ACKData（#201）
-    DemoData demo;                      // 无人机demo - DemoData（#202）
-    ScriptData agentScrip;              // 功能脚本 - ScriptData（#203）
-    UGVState ugvState;                  // 无人车状态 - UGVState（#20）
-    UGVControlCMD ugvControlCMD;        // 无人车控制指令 - UGVControlCMD（#120）
-    NodeData nodeInformation;           // 机载电脑ROS节点 - NodeData（#30）
-    Formation formation;                // 编队切换 - Formation（#40）
-    Goal goal;                          // 规划点 - Goal（#204）
-    AgentComputerStatus computerStatus; // 智能体电脑状态 -AgentComputerStatus（#31）
-    FACMapData FACMap;                  // FAC赛地图数据 -FACMapData（#32）
-    FACCompetitionState FACState;       // FAC比赛状态 -FACCompetitionState（#33）
-    ViobotSwitch viobotSwitchData;      // Viobot算法开关 - ViobotSwitch（#105）
-    RTKOrigin rtkOrigin;                // RTK原点设置- RTKOrigin（#106）
-    WaypointState waypointState;        // 航点状态 -WaypointState（#34）
-    QRCodeCoord QRCodePoiont;           // 二维码坐标- QRCodeCoord（#205）
+    HeartbeatData heartbeat;                    // 无人机心跳包 - HeartbeatData（#1）
+    UAVState uavState;                          // 无人机状态 - UAVState（#2）
+    PX4State px4State;                          // 无人机PX4状态 - PX4State（#3）
+    PX4Parameter px4Parameter;                  // 无人机PX4飞控参数 - PX4Parameter（#4）
+    UAVControlCMD uavControlCMD;                // 无人机控制指令 - UAVControlCMD（#102）
+    UAVSetup uavSetup;                          // 无人机设置指令 - UAVSetup（#103）
+    WaypointData waypointData;                  // 无人机航点 - WaypointData（#104）
+    SearchData search;                          // 搜索在线智能体 - SearchData（#200）
+    ACKData ack;                                // 智能体应答 - ACKData（#201）
+    DemoData demo;                              // 无人机demo - DemoData（#202）
+    ScriptData agentScrip;                      // 功能脚本 - ScriptData（#203）
+    UGVState ugvState;                          // 无人车状态 - UGVState（#20）
+    UGVControlCMD ugvControlCMD;                // 无人车控制指令 - UGVControlCMD（#120）
+    NodeData nodeInformation;                   // 机载电脑ROS节点 - NodeData（#30）
+    Formation formation;                        // 编队切换 - Formation（#40）
+    PointCloudData pointCloudData;              // 点云数据- PointCloudData（#50）
+    Goal goal;                                  // 规划点 - Goal（#204）
+    AgentComputerStatus computerStatus;         // 智能体电脑状态 -AgentComputerStatus（#31）
+    FACMapData FACMap;                          // FAC赛地图数据 -FACMapData（#32）
+    FACCompetitionState FACState;               // FAC比赛状态 -FACCompetitionState（#33）
+    ViobotSwitch viobotSwitchData;              // Viobot算法开关 - ViobotSwitch（#105）
+    RTKOrigin rtkOrigin;                        // RTK原点设置- RTKOrigin（#106）
+    WaypointState waypointState;                // 航点状态 -WaypointState（#34）
+    QRCodeCoord QRCodePoiont;                   // 二维码坐标- QRCodeCoord（#205）
+    PointCloudDataSwitch pointCloudDataSwitch;  // 点云数据开关 PointCloudDataSwitch（#206）
+    PointCloudDataState pointCloudDataState;    // 点云数据状态 PointCloudDataState（#207）
 };
 
 //整个数据帧

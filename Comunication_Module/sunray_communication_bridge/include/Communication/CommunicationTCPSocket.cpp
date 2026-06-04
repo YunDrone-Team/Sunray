@@ -381,6 +381,7 @@ void CommunicationTCPSocket::TCPClientManagingData(std::vector<uint8_t>& data,st
 
             readData.ip=IP;
             sigTCPClientReadData(readData);
+
             //std::cout << "TCPClient接收数据正确，处理完成。： "<<std::endl;
 
             if(data.size()<19)
@@ -544,7 +545,12 @@ int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)        
     setSocketNonblocking(_sock);
     CommunicationState back;
     back.sock=_sock;
-    back.ip=ip;
+//    back.ip=ip;
+    if(ip != nullptr)
+        back.ip.assign(ip); // 安全拷贝字符串
+    else
+        back.ip.clear();
+
     back.port=port;
     int ret = connect(_sock, (sockaddr*)&_sin, sizeof(sockaddr_in));
     setSocketBlocking(_sock);
@@ -552,7 +558,7 @@ int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)        
     {
 //        printf("<socket=%d>错误，连接服务器<%s:%d>失败...\n",_sock, ip, port);
 //        std::cout << "错误，连接服务器失败..."<<std::endl;
-         perror("connect failed");
+        perror("connect failed");
         fd_set write_fds;
         FD_ZERO(&write_fds);
         FD_SET(_sock, &write_fds);
@@ -564,10 +570,11 @@ int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)        
         ret = select(_sock + 1, NULL, &write_fds, NULL, &timeout);
         if(ret>0)
         {
-            std::cout << "select连接服务器成功..."<<std::endl;
+            std::cout << "select connect server success..."<<std::endl;
             back.state=TCPClientState::ConnectionSuccessful;
             sigTCPClientState(back);
-            connectIP=ip;
+//            connectIP=ip;
+            connectIP.assign(ip);
         }else if (SOCKET_ERROR == ret){
             std::cout << "错误，连接服务器失败..."<<std::endl;
             back.state=TCPClientState::ConnectionFail;
@@ -579,13 +586,13 @@ int  CommunicationTCPSocket::Connect(const char* ip,unsigned short port)        
             back.state=TCPClientState::ConnectionTimeout;
             sigTCPClientState(back);
         }
-    }
-    else {
+    }else {
 //        printf("<socket=%d>连接服务器<%s:%d>成功...\n",_sock, ip, port);
         std::cout << "连接服务器成功..."<<std::endl;
         back.state=TCPClientState::ConnectionSuccessful;
         sigTCPClientState(back);
-        connectIP=ip;
+//        connectIP=ip;
+        connectIP.assign(ip);
     }
     return ret;
 }

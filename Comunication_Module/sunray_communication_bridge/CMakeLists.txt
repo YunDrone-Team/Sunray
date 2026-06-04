@@ -20,6 +20,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(PCL 1.7 REQUIRED)
+
+
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -44,10 +47,12 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/../../General_Module/sunray_common/common_lib
 )
 
-
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ###############################
 ##      声明可执行cpp文件     ##
@@ -66,9 +71,18 @@ add_library(${PROJECT_NAME}
   ${COMMUNICATION_SRCS}
 )
 
-add_executable(communication_bridge_node src/communication_bridge_node.cpp)
-target_link_libraries(communication_bridge_node ${catkin_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
 
+add_executable(communication_bridge_node src/communication_bridge_node.cpp)
+##target_link_libraries(communication_bridge_node ${catkin_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(communication_bridge_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}
+  ${PCL_LIBRARIES}
+)
 # add_executable(send_test src/send_test.cpp)
 # target_link_libraries(send_test ${catkin_LIBRARIES} ${PROJECT_NAME})
 

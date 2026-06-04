@@ -1,6 +1,7 @@
 <launch>
-    <arg name="is_simulation" default="false" />        <!-- 是否处于仿真状态 -->
-    <arg name="multiClientSwitch" default="false" />    <!-- 是否处于多客户端状态 -->
+    <arg name="filterNetworkCard" default="192.168.1.5" />         <!-- 要过滤的网卡IP -->
+    <arg name="is_simulation" default="false" />                   <!-- 是否处于仿真状态 -->
+    <arg name="multiClientSwitch" default="false" />               <!-- 是否处于多客户端状态 -->
 
     <arg name="uav_name" default="uav" />
     <arg name="uav_id" default="-1" />              <!-- 当前无人机id，默认值为-1 -->
@@ -22,8 +23,11 @@
     <arg name="UAVStateFrameRate" default="30" />            <!-- 无人机状态传输帧数 -->
     <arg name="PX4ParamTransmitEnabled" default="false" />   <!-- 是否启用PX4参数传输 -->
     <arg name="UGVGoalMulticastEnabled" default="false" />   <!-- 是否启用UGV规划点(goal_id)组播开关 -->
+    <arg name="pointCloudEnabled" default="false" />          <!-- 是否启用点云数据传输 -->
+    <arg name="pointCloudRate" default="1" />                <!-- 点云数据传输帧数 -->
 
     <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
+        <param name="filterNetworkCard" value="$(arg filterNetworkCard)" />
         <param name="uav_experiment_num" value="$(arg uav_experiment_num)" />
         <param name="uav_simulation_num" value="$(arg uav_simulation_num)" />
         <param name="uav_name" value="$(arg uav_name)" />
@@ -43,5 +47,7 @@
         <param name="UAVStateFrameRate" value="$(arg UAVStateFrameRate)" />
         <param name="PX4ParamTransmitEnabled" value="$(arg PX4ParamTransmitEnabled)" />
         <param name="UGVGoalMulticastEnabled" value="$(arg UGVGoalMulticastEnabled)" />
+        <param name="pointCloudEnabled" value="$(arg pointCloudEnabled)" />
+        <param name="pointCloudRate" value="$(arg pointCloudRate)" />
     </node>
 </launch>

@@ -53,7 +53,10 @@ public:
     void coderNodePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderFormationPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderPointCloudDataPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderQRCodeCoordPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderPointCloudDataSwitchPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
+    void coderPointCloudDataStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderFACMapPayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderAgentComputerStatusload(std::vector<uint8_t>& payload,DataFrame& codelessData);
     void coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData);
@@ -75,8 +78,11 @@ public:
     void decoderWaypointPayload(std::vector<uint8_t>& dataFrame,DataFrame& waypointData);//解码无人机航点Payload帧
     void decoderNodePayload(std::vector<uint8_t>& dataFrame,DataFrame& node); //解码智能体在线ROS节点Payload帧
     void decoderFormationPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码编队切换Payload帧
+    void decoderPointCloudDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码点云数据Payload帧
     void decoderGoalPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码规划点Payload帧
     void decoderQRCodeCoordPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码二维码Payload帧
+    void decoderPointCloudDataSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码点云数据开关Payload帧
+    void decoderPointCloudDataStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码点云数据状态Payload帧
     void decoderAgentComputerStatusPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码智能体电脑状态Payload帧
     void decoderFACMapDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码FAC赛地图数据Payload帧
     void decoderFACCompetitionStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct); //解码FAC比赛状态数据Payload帧
@@ -119,8 +125,11 @@ private:
         MessageID::DemoMessageID,
         MessageID::ScriptMessageID,
         MessageID::FormationMessageID,
+        MessageID::PointCloudDataMessageID,
         MessageID::GoalMessageID,
         MessageID::QRCodeCoordMessageID,
+        MessageID::PointCloudDataSwitchMessageID,
+        MessageID::PointCloudDataStateMessageID,
         MessageID::AgentComputerStatusMessageID,
         MessageID::GroundFormationMessageID,
         MessageID::FACMapDataMessageID,

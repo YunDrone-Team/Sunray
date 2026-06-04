@@ -18,7 +18,6 @@
 #include "sunray_msgs/PX4State.h"
 #include "sunray_msgs/RTKOrigin.h"
 #include "PX4ParamManager.h"
-
 #include "std_msgs/String.h"
 
 #include <tf/LinearMath/Quaternion.h>
@@ -33,6 +32,10 @@
 #include <string>
 #include <iostream>
 #include <thread>
+
+#include <sensor_msgs/PointCloud2.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/PCLPointCloud2.h>
 
 #define UAVType 0
 #define UGVType 1
@@ -69,6 +72,8 @@ private:
     void SendUdpDataToAllOnlineGroundStations(DataFrame data);
     void UpdateUDPMulticast(const ros::TimerEvent &e);
     void UpdateUAVPx4Param(const ros::TimerEvent &e);
+    void sendPointCloudData(const ros::TimerEvent &e);
+
     bool getUAVPX4Param(DataFrame dataFrame,PX4ParamManager& maager,std::string param,double& value);
     bool getUAVPX4Param(DataFrame dataFrame,PX4ParamManager& maager,std::string param,int64_t& value);
 
@@ -78,6 +83,7 @@ private:
     void PX4StateCallBack(const sunray_msgs::PX4State::ConstPtr &msg, int robot_id);
     void goal_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int robot_id);
     void QRCodeCoord_cb(const geometry_msgs::PointStamped::ConstPtr &msg);
+    void PointCloud_cb(const sensor_msgs::PointCloud2::ConstPtr &msg, int robot_id);
 
 
     void formation_cmd_cb(const sunray_msgs::Formation::ConstPtr &msg);
@@ -125,6 +131,7 @@ private:
     string tcp_ip;
     string udp_ip;
     pid_t demoPID = -1;
+    bool pointCloudDataState=false;//点云数据状态
     bool station_connected; // 心跳包状态
     bool multiClientSwitch; // 多客户端开关
     bool PX4StateTransmitEnabled; // PX4状态传输开关
@@ -133,6 +140,9 @@ private:
     bool PX4ParamTransmitEnabled;// PX4参数传输开关 
     int UAVStateFrameRate;// UAV状态传输帧数
     bool UGVGoalMulticastEnabled;//UGV规划点组播开关
+    int pointCloudRate;// 点云数据传输帧数
+    bool pointCloudEnabled;// 点云数据传输开关
+    bool sendPointCloudState=false;// 发送点云数据状态
 
 
     std::map<int,bool>  UAVWaypointStateTopicLatest;// UAV航点状态话题是否为最新
@@ -144,6 +154,7 @@ private:
     std::vector<ros::Subscriber> ugv_state_sub;
     std::vector<ros::Subscriber> uav_waypointState_sub;
     std::vector<ros::Subscriber> ugv_goal_sub;
+    std::vector<ros::Subscriber> uav_pointCloud_sub;
 
     std::map<int,ros::Publisher> control_cmd_pub;
     std::map<int,ros::Publisher> uav_setup_pub;
@@ -175,6 +186,7 @@ private:
     ros::Timer PX4StateTimer;
     ros::Timer UAVStateTimer;
     ros::Timer UAVPX4ParamTimer;
+    ros::Timer pointCloudTimer;
 
     CpuData prevData;
     TCPServer tcpServer;
@@ -188,6 +200,8 @@ private:
     DataFrame px4StateData[MAX_AGENT_NUM];
     DataFrame uavOnlineNodeData[MAX_AGENT_NUM];
     DataFrame ugvOnlineNodeData[MAX_AGENT_NUM]; 
+    pcl::PointCloud<pcl::PointXYZ> pointCloudData[MAX_AGENT_NUM];
+
     DataFrame FACMapSendData;   // FACMap数据
 
     const float EPS = 0.0005f;  // 3位小数的精度阈值：0.0005（确保四舍五入到千分位后相等）
@@ -199,6 +213,6 @@ private:
     std::map<string, pid_t> nodeMap;
     // std::unordered_set<std::string> GSIPHash; // 存储所有已连接的IP地址
     std::unordered_map<std::string, int> GSIPHash; // 存储所有已连接的IP地址
+    std::string filterNetworkCard;//过滤网卡
 
-    
 };

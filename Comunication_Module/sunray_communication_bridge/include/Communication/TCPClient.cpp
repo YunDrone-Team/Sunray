@@ -254,11 +254,13 @@ void TCPClient::createThread()
                 {
                     // 将接收到的参数传递给 sigAllTCPClientReadData
                     sigAllTCPClientReadData(param);
+
                 });
                 std::string ip=temp.TargetIP;
                 TCPSocket->sigTCPError.connect([this,ip](const int& error)
                 {
                     // 将接收到的参数传递给 sigTCPClientError
+
                     TCPClientErrorStr temp;
                     temp.error=error;
                     temp.targetIP=ip;
@@ -271,6 +273,7 @@ void TCPClient::createThread()
                  lockRun.unlock();
 
                  temp.State=true;
+
                  sigCreateTCPClientResult(temp);
 
                 //std::cout << "创建客户端成功 "<<back<<std::endl;

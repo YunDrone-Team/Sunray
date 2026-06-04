@@ -2,6 +2,7 @@
 
 void communication_bridge::init(ros::NodeHandle &nh)
 {
+    nh.param<string>("filterNetworkCard", filterNetworkCard, "");                  // 【参数】无人机名字前缀
     nh.param<bool>("is_simulation", is_simulation, false);          // 【参数】仿真模式or真机模式：仿真模式下，多个飞机只启动一个公用的通信节点，真机模式下，每个飞机在机载电脑中分别启动一个通信节点
     nh.param<bool>("multiClientSwitch", multiClientSwitch, false);  // 【参数】多客户端模式开关：给同一个IP地址的多个端口发送数据
 
@@ -28,6 +29,8 @@ void communication_bridge::init(ros::NodeHandle &nh)
     nh.param<bool>("PX4ParamTransmitEnabled", PX4ParamTransmitEnabled, false);         // 【参数】是否启用PX4参数传输
     nh.param<bool>("UGVGoalMulticastEnabled", UGVGoalMulticastEnabled, false);         // 【参数】是否启用UGV规划点组播开关
 
+    nh.param<bool>("pointCloudEnabled", pointCloudEnabled, true);                       // 【参数】是否启用点云数据传输
+    nh.param<int>("pointCloudRate", pointCloudRate, 3);                                 // 【参数】点云数据传输帧数
     // 情况枚举：
     // CASE1（真机）:只有一台无人机的时候 uav_id =本机ID   uav_experiment_num=1 uav_simulation_num=0，不提及的默认都为0
     // CASE2（真机）:只有一台无人车的时候 ugv_id =本机ID   ugv_experiment_num=1 ugv_simulation_num=0，不提及的默认都为0
@@ -71,7 +74,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             uavPX4ParamMap.insert(std::make_pair(i, PX4ParamManager(nh, topic_prefix+"/mavros")));
             
         }
-
+         // 【订阅】无人机激光雷达点云数据 
+        // uav_pointCloud_sub.push_back(nh.subscribe<sensor_msgs::PointCloud2>(topic_prefix + "/global_points", 1, boost::bind(&communication_bridge::PointCloud_cb, this, _1, i)));
+        uav_pointCloud_sub.push_back(nh.subscribe<sensor_msgs::PointCloud2>("/drone_0_ego_planner_node/grid_map/occupancy_inflate", 1, boost::bind(&communication_bridge::PointCloud_cb, this, _1, uav_id)));
         // 无人车Sunray与地面站之间的通信（此部分仅针对仿真）
         for (int i = ugv_id; i < ugv_id + ugv_simulation_num; i++)
         {
@@ -109,6 +114,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
             // 【管理】MAVROS 参数服务客户端，无人机px4飞控参数
             uavPX4ParamMap.insert(std::make_pair(uav_id, PX4ParamManager(nh, topic_prefix+"/mavros")));
         }
+
+        // 【订阅】无人机激光雷达点云数据 
+        uav_pointCloud_sub.push_back(nh.subscribe<sensor_msgs::PointCloud2>("/drone_0_ego_planner_node/grid_map/occupancy_inflate", 1, boost::bind(&communication_bridge::PointCloud_cb, this, _1, uav_id)));
 
         // 无人车Sunray和地面站之间的通信（此部分仅针对真机）
         if (ugv_experiment_num > 0 && ugv_id>=0)
@@ -194,6 +202,9 @@ void communication_bridge::init(ros::NodeHandle &nh)
     // 【定时器】 定时发送无人机PX4飞控参数到地面站
     if(PX4ParamTransmitEnabled)
         UAVPX4ParamTimer= nh.createTimer(ros::Duration(1.0), &communication_bridge::UpdateUAVPx4Param, this);
+    // 【定时器】 定时发送点云到地面站
+    pointCloudTimer= nh.createTimer(ros::Duration(1.0/pointCloudRate), &communication_bridge::sendPointCloudData, this);
+
 
 
     //  初始化CPU数据
@@ -213,9 +224,11 @@ void communication_bridge::init(ros::NodeHandle &nh)
     tcpServer.setRunState(true);
 
     // 【UDP通信】 获取UDP通信对象
-    udpSocket = CommunicationUDPSocket::getInstance();
+    udpSocket = &(CommunicationUDPSocket::getInstance());
     // 【UDP通信】 设置解码器
     udpSocket->setDecoderInterfacePtr(new Codec);
+    // 【UDP通信】 设置过滤网卡
+    udpSocket->setFilterNetworkCard(filterNetworkCard);
     // 【UDP通信】 绑定UDP监听端口
     udpSocket->Bind(static_cast<unsigned short>(udp_port));
     // 【UDP通信】 UDP通信：接收UDP消息的回调函数 - 包括：地面站搜索在线智能体、机间通信相关的消息
@@ -318,6 +331,9 @@ void communication_bridge::TCPLinkState(bool state, std::string IP)
             GSIPHash[IP] = 1;
         station_connected = true;
 
+  
+        sendPointCloudState=true;
+  
         FACMapData temp;
         temp.init();
 
@@ -1040,6 +1056,11 @@ void communication_bridge::TCPServerCallBack(ReceivedParameter readData)
         viobotSwitch_pub.publish(sendMSG);
         break;
     }
+    case MessageID::PointCloudDataSwitchMessageID://点云数据开关 PointCloudDataSwitch（#206）
+    {
+        pointCloudEnabled = readData.dataFrame.data.pointCloudDataSwitch.dataSwitch;    
+        break;
+    }
     default:
         break;
     }
@@ -1557,6 +1578,24 @@ void communication_bridge::sendHeartbeatPacket(const ros::TimerEvent &e)
             Heartbeatdata.data.heartbeat.agentType = UGVType;
             tcpServer.allSendData(codec.coder(Heartbeatdata));
         }
+    }
+
+    if(!sendPointCloudState)
+        return;
+
+    if(uav_id>0 || uav_id<MAX_AGENT_NUM)
+    {
+        DataFrame sendDataFrame;
+        sendDataFrame.data.pointCloudDataState.init();
+        sendDataFrame.seq=MessageID::PointCloudDataStateMessageID;
+        sendDataFrame.robot_ID=uav_id;
+        sendDataFrame.data.pointCloudDataState.dataState=pointCloudEnabled;
+
+        for(int i=0;i<5;++i)
+            SendUdpDataToAllOnlineGroundStations(sendDataFrame);
+
+        sendPointCloudState = false;
+
     }
 }
 
@@ -2563,4 +2602,39 @@ std::vector<double> communication_bridge::getCpuTemperatures()
     return cpu_temps;
                              
                  
+}
+
+void communication_bridge::PointCloud_cb(const sensor_msgs::PointCloud2::ConstPtr &msg,int robot_id)
+{
+    // std::cout << "communication_bridge::PointCloud_cb robot_id:" + std::to_string(robot_id) << std::endl;
+
+    // 判断点云数据是否为空（无点）
+    if (msg->width * msg->height == 0)
+    {
+        return;
+    }
+
+    pointCloudDataState=true;
+     // 2. 转换核心代码
+    pcl::fromROSMsg(*msg, pointCloudData[robot_id]);
+
+    
+    // std::cout << "communication_bridge::PointCloud_cb end" << std::endl;
+
+}
+
+void communication_bridge::sendPointCloudData(const ros::TimerEvent &e)
+{
+
+    if(!pointCloudDataState || !pointCloudEnabled )
+        return;
+    pointCloudDataState=false;
+
+    // 发送数据到地面站 本节点 --UDP--> 地面站
+    std::lock_guard<std::mutex> lock(_mutexUDP);
+
+    for (const auto &ip : GSIPHash)
+    {
+        udpSocket->pushSendPointCloudDataQueue(pointCloudData[uav_id],uav_id,ip.first, udp_ground_port);
+    }
 }

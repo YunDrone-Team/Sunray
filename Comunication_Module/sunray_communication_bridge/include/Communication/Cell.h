@@ -36,6 +36,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <net/if.h>
+#include <fcntl.h>
 
 
     #define SOCKET int

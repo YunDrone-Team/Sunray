@@ -1,16 +1,17 @@
 <launch>
-    <arg name="is_simulation" default="true" />         <!-- 是否处于仿真状态 -->
-    <arg name="multiClientSwitch" default="false" />     <!-- 是否处于多客户端状态 -->
+    <arg name="filterNetworkCard" default="" />                 <!-- 要过滤的网卡IP -->
+    <arg name="is_simulation" default="true" />                 <!-- 是否处于仿真状态 -->
+    <arg name="multiClientSwitch" default="true" />             <!-- 是否处于多客户端状态 -->
 
     <arg name="uav_name" default="uav" />
     <arg name="uav_id" default="1" />               <!-- 当前无人机id，默认值为1 -->
     <arg name="uav_experiment_num" default="0" />   <!-- 无人机真机数量 -->
-    <arg name="uav_simulation_num" default="0" />   <!-- 仿真无人机数量 -->
+    <arg name="uav_simulation_num" default="3" />   <!-- 仿真无人机数量 -->
 
     <arg name="ugv_name" default="ugv" />
     <arg name="ugv_id" default="1" />               <!-- 当前无人车id，默认值为1 -->
     <arg name="ugv_experiment_num" default="0" />   <!-- 无人车真车数量 -->
-    <arg name="ugv_simulation_num" default="0" />   <!-- 仿真无人车数量 -->
+    <arg name="ugv_simulation_num" default="3" />   <!-- 仿真无人车数量 -->
 
     <arg name="tcp_port" default="8969" />          <!-- TCP绑定端口-->
     <arg name="udp_port" default="9898" />          <!-- UDP通信包括绑定监听、组播目标端口，机载端口要一致-->
@@ -22,9 +23,11 @@
     <arg name="UAVStateFrameRate" default="30" />            <!-- 无人机状态传输帧数 -->
     <arg name="PX4ParamTransmitEnabled" default="false" />   <!-- 是否启用PX4参数传输 -->
     <arg name="UGVGoalMulticastEnabled" default="false" />   <!-- 是否启用UGV规划点(goal_id)组播开关 -->
-
+    <arg name="pointCloudEnabled" default="false" />          <!-- 是否启用点云数据传输 -->
+    <arg name="pointCloudRate" default="1" />                <!-- 点云数据传输帧数 -->
 
     <node name="sunray_communication_bridge" pkg="sunray_communication_bridge" type="communication_bridge_node" output="screen">
+        <param name="filterNetworkCard" value="$(arg filterNetworkCard)" />
         <param name="uav_experiment_num" value="$(arg uav_experiment_num)" />
         <param name="uav_simulation_num" value="$(arg uav_simulation_num)" />
         <param name="uav_name" value="$(arg uav_name)" />
@@ -44,5 +47,7 @@
         <param name="UAVStateFrameRate" value="$(arg UAVStateFrameRate)" />
         <param name="PX4ParamTransmitEnabled" value="$(arg PX4ParamTransmitEnabled)" />
         <param name="UGVGoalMulticastEnabled" value="$(arg UGVGoalMulticastEnabled)" />
+        <param name="pointCloudEnabled" value="$(arg pointCloudEnabled)" />
+        <param name="pointCloudRate" value="$(arg pointCloudRate)" />
     </node>
 </launch>

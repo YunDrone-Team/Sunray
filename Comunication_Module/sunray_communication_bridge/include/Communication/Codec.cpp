@@ -153,6 +153,21 @@ void Codec::decoderQRCodeCoordPayload(std::vector<uint8_t>& dataFrame,DataFrame&
     uint8tArrayToDouble(dataFrame, data.z);
 }
 
+void Codec::decoderPointCloudDataSwitchPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    PointCloudDataSwitch& data = dataFrameStruct.data.pointCloudDataSwitch;
+    data.init();
+    data.dataSwitch = static_cast<uint8_t>(dataFrame[0]);
+    dataFrame.erase(dataFrame.begin());
+}
+
+void Codec::decoderPointCloudDataStatePayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+{
+    PointCloudDataState& data = dataFrameStruct.data.pointCloudDataState;
+    data.init();
+    data.dataState = static_cast<uint8_t>(dataFrame[0]);
+    dataFrame.erase(dataFrame.begin());
+}
 
 void Codec::decoderAgentComputerStatusPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
 {
@@ -186,6 +201,35 @@ void Codec::decoderAgentComputerStatusPayload(std::vector<uint8_t>& dataFrame,Da
      data.name[data.nameSize] = '\0';  //添加终止符
 
      dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.nameSize);
+ }
+
+
+ void Codec::decoderPointCloudDataPayload(std::vector<uint8_t>& dataFrame,DataFrame& dataFrameStruct)
+ {
+     PointCloudData& data = dataFrameStruct.data.pointCloudData;
+     data.init();
+
+     // 读取totalFragments（2字节，小端序）
+     data.totalFragments = static_cast<uint16_t>(dataFrame[0]);
+     data.totalFragments |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+     // 读取fragmentID（2字节，小端序）
+     data.fragmentID = static_cast<uint16_t>(dataFrame[0]);
+     data.fragmentID |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+     // 读取fragmentSizee（2字节，小端序）
+     data.fragmentSize = static_cast<uint16_t>(dataFrame[0]);
+     data.fragmentSize |= (static_cast<uint16_t>(dataFrame[1]) << 8);
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + 2);
+
+     // 读取fragmentData
+     for (uint16_t j = 0; j < data.fragmentSize; ++j)
+         data.fragmentData[j] = static_cast<char>(dataFrame[j]);
+//     data.fragmentData[data.fragmentSize] = '\0';  //添加终止符
+     dataFrame.erase(dataFrame.begin(), dataFrame.begin() + data.fragmentSize);
+
  }
 
 
@@ -840,9 +884,21 @@ bool Codec::decoder(std::vector<uint8_t> undecodedData,DataFrame& decoderData)
         /*Payload规划点数据反序列化*/
         decoderGoalPayload(undecodedData,decoderData);
         break;
+    case MessageID::PointCloudDataMessageID:
+        /*Payload点云数据反序列化*/
+        decoderPointCloudDataPayload(undecodedData,decoderData);
+        break;
     case MessageID::QRCodeCoordMessageID:
         /*Payload二维码坐标数据反序列化*/
         decoderQRCodeCoordPayload(undecodedData,decoderData);
+        break;
+    case MessageID::PointCloudDataSwitchMessageID:
+        /*Payload点云数据开关数据反序列化*/
+        decoderPointCloudDataSwitchPayload(undecodedData,decoderData);
+        break;
+    case MessageID::PointCloudDataStateMessageID:
+        /*Payload点云数据状态数据反序列化*/
+        decoderPointCloudDataStatePayload(undecodedData,decoderData);
         break;
     case MessageID::AgentComputerStatusMessageID:
         /*Payload智能体电脑状态数据反序列化*/
@@ -895,8 +951,8 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::HeartbeatMessageID:case MessageID::UAVControlCMDMessageID:
     case MessageID::UGVControlCMDMessageID:case MessageID::UAVSetupMessageID:
     case MessageID::DemoMessageID:case MessageID::ScriptMessageID:
-    case MessageID::WaypointMessageID:
-    case MessageID::ViobotSwitchMessageID:case MessageID::RTKOriginMessageID:
+    case MessageID::WaypointMessageID:case MessageID::ViobotSwitchMessageID:
+    case MessageID::RTKOriginMessageID:case MessageID::PointCloudDataSwitchMessageID:
         //TCP帧头 0xac43
         codelessData.head=PackBytesLE(0xac,0x43);
         break;
@@ -905,6 +961,7 @@ void Codec::SetDataFrameHead(DataFrame& codelessData)
     case MessageID::FACMapDataMessageID:case MessageID::FACCompetitionStateMessageID:
     case MessageID::WaypointStateMessageID:case MessageID::PX4StateMessageID:
     case MessageID::PX4ParameterMessageID:case MessageID::QRCodeCoordMessageID:
+    case MessageID::PointCloudDataMessageID:case MessageID::PointCloudDataStateMessageID:
         //UDP不带回复帧头 0xab65
         codelessData.head=PackBytesLE(0xab,0x65);
         break;
@@ -1222,6 +1279,29 @@ void Codec::coderFACMapPayload(std::vector<uint8_t>& payload,DataFrame& codeless
 
 }
 
+
+void Codec::coderPointCloudDataPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+{
+    PointCloudData data=codelessData.data.pointCloudData;
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.totalFragments >> (i * 8)) & 0xFF));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.fragmentID >> (i * 8)) & 0xFF));
+
+    for (int i = 0; i < (int)sizeof(uint16_t); i++)
+        payload.push_back(static_cast<uint8_t>((data.fragmentSize >> (i * 8)) & 0xFF));
+
+    if(payload.capacity()<data.fragmentSize+8)
+        payload.reserve(data.fragmentSize+8);
+
+    for(int j=0;j<data.fragmentSize;++j)
+        payload.push_back(static_cast<uint8_t>(data.fragmentData[j]));
+
+}
+
+
 void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
     Goal data=codelessData.data.goal;
@@ -1239,6 +1319,20 @@ void Codec::coderGoalPayload(std::vector<uint8_t>& payload,DataFrame& codelessDa
      doubleCopyToUint8tArray(payload,data.y);
      doubleCopyToUint8tArray(payload,data.z);
  }
+
+ void Codec::coderPointCloudDataSwitchPayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     PointCloudDataSwitch data=codelessData.data.pointCloudDataSwitch;
+     payload.push_back(static_cast<uint8_t>(data.dataSwitch));
+
+ }
+
+ void Codec::coderPointCloudDataStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
+ {
+     PointCloudDataState data=codelessData.data.pointCloudDataState;
+     payload.push_back(static_cast<uint8_t>(data.dataState));
+ }
+
 
 void Codec::coderFACCompetitionStatePayload(std::vector<uint8_t>& payload,DataFrame& codelessData)
 {
@@ -1486,6 +1580,10 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
         /*Payload编队切换数据序列化*/
         coderFormationPayload(PayloadData,codelessData);
         break;
+    case MessageID::PointCloudDataMessageID:
+        /*Payload点云数据序列化*/
+        coderPointCloudDataPayload(PayloadData,codelessData);
+        break;
     case MessageID::GoalMessageID:
         /*Payload规划点数据序列化*/
         coderGoalPayload(PayloadData,codelessData);
@@ -1493,6 +1591,14 @@ std::vector<uint8_t> Codec::coder(DataFrame codelessData)
     case MessageID::QRCodeCoordMessageID:
         /*Payload二维码坐标数据序列化*/
         coderQRCodeCoordPayload(PayloadData,codelessData);
+        break;
+    case MessageID::PointCloudDataSwitchMessageID:
+        /*Payload点云数据开关数据序列化*/
+        coderPointCloudDataSwitchPayload(PayloadData,codelessData);
+        break;
+    case MessageID::PointCloudDataStateMessageID:
+        /*Payload点云数据状态数据序列化*/
+        coderPointCloudDataStatePayload(PayloadData,codelessData);
         break;
     case MessageID::AgentComputerStatusMessageID:
         /*Payload智能体电脑状态数据序列化*/
