@@ -1,8 +1,10 @@
 import os
+import math
 import subprocess
 import tempfile
 import time
 from typing import Dict, List, Optional, Sequence
+from xml.sax.saxutils import quoteattr
 
 import rospy
 from sunray_msgs.msg import UAVControlCMD, UAVSetup, UAVState
@@ -222,6 +224,74 @@ class UAVAdapter:
         rospy.loginfo("悬停阶段结束")
         return target_pos
 
+    @staticmethod
+    def _normalize_angle_rad(angle_rad: float) -> float:
+        return math.atan2(math.sin(angle_rad), math.cos(angle_rad))
+
+    def transition_yaw(
+        self,
+        target_yaw_rad: float = 0.0,
+        yaw_rate_rad_s: float = 0.25,
+        hold_after_s: float = 1.0,
+        target_z_m: Optional[float] = None,
+        rate_hz: float = 20.0,
+    ) -> None:
+        if yaw_rate_rad_s <= 0:
+            raise ValueError("yaw_rate_rad_s must be positive")
+
+        target_pos = list(self._state.position)
+        if len(target_pos) < 3:
+            raise RuntimeError(f"yaw transition rejected because UAV position is invalid: {self._state_brief()}")
+        if target_z_m is not None:
+            target_pos[2] = float(target_z_m)
+        target_pos = target_pos[:3]
+
+        current_yaw = float(self._state.attitude[2]) if len(self._state.attitude) >= 3 else 0.0
+        target_yaw = self._normalize_angle_rad(float(target_yaw_rad))
+        yaw_error = self._normalize_angle_rad(target_yaw - current_yaw)
+        duration_s = abs(yaw_error) / float(yaw_rate_rad_s)
+        rospy.loginfo(
+            "开始偏航过渡 current_yaw=%.2f target_yaw=%.2f delta=%.2f duration=%.1fs target_pos=%s",
+            current_yaw,
+            target_yaw,
+            yaw_error,
+            duration_s,
+            [round(v, 3) for v in target_pos],
+        )
+
+        cmd = UAVControlCMD()
+        cmd.cmd = UAVControlCMD.XyzPosYaw
+        cmd.desired_pos = target_pos
+        rate = rospy.Rate(rate_hz)
+        start_time = time.time()
+        last_display = None
+
+        while not rospy.is_shutdown():
+            elapsed_s = time.time() - start_time
+            ratio = 1.0 if duration_s <= 1.0e-3 else min(1.0, elapsed_s / duration_s)
+            desired_yaw = self._normalize_angle_rad(current_yaw + yaw_error * ratio)
+            cmd.header.stamp = rospy.Time.now()
+            cmd.desired_yaw = desired_yaw
+            self._cmd_pub.publish(cmd)
+
+            remaining = max(0, int(duration_s - elapsed_s))
+            if remaining != last_display:
+                print(f"\r[Yaw Transition] 倒计时: {remaining:02d}s yaw={desired_yaw:.2f}", end="", flush=True)
+                last_display = remaining
+            if ratio >= 1.0:
+                break
+            self._rate_sleep_or_interrupt(rate)
+
+        hold_deadline = time.time() + max(0.0, float(hold_after_s))
+        while not rospy.is_shutdown() and time.time() < hold_deadline:
+            cmd.header.stamp = rospy.Time.now()
+            cmd.desired_yaw = target_yaw
+            self._cmd_pub.publish(cmd)
+            self._rate_sleep_or_interrupt(rate)
+        print()
+        self._raise_if_shutdown()
+        rospy.loginfo("偏航过渡结束")
+
     def goto_waypoint(
         self,
         target: Sequence[float],
@@ -322,24 +392,32 @@ class UAVAdapter:
         auto_takeoff: bool,
         height_m: float,
         launch_args: Optional[Dict[str, object]] = None,
+        remaps: Optional[Sequence[Dict[str, str]]] = None,
     ) -> Dict[str, object]:
+        normalized_remaps = self._normalize_remaps(remaps)
         rospy.loginfo(
-            "启动视觉降落 launch=%s auto_takeoff=%s height=%.2f",
+            "启动视觉降落 launch=%s auto_takeoff=%s height=%.2f remaps=%s",
             launch_file,
             auto_takeoff,
             height_m,
+            normalized_remaps,
         )
         # 使用临时文件同时实现：1) 终端实时显示（无缓冲延迟） 2) 事后捕获输出用于失败检测
         # 之前用 stdout=PIPE 会导致 roslaunch SUMMARY 被缓冲，显示顺序与节点直接输出不一致
         tmp_fd, tmp_path = tempfile.mkstemp(prefix="sunray_vland_", suffix=".log", dir="/tmp")
+        wrapper_path = ""
         try:
-            launch_command = [
-                "roslaunch",
-                "sunray_tutorial",
-                launch_file,
-                f"auto_takeoff:={'true' if auto_takeoff else 'false'}",
-                f"height:={height_m}",
-            ]
+            if normalized_remaps:
+                wrapper_path = self._write_visual_land_wrapper(launch_file, normalized_remaps)
+                launch_command = ["roslaunch", wrapper_path]
+            else:
+                launch_command = ["roslaunch", "sunray_tutorial", launch_file]
+            launch_command.extend(
+                [
+                    f"auto_takeoff:={'true' if auto_takeoff else 'false'}",
+                    f"height:={height_m}",
+                ]
+            )
             if launch_args:
                 for key, value in launch_args.items():
                     if value is None:
@@ -373,9 +451,42 @@ class UAVAdapter:
                 os.unlink(tmp_path)
             except OSError:
                 pass
+            if wrapper_path:
+                try:
+                    os.unlink(wrapper_path)
+                except OSError:
+                    pass
 
         rospy.loginfo("视觉降落结束，返回码=%s", return_code)
-        return {"return_code": return_code, "output_lines": output_lines[-300:]}
+        return {"return_code": return_code, "output_lines": output_lines[-300:], "remaps": normalized_remaps}
+
+    @staticmethod
+    def _normalize_remaps(remaps: Optional[Sequence[Dict[str, str]]]) -> List[Dict[str, str]]:
+        if not remaps:
+            return []
+        normalized = []
+        for index, remap in enumerate(remaps):
+            if not isinstance(remap, dict):
+                raise ValueError(f"visual landing remap #{index} must be a mapping")
+            source = remap.get("from")
+            target = remap.get("to")
+            if not source or not target:
+                raise ValueError(f"visual landing remap #{index} requires from/to")
+            normalized.append({"from": str(source), "to": str(target)})
+        return normalized
+
+    @staticmethod
+    def _write_visual_land_wrapper(launch_file: str, remaps: Sequence[Dict[str, str]]) -> str:
+        fd, wrapper_path = tempfile.mkstemp(prefix="sunray_vland_wrapper_", suffix=".launch", dir="/tmp")
+        include_file = f"$(find sunray_tutorial)/launch/{launch_file}"
+        lines = ["<launch>"]
+        for remap in remaps:
+            lines.append(f"  <remap from={quoteattr(remap['from'])} to={quoteattr(remap['to'])} />")
+        lines.append(f"  <include file={quoteattr(include_file)} pass_all_args=\"true\" />")
+        lines.append("</launch>")
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+        return wrapper_path
 
     def stop_nodes(self, node_names: Sequence[str], timeout_s: float = 5.0) -> Dict[str, int]:
         results = {}

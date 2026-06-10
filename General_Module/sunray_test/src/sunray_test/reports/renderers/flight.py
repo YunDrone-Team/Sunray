@@ -14,11 +14,19 @@ from sunray_test.reports.renderers.common import (
 def _preferred_metric_order(section_title: str, category_name: str) -> Iterable[str]:
     if section_title == "视觉降落指标" and category_name == "trajectory":
         return (
-            "horizontal_alignment_error_m",
-            "final_landing_position_error_m",
             "landing_target_zone_radius_m",
             "landing_target_center_xy_m",
+            "landing_target_source",
+            "landing_target_estimate_count",
+            "final_landing_position_error_m",
+            "horizontal_alignment_error_m",
             "final_descent_trigger_xy_error_m",
+            "landing_start_xy_m",
+            "landing_end_xy_m",
+            "landing_start_to_end_xy_displacement_m",
+            "horizontal_travel_m",
+            "landing_vertical_drop_m",
+            "landing_final_altitude_m",
             "target_acquisition_time_s",
             "target_tracking_continuity_rate",
             "target_tracking_continuity_rate_exempt_terminal_loss",
@@ -30,6 +38,14 @@ def _preferred_metric_order(section_title: str, category_name: str) -> Iterable[
             "visual_landing_aborted",
             "landed_within_target_zone",
             "landing_duration_s",
+            "landing_case_duration_s",
+            "landing_duration_source",
+            "landing_duration_fallback_reason",
+            "landing_effective_start_offset_s",
+            "landing_effective_end_offset_s",
+            "landing_effective_start_altitude_m",
+            "landing_effective_end_altitude_m",
+            "landing_terminal_altitude_threshold_m",
             "landing_safety_pass",
         )
     return ()

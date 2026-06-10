@@ -20,9 +20,21 @@ recording:
   topic_templates:
     - "/uav{uav_id}/mavros/local_position/pose"
     - "/uav{uav_id}/sunray/uav_state"
+    - "/uav{uav_id}/sunray_detect/qrcode_detection_ros"
+    - "/uav{uav_id}/sunray_detect/landmark_detection_ros"
 
 defaults:
   hardware_check_timeout_s: 5.0
+  camera_sample_duration_s: 1.5
+  camera_min_messages: 3
+  camera_min_rate_hz: 2.0
+  camera_max_gap_s: 1.0
+  camera_max_identical_frame_ratio: 0.95
+  camera_black_mean_threshold: 25.0
+  camera_black_dynamic_range_threshold: 8
+  camera_max_black_frame_ratio: 0.8
+  camera_require_timestamp_progress: true
+  camera_require_frame_content_change: false
   battery_pass_threshold_v: 13.8
   takeoff_target_z_m: 1.0
   takeoff_reach_radius_m: 0.12
@@ -36,5 +48,6 @@ defaults:
   waypoint_timeout_s: 40.0
   visual_landing_auto_takeoff: false
   visual_landing_height_m: 1.0
+  visual_landing_target_zone_radius_m: 0.15
   hover_duration_s: 120.0
   waypoint_reach_radius_m: 0.13

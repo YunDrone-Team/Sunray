@@ -25,14 +25,17 @@ class VisualLandingCase(BaseCase):
             self.execution_context.params.get("auto_takeoff", context.defaults["visual_landing_auto_takeoff"])
         )
         height_m = float(self.execution_context.params.get("height_m", context.defaults["visual_landing_height_m"]))
-        launch_args = self.execution_context.params.get("launch_args", {})
+        launch_args = dict(self.execution_context.params.get("launch_args", {}))
+        launch_args.setdefault("uav_id", context.uav_id)
+        remaps = self.execution_context.params.get("remaps", [])
         pre_stop_nodes = self.execution_context.params.get("pre_stop_nodes", [])
         rospy.loginfo(
-            "[CASE] %s: 开始视觉降落 launch=%s auto_takeoff=%s height=%.2f",
+            "[CASE] %s: 开始视觉降落 launch=%s auto_takeoff=%s height=%.2f remaps=%s",
             self.execution_context.case_id,
             launch_file,
             auto_takeoff,
             height_m,
+            remaps,
         )
         stop_results = {}
         if pre_stop_nodes:
@@ -42,7 +45,13 @@ class VisualLandingCase(BaseCase):
             rospy.sleep(0.5)
 
         failure_patterns = self.execution_context.params.get("failure_patterns", self._DEFAULT_FAILURE_PATTERNS)
-        launch_result = vehicle.visual_land(launch_file, auto_takeoff, height_m, launch_args=launch_args)
+        launch_result = vehicle.visual_land(
+            launch_file,
+            auto_takeoff,
+            height_m,
+            launch_args=launch_args,
+            remaps=remaps,
+        )
         return_code = int(launch_result["return_code"])
         output_lines = launch_result.get("output_lines", [])
         matched_failure_patterns = sorted(
@@ -71,6 +80,7 @@ class VisualLandingCase(BaseCase):
                 "launch_file": launch_file,
                 "height_m": height_m,
                 "launch_args": launch_args,
+                "remaps": launch_result.get("remaps", remaps),
                 "return_code": return_code,
                 "matched_failure_patterns": matched_failure_patterns,
                 "pre_stop_nodes": pre_stop_nodes,

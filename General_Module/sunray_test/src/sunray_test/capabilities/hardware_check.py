@@ -1,3 +1,6 @@
+import hashlib
+import time
+from collections import Counter
 from typing import Any, Dict, List, Optional, Tuple
 
 import os
@@ -31,23 +34,181 @@ class HardwareCheck:
         return False
 
     @staticmethod
+    def _image_stamp_s(image_msg: Image) -> float:
+        stamp = getattr(getattr(image_msg, "header", None), "stamp", None)
+        if stamp is None:
+            return 0.0
+        try:
+            return float(stamp.to_sec())
+        except Exception:
+            return 0.0
+
+    @staticmethod
+    def _image_hash(image_msg: Image) -> str:
+        try:
+            return hashlib.sha1(image_msg.data).hexdigest()
+        except TypeError:
+            return hashlib.sha1(bytes(image_msg.data)).hexdigest()
+
+    @staticmethod
+    def _image_stats(image_msg: Image, max_samples: int = 4096) -> Tuple[float, int]:
+        data = image_msg.data
+        if not data:
+            return 0.0, 0
+        if max_samples <= 0 or len(data) <= max_samples:
+            sample = bytes(data)
+        else:
+            stride = max(1, len(data) // max_samples)
+            sample = bytes(data[::stride])
+        if not sample:
+            return 0.0, 0
+        min_value = min(sample)
+        max_value = max(sample)
+        return sum(sample) / float(len(sample)), max_value - min_value
+
+    @staticmethod
+    def _sample_image_topic(topic: str, timeout_s: float, sample_duration_s: float) -> Dict[str, Any]:
+        samples: List[Tuple[float, Image]] = []
+
+        def callback(message):
+            samples.append((time.monotonic(), message))
+
+        subscriber = rospy.Subscriber(topic, Image, callback, queue_size=20)
+        try:
+            first_deadline = time.monotonic() + timeout_s
+            while not rospy.is_shutdown() and not samples and time.monotonic() < first_deadline:
+                rospy.sleep(0.03)
+
+            if not samples:
+                return {"ok": False, "detail": f"no image from {topic}", "message_count": 0}
+
+            sample_end = samples[0][0] + sample_duration_s
+            while not rospy.is_shutdown() and time.monotonic() < sample_end:
+                rospy.sleep(0.03)
+        finally:
+            subscriber.unregister()
+
+        receive_times = [timestamp for timestamp, _ in samples]
+        intervals = [receive_times[index] - receive_times[index - 1] for index in range(1, len(receive_times))]
+        elapsed_s = max(receive_times[-1] - receive_times[0], 0.0)
+        rate_hz = (len(receive_times) - 1) / elapsed_s if len(receive_times) > 1 and elapsed_s > 0 else 0.0
+        return {
+            "ok": True,
+            "detail": "sampled",
+            "message_count": len(samples),
+            "rate_hz": rate_hz,
+            "max_gap_s": max(intervals) if intervals else None,
+            "messages": [message for _, message in samples],
+        }
+
+    @staticmethod
     def camera_alive(
         topic: str,
         timeout_s: float,
         device_path: Optional[str] = None,
         require_non_uniform_frame: bool = True,
-    ) -> Tuple[str, str]:
+        sample_duration_s: float = 1.5,
+        min_messages: int = 3,
+        min_rate_hz: float = 2.0,
+        max_gap_s: float = 1.0,
+        max_identical_frame_ratio: float = 0.95,
+        require_timestamp_progress: bool = True,
+        require_frame_content_change: bool = False,
+        black_mean_threshold: float = 25.0,
+        black_dynamic_range_threshold: int = 8,
+        max_black_frame_ratio: float = 0.8,
+    ) -> Tuple[str, str, Dict[str, Any]]:
+        sample_duration_s = max(0.1, float(sample_duration_s))
+        min_messages = max(1, int(min_messages))
+        min_rate_hz = max(0.0, float(min_rate_hz))
+        max_gap_s = max(0.0, float(max_gap_s))
+        max_identical_frame_ratio = min(1.0, max(0.0, float(max_identical_frame_ratio)))
+        black_mean_threshold = max(0.0, float(black_mean_threshold))
+        black_dynamic_range_threshold = max(0, int(black_dynamic_range_threshold))
+        max_black_frame_ratio = min(1.0, max(0.0, float(max_black_frame_ratio)))
+        metrics: Dict[str, Any] = {
+            "topic": topic,
+            "timeout_s": timeout_s,
+            "sample_duration_s": sample_duration_s,
+            "min_messages": min_messages,
+            "min_rate_hz": min_rate_hz,
+            "max_gap_s": max_gap_s,
+            "require_non_uniform_frame": require_non_uniform_frame,
+            "max_identical_frame_ratio": max_identical_frame_ratio,
+            "require_timestamp_progress": require_timestamp_progress,
+            "require_frame_content_change": require_frame_content_change,
+            "black_mean_threshold": black_mean_threshold,
+            "black_dynamic_range_threshold": black_dynamic_range_threshold,
+            "max_black_frame_ratio": max_black_frame_ratio,
+        }
         if device_path and not os.path.exists(device_path):
-            return "fail", f"device not found: {device_path}"
+            metrics["device_path"] = device_path
+            return "fail", f"device not found: {device_path}", metrics
 
-        image_msg = HardwareCheck._wait_for_message(topic, Image, timeout_s)
-        if image_msg is None:
-            return "fail", f"no image from {topic}"
+        sample = HardwareCheck._sample_image_topic(topic, timeout_s, sample_duration_s)
+        metrics.update({key: value for key, value in sample.items() if key != "messages"})
+        if not sample.get("ok"):
+            return "fail", str(sample.get("detail") or f"no image from {topic}"), metrics
 
-        if require_non_uniform_frame and not HardwareCheck._image_has_variation(image_msg):
-            return "fail", f"image from {topic} is uniform; camera may be stuck"
+        messages = sample.get("messages", [])
+        image_messages = [message for message in messages if isinstance(message, Image)]
+        metrics["message_count"] = len(image_messages)
+        if len(image_messages) < min_messages:
+            return "fail", f"camera message count {len(image_messages)} < {min_messages} on {topic}", metrics
 
-        return "pass", f"topic alive: {topic}"
+        rate_hz = float(metrics.get("rate_hz") or 0.0)
+        metrics["rate_hz"] = round(rate_hz, 2)
+        if rate_hz < min_rate_hz:
+            return "fail", f"camera rate {rate_hz:.2f}Hz < {min_rate_hz:.2f}Hz on {topic}", metrics
+
+        observed_max_gap = metrics.get("max_gap_s")
+        if observed_max_gap is not None:
+            observed_max_gap = float(observed_max_gap)
+            metrics["max_gap_s"] = round(observed_max_gap, 3)
+            if observed_max_gap > max_gap_s:
+                return "fail", f"camera max gap {observed_max_gap:.2f}s > {max_gap_s:.2f}s on {topic}", metrics
+
+        uniform_count = sum(1 for message in image_messages if not HardwareCheck._image_has_variation(message))
+        metrics["uniform_frame_count"] = uniform_count
+        image_stats = [HardwareCheck._image_stats(message) for message in image_messages]
+        black_frame_count = sum(
+            1
+            for mean_value, dynamic_range in image_stats
+            if mean_value <= black_mean_threshold and dynamic_range <= black_dynamic_range_threshold
+        )
+        black_frame_ratio = black_frame_count / float(len(image_stats)) if image_stats else 0.0
+        metrics["image_mean_min"] = round(min((item[0] for item in image_stats), default=0.0), 2)
+        metrics["image_mean_max"] = round(max((item[0] for item in image_stats), default=0.0), 2)
+        metrics["image_dynamic_range_max"] = max((item[1] for item in image_stats), default=0)
+        metrics["black_frame_count"] = black_frame_count
+        metrics["black_frame_ratio"] = round(black_frame_ratio, 3)
+        if black_frame_ratio > max_black_frame_ratio:
+            return "fail", f"sampled images from {topic} are black; camera may need restart", metrics
+
+        if require_non_uniform_frame and uniform_count == len(image_messages):
+            return "fail", f"all sampled images from {topic} are uniform; camera may be stuck", metrics
+
+        hashes = [HardwareCheck._image_hash(message) for message in image_messages]
+        unique_hash_count = len(set(hashes))
+        dominant_hash_count = Counter(hashes).most_common(1)[0][1] if hashes else 0
+        identical_frame_ratio = dominant_hash_count / float(len(hashes)) if hashes else 0.0
+        metrics["unique_frame_count"] = unique_hash_count
+        metrics["dominant_frame_count"] = dominant_hash_count
+        metrics["identical_frame_ratio"] = round(identical_frame_ratio, 3)
+
+        stamps = [HardwareCheck._image_stamp_s(message) for message in image_messages]
+        positive_stamps = [stamp for stamp in stamps if stamp > 0.0]
+        unique_stamp_count = len(set(positive_stamps))
+        metrics["unique_stamp_count"] = unique_stamp_count
+        metrics["timestamp_progress"] = unique_stamp_count > 1
+
+        if require_timestamp_progress and positive_stamps and unique_stamp_count <= 1:
+            return "fail", f"image timestamp does not progress on {topic}; camera stream may be stuck", metrics
+
+        if require_frame_content_change and identical_frame_ratio >= max_identical_frame_ratio:
+            return "fail", f"sampled images from {topic} are identical; camera may be frozen", metrics
+
+        return "pass", f"camera healthy: {topic}, {len(image_messages)} frames, {rate_hz:.2f}Hz", metrics
 
     @staticmethod
     def battery_voltage(topic: str, timeout_s: float, pass_threshold_v: float) -> Tuple[str, str, Optional[float]]:

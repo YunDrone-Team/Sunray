@@ -333,6 +333,36 @@ class EgoGoalCase(BaseCase):
                 context.defaults.get("ego_keepalive_zero_velocity_epsilon", 1.0e-3),
             )
         )
+        post_transition_enabled = bool(
+            params.get(
+                "post_transition_enabled",
+                context.defaults.get("ego_post_transition_enabled", False),
+            )
+        )
+        post_transition_target_yaw_rad = float(
+            params.get(
+                "post_transition_target_yaw_rad",
+                context.defaults.get("ego_post_transition_target_yaw_rad", 0.0),
+            )
+        )
+        post_transition_yaw_rate_rad_s = float(
+            params.get(
+                "post_transition_yaw_rate_rad_s",
+                context.defaults.get("ego_post_transition_yaw_rate_rad_s", 0.25),
+            )
+        )
+        post_transition_hold_after_s = float(
+            params.get(
+                "post_transition_hold_after_s",
+                context.defaults.get("ego_post_transition_hold_after_s", 1.0),
+            )
+        )
+        post_transition_target_z_m = params.get(
+            "post_transition_target_z_m",
+            context.defaults.get("ego_post_transition_target_z_m", None),
+        )
+        if post_transition_target_z_m is not None:
+            post_transition_target_z_m = float(post_transition_target_z_m)
         pos_cmd_topic = str(params.get("pos_cmd_topic", context.resolved_topics.get("ego_pos_cmd", "/uav1/pos_cmd")))
         control_cmd_topic = str(
             params.get("control_cmd_topic", context.resolved_topics.get("uav_control_cmd", "/uav1/sunray/uav_control_cmd"))
@@ -463,6 +493,15 @@ class EgoGoalCase(BaseCase):
             if keepalive is not None:
                 keepalive.stop()
 
+        if post_transition_enabled:
+            rospy.loginfo("[CASE] %s: 执行 EGO 后偏航过渡", self.execution_context.case_id)
+            vehicle.transition_yaw(
+                target_yaw_rad=post_transition_target_yaw_rad,
+                yaw_rate_rad_s=post_transition_yaw_rate_rad_s,
+                hold_after_s=post_transition_hold_after_s,
+                target_z_m=post_transition_target_z_m,
+            )
+
         rospy.loginfo("[CASE] %s 完成", self.execution_context.case_id)
         return self._result(
             "pass",
@@ -481,5 +520,10 @@ class EgoGoalCase(BaseCase):
                 "keepalive_rate_hz": keepalive_rate_hz,
                 "keepalive_pos_cmd_topic": pos_cmd_topic,
                 "keepalive_control_cmd_topic": control_cmd_topic,
+                "post_transition_enabled": post_transition_enabled,
+                "post_transition_target_yaw_rad": post_transition_target_yaw_rad,
+                "post_transition_yaw_rate_rad_s": post_transition_yaw_rate_rad_s,
+                "post_transition_hold_after_s": post_transition_hold_after_s,
+                "post_transition_target_z_m": post_transition_target_z_m,
             },
         )

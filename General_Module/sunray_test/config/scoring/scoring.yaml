@@ -44,15 +44,12 @@ platform_profiles:
       weight: 0.30
       gates: [visual_landing_success, landing_safety_pass, landed_within_target_zone]
       metrics:
-        horizontal_alignment_error_m: { thresholds: [0.015, 0.060, 0.150, 0.330], weight: 0.15 }
-        final_landing_position_error_m: { thresholds: [0.015, 0.060, 0.150, 0.375], weight: 0.20 }
-        final_descent_trigger_xy_error_m: { thresholds: [0.020, 0.080, 0.180, 0.400], weight: 0.10 }
-        target_acquisition_time_s: { thresholds: [0.3, 1.5, 3.8, 7.5], weight: 0.10 }
-        target_tracking_continuity_rate: { thresholds: [76, 69, 59, 43], weight: 0.15, higher_is_better: true }
-        target_tracking_continuity_rate_exempt_terminal_loss: { thresholds: [82, 74, 62, 45], weight: 0.10, higher_is_better: true }
-        landing_duration_s: { thresholds: [12.0, 20.0, 32.0, 55.0], weight: 0.10 }
-        landed_within_target_zone: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
-        landing_safety_pass: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
+        landing_duration_s: { thresholds: [8.0, 12.0, 22.0, 40.0], weight: 0.25 }
+        final_landing_position_error_m: { thresholds: [0.040, 0.100, 0.180, 0.350], weight: 0.30 }
+        final_descent_trigger_xy_error_m: { thresholds: [0.040, 0.100, 0.180, 0.350], weight: 0.15 }
+        target_tracking_continuity_rate_exempt_terminal_loss: { thresholds: [95.0, 85.0, 70.0, 45.0], weight: 0.10, higher_is_better: true }
+        landing_safety_pass: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.10, higher_is_better: true }
+        visual_landing_success: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.10, higher_is_better: true }
 
   sunray150_lidar:
     hover:
@@ -99,15 +96,12 @@ platform_profiles:
       weight: 0.25
       gates: [visual_landing_success, landing_safety_pass, landed_within_target_zone]
       metrics:
-        horizontal_alignment_error_m: { thresholds: [0.015, 0.060, 0.150, 0.330], weight: 0.15 }
-        final_landing_position_error_m: { thresholds: [0.015, 0.060, 0.150, 0.375], weight: 0.20 }
-        final_descent_trigger_xy_error_m: { thresholds: [0.020, 0.080, 0.180, 0.400], weight: 0.10 }
-        target_acquisition_time_s: { thresholds: [0.3, 1.5, 3.8, 7.5], weight: 0.10 }
-        target_tracking_continuity_rate: { thresholds: [76, 69, 59, 43], weight: 0.15, higher_is_better: true }
-        target_tracking_continuity_rate_exempt_terminal_loss: { thresholds: [82, 74, 62, 45], weight: 0.10, higher_is_better: true }
-        landing_duration_s: { thresholds: [12.0, 20.0, 32.0, 55.0], weight: 0.10 }
-        landed_within_target_zone: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
-        landing_safety_pass: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.05, higher_is_better: true }
+        landing_duration_s: { thresholds: [8.0, 12.0, 22.0, 40.0], weight: 0.25 }
+        final_landing_position_error_m: { thresholds: [0.040, 0.100, 0.180, 0.350], weight: 0.30 }
+        final_descent_trigger_xy_error_m: { thresholds: [0.040, 0.100, 0.180, 0.350], weight: 0.15 }
+        target_tracking_continuity_rate_exempt_terminal_loss: { thresholds: [95.0, 85.0, 70.0, 45.0], weight: 0.10, higher_is_better: true }
+        landing_safety_pass: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.10, higher_is_better: true }
+        visual_landing_success: { thresholds: [1.0, 1.0, 1.0, 0.0], weight: 0.10, higher_is_better: true }
 
 grades:
   - { min: 90, label: 优秀, color: "#17a05d" }

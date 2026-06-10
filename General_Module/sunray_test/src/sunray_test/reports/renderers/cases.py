@@ -32,6 +32,23 @@ def _hardware_metrics_for_display(case: Dict[str, Any]) -> Dict[str, Any]:
         return {}
 
     case_id = str(case.get("id", ""))
+    if case_id.startswith(("front_camera", "down_camera")):
+        return {
+            "topic": metrics.get("topic", "-"),
+            "message_count": metrics.get("message_count", "-"),
+            "rate_hz": _fmt_float(metrics.get("rate_hz")),
+            "max_gap_s": _fmt_float(metrics.get("max_gap_s"), 3),
+            "uniform_frame_count": metrics.get("uniform_frame_count", "-"),
+            "unique_frame_count": metrics.get("unique_frame_count", "-"),
+            "identical_frame_ratio": _fmt_float(metrics.get("identical_frame_ratio"), 3),
+            "black_frame_count": metrics.get("black_frame_count", "-"),
+            "black_frame_ratio": _fmt_float(metrics.get("black_frame_ratio"), 3),
+            "image_mean_min": _fmt_float(metrics.get("image_mean_min")),
+            "image_mean_max": _fmt_float(metrics.get("image_mean_max")),
+            "image_dynamic_range_max": metrics.get("image_dynamic_range_max", "-"),
+            "timestamp_progress": metrics.get("timestamp_progress", "-"),
+        }
+
     if case_id.startswith("lidar_health"):
         imu = metrics.get("imu", {}) if isinstance(metrics.get("imu"), dict) else {}
         lidar = metrics.get("lidar", {}) if isinstance(metrics.get("lidar"), dict) else {}
@@ -55,7 +72,10 @@ def _case_metrics_for_display(case: Dict[str, Any]) -> Dict[str, Any]:
     if case.get("category") == "hardware":
         return _hardware_metrics_for_display(case)
     metrics = case.get("metrics", {})
-    return metrics if isinstance(metrics, dict) else {}
+    if not isinstance(metrics, dict):
+        return {}
+    hidden_keys = {"remaps", "pre_stop_results"}
+    return {key: value for key, value in metrics.items() if key not in hidden_keys}
 
 
 def _pass_score_threshold(grade_thresholds: List[Dict[str, Any]]) -> float:

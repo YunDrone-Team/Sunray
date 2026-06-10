@@ -26,6 +26,8 @@ catkin_install_python(PROGRAMS
   scripts/run_scenario.py
   scripts/generate_report.py
   scripts/vrpn_server_check.py
+  scripts/camera_launch_guard.py
+  scripts/camera_watchdog.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

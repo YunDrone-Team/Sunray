@@ -35,7 +35,7 @@ class LidarHealthCase(BaseCase):
             return None
 
         script_path = os.path.join(context.package_root, "scripts", "livox_mid360_autoconfig.py")
-        iface = str(lidar_config.get("mid360_iface", "eth0"))
+        iface = str(lidar_config.get("mid360_iface", "auto"))
         config_path = os.path.expanduser(
             str(
                 lidar_config.get(

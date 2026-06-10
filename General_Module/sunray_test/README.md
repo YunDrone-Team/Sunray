@@ -202,10 +202,17 @@ source devel/setup.bash
 rosrun sunray_test vrpn_server_check.py
 ```
 
-该脚本会读取并展示以下 launch 中的 server IP，并支持选择修改其中一个或全部：
+该脚本会读取并展示以下 launch 中的 server IP，交互时可用方向键选择单个文件或全部文件，并支持命令行直接修改：
 
 - `General_Module/sunray_uav_control/launch/external_fusion.launch`
 - `General_Module/sunray_uav_control/launch/sunray_vrpn.launch`
+
+如果需要直接写入，可使用：
+
+```bash
+rosrun sunray_test vrpn_server_check.py --server 192.168.xx.xx --yes
+rosrun sunray_test vrpn_server_check.py --target vrpn --server 192.168.xx.xx --yes
+```
 
 雷达款实机常用命令：
 

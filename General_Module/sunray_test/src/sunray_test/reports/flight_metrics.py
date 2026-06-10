@@ -1,4 +1,5 @@
 import ast
+import bisect
 import csv
 import json
 import math
@@ -589,6 +590,209 @@ def _position_from_msg(msg: Any) -> Optional[List[float]]:
     return None
 
 
+def _yaw_from_msg(msg: Any) -> Optional[float]:
+    pose = getattr(msg, "pose", None)
+    if pose is not None and hasattr(pose, "pose"):
+        pose = pose.pose
+    orientation = getattr(pose, "orientation", None)
+    if orientation is not None:
+        x = float(orientation.x)
+        y = float(orientation.y)
+        z = float(orientation.z)
+        w = float(orientation.w)
+        return math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
+
+    attitude = getattr(msg, "attitude", None)
+    if attitude is not None and len(attitude) >= 3:
+        return float(attitude[2])
+    return None
+
+
+def _select_landing_target_topic_from_info(topic_info: Dict[str, Any], payload: Dict[str, Any]) -> Optional[str]:
+    candidates: List[str] = []
+    detection_suffixes = (
+        "/sunray_detect/qrcode_detection_ros",
+        "/sunray_detect/landmark_detection_ros",
+    )
+    for topic in payload.get("artifacts", {}).get("recording_topics", []) or []:
+        if str(topic).endswith(detection_suffixes):
+            candidates.append(str(topic))
+
+    for topic in payload.get("config", {}).get("recording", {}).get("topic_templates", []) or []:
+        if str(topic).endswith(detection_suffixes):
+            candidates.append(str(topic))
+
+    for topic, info in topic_info.items():
+        msg_type = getattr(info, "msg_type", "")
+        if topic.endswith(detection_suffixes) or msg_type in {
+            "sunray_msgs/TargetsInFrameMsg",
+            "detection_msgs/TargetsInFrameMsg",
+        }:
+            candidates.append(topic)
+
+    unique_candidates = []
+    for topic in candidates:
+        if topic in topic_info and topic not in unique_candidates:
+            unique_candidates.append(topic)
+    for topic in unique_candidates:
+        if getattr(topic_info[topic], "message_count", 0) > 0:
+            return topic
+    if unique_candidates:
+        return unique_candidates[0]
+    return None
+
+
+def _target_relative_from_msg(msg: Any) -> Optional[Dict[str, float]]:
+    targets = getattr(msg, "targets", None)
+    if not targets:
+        return None
+
+    target = targets[0]
+    px = float(getattr(target, "px", 0.0))
+    py = float(getattr(target, "py", 0.0))
+    pz = float(getattr(target, "pz", 0.0))
+    if not all(math.isfinite(value) for value in (px, py, pz)):
+        return None
+    if abs(px) > 5.0 or abs(py) > 5.0 or abs(pz) > 5.0:
+        return None
+
+    return {
+        "x_rel_m": px,
+        "y_rel_m": -py,
+        "z_rel_m": -pz,
+        "raw_px_m": px,
+        "raw_py_m": py,
+        "raw_pz_m": pz,
+        "yaw_rel_deg": -float(getattr(target, "yaw", 0.0)),
+    }
+
+
+def _write_target_estimate_csv(csv_path: str, rows: List[Dict[str, float]]) -> None:
+    fields = [
+        "time",
+        "uav_x",
+        "uav_y",
+        "uav_z",
+        "uav_yaw",
+        "target_x",
+        "target_y",
+        "x_rel_m",
+        "y_rel_m",
+        "z_rel_m",
+    ]
+    with open(csv_path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field) for field in fields})
+
+
+def _estimate_landing_target_metrics(
+    pose_rows: List[List[float]],
+    target_rows: List[Dict[str, float]],
+    target_zone_radius_m: float,
+    window_start_time_s: Optional[float],
+) -> Dict[str, Any]:
+    if not target_rows:
+        return {
+            "landing_target_source": "unavailable_in_rosbag",
+            "target_estimates": [],
+        }
+
+    pose_times = [float(row[0]) for row in pose_rows]
+    estimates: List[Dict[str, float]] = []
+    max_sync_delta_s = 0.2
+    for target in target_rows:
+        timestamp = float(target["time"])
+        index = bisect.bisect_left(pose_times, timestamp)
+        candidate_indices = [item for item in (index - 1, index) if 0 <= item < len(pose_rows)]
+        if not candidate_indices:
+            continue
+        nearest_index = min(candidate_indices, key=lambda item: abs(pose_times[item] - timestamp))
+        if abs(pose_times[nearest_index] - timestamp) > max_sync_delta_s:
+            continue
+
+        pose_row = pose_rows[nearest_index]
+        yaw = pose_row[4]
+        if yaw is None:
+            continue
+
+        cos_yaw = math.cos(float(yaw))
+        sin_yaw = math.sin(float(yaw))
+        x_rel = float(target["x_rel_m"])
+        y_rel = float(target["y_rel_m"])
+        target_x = float(pose_row[1]) + cos_yaw * x_rel - sin_yaw * y_rel
+        target_y = float(pose_row[2]) + sin_yaw * x_rel + cos_yaw * y_rel
+        estimates.append(
+            {
+                "time": timestamp,
+                "uav_x": float(pose_row[1]),
+                "uav_y": float(pose_row[2]),
+                "uav_z": float(pose_row[3]),
+                "uav_yaw": float(yaw),
+                "target_x": target_x,
+                "target_y": target_y,
+                "x_rel_m": x_rel,
+                "y_rel_m": y_rel,
+                "z_rel_m": float(target["z_rel_m"]),
+            }
+        )
+
+    if not estimates:
+        return {
+            "landing_target_source": "target_topic_without_synced_pose",
+            "target_estimates": [],
+        }
+
+    import numpy as np
+
+    target_xy = np.asarray([[item["target_x"], item["target_y"]] for item in estimates], dtype=float)
+    center_xy = np.median(target_xy, axis=0)
+    pose_xy = np.asarray([[row[1], row[2]] for row in pose_rows], dtype=float)
+    final_xy = pose_xy[-1]
+    final_error = float(np.linalg.norm(final_xy - center_xy))
+    alignment_errors = np.linalg.norm(pose_xy - center_xy, axis=1)
+    trigger_index_candidates = np.flatnonzero(np.asarray([row[3] for row in pose_rows], dtype=float) <= 0.5)
+    final_descent_trigger_xy_error = None
+    if len(trigger_index_candidates):
+        final_descent_trigger_xy_error = float(alignment_errors[int(trigger_index_candidates[0])])
+
+    first_target_time = float(estimates[0]["time"])
+    last_target_time = float(estimates[-1]["time"])
+    acquired_pose_mask = np.asarray(pose_times, dtype=float) >= first_target_time
+    target_times = [float(item["time"]) for item in estimates]
+    tracked_pose_count = 0
+    total_pose_count = 0
+    for timestamp in np.asarray(pose_times, dtype=float)[acquired_pose_mask]:
+        total_pose_count += 1
+        nearest = bisect.bisect_left(target_times, float(timestamp))
+        candidate_indices = [item for item in (nearest - 1, nearest) if 0 <= item < len(target_times)]
+        if candidate_indices and min(abs(target_times[item] - float(timestamp)) for item in candidate_indices) <= 0.3:
+            tracked_pose_count += 1
+    continuity_rate = float(tracked_pose_count / total_pose_count * 100.0) if total_pose_count else None
+
+    exempt_mask = (np.asarray(pose_times, dtype=float) >= first_target_time) & (np.asarray(pose_times, dtype=float) <= last_target_time)
+    exempt_total = int(np.count_nonzero(exempt_mask))
+    exempt_rate = None
+    if exempt_total:
+        exempt_rate = float(min(100.0, len(estimates) / exempt_total * 100.0))
+
+    window_start = window_start_time_s if window_start_time_s is not None else pose_rows[0][0]
+    return {
+        "landing_target_source": "sunray_detect_body_frame_estimate",
+        "landing_target_center_xy_m": center_xy.tolist(),
+        "final_landing_position_error_m": final_error,
+        "horizontal_alignment_error_m": float(np.percentile(alignment_errors, 95)),
+        "final_descent_trigger_xy_error_m": final_descent_trigger_xy_error,
+        "landed_within_target_zone": final_error <= target_zone_radius_m,
+        "target_acquisition_time_s": first_target_time - float(window_start),
+        "target_tracking_continuity_rate": continuity_rate,
+        "target_tracking_continuity_rate_exempt_terminal_loss": exempt_rate,
+        "target_estimate_count": len(estimates),
+        "target_estimates": estimates,
+    }
+
+
 def _distance_to_goal(row: Any, goal: List[float], use_xy_only: bool) -> float:
     dx = float(row["x"] - goal[0])
     dy = float(row["y"] - goal[1])
@@ -929,6 +1133,88 @@ def _find_case(payload: Dict[str, Any], case_prefixes: tuple) -> Optional[Dict[s
     return None
 
 
+def _estimate_effective_landing_duration(
+    rows: List[List[float]],
+    window_start_time_s: Optional[float],
+    case_duration_s: Optional[float],
+) -> Dict[str, Any]:
+    if len(rows) < 2:
+        return {
+            "duration_s": case_duration_s,
+            "source": "case_window_fallback",
+            "fallback_reason": "insufficient_pose_samples",
+        }
+
+    times = [float(row[0]) for row in rows]
+    altitudes = [float(row[3]) for row in rows]
+    start_z = altitudes[0]
+    final_z = altitudes[-1]
+    total_drop_m = start_z - final_z
+    if total_drop_m <= 0.2:
+        return {
+            "duration_s": case_duration_s,
+            "source": "case_window_fallback",
+            "fallback_reason": "insufficient_vertical_drop",
+        }
+
+    # Detect sustained descent instead of using the roslaunch/case start timestamp.
+    lookahead_s = 1.0
+    min_lookahead_s = 0.5
+    min_descent_rate_mps = 0.02
+    descent_start_index = None
+    for index, timestamp in enumerate(times):
+        lookahead_index = bisect.bisect_left(times, timestamp + lookahead_s)
+        if lookahead_index >= len(times):
+            break
+        elapsed_s = times[lookahead_index] - timestamp
+        if elapsed_s < min_lookahead_s:
+            continue
+        descent_rate_mps = (altitudes[index] - altitudes[lookahead_index]) / elapsed_s
+        if descent_rate_mps >= min_descent_rate_mps:
+            descent_start_index = index
+            break
+
+    if descent_start_index is None:
+        min_drop_for_start_m = max(0.05, total_drop_m * 0.05)
+        for index, altitude in enumerate(altitudes):
+            if start_z - altitude >= min_drop_for_start_m:
+                descent_start_index = index
+                break
+
+    if descent_start_index is None:
+        return {
+            "duration_s": case_duration_s,
+            "source": "case_window_fallback",
+            "fallback_reason": "descent_start_not_detected",
+        }
+
+    terminal_altitude_m = max(final_z + 0.05, 0.10)
+    descent_end_index = len(rows) - 1
+    for index in range(descent_start_index, len(rows)):
+        if altitudes[index] <= terminal_altitude_m:
+            descent_end_index = index
+            break
+
+    if descent_end_index <= descent_start_index:
+        return {
+            "duration_s": case_duration_s,
+            "source": "case_window_fallback",
+            "fallback_reason": "invalid_descent_window",
+        }
+
+    effective_duration_s = float(times[descent_end_index] - times[descent_start_index])
+    window_start = window_start_time_s if window_start_time_s is not None else times[0]
+    return {
+        "duration_s": effective_duration_s,
+        "source": "pose_descent_window",
+        "start_offset_s": float(times[descent_start_index] - window_start),
+        "end_offset_s": float(times[descent_end_index] - window_start),
+        "start_altitude_m": float(altitudes[descent_start_index]),
+        "end_altitude_m": float(altitudes[descent_end_index]),
+        "terminal_altitude_threshold_m": float(terminal_altitude_m),
+    }
+
+
 def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     event_log = payload.get("event_log") or _load_event_log(payload.get("artifacts", {}).get("event_log_jsonl", ""))
     window_info = _find_case_window(event_log, ("visual_landing",))
@@ -962,6 +1248,8 @@ def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Opti
                 "landing_safety_pass": case_result == "pass" and not matched_failure_patterns,
                 "landed_within_target_zone": None,
                 "landing_duration_s": duration_s,
+                "landing_case_duration_s": duration_s,
+                "landing_duration_source": "case_window_fallback",
             }
         },
         "artifacts": {},
@@ -978,8 +1266,12 @@ def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Opti
     import rosbag
 
     rows: List[List[float]] = []
+    target_rows: List[Dict[str, float]] = []
+    target_topic = None
     with rosbag.Bag(bag_path) as bag:
-        pose_topic = _select_pose_topic_from_info(bag.get_type_and_topic_info().topics, payload)
+        topic_info = bag.get_type_and_topic_info().topics
+        pose_topic = _select_pose_topic_from_info(topic_info, payload)
+        target_topic = _select_landing_target_topic_from_info(topic_info, payload)
         if pose_topic is None:
             return _normalize(analysis)
         for _, msg, t in bag.read_messages(topics=[pose_topic]):
@@ -989,7 +1281,17 @@ def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Opti
             position = _position_from_msg(msg)
             if position is None:
                 continue
-            rows.append([timestamp, position[0], position[1], position[2]])
+            yaw = _yaw_from_msg(msg)
+            rows.append([timestamp, position[0], position[1], position[2], yaw])
+        if target_topic:
+            for _, msg, t in bag.read_messages(topics=[target_topic]):
+                timestamp = t.to_sec()
+                if timestamp < window_info["start_time"] or timestamp > window_info["end_time"]:
+                    continue
+                target = _target_relative_from_msg(msg)
+                if target is None:
+                    continue
+                target_rows.append({"time": timestamp, **target})
 
     if len(rows) < 2:
         return _normalize(analysis)
@@ -1002,19 +1304,45 @@ def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Opti
     valid_dt = dt > 0.005
     speeds = np.linalg.norm(delta[valid_dt], axis=1) / dt[valid_dt] if np.any(valid_dt) else np.asarray([], dtype=float)
     horizontal_travel = float(np.linalg.norm(np.diff(pos[:, :2], axis=0), axis=1).sum()) if len(pos) > 1 else 0.0
+    landing_start_xy = pos[0, :2]
+    landing_end_xy = pos[-1, :2]
+    start_to_end_xy_displacement = float(np.linalg.norm(landing_end_xy - landing_start_xy))
     z_drop = float(pos[0, 2] - pos[-1, 2])
-    touchdown_xy_offset = float(np.linalg.norm(pos[-1, :2] - pos[0, :2]))
-    horizontal_alignment_error = touchdown_xy_offset
-    final_descent_trigger_xy_error = touchdown_xy_offset
-    if len(pos) > 1:
-        descent_trigger_indices = np.flatnonzero(pos[:, 2] <= 0.5)
-        if len(descent_trigger_indices):
-            trigger_pos = pos[int(descent_trigger_indices[0]), :2]
-            final_descent_trigger_xy_error = float(np.linalg.norm(trigger_pos - pos[0, :2]))
-    landed_within_target_zone = touchdown_xy_offset <= target_zone_radius_m
-    target_acquisition_time_s = 0.0 if case_result == "pass" else None
-    target_tracking_continuity_rate = 100.0 if case_result == "pass" and not matched_failure_patterns else 0.0
+    effective_duration = _estimate_effective_landing_duration(
+        rows,
+        window_info["start_time"] if window_info else None,
+        duration_s,
+    )
+    landing_target_center_xy = None
+    touchdown_xy_offset = None
+    horizontal_alignment_error = None
+    final_descent_trigger_xy_error = None
+    landed_within_target_zone = None
+    target_acquisition_time_s = None
+    target_tracking_continuity_rate = None
+    target_tracking_continuity_rate_exempt_terminal_loss = None
+    target_estimate_count = 0
     descent_stability_level = "excellent"
+    target_metrics = _estimate_landing_target_metrics(
+        rows,
+        sorted(target_rows, key=lambda row: row["time"]),
+        target_zone_radius_m,
+        window_info["start_time"] if window_info else None,
+    )
+    if target_topic and not target_rows:
+        target_metrics["landing_target_source"] = "target_topic_without_valid_detections"
+    if target_metrics.get("landing_target_center_xy_m") is not None:
+        landing_target_center_xy = target_metrics.get("landing_target_center_xy_m")
+        touchdown_xy_offset = target_metrics.get("final_landing_position_error_m")
+        horizontal_alignment_error = target_metrics.get("horizontal_alignment_error_m")
+        final_descent_trigger_xy_error = target_metrics.get("final_descent_trigger_xy_error_m")
+        landed_within_target_zone = target_metrics.get("landed_within_target_zone")
+        target_acquisition_time_s = target_metrics.get("target_acquisition_time_s")
+        target_tracking_continuity_rate = target_metrics.get("target_tracking_continuity_rate")
+        target_tracking_continuity_rate_exempt_terminal_loss = target_metrics.get(
+            "target_tracking_continuity_rate_exempt_terminal_loss"
+        )
+        target_estimate_count = int(target_metrics.get("target_estimate_count") or 0)
     if len(speeds):
         speed_p95 = float(np.percentile(speeds, 95))
         if speed_p95 > 0.6 or horizontal_travel > 0.6:
@@ -1026,18 +1354,45 @@ def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Opti
     os.makedirs(csv_dir, exist_ok=True)
     pose_csv = os.path.join(csv_dir, "visual_landing_pose.csv")
     _write_xyz_csv(pose_csv, rows)
+    target_estimates = target_metrics.get("target_estimates") or []
+    if target_estimates:
+        target_csv = os.path.join(csv_dir, "visual_landing_target_estimate.csv")
+        _write_target_estimate_csv(target_csv, target_estimates)
+        analysis["artifacts"]["target_estimate_csv"] = os.path.relpath(target_csv, run_dir)
 
     analysis["pose_topic"] = pose_topic
+    analysis["target_topic"] = target_topic
     analysis["artifacts"]["pose_window_csv"] = os.path.relpath(pose_csv, run_dir)
+    analysis["metrics_by_category"]["completion"].update(
+        {
+            "landing_duration_s": effective_duration.get("duration_s"),
+            "landing_case_duration_s": duration_s,
+            "landing_duration_source": effective_duration.get("source"),
+            "landing_duration_fallback_reason": effective_duration.get("fallback_reason"),
+            "landing_effective_start_offset_s": effective_duration.get("start_offset_s"),
+            "landing_effective_end_offset_s": effective_duration.get("end_offset_s"),
+            "landing_effective_start_altitude_m": effective_duration.get("start_altitude_m"),
+            "landing_effective_end_altitude_m": effective_duration.get("end_altitude_m"),
+            "landing_terminal_altitude_threshold_m": effective_duration.get("terminal_altitude_threshold_m"),
+        }
+    )
     analysis["metrics_by_category"]["trajectory"] = {
         "horizontal_alignment_error_m": horizontal_alignment_error,
         "final_landing_position_error_m": touchdown_xy_offset,
         "landing_target_zone_radius_m": target_zone_radius_m,
-        "landing_target_center_xy_m": [0.0, 0.0],
+        "landing_target_center_xy_m": landing_target_center_xy,
+        "landing_target_source": target_metrics.get("landing_target_source"),
+        "landing_target_estimate_count": target_estimate_count,
+        "landing_start_xy_m": landing_start_xy.tolist(),
+        "landing_end_xy_m": landing_end_xy.tolist(),
+        "landing_start_to_end_xy_displacement_m": start_to_end_xy_displacement,
+        "horizontal_travel_m": horizontal_travel,
+        "landing_vertical_drop_m": z_drop,
+        "landing_final_altitude_m": float(pos[-1, 2]),
         "final_descent_trigger_xy_error_m": final_descent_trigger_xy_error,
         "target_acquisition_time_s": target_acquisition_time_s,
         "target_tracking_continuity_rate": target_tracking_continuity_rate,
-        "target_tracking_continuity_rate_exempt_terminal_loss": target_tracking_continuity_rate,
+        "target_tracking_continuity_rate_exempt_terminal_loss": target_tracking_continuity_rate_exempt_terminal_loss,
         "descent_stability_level": descent_stability_level,
     }
     analysis["metrics_by_category"]["completion"]["landed_within_target_zone"] = landed_within_target_zone
@@ -1047,6 +1402,19 @@ def _load_builtin_landing_metrics(run_dir: str, payload: Dict[str, Any]) -> Opti
         and float(pos[-1, 2]) <= 0.25
         and z_drop > 0.5
     )
+    if target_metrics.get("landing_target_center_xy_m") is None:
+        if target_metrics.get("landing_target_source") == "target_topic_without_valid_detections":
+            analysis["limitations"].append(
+                "已记录视觉检测话题，但视觉降落窗口内没有有效 targets，最终落点相对目标误差无法计算。"
+            )
+        elif target_metrics.get("landing_target_source") == "target_topic_without_synced_pose":
+            analysis["limitations"].append(
+                "已记录视觉检测话题，但检测消息无法与无人机位姿时间同步，最终落点相对目标误差无法计算。"
+            )
+        else:
+            analysis["limitations"].append(
+                "未记录视觉目标在世界坐标中的位置，最终落点相对目标误差无法计算；起终点水平位移仅作为诊断项，不参与落点精度评分。"
+            )
     return _normalize(analysis)
 
 

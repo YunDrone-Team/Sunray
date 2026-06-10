@@ -179,6 +179,14 @@ def _validate_defaults(defaults: Any, path: str) -> None:
     defaults_dict = _ensure_dict(defaults, path)
     numeric_keys = {
         "hardware_check_timeout_s",
+        "camera_sample_duration_s",
+        "camera_min_messages",
+        "camera_min_rate_hz",
+        "camera_max_gap_s",
+        "camera_max_identical_frame_ratio",
+        "camera_black_mean_threshold",
+        "camera_black_dynamic_range_threshold",
+        "camera_max_black_frame_ratio",
         "battery_pass_threshold_v",
         "takeoff_reach_radius_m",
         "takeoff_stable_time_s",
@@ -198,6 +206,13 @@ def _validate_defaults(defaults: Any, path: str) -> None:
         "ego_goal_republish_rate_hz",
         "ego_goal_publish_burst_count",
         "ego_goal_publish_burst_interval_s",
+        "ego_keepalive_rate_hz",
+        "ego_keepalive_stale_timeout_s",
+        "ego_keepalive_zero_velocity_epsilon",
+        "ego_post_transition_target_yaw_rad",
+        "ego_post_transition_yaw_rate_rad_s",
+        "ego_post_transition_hold_after_s",
+        "ego_post_transition_target_z_m",
         "visual_landing_height_m",
         "visual_landing_target_zone_radius_m",
     }
@@ -238,6 +253,41 @@ def _validate_defaults(defaults: Any, path: str) -> None:
         _ensure_bool(defaults_dict["waypoint_analysis_use_xy_only"], f"{path}.waypoint_analysis_use_xy_only")
     if "ego_goal_use_xy_only" in defaults_dict:
         _ensure_bool(defaults_dict["ego_goal_use_xy_only"], f"{path}.ego_goal_use_xy_only")
+    if "ego_keepalive_enabled" in defaults_dict:
+        _ensure_bool(defaults_dict["ego_keepalive_enabled"], f"{path}.ego_keepalive_enabled")
+    if "ego_post_transition_enabled" in defaults_dict:
+        _ensure_bool(defaults_dict["ego_post_transition_enabled"], f"{path}.ego_post_transition_enabled")
+    if "ego_post_transition_yaw_rate_rad_s" in defaults_dict:
+        value = _ensure_number(defaults_dict["ego_post_transition_yaw_rate_rad_s"], f"{path}.ego_post_transition_yaw_rate_rad_s")
+        _ensure(value > 0, f"{path}.ego_post_transition_yaw_rate_rad_s must be positive")
+    if "ego_post_transition_hold_after_s" in defaults_dict:
+        value = _ensure_number(defaults_dict["ego_post_transition_hold_after_s"], f"{path}.ego_post_transition_hold_after_s")
+        _ensure(value >= 0, f"{path}.ego_post_transition_hold_after_s must be non-negative")
+    if "camera_min_messages" in defaults_dict:
+        value = _ensure_number(defaults_dict["camera_min_messages"], f"{path}.camera_min_messages")
+        _ensure(value >= 1 and float(value).is_integer(), f"{path}.camera_min_messages must be a positive integer")
+    for positive_key in ("camera_sample_duration_s", "camera_min_rate_hz", "camera_max_gap_s"):
+        if positive_key in defaults_dict:
+            value = _ensure_number(defaults_dict[positive_key], f"{path}.{positive_key}")
+            _ensure(value > 0, f"{path}.{positive_key} must be positive")
+    if "camera_max_identical_frame_ratio" in defaults_dict:
+        value = _ensure_number(defaults_dict["camera_max_identical_frame_ratio"], f"{path}.camera_max_identical_frame_ratio")
+        _ensure(0.0 <= value <= 1.0, f"{path}.camera_max_identical_frame_ratio must be in [0, 1]")
+    if "camera_black_mean_threshold" in defaults_dict:
+        value = _ensure_number(defaults_dict["camera_black_mean_threshold"], f"{path}.camera_black_mean_threshold")
+        _ensure(value >= 0, f"{path}.camera_black_mean_threshold must be non-negative")
+    if "camera_black_dynamic_range_threshold" in defaults_dict:
+        value = _ensure_number(
+            defaults_dict["camera_black_dynamic_range_threshold"],
+            f"{path}.camera_black_dynamic_range_threshold",
+        )
+        _ensure(value >= 0, f"{path}.camera_black_dynamic_range_threshold must be non-negative")
+    if "camera_max_black_frame_ratio" in defaults_dict:
+        value = _ensure_number(defaults_dict["camera_max_black_frame_ratio"], f"{path}.camera_max_black_frame_ratio")
+        _ensure(0.0 <= value <= 1.0, f"{path}.camera_max_black_frame_ratio must be in [0, 1]")
+    for bool_key in ("camera_require_timestamp_progress", "camera_require_frame_content_change"):
+        if bool_key in defaults_dict:
+            _ensure_bool(defaults_dict[bool_key], f"{path}.{bool_key}")
 
 
 def _validate_topics(topics: Any, path: str, allow_empty_values: bool) -> None:
@@ -404,10 +454,27 @@ def _validate_suite_step(
 
     if case_type == "hardware.camera_alive":
         _ensure("topic_key" in params, f"{path}.params.topic_key is required for hardware.camera_alive")
-        if "timeout_s" in params:
-            _ensure_number(params["timeout_s"], f"{path}.params.timeout_s")
+        for number_key in (
+            "timeout_s",
+            "sample_duration_s",
+            "min_rate_hz",
+            "max_gap_s",
+            "max_identical_frame_ratio",
+            "black_mean_threshold",
+            "black_dynamic_range_threshold",
+            "max_black_frame_ratio",
+        ):
+            if number_key in params:
+                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        if "min_messages" in params:
+            value = _ensure_number(params["min_messages"], f"{path}.params.min_messages")
+            _ensure(value >= 0 and float(value).is_integer(), f"{path}.params.min_messages must be a non-negative integer")
         if "require_non_uniform_frame" in params:
             _ensure_bool(params["require_non_uniform_frame"], f"{path}.params.require_non_uniform_frame")
+        if "require_timestamp_progress" in params:
+            _ensure_bool(params["require_timestamp_progress"], f"{path}.params.require_timestamp_progress")
+        if "require_frame_content_change" in params:
+            _ensure_bool(params["require_frame_content_change"], f"{path}.params.require_frame_content_change")
         if "device_path" in params:
             _ensure_string(params["device_path"], f"{path}.params.device_path")
     elif case_type == "hardware.battery_voltage":
@@ -452,7 +519,7 @@ def _validate_suite_step(
             _ensure_ego_goal_list(mission, f"merged.missions.{mission_key}")
         else:
             raise ConfigValidationError(f"merged.missions.{mission_key} must be a mapping or goal list")
-        for string_key in ("goal_topic", "frame_id"):
+        for string_key in ("goal_topic", "frame_id", "goal_source", "pos_cmd_topic", "control_cmd_topic"):
             if string_key in params:
                 _ensure_string(params[string_key], f"{path}.params.{string_key}")
         for number_key in (
@@ -464,6 +531,13 @@ def _validate_suite_step(
             "republish_rate_hz",
             "publish_burst_count",
             "publish_burst_interval_s",
+            "keepalive_rate_hz",
+            "keepalive_stale_timeout_s",
+            "keepalive_zero_velocity_epsilon",
+            "post_transition_target_yaw_rad",
+            "post_transition_yaw_rate_rad_s",
+            "post_transition_hold_after_s",
+            "post_transition_target_z_m",
         ):
             if number_key in params:
                 _ensure_number(params[number_key], f"{path}.params.{number_key}")
@@ -475,6 +549,9 @@ def _validate_suite_step(
             _ensure(value >= 0, f"{path}.params.publish_burst_interval_s must be non-negative")
         if "use_xy_only" in params:
             _ensure_bool(params["use_xy_only"], f"{path}.params.use_xy_only")
+        for bool_key in ("keepalive_enabled", "post_transition_enabled"):
+            if bool_key in params:
+                _ensure_bool(params[bool_key], f"{path}.params.{bool_key}")
     elif case_type == "flight.visual_landing":
         if "launch_file" in params:
             _ensure_string(params["launch_file"], f"{path}.params.launch_file")
@@ -487,6 +564,15 @@ def _validate_suite_step(
             for key, value in launch_args.items():
                 _ensure_string(key, f"{path}.params.launch_args.{key}")
                 _ensure(isinstance(value, (str, int, float, bool)), f"{path}.params.launch_args.{key} must be a scalar")
+        if "remaps" in params:
+            remaps = _ensure_list(params["remaps"], f"{path}.params.remaps")
+            for index, remap in enumerate(remaps):
+                remap_path = f"{path}.params.remaps[{index}]"
+                remap_dict = _ensure_dict(remap, remap_path)
+                _ensure("from" in remap_dict, f"{remap_path}.from is required")
+                _ensure("to" in remap_dict, f"{remap_path}.to is required")
+                _ensure_string(remap_dict["from"], f"{remap_path}.from")
+                _ensure_string(remap_dict["to"], f"{remap_path}.to")
         if "failure_patterns" in params:
             for index, pattern in enumerate(_ensure_list(params["failure_patterns"], f"{path}.params.failure_patterns")):
                 _ensure_string(pattern, f"{path}.params.failure_patterns[{index}]")

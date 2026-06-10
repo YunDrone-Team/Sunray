@@ -22,6 +22,31 @@ CASE_ID_TO_SECTION = {
     "visual_landing": "visual_landing",
 }
 
+CASE_NAME_TO_SECTION = {
+    "悬停": "hover",
+    "指点飞行": "waypoint",
+    "航点飞行": "waypoint",
+    "EGO-Planner自主规划": "ego_goal",
+    "EGO自主规划": "ego_goal",
+    "视觉降落": "visual_landing",
+}
+
+
+def _case_section_key(case: Dict[str, Any]) -> Optional[str]:
+    case_id = str(case.get("id") or case.get("case_id") or "").strip()
+    if case_id:
+        for prefix, key in CASE_ID_TO_SECTION.items():
+            if case_id == prefix or case_id.startswith(prefix):
+                return key
+
+    case_name = str(case.get("name", "")).strip()
+    if case_name in CASE_NAME_TO_SECTION:
+        return CASE_NAME_TO_SECTION[case_name]
+    case_type = str(case.get("type", "")).strip()
+    if case_type.startswith("flight."):
+        return CASE_ID_TO_SECTION.get(case_type.split(".", 1)[1])
+    return None
+
 
 def _normalize(value: Any) -> Any:
     if isinstance(value, dict):
@@ -99,9 +124,9 @@ def _lerp(a: float, b: float, t: float) -> float:
 
 
 def _score_single_metric(value: Any, thresholds: List[float], higher_is_better: bool = False) -> Optional[float]:
-    if value is None or not isinstance(value, (int, float)) or isinstance(value, bool):
+    if value is None or not isinstance(value, (int, float, bool)):
         return None
-    v = float(value)
+    v = 1.0 if value is True else 0.0 if value is False else float(value)
     t100, t75, t60, t0 = [float(t) for t in thresholds]
     if higher_is_better:
         if v >= t100:
@@ -146,12 +171,44 @@ def _collect_flat_metrics(section: Dict[str, Any]) -> Dict[str, Any]:
     return flat
 
 
-def _check_gates(flat_metrics: Dict[str, Any], gates: List[str]) -> bool:
+def _failed_gates(flat_metrics: Dict[str, Any], gates: List[str]) -> List[str]:
+    failed = []
     for gate_key in gates:
-        val = flat_metrics.get(gate_key)
-        if val is None or val is False:
-            return False
-    return True
+        value = flat_metrics.get(gate_key)
+        if value is None or value is False:
+            failed.append(gate_key)
+        elif isinstance(value, (int, float)) and not isinstance(value, bool) and float(value) <= 0:
+            failed.append(gate_key)
+    return failed
+
+
+def _score_configured_metric(metric_key: str, value: Any, cfg: Dict[str, Any]) -> Tuple[float, float, Dict[str, Any]]:
+    thresholds = cfg.get("thresholds", [])
+    if len(thresholds) != 4:
+        raise ValueError(f"invalid scoring thresholds for {metric_key}: expected four values")
+
+    weight = float(cfg.get("weight", 0))
+    score = _score_single_metric(value, thresholds, cfg.get("higher_is_better", False))
+    if score is None:
+        detail = {"value": value, "score": 0.0}
+        detail["reason"] = "missing_metric" if value is None else "invalid_metric_value"
+        return 0.0, weight, detail
+    return score, weight, {"value": value, "score": round(score, 1)}
+
+
+def _score_metric_set(flat_metrics: Dict[str, Any], metric_configs: Dict[str, Any]) -> Tuple[Optional[float], Dict[str, Any]]:
+    weighted_sum = 0.0
+    total_weight = 0.0
+    details: Dict[str, Any] = {}
+    for metric_key, cfg in metric_configs.items():
+        score, weight, detail = _score_configured_metric(metric_key, flat_metrics.get(metric_key), cfg)
+        details[metric_key] = detail
+        if weight > 0:
+            weighted_sum += score * weight
+            total_weight += weight
+
+    section_score = round(weighted_sum / total_weight, 1) if total_weight > 0 else None
+    return section_score, details
 
 
 def _score_section(section: Dict[str, Any], section_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -160,27 +217,13 @@ def _score_section(section: Dict[str, Any], section_config: Dict[str, Any]) -> D
     metric_configs = section_config.get("metrics", {})
     details: Dict[str, Any] = {}
 
-    if gates and not _check_gates(flat, gates):
+    failed_gates = _failed_gates(flat, gates)
+    if failed_gates:
         for metric_key in metric_configs:
-            details[metric_key] = {"value": flat.get(metric_key), "score": 0.0}
-        return {"score": 0.0, "gate_failed": True, "details": details}
+            details[metric_key] = {"value": flat.get(metric_key), "score": 0.0, "reason": "gate_failed"}
+        return {"score": 0.0, "gate_failed": True, "failed_gates": failed_gates, "details": details}
 
-    weighted_sum = 0.0
-    total_weight = 0.0
-    for metric_key, cfg in metric_configs.items():
-        value = flat.get(metric_key)
-        thresholds = cfg.get("thresholds", [])
-        higher_is_better = cfg.get("higher_is_better", False)
-        weight = float(cfg.get("weight", 0))
-        score = _score_single_metric(value, thresholds, higher_is_better)
-        if score is not None:
-            weighted_sum += score * weight
-            total_weight += weight
-            details[metric_key] = {"value": value, "score": round(score, 1)}
-        else:
-            details[metric_key] = {"value": value, "score": None}
-
-    section_score = round(weighted_sum / total_weight, 1) if total_weight > 0 else None
+    section_score, details = _score_metric_set(flat, metric_configs)
     return {"score": section_score, "gate_failed": False, "details": details}
 
 
@@ -202,41 +245,35 @@ def _score_waypoint_section(section: Dict[str, Any], section_config: Dict[str, A
     }
     waypoint_scores: List[Dict[str, Any]] = []
 
-    if section_gates and not _check_gates(flat, section_gates):
+    failed_section_gates = _failed_gates(flat, section_gates)
+    if failed_section_gates:
         details = {
-            metric_key: {"value": flat.get(metric_key), "score": 0.0}
+            metric_key: {"value": flat.get(metric_key), "score": 0.0, "reason": "gate_failed"}
             for metric_key in metric_configs
         }
         return {
             "score": 0.0,
             "gate_failed": True,
+            "failed_gates": failed_section_gates,
             "details": details,
             "waypoint_scores": [],
         }
 
     for waypoint_data in waypoints:
         waypoint_metrics = waypoint_data.get("metrics", {})
-        if waypoint_gates and not _check_gates(waypoint_metrics, waypoint_gates):
-            waypoint_scores.append({"score": 0.0, "gate_failed": True, "waypoint": waypoint_data.get("waypoint")})
+        failed_waypoint_gates = _failed_gates(waypoint_metrics, waypoint_gates)
+        if failed_waypoint_gates:
+            waypoint_scores.append(
+                {
+                    "score": 0.0,
+                    "gate_failed": True,
+                    "failed_gates": failed_waypoint_gates,
+                    "waypoint": waypoint_data.get("waypoint"),
+                }
+            )
             continue
 
-        weighted_sum = 0.0
-        total_weight = 0.0
-        details: Dict[str, Any] = {}
-        for metric_key, cfg in waypoint_metric_configs.items():
-            value = waypoint_metrics.get(metric_key)
-            thresholds = cfg.get("thresholds", [])
-            higher_is_better = cfg.get("higher_is_better", False)
-            weight = float(cfg.get("weight", 0))
-            score = _score_single_metric(value, thresholds, higher_is_better)
-            if score is not None:
-                weighted_sum += score * weight
-                total_weight += weight
-                details[metric_key] = {"value": value, "score": round(score, 1)}
-            else:
-                details[metric_key] = {"value": value, "score": None}
-
-        waypoint_score = round(weighted_sum / total_weight, 1) if total_weight > 0 else None
+        waypoint_score, details = _score_metric_set(waypoint_metrics, waypoint_metric_configs)
         waypoint_scores.append(
             {
                 "score": waypoint_score,
@@ -296,12 +333,10 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
     case_result_by_section: Dict[str, str] = {}
 
     for case in cases:
-        case_id = str(case.get("id", ""))
         result = str(case.get("result", "")).strip().lower()
-        for prefix, key in CASE_ID_TO_SECTION.items():
-            if case_id == prefix or case_id.startswith(prefix):
-                case_result_by_section[key] = result
-                break
+        config_key = _case_section_key(case)
+        if config_key:
+            case_result_by_section[config_key] = result
 
     planned_scored_sections: List[str] = []
     for key in ("hover", "waypoint", "ego_goal", "visual_landing"):
@@ -333,14 +368,14 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
         score_entry = scores.get(config_key)
         if not isinstance(score_entry, dict):
             case_result = case_result_by_section.get(config_key, "")
-            if case_result == "pass":
-                continue
             score_entry = {
                 "score": 0.0,
                 "gate_failed": True,
                 "details": {},
-                "forced_by_case_result": case_result or "fail",
+                "reason": "missing_metrics_section",
             }
+            if case_result and case_result != "pass":
+                score_entry["forced_by_case_result"] = case_result
             label, color = _grade_for_score(score_entry["score"], grade_config)
             score_entry["grade"] = label
             score_entry["grade_color"] = color
@@ -367,12 +402,7 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
         if case.get("category") == "hardware":
             case.pop("score", None)
             continue
-        case_id = str(case.get("id", ""))
-        config_key = None
-        for prefix, key in CASE_ID_TO_SECTION.items():
-            if case_id == prefix or case_id.startswith(prefix):
-                config_key = key
-                break
+        config_key = _case_section_key(case)
         if config_key and config_key in scores and isinstance(scores[config_key], dict):
             if str(case.get("result", "")).strip().lower() == "pass":
                 case["score"] = scores[config_key].get("score")

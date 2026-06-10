@@ -238,7 +238,7 @@ def _run_mid360_ip_check(args, platform_name: str) -> None:
     if lidar_config and not bool(lidar_config.get("mid360_auto_check", False)):
         return
 
-    iface = args.mid360_iface.strip() or str(lidar_config.get("mid360_iface", "eth0"))
+    iface = args.mid360_iface.strip() or str(lidar_config.get("mid360_iface", "auto"))
     config_path = os.path.expanduser(
         args.mid360_config.strip()
         or str(

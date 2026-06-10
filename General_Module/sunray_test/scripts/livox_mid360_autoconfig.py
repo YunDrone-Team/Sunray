@@ -14,10 +14,13 @@ import ipaddress
 import json
 import os
 import re
+import select
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,6 +28,8 @@ from pathlib import Path
 DISCOVERY_PORT = 56000
 LIVOX_MAC_PREFIXES = ("8c:58:23",)
 MIN_ACTIVE_SCAN_LIDAR_SCORE = 100
+LIDAR_SEARCH_NETWORK = ipaddress.ip_network("192.168.1.0/24")
+RAW_ARP_PROBE_SOURCE_IPS = ("192.168.1.250", "192.168.1.251")
 SDK_QUERY_CACHE = Path.home() / ".cache/sunray_test/livox_sdk_sn_query"
 
 
@@ -220,14 +225,6 @@ def iface_ipv4(iface: str) -> str | None:
     return match.group(1) if match else None
 
 
-def iface_ipv4_info(iface: str) -> tuple[str | None, int | None]:
-    output = run_text(["ip", "-4", "-o", "addr", "show", "dev", iface])
-    match = re.search(r"\binet\s+(\d+\.\d+\.\d+\.\d+)/(\d+)", output)
-    if not match:
-        return None, None
-    return match.group(1), int(match.group(2))
-
-
 def list_ipv4_interfaces() -> list[tuple[str, str, int]]:
     output = run_text(["ip", "-4", "-o", "addr", "show"])
     interfaces: list[tuple[str, str, int]] = []
@@ -242,6 +239,27 @@ def list_ipv4_interfaces() -> list[tuple[str, str, int]]:
     return interfaces
 
 
+def list_ethernet_interfaces() -> list[str]:
+    output = run_text(["ip", "-br", "link"])
+    interfaces: list[str] = []
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) < 3:
+            continue
+        iface, state = parts[0], parts[1]
+        flags = " ".join(parts[3:])
+        if "@" in iface:
+            iface = iface.split("@", 1)[0]
+        if iface == "lo" or iface.startswith(("docker", "veth", "br-", "virbr")):
+            continue
+        if not iface.startswith(("eth", "en", "eno", "ens", "enp", "enx")):
+            continue
+        if state != "UP" and "LOWER_UP" not in flags:
+            continue
+        interfaces.append(iface)
+    return interfaces
+
+
 def candidate_ifaces(requested_iface: str, config_paths: list[Path]) -> list[str]:
     if requested_iface.strip().lower() != "auto":
         return [requested_iface]
@@ -249,6 +267,8 @@ def candidate_ifaces(requested_iface: str, config_paths: list[Path]) -> list[str
     configured_ips = [read_config_lidar_ip(path) for path in config_paths]
     configured_ips = [ip for ip in configured_ips if ip]
     interfaces = list_ipv4_interfaces()
+    ethernet_interfaces = list_ethernet_interfaces()
+    ipv4_iface_names = {iface for iface, _, _ in interfaces}
     candidates: list[str] = []
 
     for configured_ip in configured_ips:
@@ -261,12 +281,13 @@ def candidate_ifaces(requested_iface: str, config_paths: list[Path]) -> list[str
             if lidar_addr in network and iface not in candidates:
                 candidates.append(iface)
 
-    ethernet_like = [
-        iface
-        for iface, _, _ in interfaces
-        if iface.startswith(("eth", "en", "eno", "ens", "enp"))
-    ]
-    for iface in ethernet_like:
+    for iface, host_ip, _ in interfaces:
+        if iface in ethernet_interfaces and ip_in_lidar_search_network(host_ip) and iface not in candidates:
+            candidates.append(iface)
+    for iface in [iface for iface in ethernet_interfaces if iface not in ipv4_iface_names]:
+        if iface not in candidates:
+            candidates.append(iface)
+    for iface in ethernet_interfaces:
         if iface not in candidates:
             candidates.append(iface)
     for iface, _, _ in interfaces:
@@ -282,6 +303,13 @@ def verbose_print(enabled: bool, message: str) -> None:
 
 def progress(message: str) -> None:
     print(f"[scan] {message}", flush=True)
+
+
+def ip_in_lidar_search_network(ip: str) -> bool:
+    try:
+        return ipaddress.ip_address(ip) in LIDAR_SEARCH_NETWORK
+    except ValueError:
+        return False
 
 
 def parse_ascii_from_hex_dump(lines: list[str], verbose: bool = False) -> str | None:
@@ -383,6 +411,9 @@ def parse_tcpdump(output: str, iface: str, verbose: bool = False) -> Discovery:
                 if packet_source_ip == result.iface_ip:
                     verbose_print(verbose, f"ignore host discovery packet: source_ip={packet_source_ip}, line={line}")
                     continue
+                if not ip_in_lidar_search_network(packet_source_ip):
+                    verbose_print(verbose, f"ignore discovery packet outside {LIDAR_SEARCH_NETWORK}: {line}")
+                    continue
                 result.lidar_ip = packet_source_ip
                 result.method = "livox_discovery"
                 result.raw_packets += 1
@@ -395,6 +426,9 @@ def parse_tcpdump(output: str, iface: str, verbose: bool = False) -> Discovery:
             if match:
                 host_ip, lidar_ip = match.groups()
                 verbose_print(verbose, f"ARP request: lidar_ip={lidar_ip}, requested_host_ip={host_ip}")
+                if not ip_in_lidar_search_network(lidar_ip):
+                    verbose_print(verbose, f"ignore ARP sender outside {LIDAR_SEARCH_NETWORK}: {line}")
+                    continue
                 if result.lidar_ip is None or result.lidar_ip == lidar_ip:
                     result.lidar_ip = lidar_ip
                     result.requested_host_ip = host_ip
@@ -442,18 +476,133 @@ def sniff(iface: str, timeout_sec: float, sudo: bool, verbose: bool = False) -> 
     return parse_tcpdump(output, iface, verbose=verbose)
 
 
-def _scan_network_for_iface(iface: str) -> ipaddress.IPv4Network | None:
-    host_ip, prefix = iface_ipv4_info(iface)
-    if not host_ip or prefix is None:
-        return None
-    network = ipaddress.ip_network(f"{host_ip}/{prefix}", strict=False)
-    if network.num_addresses > 256:
-        network = ipaddress.ip_network(f"{host_ip}/24", strict=False)
-    return network
-
-
 def _ping_once(iface: str, ip: str) -> None:
     run_text(["timeout", "0.8", "ping", "-I", iface, "-c", "1", "-W", "1", ip], timeout=1.2)
+
+
+def iface_mac(iface: str) -> str | None:
+    path = Path("/sys/class/net") / iface / "address"
+    try:
+        mac = path.read_text(encoding="utf-8").strip().lower()
+    except OSError:
+        return None
+    return mac if re.fullmatch(r"[0-9a-f]{2}(:[0-9a-f]{2}){5}", mac) else None
+
+
+def _mac_bytes(mac: str) -> bytes:
+    return bytes(int(part, 16) for part in mac.split(":"))
+
+
+def _raw_arp_request(src_mac: bytes, source_ip: str, target_ip: str) -> bytes:
+    return b"".join(
+        [
+            b"\xff\xff\xff\xff\xff\xff",
+            src_mac,
+            b"\x08\x06",
+            b"\x00\x01",
+            b"\x08\x00",
+            b"\x06",
+            b"\x04",
+            b"\x00\x01",
+            src_mac,
+            socket.inet_aton(source_ip),
+            b"\x00\x00\x00\x00\x00\x00",
+            socket.inet_aton(target_ip),
+        ]
+    )
+
+
+def raw_arp_scan_via_sudo(iface: str, verbose: bool = False) -> list[dict[str, object]]:
+    command = ["sudo"]
+    if not sys.stdin.isatty():
+        command.append("-n")
+    command.extend(
+        [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--raw-arp-helper",
+            iface,
+        ]
+    )
+    if verbose:
+        command.append("--verbose")
+    output = run_text(command, timeout=8.0)
+    verbose_print(verbose, f"sudo raw ARP helper output: {output.strip() or 'N/A'}")
+    result_prefix = "RAW_ARP_RESULTS "
+    for line in output.splitlines():
+        if not line.startswith(result_prefix):
+            continue
+        try:
+            entries = json.loads(line[len(result_prefix) :])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(entries, list):
+            return [entry for entry in entries if isinstance(entry, dict)]
+    progress("raw ARP scan skipped: run this script with sudo, or grant CAP_NET_RAW, to scan without changing interface IP")
+    return []
+
+
+def raw_arp_scan(iface: str, sudo: bool, verbose: bool = False) -> list[dict[str, object]]:
+    mac = iface_mac(iface)
+    if not mac:
+        verbose_print(verbose, f"raw ARP scan skipped: no MAC for iface={iface}")
+        return []
+    src_mac = _mac_bytes(mac)
+    targets = [str(ip) for ip in LIDAR_SEARCH_NETWORK.hosts()]
+    responses: dict[str, dict[str, object]] = {}
+
+    try:
+        sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(0x0806))
+    except PermissionError:
+        if sudo and hasattr(os, "geteuid") and os.geteuid() != 0:
+            return raw_arp_scan_via_sudo(iface, verbose=verbose)
+        progress("raw ARP scan skipped: root or CAP_NET_RAW is required to scan without changing interface IP")
+        return []
+    except OSError as exc:
+        verbose_print(verbose, f"raw ARP scan skipped: open socket failed: {exc}")
+        return []
+
+    try:
+        sock.bind((iface, 0))
+        sock.setblocking(False)
+        progress(f"raw ARP scan on {iface} network={LIDAR_SEARCH_NETWORK} hosts={len(targets)}")
+        verbose_print(verbose, f"raw ARP scan iface={iface}, source_mac={mac}, targets={len(targets)}")
+        for idx, target_ip in enumerate(targets):
+            source_ip = RAW_ARP_PROBE_SOURCE_IPS[idx % len(RAW_ARP_PROBE_SOURCE_IPS)]
+            sock.send(_raw_arp_request(src_mac, source_ip, target_ip))
+            if idx % 32 == 0:
+                _collect_raw_arp_replies(sock, responses, deadline=time.monotonic() + 0.01)
+        _collect_raw_arp_replies(sock, responses, deadline=time.monotonic() + 1.2)
+    except OSError as exc:
+        verbose_print(verbose, f"raw ARP scan skipped: socket operation failed: {exc}")
+        return []
+    finally:
+        sock.close()
+
+    entries = list(responses.values())
+    verbose_print(verbose, f"raw ARP scan responses={entries}")
+    return entries
+
+
+def _collect_raw_arp_replies(sock: socket.socket, responses: dict[str, dict[str, object]], deadline: float) -> None:
+    while time.monotonic() < deadline:
+        timeout = max(0.0, min(0.05, deadline - time.monotonic()))
+        readable, _, _ = select.select([sock], [], [], timeout)
+        if not readable:
+            continue
+        try:
+            packet = sock.recv(65535)
+        except BlockingIOError:
+            continue
+        if len(packet) < 42 or packet[12:14] != b"\x08\x06":
+            continue
+        arp = packet[14:42]
+        if arp[6:8] != b"\x00\x02":
+            continue
+        sender_mac = ":".join(f"{byte:02x}" for byte in arp[8:14])
+        sender_ip = socket.inet_ntoa(arp[14:18])
+        if ip_in_lidar_search_network(sender_ip):
+            responses[sender_ip] = {"ip": sender_ip, "mac": sender_mac, "state": "RAW_ARP", "ttl": None}
 
 
 def _neighbor_entries(iface: str) -> list[dict[str, str]]:
@@ -490,47 +639,64 @@ def _gateway_ips(iface: str) -> set[str]:
     return gateways
 
 
-def active_scan(iface: str, verbose: bool = False) -> Discovery:
-    host_ip = iface_ipv4(iface)
-    result = Discovery(iface_ip=host_ip, method="active_scan")
-    network = _scan_network_for_iface(iface)
-    if network is None:
-        verbose_print(verbose, f"active scan skipped: no IPv4 network for iface={iface}")
-        return result
-
-    hosts = [str(ip) for ip in network.hosts() if str(ip) != host_ip]
-    progress(f"active scan on {iface} network={network} hosts={len(hosts)}")
-    verbose_print(verbose, f"active scan iface={iface}, network={network}, hosts={len(hosts)}")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
-        futures = [executor.submit(_ping_once, iface, ip) for ip in hosts]
-        completed = 0
-        report_step = max(16, len(futures) // 8) if futures else 1
-        for future in concurrent.futures.as_completed(futures):
-            future.result()
-            completed += 1
-            if completed == len(futures) or completed % report_step == 0:
-                print(f"\r[scan] active scan progress {completed}/{len(futures)}", end="", flush=True)
-        if futures:
-            print()
-
-    gateways = _gateway_ips(iface)
-    candidates = []
-    for entry in _neighbor_entries(iface):
+def _score_candidates(entries: list[dict[str, object]], host_ip: str | None, gateways: set[str]) -> list[dict[str, object]]:
+    candidates: list[dict[str, object]] = []
+    for entry in entries:
         ip = entry["ip"]
+        if not ip_in_lidar_search_network(ip):
+            continue
         if ip == host_ip or ip in gateways:
             continue
-        ttl = _ping_ttl(iface, ip)
+        ttl = entry.get("ttl")
         mac = entry["mac"]
         score = 0
         if mac.startswith(LIVOX_MAC_PREFIXES):
             score += 100
-        if ttl is not None and ttl >= 200:
+        if isinstance(ttl, int) and ttl >= 200:
             score += 40
-        if ip.startswith("192.168.1."):
-            score += 5
+        score += 5
         candidates.append({**entry, "ttl": ttl, "score": score})
-
     candidates.sort(key=lambda item: (item["score"], item["state"] == "REACHABLE"), reverse=True)
+    return candidates
+
+
+def active_scan(iface: str, sudo: bool, verbose: bool = False) -> Discovery:
+    host_ip = iface_ipv4(iface)
+    result = Discovery(iface_ip=host_ip, method="active_scan")
+    gateways = _gateway_ips(iface)
+
+    if host_ip and ip_in_lidar_search_network(host_ip):
+        hosts = [str(ip) for ip in LIDAR_SEARCH_NETWORK.hosts() if str(ip) != host_ip]
+        progress(f"active scan on {iface} network={LIDAR_SEARCH_NETWORK} hosts={len(hosts)}")
+        verbose_print(verbose, f"active scan iface={iface}, network={LIDAR_SEARCH_NETWORK}, hosts={len(hosts)}")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
+            futures = [executor.submit(_ping_once, iface, ip) for ip in hosts]
+            completed = 0
+            report_step = max(16, len(futures) // 8) if futures else 1
+            for future in concurrent.futures.as_completed(futures):
+                future.result()
+                completed += 1
+                if completed == len(futures) or completed % report_step == 0:
+                    print(f"\r[scan] active scan progress {completed}/{len(futures)}", end="", flush=True)
+            if futures:
+                print()
+
+        entries = []
+        for entry in _neighbor_entries(iface):
+            ttl = _ping_ttl(iface, entry["ip"]) if ip_in_lidar_search_network(entry["ip"]) else None
+            entries.append({**entry, "ttl": ttl})
+    else:
+        if host_ip:
+            progress(
+                f"interface {iface} IPv4 {host_ip} is outside {LIDAR_SEARCH_NETWORK}; "
+                "trying raw Ethernet ARP scan without changing the address"
+            )
+        else:
+            progress(f"interface {iface} has no IPv4; trying raw Ethernet ARP scan without configuring an address")
+        result.method = "raw_arp_scan"
+        entries = raw_arp_scan(iface, sudo=sudo, verbose=verbose)
+
+    candidates = _score_candidates(entries, host_ip, gateways)
     verbose_print(verbose, f"active scan candidates={candidates}")
     if candidates:
         preview = ", ".join(
@@ -789,7 +955,7 @@ def discover(ifaces: list[str], timeout_sec: float, sudo: bool, verbose: bool = 
     for iface in ifaces:
         progress(f"checking interface {iface} by active scan")
         verbose_print(verbose, f"active scan iface={iface}")
-        result = active_scan(iface, verbose=verbose)
+        result = active_scan(iface, sudo=sudo, verbose=verbose)
         if result.lidar_ip:
             progress(f"found lidar by active scan on {iface}: {result.lidar_ip}")
             return iface, result
@@ -844,6 +1010,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Auto-discover Livox lidar IP/SN from eth discovery packets.",
     )
+    parser.add_argument("--raw-arp-helper", metavar="IFACE", help=argparse.SUPPRESS)
     parser.add_argument(
         "-i",
         "--iface",
@@ -900,6 +1067,11 @@ def main() -> int:
         help="return non-zero when detected lidar IP differs from configured lidar IP",
     )
     args = parser.parse_args()
+    if args.raw_arp_helper:
+        entries = raw_arp_scan(args.raw_arp_helper, sudo=False, verbose=args.verbose)
+        print("RAW_ARP_RESULTS " + json.dumps(entries, separators=(",", ":")))
+        return 0
+
     config_paths = resolve_config_paths(args.config, verbose=args.verbose)
     ifaces = candidate_ifaces(args.iface, config_paths)
     progress("starting MID360 discovery")

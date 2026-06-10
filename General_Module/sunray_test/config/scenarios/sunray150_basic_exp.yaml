@@ -17,7 +17,7 @@ windows:
         command: roslaunch sunray_uav_control sunray_mavros_exp.launch
       - title: web_cam
         delay_s: 5.0
-        command: roslaunch sunray_test web_cam_dual.launch
+        command: roslaunch sunray_test web_cam_dual.launch camera_profile:=sunray150_basic
       - title: fusion
         delay_s: 5.0
         command: roslaunch sunray_uav_control external_fusion.launch external_source:={external_source}
@@ -28,10 +28,10 @@ windows:
         delay_s: 2.0
         command: roslaunch sunray_uav_control terminal_control.launch uav_id:={uav_id}
       - title: detection
-        delay_s: 2.0
+        delay_s: 10.0
         command: roslaunch sunray_test detection_dual.launch down_image_topic:=/web_cam/image_raw down_camera_info_topic:=/web_cam/camera_info
   - title: Sunray Test Runner
     tabs:
       - title: run_suite
-        delay_s: 5.0
+        delay_s: 15.0
         command: rosrun sunray_test run_suite.py {runner_cli}
