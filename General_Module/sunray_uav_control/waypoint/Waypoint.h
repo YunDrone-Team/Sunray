@@ -209,10 +209,16 @@ int Waypoint::waypoint_mission()
         
         // 发布无人机控制指令，移动模式为XyVelZPosYaw，XY控制速度，Z控制高度，偏航角固定
         control_cmd.header.stamp = ros::Time::now();
-        control_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYaw;
+        // control_cmd.cmd = sunray_msgs::UAVControlCMD::XyVelZPosYaw;
+        control_cmd.cmd = sunray_msgs::UAVControlCMD::XyzPosVelYaw;
+
+        control_cmd.desired_pos[0] = waypoint_vector[uav_wp_state.wp_index].x;
+        control_cmd.desired_pos[1] = waypoint_vector[uav_wp_state.wp_index].y;
+        control_cmd.desired_pos[2] = waypoint_vector[uav_wp_state.wp_index].z;
+
         control_cmd.desired_vel[0] = uav_wp_state.velocity[0];
         control_cmd.desired_vel[1] = uav_wp_state.velocity[1];
-        control_cmd.desired_pos[2] = waypoint_vector[uav_wp_state.wp_index].z;
+        control_cmd.desired_vel[2] = 0.0;
         
         // 根据偏航角类型计算航点间的偏航角
         uav_wp_state.yaw = get_yaw_from_waypoint(uav_wp.wp_yaw_type,

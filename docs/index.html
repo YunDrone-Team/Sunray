@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sunray 用户二次开发手册</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+<div class="brand">
+<div class="brand-mark">SR</div>
+<div>
+<p class="brand-title">Sunray 手册</p>
+<p class="brand-subtitle">用户二次开发指南</p>
+</div>
+</div>
+<nav>
+<p class="nav-section">开始</p>
+<a href="#intro">手册定位</a>
+<a href="#quick-map">仓库地图</a>
+<a href="#learn-path">学习路线</a>
+<a href="#build-run">编译与启动</a>
+<p class="nav-section">核心开发</p>
+<a href="#ros-graph">运行链路</a>
+<a href="#messages">消息接口</a>
+<a href="#uav">无人机二次开发</a>
+<a href="#ugv">无人车二次开发</a>
+<a href="#external-position">外部定位</a>
+<a href="#planner">规划接入</a>
+<p class="nav-section">重点包深入</p>
+<a href="#deep-common">sunray_common</a>
+<a href="#deep-uav-control">sunray_uav_control</a>
+<a href="#deep-tutorial">sunray_tutorial</a>
+<a href="#deep-planner-utils">sunray_planner_utils</a>
+<a href="#deep-ego">ego-planner-swarm</a>
+<a href="#quick-scripts">快速启动脚本</a>
+<p class="nav-section">扩展模块</p>
+<a href="#vision">视觉与目标</a>
+<a href="#formation">编队与避障</a>
+<a href="#gimbal-media">云台与视频</a>
+<a href="#communication">通信桥接</a>
+<a href="#fmt">FMT 控制</a>
+<p class="nav-section">实践</p>
+<a href="#new-task">写一个新任务</a>
+<a href="#simulation">仿真到实机</a>
+<a href="#debug">调试方法</a>
+<a href="#safety">安全清单</a>
+<a href="#appendix">速查表</a>
+</nav>
+</aside>
+
+    <main class="main">
+      <header class="hero">
+<div class="hero-inner">
+<p class="eyebrow">Sunray Open Source UAV/UGV Platform</p>
+<h1>Sunray 用户二次开发手册</h1>
+<p class="lead">
+            本手册面向有一点 ROS 基础、但没有系统接触过 PX4 的学生。目标不是让你一开始读懂每一行飞控代码，而是让你理解 Sunray 的分层、话题接口和常见改法，能够稳妥地把自己的算法接进无人机或无人车任务。
+          </p>
+<div class="hero-grid">
+<div class="metric"><strong>核心入口</strong><span>`sunray_common`、`sunray_uav_control`、`sunray_tutorial`、`sunray_planner_utils`、EGO</span></div>
+<div class="metric"><strong>推荐改法</strong><span>复制示例任务，发布 Sunray 控制话题，少改底层控制节点</span></div>
+<div class="metric"><strong>外部项目</strong><span>EGO、FUEL、VINS、雷达驱动、轮趣底盘等以接入边界为主</span></div>
+<div class="metric"><strong>文档范围</strong><span>只维护 `docs/`，不修改任何源码、配置或脚本</span></div>
+</div>
+</div>
+</header>
+
+      <div class="content" id="doc-content" aria-live="polite">
+        <div class="loading-panel">
+          <h2>正在加载文档</h2>
+          <p>正在读取 Markdown 内容...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="assets/vendor/marked.min.js"></script>
+  <script src="assets/doc-data.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
