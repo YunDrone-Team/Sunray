@@ -1,8 +1,22 @@
 <launch>
+    <arg name="uav_id" default="1" />
+    <arg name="uav_name" default="uav" />
+    <arg name="trajectory_mode" default="smooth" />
+    <arg name="max_vel" default="1.0" />
+    <arg name="kp_vel" default="0.8" />
+    <arg name="min_segment_time" default="1.0" />
+    <arg name="arrival_radius" default="0.25" />
+    <arg name="flag_printf" default="true" />
+
     <node name="waypoint_mission_node" pkg="sunray_uav_control" type="waypoint_mission_node" output="screen">
-        <param name="uav_id" value="1" />
-        <param name="uav_name" value="uav" />
-        <param name="max_vel" value="1.0" />
-        <param name="kp_vel" value="0.8" />
+        <param name="uav_id" value="$(arg uav_id)" />
+        <param name="uav_name" value="$(arg uav_name)" />
+        <!-- point: 逐点航点旧逻辑; smooth: 三次 Hermite 平滑轨迹，发布 XyzPosVelYaw -->
+        <param name="trajectory_mode" value="$(arg trajectory_mode)" />
+        <param name="max_vel" value="$(arg max_vel)" />
+        <param name="kp_vel" value="$(arg kp_vel)" />
+        <param name="min_segment_time" value="$(arg min_segment_time)" />
+        <param name="arrival_radius" value="$(arg arrival_radius)" />
+        <param name="flag_printf" value="$(arg flag_printf)" />
     </node>
 </launch>

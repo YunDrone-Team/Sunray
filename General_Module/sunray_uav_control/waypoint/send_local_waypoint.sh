@@ -17,37 +17,24 @@ start: true
 wp_num: 4
 wp_end_type: 1
 wp_yaw_type: 2
-wp_coordinate_type: 1
 wp_move_vel: 1.5
 wp_points:
 - x: 0.0
   y: 0.0
   z: 2.0
   yaw: 0.0
-  latitude: 0.0
-  longitude: 0.0
-  altitude: 0.0
 - x: 3.0
   y: 0.0
   z: 2.0
   yaw: 0.0
-  latitude: 0.0
-  longitude: 0.0
-  altitude: 0.0
 - x: 3.0
   y: 3.0
   z: 2.5
   yaw: 0.0
-  latitude: 0.0
-  longitude: 0.0
-  altitude: 0.0
 - x: 0.0
   y: 3.0
   z: 2.5
   yaw: 0.0
-  latitude: 0.0
-  longitude: 0.0
-  altitude: 0.0
 "
 
 echo ""
