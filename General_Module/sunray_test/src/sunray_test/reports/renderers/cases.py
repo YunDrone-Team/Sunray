@@ -62,7 +62,11 @@ def _hardware_metrics_for_display(case: Dict[str, Any]) -> Dict[str, Any]:
             "max_gap_s": _fmt_float(lidar.get("max_gap_s"), 3),
             "min_point_count": lidar.get("min_point_count", "-"),
             "avg_point_count": _fmt_float(lidar.get("avg_point_count")),
-            "valid_clouds": f"{valid_cloud_count}/{message_count}" if valid_cloud_count is not None and message_count else "-",
+            "valid_clouds": (
+                f"{valid_cloud_count}/{message_count}"
+                if valid_cloud_count is not None and message_count
+                else "-"
+            ),
         }
 
     return metrics
@@ -97,7 +101,10 @@ def _display_result(case: Dict[str, Any], grade_thresholds: List[Dict[str, Any]]
     return result
 
 
-def _build_case_flight_map(cases: List[Dict[str, Any]], flight_sections: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def _build_case_flight_map(
+    cases: List[Dict[str, Any]],
+    flight_sections: List[Dict[str, Any]],
+) -> Dict[str, Dict[str, Any]]:
     case_flight_map: Dict[str, Dict[str, Any]] = {}
     for section in flight_sections:
         title = section.get("title", "")
@@ -110,7 +117,17 @@ def _build_case_flight_map(cases: List[Dict[str, Any]], flight_sections: List[Di
     return case_flight_map
 
 
-def render_case_rows(cases: List[Dict[str, Any]], flight_sections: List[Dict[str, Any]], grade_thresholds: List[Dict[str, Any]]) -> str:
+def _render_time_and_metrics(case: Dict[str, Any], metrics_html: str) -> str:
+    started_at = escape(format_display_text(case.get("started_at", "-")))
+    finished_at = escape(format_display_text(case.get("finished_at", "-")))
+    return f'<div class="case-time">{started_at} -> {finished_at}</div>{metrics_html}'
+
+
+def render_case_rows(
+    cases: List[Dict[str, Any]],
+    flight_sections: List[Dict[str, Any]],
+    grade_thresholds: List[Dict[str, Any]],
+) -> str:
     case_flight_map = _build_case_flight_map(cases, flight_sections)
     rows: List[str] = []
     for index, case in enumerate(cases, start=1):
@@ -140,7 +157,7 @@ def render_case_rows(cases: List[Dict[str, Any]], flight_sections: List[Dict[str
             f"<td>{escape(case.get('category', '-'))}</td>"
             f"<td>{status_badge(result)}</td>"
             f"<td>{score_display(case, grade_thresholds)}</td>"
-            f"<td><div class=\"case-time\">{escape(format_display_text(case.get('started_at', '-')))} -> {escape(format_display_text(case.get('finished_at', '-')))}</div>{metrics_html}</td>"
+            f"<td>{_render_time_and_metrics(case, metrics_html)}</td>"
             f"<td>{escape(format_duration(case.get('started_at'), case.get('finished_at')))}</td>"
             "</tr>"
             f"{detail_row}"

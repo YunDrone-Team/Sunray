@@ -119,7 +119,10 @@ def _config_priority(path: Path) -> tuple[int, float, int, str]:
     except OSError:
         newest_first = 0.0
     preferred_tokens = ("sunray_map", "drone3plot", "/sunray/", "ws_loc")
-    preferred_rank = next((idx for idx, token in enumerate(preferred_tokens) if token in lowered), len(preferred_tokens))
+    preferred_rank = next(
+        (idx for idx, token in enumerate(preferred_tokens) if token in lowered),
+        len(preferred_tokens),
+    )
     return low_priority, newest_first, preferred_rank, str(path)
 
 
@@ -538,7 +541,10 @@ def raw_arp_scan_via_sudo(iface: str, verbose: bool = False) -> list[dict[str, o
             continue
         if isinstance(entries, list):
             return [entry for entry in entries if isinstance(entry, dict)]
-    progress("raw ARP scan skipped: run this script with sudo, or grant CAP_NET_RAW, to scan without changing interface IP")
+    progress(
+        "raw ARP scan skipped: run this script with sudo, or grant CAP_NET_RAW, "
+        "to scan without changing interface IP"
+    )
     return []
 
 
@@ -639,7 +645,11 @@ def _gateway_ips(iface: str) -> set[str]:
     return gateways
 
 
-def _score_candidates(entries: list[dict[str, object]], host_ip: str | None, gateways: set[str]) -> list[dict[str, object]]:
+def _score_candidates(
+    entries: list[dict[str, object]],
+    host_ip: str | None,
+    gateways: set[str],
+) -> list[dict[str, object]]:
     candidates: list[dict[str, object]] = []
     for entry in entries:
         ip = entry["ip"]
@@ -916,7 +926,13 @@ def _make_sdk_query_config(base_config: Path | None, lidar_ip: str, iface_ip: st
     return Path(tmp.name)
 
 
-def query_sn_by_sdk(config_paths: list[Path], lidar_ip: str, iface_ip: str | None, timeout_sec: float, verbose: bool = False) -> str | None:
+def query_sn_by_sdk(
+    config_paths: list[Path],
+    lidar_ip: str,
+    iface_ip: str | None,
+    timeout_sec: float,
+    verbose: bool = False,
+) -> str | None:
     sdk_roots = _sdk2_candidates()
     if not sdk_roots:
         verbose_print(verbose, "SDK SN query skipped: Livox-SDK2 not found")
@@ -1031,7 +1047,11 @@ def main() -> int:
         help="seconds to spend on optional post-scan packet sniffing for SN",
     )
     parser.add_argument("--no-log-sn", action="store_true", help="do not try to fill SN from recent ROS logs")
-    parser.add_argument("--no-sniff-sn", action="store_true", help="do not try optional post-scan packet sniffing for SN")
+    parser.add_argument(
+        "--no-sniff-sn",
+        action="store_true",
+        help="do not try optional post-scan packet sniffing for SN",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="print detailed sniff/parse diagnostics")
     parser.add_argument("--no-sudo", action="store_true", help="do not prefix tcpdump with sudo")
     parser.add_argument(
@@ -1044,7 +1064,11 @@ def main() -> int:
         ),
     )
     parser.add_argument("--apply", action="store_true", help="actually update config files")
-    parser.add_argument("--yes", action="store_true", help="update config without interactive confirmation when used with --apply")
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="update config without interactive confirmation when used with --apply",
+    )
     parser.add_argument(
         "--sdk-sn",
         action="store_true",

@@ -116,7 +116,11 @@ def _load_launch_contents(launch_files: List[str]) -> Dict[str, Tuple[str, str]]
     return contents
 
 
-def _print_target_table(all_contents: Dict[str, Tuple[str, str]], selected_key: str = "all", clear: bool = False) -> None:
+def _print_target_table(
+    all_contents: Dict[str, Tuple[str, str]],
+    selected_key: str = "all",
+    clear: bool = False,
+) -> None:
     if clear:
         print("\033[2J\033[H", end="")
     print("┌ CONFIG CANDIDATES", flush=True)

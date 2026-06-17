@@ -22,7 +22,7 @@
 - `General_Module/sunray_planner_utils`
 - `External_Module/ego-planner-swarm`
 
-同时整理了 `scripts_sim`、`scripts_exp`、`scripts_swarm`、`server` 和 `tests/production` 中的快速启动方式。这些脚本既可以手动运行，也可以作为地面站快速启动的命令模板。
+同时整理了 `scripts_sim`、`scripts_exp`、`scripts_swarm` 和 `server` 中的快速启动方式。这些脚本既可以手动运行，也可以作为地面站快速启动的命令模板。
 
 ## 维护说明
 

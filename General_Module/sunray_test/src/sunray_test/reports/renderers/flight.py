@@ -61,6 +61,37 @@ def _should_show_mission(mission_key: str, platform_name: str) -> bool:
     return True
 
 
+def _render_point_list(title: str, points: List[Any]) -> str:
+    items: List[str] = []
+    for index, point in enumerate(points, start=1):
+        point_text = escape(pretty_value(point))
+        items.append(
+            '<div style="display:flex; align-items:center; gap:10px; '
+            'background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; '
+            'padding:8px 10px;">'
+            '<span style="display:inline-flex; align-items:center; justify-content:center; '
+            'width:22px; height:22px; border-radius:999px; background:var(--primary); '
+            f'color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">{index}</span>'
+            f'<span style="font-family: var(--mono); font-size: 12px;">{point_text}</span>'
+            "</div>"
+        )
+    return (
+        '<div style="margin-top: 12px;">'
+        f'<div style="font-size: 12px; font-weight: 700; color: var(--muted); '
+        f'margin-bottom: 8px;">{escape(title)}</div>'
+        f'<div style="display:flex; flex-direction:column; gap:8px;">{"".join(items)}</div>'
+        "</div>"
+    )
+
+
+def _render_flight_card_title(title: str) -> str:
+    return (
+        '<div class="flight-card-title" style="margin-bottom: 12px; '
+        'color: var(--primary); border-bottom: 1px solid var(--line); '
+        f'padding-bottom: 8px;">{escape(title)}</div>'
+    )
+
+
 def _render_missions_snapshot(missions: Dict[str, Any], platform_name: str) -> str:
     if not missions:
         return '<div class="empty-block">暂无数据</div>'
@@ -71,7 +102,11 @@ def _render_missions_snapshot(missions: Dict[str, Any], platform_name: str) -> s
             continue
         if isinstance(mission_value, dict):
             mission_name = mission_value.get("name") or mission_key
-            mission_meta = {k: v for k, v in mission_value.items() if k not in {"name", "waypoints", "goals", "mission_key"}}
+            mission_meta = {
+                key: value
+                for key, value in mission_value.items()
+                if key not in {"name", "waypoints", "goals", "mission_key"}
+            }
             waypoints = mission_value.get("waypoints")
             goals = mission_value.get("goals")
         else:
@@ -84,51 +119,16 @@ def _render_missions_snapshot(missions: Dict[str, Any], platform_name: str) -> s
 
         waypoint_html = ""
         if isinstance(waypoints, list) and waypoints:
-            waypoint_items: List[str] = []
-            for index, point in enumerate(waypoints, start=1):
-                point_text = pretty_value(point)
-                waypoint_items.append(
-                    '<div style="display:flex; align-items:center; gap:10px; '
-                    'background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; '
-                    'padding:8px 10px;">'
-                    f'<span style="display:inline-flex; align-items:center; justify-content:center; '
-                    f'width:22px; height:22px; border-radius:999px; background:var(--primary); '
-                    f'color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">{index}</span>'
-                    f'<span style="font-family: var(--mono); font-size: 12px;">{escape(point_text)}</span>'
-                    "</div>"
-                )
-            waypoint_html = (
-                '<div style="margin-top: 12px;">'
-                '<div style="font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">航点列表</div>'
-                f'<div style="display:flex; flex-direction:column; gap:8px;">{"".join(waypoint_items)}</div>'
-                "</div>"
-            )
+            waypoint_html = _render_point_list("航点列表", waypoints)
         elif isinstance(goals, list) and goals:
-            goal_items: List[str] = []
-            for index, point in enumerate(goals, start=1):
-                point_text = pretty_value(point)
-                goal_items.append(
-                    '<div style="display:flex; align-items:center; gap:10px; '
-                    'background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; '
-                    'padding:8px 10px;">'
-                    f'<span style="display:inline-flex; align-items:center; justify-content:center; '
-                    f'width:22px; height:22px; border-radius:999px; background:var(--primary); '
-                    f'color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">{index}</span>'
-                    f'<span style="font-family: var(--mono); font-size: 12px;">{escape(point_text)}</span>'
-                    "</div>"
-                )
-            waypoint_html = (
-                '<div style="margin-top: 12px;">'
-                '<div style="font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">目标点列表</div>'
-                f'<div style="display:flex; flex-direction:column; gap:8px;">{"".join(goal_items)}</div>'
-                "</div>"
-            )
+            waypoint_html = _render_point_list("目标点列表", goals)
 
         mission_cards.append(
             '<div style="border: 1px solid var(--line); background: #f8fafc; border-radius: 14px; padding: 14px;">'
             f'<div style="font-size: 14px; font-weight: 700; color: var(--text);">{escape(mission_name)}</div>'
             + (
-                f'<div style="font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--mono);">{escape(str(mission_key))}</div>'
+                '<div style="font-size: 12px; color: var(--muted); '
+                f'margin-top: 4px; font-family: var(--mono);">{escape(str(mission_key))}</div>'
                 if str(mission_name) != str(mission_key)
                 else ""
             )
@@ -145,7 +145,10 @@ def render_config_snapshot(config: Dict[str, Any], platform_name: str = "") -> s
     topics = config.get("topics", {}) if isinstance(config.get("topics"), dict) else {}
     missions = config.get("missions", {}) if isinstance(config.get("missions"), dict) else {}
 
-    defaults_html = "".join(render_labeled_value(key, value) for key, value in defaults.items()) or '<div class="empty-block">暂无数据</div>'
+    defaults_html = (
+        "".join(render_labeled_value(key, value) for key, value in defaults.items())
+        or '<div class="empty-block">暂无数据</div>'
+    )
     topics_items: List[str] = []
     for key, value in topics.items():
         desc = METRIC_DESCRIPTIONS.get(key)
@@ -167,15 +170,15 @@ def render_config_snapshot(config: Dict[str, Any], platform_name: str = "") -> s
     return (
         '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">'
         '<div class="flight-card">'
-        '<div class="flight-card-title" style="margin-bottom: 12px; color: var(--primary); border-bottom: 1px solid var(--line); padding-bottom: 8px;">Defaults (基础配置)</div>'
+        f'{_render_flight_card_title("Defaults (基础配置)")}'
         f'<div style="display: flex; flex-direction: column; gap: 8px;">{defaults_html}</div>'
         "</div>"
         '<div class="flight-card">'
-        '<div class="flight-card-title" style="margin-bottom: 12px; color: var(--primary); border-bottom: 1px solid var(--line); padding-bottom: 8px;">Topics (话题映射)</div>'
+        f'{_render_flight_card_title("Topics (话题映射)")}'
         f'<div style="display: flex; flex-direction: column; gap: 6px;">{topics_html}</div>'
         "</div>"
         '<div class="flight-card">'
-        '<div class="flight-card-title" style="margin-bottom: 12px; color: var(--primary); border-bottom: 1px solid var(--line); padding-bottom: 8px;">Missions (任务详情)</div>'
+        f'{_render_flight_card_title("Missions (任务详情)")}'
         f"{missions_html}"
         "</div>"
         "</div>"
@@ -193,7 +196,9 @@ def render_artifacts(artifacts: Dict[str, Any]) -> str:
             '<div class="flight-card">'
             '<div style="font-size: 12px;">'
             f'<span style="font-weight: 700; color: var(--muted);">{escape(key)}</span>'
-            f'<div style="background: #f8fafc; border-radius: 4px; padding: 6px 8px; font-family: var(--mono); margin-top: 4px; border: 1px solid #edf2f7; font-size: 11px; word-break: break-all;">{escape(pretty_value(display_value))}</div>'
+            '<div style="background: #f8fafc; border-radius: 4px; padding: 6px 8px; '
+            'font-family: var(--mono); margin-top: 4px; border: 1px solid #edf2f7; '
+            f'font-size: 11px; word-break: break-all;">{escape(pretty_value(display_value))}</div>'
             "</div>"
             "</div>"
         )
@@ -220,7 +225,10 @@ def render_artifacts(artifacts: Dict[str, Any]) -> str:
         )
 
     cards_html = "".join(cards) or '<div class="empty-block">暂无数据</div>'
-    return f'<div class="flight-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">{cards_html}</div>'
+    return (
+        '<div class="flight-grid" style="grid-template-columns: '
+        f'repeat(auto-fit, minmax(280px, 1fr));">{cards_html}</div>'
+    )
 
 
 def render_flight_section_content(section: Dict[str, Any]) -> str:
@@ -252,7 +260,9 @@ def render_flight_section_content(section: Dict[str, Any]) -> str:
             if not display_metrics:
                 continue
             content_parts.append(f'<div class="flight-subtitle">{escape(display_name)}</div>')
-            content_parts.append(render_metric_blocks(display_metrics, _preferred_metric_order(raw_title, category_name)))
+            content_parts.append(
+                render_metric_blocks(display_metrics, _preferred_metric_order(raw_title, category_name))
+            )
     else:
         flat_metrics = section.get("metrics")
         if isinstance(flat_metrics, dict) and flat_metrics:
@@ -280,7 +290,8 @@ def render_flight_section_content(section: Dict[str, Any]) -> str:
                 f'{"".join(metric_html)}'
                 "</div>"
             )
-        content_parts.append(f'<div class="flight-subtitle">{"目标点明细" if raw_title == "EGO自主规划指标" else "航点明细"}</div>')
+        detail_title = "目标点明细" if raw_title == "EGO自主规划指标" else "航点明细"
+        content_parts.append(f'<div class="flight-subtitle">{detail_title}</div>')
         content_parts.append(f'<div class="flight-grid">{"".join(cards)}</div>')
 
     meta = {}

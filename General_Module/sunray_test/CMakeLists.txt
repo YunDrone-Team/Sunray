@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   sunray_msgs
 )
 
+catkin_python_setup()
+
 catkin_package(
   CATKIN_DEPENDS
   geometry_msgs
@@ -19,11 +21,8 @@ catkin_package(
 )
 
 catkin_install_python(PROGRAMS
-  scripts/run_suite.py
-  scripts/internal_run.py
   scripts/livox_mid360_autoconfig.py
-  scripts/show_config.py
-  scripts/run_scenario.py
+  scripts/run_test_dashboard.py
   scripts/generate_report.py
   scripts/vrpn_server_check.py
   scripts/camera_launch_guard.py
@@ -42,3 +41,10 @@ install(DIRECTORY config/
 install(FILES README.md
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_nosetests(test/test_dashboard_model.py)
+  catkin_add_nosetests(test/test_dashboard_history.py)
+  catkin_add_nosetests(test/test_dashboard_ui.py)
+  catkin_add_nosetests(test/test_dashboard_cli.py)
+endif()

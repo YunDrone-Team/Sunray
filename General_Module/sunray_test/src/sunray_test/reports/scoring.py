@@ -196,7 +196,10 @@ def _score_configured_metric(metric_key: str, value: Any, cfg: Dict[str, Any]) -
     return score, weight, {"value": value, "score": round(score, 1)}
 
 
-def _score_metric_set(flat_metrics: Dict[str, Any], metric_configs: Dict[str, Any]) -> Tuple[Optional[float], Dict[str, Any]]:
+def _score_metric_set(
+    flat_metrics: Dict[str, Any],
+    metric_configs: Dict[str, Any],
+) -> Tuple[Optional[float], Dict[str, Any]]:
     weighted_sum = 0.0
     total_weight = 0.0
     details: Dict[str, Any] = {}
@@ -350,7 +353,10 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
             continue
 
         section_config = scoring_config[config_key]
-        result = _score_waypoint_section(section, section_config) if config_key in {"waypoint", "ego_goal"} else _score_section(section, section_config)
+        if config_key in {"waypoint", "ego_goal"}:
+            result = _score_waypoint_section(section, section_config)
+        else:
+            result = _score_section(section, section_config)
 
         case_result = case_result_by_section.get(config_key)
         if case_result and case_result != "pass":
@@ -390,7 +396,11 @@ def compute_scores(payload: Dict[str, Any], scoring_config: Dict[str, Any]) -> N
 
     if section_results:
         total_weight = sum(weight for _, _, weight in section_results)
-        overall_score = round(sum(score * weight for _, score, weight in section_results) / total_weight, 1) if total_weight > 0 else None
+        if total_weight > 0:
+            weighted_score = sum(score * weight for _, score, weight in section_results)
+            overall_score = round(weighted_score / total_weight, 1)
+        else:
+            overall_score = None
     else:
         overall_score = None
 

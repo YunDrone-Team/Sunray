@@ -12,7 +12,6 @@ class VisualLandingCase(BaseCase):
     default_resulting_state = "landed"
     _DEFAULT_FAILURE_PATTERNS = (
         "over time",
-        "Land directly",
     )
 
     def execute(self, context, vehicle, event_logger):

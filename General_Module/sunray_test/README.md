@@ -1,73 +1,95 @@
 # sunray_test
 
-`sunray_test` 是 Sunray 的自动化测试模块，负责：
+`sunray_test` 是 Sunray 的自动化测试模块。当前只保留 Dashboard 这套入口：
 
-- 按 `platform + environment + suite` 组合生成生效配置
-- 执行硬件检查、起飞/降落 phase、飞行 case
-- 产出 `test_result.json`、`test_config.json`、`event_log.jsonl`、`report.html`
-- 对飞行数据做分析、评分和 HTML 报告渲染
+- 人工入口：`tests/run_test.sh`
+- ROS 入口：`rosrun sunray_test run_test_dashboard.py`
 
-当前整体分两层：
+旧的 `run_suite.py`、`run_scenario.py`、`internal_run.py`、`show_config.py` 入口和 `config/suites`、`config/scenarios` 配置已废弃并移除。Dashboard 会根据用户选择生成运行期 suite，再通过 `run_test_dashboard.py --run-suite --suite-file ...` 内部模式启动执行器；用户不需要直接调用内部模式。
 
-- `tests/`
-  面向人工入口和兼容包装
-- `General_Module/sunray_test/`
-  面向框架实现，负责场景编排、配置加载、执行、报告和评分
+测试产物默认输出到 `tests/output/<timestamp>/`，运行期 suite 写入 `tests/output/generated_suites/`。
 
-## 入口
-
-1. 手工入口：`tests/run_test.sh`
-2. 场景启动器：`rosrun sunray_test run_scenario.py --scenario ...`
-3. 真正执行器：`rosrun sunray_test run_suite.py --platform ... --environment sim|exp --suite ...`
-4. 内部直连入口：`rosrun sunray_test internal_run.py`
-5. 生效配置查看：`rosrun sunray_test show_config.py --platform ... --environment ... --suite ...`
-6. VRPN 服务器地址检查：`rosrun sunray_test vrpn_server_check.py`
-
-测试产物默认输出到 `workspace_root/tests/output/<timestamp>/`。  
-如果需要覆盖输出目录，只通过 `run_suite.py --output-dir ...` 传参，不再在 suite 配置里定义。
-
-### 入口说明
-
-- `run_scenario.py`
-  负责按 `config/scenarios/*.yaml` 拉起仿真/实机场景窗口。
-  在真正开终端前会先校验 `platform/environment/suite` 组合是否合法，避免配置错了还先拉一堆窗口。
-- `run_suite.py`
-  底层执行器，直接调用 `TestRunner` 跑一套测试。
-- `internal_run.py`
-  适合环境已经准备好、只想反复切换 suite 重跑的场景。
-  它会在运行时列出 `config/suites/*.yaml`，只要求选择 suite，不再交互输入 `SN` 和测试人员。
-- `show_config.py`
-  输出 merge 后并且通过校验的最终配置，适合调参时确认真实生效值。
-
-### 常用命令
+## 使用
 
 ```bash
 source devel/setup.bash
 
-rosrun sunray_test internal_run.py
-rosrun sunray_test run_suite.py --platform sunray150_basic --environment sim --suite basic_acceptance
-rosrun sunray_test run_suite.py --platform sunray150_lidar --environment exp --suite lidar_acceptance
-rosrun sunray_test run_scenario.py --list
-rosrun sunray_test run_scenario.py --scenario sunray150_basic_sim
-rosrun sunray_test run_scenario.py --scenario sunray150_lidar_exp
-rosrun sunray_test show_config.py --platform sunray150_basic --environment sim --suite flight_regression
-rosrun sunray_test show_config.py --platform sunray150_lidar --environment exp --suite lidar_acceptance
-rosrun sunray_test show_config.py --platform sunray150_basic --environment sim --suite flight_regression --section topics --format yaml
-rosrun sunray_test vrpn_server_check.py
-```
-
-实机测试也可以从仓库根目录使用人工入口：
-
-```bash
 tests/run_test.sh
+tests/run_test.sh --sim
+tests/run_test.sh --list
+tests/run_test.sh --check-config
+tests/run_test.sh --history
+tests/run_test.sh --open-latest-report
+tests/run_test.sh --items visual_landing --dry-run --no-bringup --no-prompt
+tests/run_test.sh --items visual_landing --show-suite --no-prompt
+tests/run_test.sh --items visual_landing --write-suite-only --no-prompt
+tests/run_test.sh --sim --items ego_goal
 ```
 
-当前常用生产测试脚本包括基础款和雷达款：
+默认环境是 `exp`；只有带 `--sim` 时才拉起 Gazebo 仿真链路。Dashboard 固定使用 `uav_id=1`。
 
-- `tests/production/sunray150_basic_exp_test.sh`
-- `tests/production/sunray150_basic_sim_test.sh`
-- `tests/production/sunray150_lidar_exp_test.sh`
-- `tests/production/sunray150_lidar_sim_test.sh`
+交互流程先选择硬件测试，再选择功能测试。功能测试会自动补齐依赖硬件，例如 `visual_landing` 补 `battery + down_camera`，`ego_goal` 补 `battery + lidar`。用户也可以额外选择某个硬件测试。
+
+## 入口参数
+
+- `--sim`：使用仿真环境并拉起 sim bringup
+- `--items visual_landing,ego_goal`：跳过交互，直接指定测试项目
+- `--check-config`：校验 dashboard 配置并输出摘要
+- `--history --history-limit 5`：查看最近测试结果
+- `--open-latest-report`：打开最近一次 HTML 报告
+- `--show-suite`：只打印生成的运行期 suite，不写入文件，不启动测试
+- `--write-suite-only`：只写入运行期 suite，不启动测试，并打印内部 runner 命令
+- `--dry-run --no-bringup`：只预览 suite、bringup tabs 和 runner 命令
+- `--no-prompt --sn ... --tester ...`：跳过 SN/测试人员交互
+- `--yes`：跳过最终启动确认
+
+`--dry-run`、`--show-suite`、`--write-suite-only` 是互斥动作，并且不会要求 `gnome-terminal`。
+
+## 架构
+
+Dashboard 负责三件事：
+
+- 根据 `config/dashboard/dashboard.yaml` 的测试项、依赖和运行规则生成运行期 suite
+- 按 `sim/exp` 和测试需求生成 bringup tabs
+- 写入 suite 后通过内部 runner 模式执行 `TestRunner`
+
+执行器逻辑仍然在 `src/sunray_test/core/runner.py`，配置加载和校验在 `src/sunray_test/core/suite_loader.py`。这样入口收敛为一套，但硬件测试、功能测试、phase、报告生成仍然保持解耦。
+
+## 目录职责
+
+- `config/dashboard/`
+  Dashboard 测试项、依赖关系、runtime profile、bringup tabs、runner tabs
+- `config/platforms/`
+  平台默认参数、topic、录包 topic、分析参数
+- `config/environments/`
+  `sim` / `exp` 环境差异和 topic 覆盖
+- `config/missions/`
+  航点和 EGO 目标点等飞行任务数据
+- `config/scoring/`
+  飞行评分权重、门槛和等级阈值
+- `src/sunray_test/cases/`
+  硬件测试和功能测试 case
+- `src/sunray_test/phases/`
+  起飞、降落等复用阶段
+- `src/sunray_test/core/`
+  runner、上下文、suite 加载和结果模型
+- `src/sunray_test/dashboard/`
+  Dashboard CLI、模型、交互、终端启动、运行期 suite 和历史结果
+- `src/sunray_test/reports/`
+  飞行分析、评分和 HTML 报告
+
+## 扩展测试项
+
+新增硬件或功能测试时按这个边界改：
+
+1. 在 `src/sunray_test/cases/` 增加 case，并在 registry 中注册。
+2. 如果需要起飞/降落等阶段动作，放在 `src/sunray_test/phases/`。
+3. 在 `config/dashboard/dashboard.yaml` 增加测试项、显示名、分组、依赖、suite step。
+4. 如果功能测试依赖额外 bringup，在同一个 dashboard 配置里给对应 tab 加 `when` 条件。
+5. 如果需要任务点或目标点，把数据放进 `config/missions/`。
+6. 如果需要评分，扩展 `config/scoring/scoring.yaml` 和 `src/sunray_test/reports/`。
+
+硬件测试可以单独选择；功能测试必须声明所需硬件依赖，由 Dashboard 自动补齐。
 
 ## 安装和编译
 
@@ -78,192 +100,31 @@ bash General_Module/sunray_test/setup_sunray_test.sh
 source devel/setup.bash
 ```
 
-该脚本会检查并安装 `sunray_test` 需要的 Python 库，然后执行：
+该脚本会检查并安装 Python 依赖，然后编译 `sunray_test`。
 
-```bash
-catkin_make --source General_Module/sunray_test --build build/sunray_test
-```
+## VRPN 检查
 
-## 配置模型
-
-当前配置按职责拆成几层：
-
-- `platforms`
-  机型默认参数，例如起飞高度、悬停时长、航点阈值、电池阈值、录包 topic 模板
-- `environments`
-  环境差异，例如 `sim / exp` 的 topic 覆盖和额外录包 topic
-- `suites`
-  测试项顺序和编排，只描述这次测什么、按什么顺序测
-- `scenarios`
-  场景启动链，描述要拉起哪些 `roslaunch/tab`，以及默认 runner 参数
-- `missions`
-  可复用飞行任务，例如航点列表和 EGO 目标点列表
-- `scoring`
-  飞行分析评分规则和等级阈值
-
-### 当前约定
-
-- `platforms` 保存机型默认测试参数
-- `suites` 只保存测试顺序和编排必需参数，例如 `mission_key`
-- 如果某个测试项没有在 `suite.steps[].params` 里显式传参，就自动使用 `platform.defaults`
-- `environment` 只覆盖环境差异，不重复写整套默认参数
-- 每次测试输出目录会保存 `test_config.json`，记录本次实际生效的配置快照，便于复盘悬停时间、目标点、判定范围、录包 topic 等参数
-
-## 配置校验与生效配置查看
-
-`src/sunray_test/core/suite_loader.py` 现在负责两件事：
-
-- `load_config_triplet(...)`
-  负责 merge `platform/environment/suite`
-- `validate_config_triplet(...)`
-  负责在加载期校验结构、类型、topic 引用、mission 引用、case/phase 是否已注册
-
-这意味着以下问题会在“加载配置时”直接报错，而不是跑到一半才炸：
-
-- YAML 顶层缺 key 或写错 key
-- `steps` 结构错误
-- `case type / phase` 未注册
-- `topic_key` 指向不存在的 topic
-- `mission_key` 指向不存在的 mission
-- 数值字段、布尔字段类型不对
-
-调参时建议优先用：
-
-```bash
-rosrun sunray_test show_config.py --platform sunray150_basic --environment sim --suite basic_acceptance
-```
-
-它会输出 merge 后并且通过校验的最终配置，减少在 `platform/environment/suite` 之间来回跳。
-
-## 目录职责
-
-- `config/platforms/`
-  机型配置
-- `config/environments/`
-  环境配置，例如 `sim` / `exp`
-- `config/scenarios/`
-  场景启动配置，例如拉起哪些 launch/tab/延迟和默认 runner 参数
-- `config/missions/`
-  复用飞行任务配置，例如航点序列和 EGO 目标点
-- `config/cameras/<platform>/`
-  实机前视/下视相机驱动配置，例如 `video_device`
-- `config/suites/`
-  测试项顺序和编排
-- `config/scoring/`
-  飞行评分权重、门槛和等级阈值
-- `src/sunray_test/cases/`
-  硬件测试和飞行任务
-- `src/sunray_test/phases/`
-  起飞、降落等可复用阶段动作
-- `src/sunray_test/capabilities/`
-  rosbag、事件日志、硬件探测等公共能力
-- `src/sunray_test/core/`
-  配置加载、上下文、执行主流程、结果模型
-- `src/sunray_test/reports/`
-  分析、评分和 HTML 报告生成
-
-## 报告模块结构
-
-报告相关代码已经拆成“评分”和“渲染”两层，避免所有逻辑堆在单文件里：
-
-- `reports/flight_metrics.py`
-  负责从日志和 rosbag 中提取飞行分析结果
-- `reports/scoring.py`
-  负责综合评分、分项评分、权重和等级
-- `reports/html_renderer.py`
-  页面总编排
-- `reports/renderers/common.py`
-  公共格式化、状态 badge、键值描述渲染
-- `reports/renderers/summary.py`
-  水印、综合评分、阶段轨迹、基础信息
-- `reports/renderers/cases.py`
-  用例表格和展开详情
-- `reports/renderers/flight.py`
-  飞行指标内容、配置快照、产物信息
-- `reports/renderers/styles.py`
-  报告 CSS
-
-当前报告产物仅保留普通 HTML 测试报告 `report.html`。
-
-## 雷达款测试
-
-雷达款平台使用 `sunray150_lidar`，常用套件是 `lidar_acceptance`。典型流程包括：
-
-- 前视/下视相机检测
-- 电池电压检测
-- MID360/Livox 点云和 IMU 健康检查
-- 起飞、悬停、EGO-Planner 自主规划、指点飞行、视觉降落
-- rosbag 记录、评分、HTML 报告生成
-
-实机运行前建议先确认 VRPN 服务器 IP：
+实机运行前如需确认 VRPN 服务器 IP：
 
 ```bash
 source devel/setup.bash
 rosrun sunray_test vrpn_server_check.py
 ```
 
-该脚本会读取并展示以下 launch 中的 server IP，交互时可用方向键选择单个文件或全部文件，并支持命令行直接修改：
-
-- `General_Module/sunray_uav_control/launch/external_fusion.launch`
-- `General_Module/sunray_uav_control/launch/sunray_vrpn.launch`
-
-如果需要直接写入，可使用：
+如需直接写入：
 
 ```bash
 rosrun sunray_test vrpn_server_check.py --server 192.168.xx.xx --yes
 rosrun sunray_test vrpn_server_check.py --target vrpn --server 192.168.xx.xx --yes
 ```
 
-雷达款实机常用命令：
+## sim / exp 话题约定
 
-```bash
-rosrun sunray_test show_config.py --platform sunray150_lidar --environment exp --suite lidar_acceptance
-rosrun sunray_test run_scenario.py --scenario sunray150_lidar_exp
-```
-
-## 参数修改位置
-
-- 改机型默认 topic / 阈值：`config/platforms/*.yaml`
-- 改 sim / exp 环境差异：`config/environments/*.yaml`
-- 改场景拉起链：`config/scenarios/*.yaml`
-- 改航点任务：`config/missions/*.yaml`
-- 改 EGO 目标点：`config/missions/lidar_ego_goals.yaml`
-- 改测试顺序：`config/suites/*.yaml`
-- 改评分规则：`config/scoring/scoring.yaml`
-- 改实机相机设备号：`config/cameras/<platform>/*.yml`
-
-相机在线检测默认不只检查“有没有图像消息”，还会检查图像数据是否不是整帧全一致。  
-这条规则当前为代码内默认开启，不再放到配置文件中修改。
-
-切换到 `CMD_CONTROL` 后，如果需要等待几秒再解锁，可在 `config/platforms/*.yaml` 中调整。  
-当前默认固定等待 3 秒。
-
-## sim / exp 话题对照
-
-### 相机话题
-
-- `platforms`
-  - `front_camera` / `down_camera` 默认留空，由环境显式提供
 - `sim`
-  - `front_camera`: `/uav{uav_id}/monocular_front/image_raw`
-  - `down_camera`: `/uav{uav_id}/monocular_down/image_raw`
+  - 前视相机：`/uav{uav_id}/monocular_front/image_raw`
+  - 下视相机：`/uav{uav_id}/monocular_down/image_raw`
 - `exp`
-  - `front_camera`: `/web_cam_front/image_raw`
-  - `down_camera`: `/web_cam/image_raw`
+  - 前视相机：`/web_cam_front/image_raw`
+  - 下视相机：`/web_cam/image_raw`
 
-### 录包 topic
-
-- 平台公共 topic
-  - `/uav{uav_id}/mavros/local_position/pose`
-  - `/uav{uav_id}/sunray/uav_state`
-  - `/uav{uav_id}/sunray/uav_control_cmd`
-  - `/uav{uav_id}/sunray/setup`
-  - `/uav{uav_id}/sunray_detect/landmark_detection_ros`
-- 雷达款会按平台配置追加点云、IMU、EGO 规划和定位相关 topic
-- `sim` 额外追加
-  - `/uav{uav_id}/sunray/gazebo_pose`
-- `exp` 额外追加
-  - `/vrpn_client_node_1/uav1/pose`
-  - `/vrpn_client_node_1/uav1/twist`
-
-飞行分析优先使用 VRPN 数据源；只有没有可用 VRPN 数据时，才回退使用 UAVState / MAVROS 等辅助数据源。
+具体话题以 `config/environments/*.yaml` 为准。

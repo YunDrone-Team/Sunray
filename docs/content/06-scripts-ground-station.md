@@ -14,7 +14,6 @@
 | `scripts_exp` | 实机快速启动。 | `demo_takeoff_hover_land.sh`、`uav_control_viobot.sh`、`sunray_uav_ego_mid360.sh`、`ugv_formation.sh`。 |
 | `scripts_swarm` | 集群/GPS/RTK/leader-follower 快速启动。 | `leader_fowllower_sim_3uav.sh`、`uav_control_sim_gps.sh`、`uav_control_sim_rtk.sh`。 |
 | `server` | 机载端/地面站后台自启动配置。 | `server.sh`、`server.env`、`communication.sh`。 |
-| `tests/production` | 生产/硬件测试场景。 | `sunray150_basic_sim_test.sh`、`sunray150_lidar_exp_test.sh`。 |
 
 ### 地面站快速启动的本质
 

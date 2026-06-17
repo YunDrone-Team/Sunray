@@ -125,7 +125,10 @@ def _find_case_window(event_log: List[Dict[str, Any]], case_prefixes: tuple) -> 
         if not detail:
             continue
         timestamp = float(row.get("timestamp") or row.get("ros_timestamp") or row.get("wall_timestamp"))
-        if event_name == "case_start" and any(detail == prefix or detail.startswith(prefix) for prefix in case_prefixes):
+        if event_name == "case_start" and any(
+            detail == prefix or detail.startswith(prefix)
+            for prefix in case_prefixes
+        ):
             starts[detail] = timestamp
         elif event_name == "case_end":
             case_id = detail.split(":", 1)[0]
@@ -191,9 +194,15 @@ def _load_builtin_hover_metrics(run_dir: str, payload: Dict[str, Any]) -> Option
             dtype=float,
         )
     elif isinstance(hover_reference, (list, tuple)) and len(hover_reference) >= 3:
-        target_array = np.asarray([float(hover_reference[0]), float(hover_reference[1]), float(hover_reference[2])], dtype=float)
+        target_array = np.asarray(
+            [float(hover_reference[0]), float(hover_reference[1]), float(hover_reference[2])],
+            dtype=float,
+        )
     else:
-        target_array = np.asarray([float(np.median(first_samples[:, 0])), float(np.median(first_samples[:, 1])), target_z], dtype=float)
+        target_array = np.asarray(
+            [float(np.median(first_samples[:, 0])), float(np.median(first_samples[:, 1])), target_z],
+            dtype=float,
+        )
     err = pos - target_array
     xy_error = np.linalg.norm(err[:, :2], axis=1)
     z_error = err[:, 2]
@@ -431,7 +440,9 @@ def _load_builtin_waypoint_metrics(run_dir: str, payload: Dict[str, Any]) -> Opt
             start_pos = flight_pos[0]
             direct_distance = float(np.linalg.norm(wp_array - start_pos))
             path_efficiency = float(direct_distance / path_length_m) if path_length_m > 1e-9 else None
-            max_lateral_deviation_m = float(max(_point_to_line_distance(point, start_pos, wp_array) for point in flight_pos))
+            max_lateral_deviation_m = float(
+                max(_point_to_line_distance(point, start_pos, wp_array) for point in flight_pos)
+            )
             overshoot_distance_m = _compute_overshoot_distance(flight_pos, start_pos, wp_array)
             reach_time = float(first_entry_time - waypoint_info["start_time"]) if first_entry_time is not None else None
             settling_time = float(settled_time - waypoint_info["start_time"])
@@ -477,10 +488,15 @@ def _load_builtin_waypoint_metrics(run_dir: str, payload: Dict[str, Any]) -> Opt
         if isinstance(item.get("final_xy_error"), (int, float)) and not isinstance(item.get("final_xy_error"), bool)
     ]
     segment_end_times = [item.get("end_time") for item in waypoints if item.get("end_time") is not None]
+    total_waypoint_time_s = (
+        float(max(segment_end_times) - waypoints[0]["start_time"])
+        if segment_end_times
+        else None
+    )
     summary: Dict[str, Any] = {
         "wp_success_count": len(successful_views),
         "all_wp_success_flag": len(successful_views) == len(results),
-        "total_waypoint_time_s": float(max(segment_end_times) - waypoints[0]["start_time"]) if segment_end_times else None,
+        "total_waypoint_time_s": total_waypoint_time_s,
         "mean_path_efficiency": float(sum(path_efficiencies) / len(path_efficiencies)) if path_efficiencies else None,
         "worst_final_xy_error": float(max(final_xy_errors)) if final_xy_errors else None,
     }
@@ -561,7 +577,10 @@ def _select_pose_topic_from_info(topic_info: Dict[str, Any], payload: Dict[str, 
         if legacy_configured in topic_info:
             return legacy_configured
         available = ", ".join(sorted(topic_info.keys())[:20])
-        raise ValueError(f"configured topics.local_position_pose not found in rosbag: {legacy_configured}; available topics: {available}")
+        raise ValueError(
+            "configured topics.local_position_pose not found in rosbag: "
+            f"{legacy_configured}; available topics: {available}"
+        )
     preferred_suffixes = (
         "/mavros/local_position/pose",
         "/sunray/uav_state",
@@ -771,7 +790,8 @@ def _estimate_landing_target_metrics(
             tracked_pose_count += 1
     continuity_rate = float(tracked_pose_count / total_pose_count * 100.0) if total_pose_count else None
 
-    exempt_mask = (np.asarray(pose_times, dtype=float) >= first_target_time) & (np.asarray(pose_times, dtype=float) <= last_target_time)
+    pose_time_array = np.asarray(pose_times, dtype=float)
+    exempt_mask = (pose_time_array >= first_target_time) & (pose_time_array <= last_target_time)
     exempt_total = int(np.count_nonzero(exempt_mask))
     exempt_rate = None
     if exempt_total:
@@ -848,7 +868,12 @@ def _compute_path_heading_change_deg(points: Any, min_step_m: float = 0.02) -> O
     return heading_change
 
 
-def _compute_path_backtrack_distance_m(points: Any, start: Any, end: Any, min_backtrack_m: float = 0.01) -> Optional[float]:
+def _compute_path_backtrack_distance_m(
+    points: Any,
+    start: Any,
+    end: Any,
+    min_backtrack_m: float = 0.01,
+) -> Optional[float]:
     import numpy as np
 
     if len(points) < 2:
@@ -875,7 +900,13 @@ def _build_ego_goal_metric_groups(metrics: Dict[str, Any]) -> Dict[str, Dict[str
             "path_heading_change_deg",
             "path_backtrack_distance_m",
         ),
-        "response_smoothness": ("reach_time_s", "settling_time_s", "overshoot_distance_m", "speed_mean_mps", "speed_p95_mps"),
+        "response_smoothness": (
+            "reach_time_s",
+            "settling_time_s",
+            "overshoot_distance_m",
+            "speed_mean_mps",
+            "speed_p95_mps",
+        ),
     }
     return {
         group_name: {key: metrics.get(key) for key in keys if key in metrics}
