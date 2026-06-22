@@ -36,30 +36,55 @@ class Navigation:
         self.goal = None
         self.goal_received = False
         self.target_dir = None
+        self.target_dir_min_xy_dist = 0.10
         self.stable_times = 0
         self.has_action = False
         self.goal_hold_latched = False
         self.laser_points_msg = None
 
-        self.height_control = False 
-        self.px4_control = rospy.get_param('rl/use_px4', True)
+        self.height_control = False
+
+        agent_name = self.get_param("agent_name", "uav")
+        agent_id = self.get_param("agent_id", 1)
+        default_agent_prefix = f"/{agent_name}{agent_id}"
+        self.agent_prefix = self.get_param("agent_prefix", default_agent_prefix)
+
+        default_odom_topic = self.join_topic(self.agent_prefix, "sunray/uav_odom")
+        self.odom_topic = self.get_param("odom_topic", default_odom_topic)
+        self.cmd_vel_topic = self.get_param("cmd_vel_topic", "/CERLAB/quadcopter/cmd_vel")
+        self.setpoint_pose_topic = self.get_param("setpoint_pose_topic", "/CERLAB/quadcopter/setpoint_pose")
+        self.goal_topic = self.get_param("goal_topic", "/move_base_simple/goal")
+        self.target_dir_min_xy_dist = self.get_param("target_dir_min_xy_dist", self.target_dir_min_xy_dist)
+
+        self.mavros_prefix = self.get_param("mavros_prefix", self.join_topic(self.agent_prefix, "mavros"))
+        self.mavros_odom_topic = self.get_param("mavros_odom_topic", self.join_topic(self.mavros_prefix, "local_position/odom"))
+        self.mavros_state_topic = self.get_param("mavros_state_topic", self.join_topic(self.mavros_prefix, "state"))
+        self.mavros_setpoint_raw_topic = self.get_param("mavros_setpoint_raw_topic", self.join_topic(self.mavros_prefix, "setpoint_raw/local"))
+        self.mavros_setpoint_pose_topic = self.get_param("mavros_setpoint_pose_topic", self.join_topic(self.mavros_prefix, "setpoint_position/local"))
+        self.mavros_set_mode_service = self.get_param("mavros_set_mode_service", self.join_topic(self.mavros_prefix, "set_mode"))
+        self.mavros_arming_service = self.get_param("mavros_arming_service", self.join_topic(self.mavros_prefix, "cmd/arming"))
+
+        # 默认使用 Sunray无人机控制框架适配模式；只有显式设置 /rl/use_px4=true 时才直接走 MAVROS。
+        self.px4_control = self.get_param("use_px4", False)
+        rospy.loginfo("[nav-ros]: use_px4=%s", self.px4_control)
+        rospy.loginfo("[nav-ros]: odom topic: %s", self.mavros_odom_topic if self.px4_control else self.odom_topic)
 
         self.use_policy_server = False
 
         self.odom_received = False
         if (self.px4_control):
             # PX4/MAVROS 控制模式：
-            # 1. 从 MAVROS local_position/odom 获取无人机里程计。
+            # 1. 从带无人机命名空间的 MAVROS local_position/odom 获取无人机里程计。
             # 2. 从 MAVROS state 获取当前飞控模式和解锁状态。
             # 3. 将 NAVRL 生成的速度/位置指令直接发布给 MAVROS setpoint 接口。
-            self.odom_sub = rospy.Subscriber("/mavros/local_position/odom", Odometry, self.odom_callback)
-            self.state_sub = rospy.Subscriber("/mavros/state", State, self.state_callback)
-            self.action_pub = rospy.Publisher("/mavros/setpoint_raw/local", PositionTarget, queue_size=10)
-            self.pose_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=10)
+            self.odom_sub = rospy.Subscriber(self.mavros_odom_topic, Odometry, self.odom_callback)
+            self.state_sub = rospy.Subscriber(self.mavros_state_topic, State, self.state_callback)
+            self.action_pub = rospy.Publisher(self.mavros_setpoint_raw_topic, PositionTarget, queue_size=10)
+            self.pose_pub = rospy.Publisher(self.mavros_setpoint_pose_topic, PoseStamped, queue_size=10)
 
             # PX4 OFFBOARD 模式切换和解锁服务。
-            self.set_mode_client = rospy.ServiceProxy("mavros/set_mode", SetMode)
-            self.arming_client = rospy.ServiceProxy("mavros/cmd/arming", CommandBool)
+            self.set_mode_client = rospy.ServiceProxy(self.mavros_set_mode_service, SetMode)
+            self.arming_client = rospy.ServiceProxy(self.mavros_arming_service, CommandBool)
 
             self.mavros_state = None
             self.offb_set_mode = SetModeRequest()
@@ -67,21 +92,17 @@ class Navigation:
             self.arm_cmd = CommandBoolRequest()
             self.arm_cmd.value = True
         else:
-            # 非 PX4 控制模式：
-            # 1. 使用 NAVRL 原始示例的 /CERLAB/quadcopter/odom 作为里程计输入。
-            # 2. 将速度指令发布到 /CERLAB/quadcopter/cmd_vel。
+            # Sunray无人机控制框架适配模式：
+            # 1. 默认使用 external_fusion_node 发布的 /uav1/sunray/uav_odom 作为里程计输入。
+            # 2. 将速度指令发布到内部桥接话题。
             #    sunray_navrl_adapter/NavRL2Sunray_node 会订阅该话题，并转换成 Sunray UAVControlCMD。
             # 3. setpoint_pose 用于 NAVRL 内部起飞/目标位姿相关逻辑。
-            # 以下odom三选一均可
-            self.odom_sub1 = rospy.Subscriber("/uav1/sunray_sim/odom", Odometry, self.odom_callback)
-            self.odom_sub2 = rospy.Subscriber("/uav1/sunray/localization/local_odom", Odometry, self.odom_callback)
-            self.odom_sub3 = rospy.Subscriber("/ugv1/sunray_sim/odom", Odometry, self.odom_callback)
-            self.odom_sub = rospy.Subscriber("/CERLAB/quadcopter/odom", Odometry, self.odom_callback)
-            self.action_pub = rospy.Publisher("/CERLAB/quadcopter/cmd_vel", TwistStamped, queue_size=10)
-            self.pose_pub = rospy.Publisher("/CERLAB/quadcopter/setpoint_pose", PoseStamped, queue_size=10)
+            self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.odom_callback)
+            self.action_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped, queue_size=10)
+            self.pose_pub = rospy.Publisher(self.setpoint_pose_topic, PoseStamped, queue_size=10)
 
         # RViz 2D Nav Goal 输入的导航目标点。
-        self.goal_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_callback)
+        self.goal_sub = rospy.Subscriber(self.goal_topic, PoseStamped, self.goal_callback)
 
         # 以下话题主要用于 RViz 调试显示：
         # raycast：策略输入使用的射线采样点。
@@ -106,6 +127,14 @@ class Navigation:
         safety_thread.start()
 
         self.takeoff()
+
+    @staticmethod
+    def join_topic(prefix, suffix):
+        return prefix.rstrip("/") + "/" + suffix.lstrip("/")
+
+    @staticmethod
+    def get_param(name, default):
+        return rospy.get_param("~" + name, rospy.get_param("/rl/" + name, default))
   
     def make_empty_dynamic_obstacles(self):
         dynamic_obstacle_num = self.cfg.algo.feature_extractor.dyn_obs_num
@@ -299,7 +328,7 @@ class Navigation:
 
         self.goal = goal
         self.goal.pose.position.z = self.takeoff_pose.pose.position.z
-        self.update_target_dir()
+        self.update_target_dir(force=True)
 
         self.goal_received = True
         self.stable_times = 0
@@ -314,12 +343,24 @@ class Navigation:
             self.target_dir[2].item(),
         )
 
-    def update_target_dir(self):
+    def update_target_dir(self, force=False):
         if self.goal is None or not self.odom_received:
             return
         dir_x = self.goal.pose.position.x - self.odom.pose.pose.position.x
         dir_y = self.goal.pose.position.y - self.odom.pose.pose.position.y
         dir_z = self.goal.pose.position.z - self.odom.pose.pose.position.z
+        xy_dist = np.hypot(dir_x, dir_y)
+        if (not force and self.target_dir is not None and xy_dist < self.target_dir_min_xy_dist):
+            return
+        if (xy_dist < 1e-6):
+            _, _, yaw = tf.transformations.euler_from_quaternion([
+                self.odom.pose.pose.orientation.x,
+                self.odom.pose.pose.orientation.y,
+                self.odom.pose.pose.orientation.z,
+                self.odom.pose.pose.orientation.w,
+            ])
+            dir_x = np.cos(yaw)
+            dir_y = np.sin(yaw)
         self.target_dir = torch.tensor([dir_x, dir_y, dir_z], device=self.cfg.device)
 
     def quaternion_to_rotation_matrix(self, quaternion):
@@ -525,7 +566,8 @@ class Navigation:
             return
 
         # 到达目标后进入锁存保持状态：目标点只发布一次位置设定值，之后不再继续发布速度指令。
-        # Sunray 的 MOVE_POINT 是事件型命令，发送一次即可持续定点保持；继续发布速度指令反而容易在目标附近抖动。
+        # 适配器会把 setpoint_pose 转换为 UAVControlCMD::XyzPosYaw，发送一次即可进入定点保持；
+        # 继续发布速度指令反而容易在目标附近抖动。
         if (self.goal_hold_latched):
             return
 
@@ -591,7 +633,7 @@ class Navigation:
                 safe_cmd_vel_local = 0.5 * safe_cmd_vel_local/np.linalg.norm(safe_cmd_vel_local)
                 safe_cmd_vel_world = 0.5 * safe_cmd_vel_world/np.linalg.norm(safe_cmd_vel_world)
         # Sunray适配修改：原始NAVRL在1.0m内清零速度，仍然持续发布cmd_vel。
-        # 这里改为0.4m内发布明确的位置设定值，使适配器转换为Sunray MOVE_POINT定点保持。
+        # 这里改为0.4m内发布明确的位置设定值，使适配器转换为 UAVControlCMD::XyzPosYaw 定点保持。
         # elif (distance <= 1.0):
         #     safe_cmd_vel_local *= 0.
         #     safe_cmd_vel_world *= 0.

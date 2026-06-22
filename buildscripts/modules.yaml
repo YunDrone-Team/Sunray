@@ -167,7 +167,6 @@ modules:
     build_path: "build/sunray_orca"
     dependencies: ["sunray_common"]
 
-
   # 图像识别模块
   sunray_detection:
     description: "图像识别模块"
@@ -181,6 +180,31 @@ modules:
     source_path: "External_Module/VINS-Fusion"
     build_path: "build/vins_fusion"
     dependencies: [""]
+
+  onboard_detector:
+    description: "NavRL planner 示例的机载动态障碍物检测包，提供动态障碍物服务和检测节点"
+    label: planning
+    source_path: "External_Module/navrl_planner_example/onboard_detector"
+    build_path: "build/onboard_detector"
+    dependencies: []
+  map_manager:
+    description: "NavRL planner 示例的地图管理包，提供占据地图、ESDF、动态地图和地图查询服务"
+    label: planning
+    source_path: "External_Module/navrl_planner_example/map_manager"
+    build_path: "build/map_manager"
+    dependencies: ["onboard_detector"]
+  navigation_runner:
+    description: "NavRL planner 示例的导航运行包，提供安全动作和策略推理服务"
+    label: planning
+    source_path: "External_Module/navrl_planner_example/navigation_runner"
+    build_path: "build/navigation_runner"
+    dependencies: ["onboard_detector", "map_manager"]
+  sunray_navrl_adapter:
+    description: "NavRL planner 到 Sunray 控制接口的适配示例，预留 NavRL 控制命令转换节点"
+    label: planning
+    source_path: "External_Module/navrl_planner_example/sunray_navrl_adapter"
+    build_path: "build/sunray_navrl_adapter"
+    dependencies: ["sunray_common", "navigation_runner"]
 
 # ========== 预定义组 ==========
 # 直接基于 build_deprecated 目录的脚本内容

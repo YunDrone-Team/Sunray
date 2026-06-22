@@ -53,7 +53,7 @@ namespace safeAction {
 		}
 
 		// safety distance
-		if (not this->nh_.getParam(this->ns_ + "/safety_distance", this->maxHeight_)){
+		if (not this->nh_.getParam(this->ns_ + "/safety_distance", this->safetyDist_)){
 			this->safetyDist_ = 0.3;
 			cout << this->hint_ << ": No safety distance param. Use default: 0.3m" << endl;
 		}

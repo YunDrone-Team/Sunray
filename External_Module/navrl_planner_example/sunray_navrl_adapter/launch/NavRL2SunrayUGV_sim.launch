@@ -1,5 +1,5 @@
 <launch>
-  <!-- 直接对接 sunray_sim 单无人车仿真，不启动定位融合，也不启动 sunray_ugv_control。 -->
+  <!-- 对接 Sunray UGV 控制接口，NavRL 输出会转换为 sunray_msgs/UGVControlCMD。 -->
   <arg name="agent_name" default="ugv" />
   <arg name="agent_id" default="1" />
   <arg name="agent_prefix" default="/$(arg agent_name)$(arg agent_id)" />
@@ -18,8 +18,9 @@
   <arg name="setpoint_pose_topic" default="/CERLAB/quadcopter/setpoint_pose" />
   <arg name="goal_topic" default="/move_base_simple/goal" />
 
-  <!-- sunray_sim UgvSimulator 直接订阅这个车体系速度指令。 -->
-  <arg name="ugv_cmd_vel_topic" default="$(arg agent_prefix)/sunray/ugv_control/cmd_vel" />
+  <!-- Sunray UGV 控制节点订阅这个外部控制指令。 -->
+  <arg name="ugv_control_cmd_topic" default="$(arg agent_prefix)/sunray_ugv/ugv_control_cmd" />
+  <arg name="frame_id" default="map" />
 
   <arg name="node_name" default="NavRL2SunrayUGV_sim_$(arg agent_id)" />
   <arg name="queue_size" default="50" />
@@ -32,7 +33,14 @@
   <arg name="goal_stop_distance" default="0.4" />
   <arg name="status_print_hz" default="1.0" />
 
-  <param name="rl/use_px4" value="false" />
+  <param name="/rl/use_px4" value="false" />
+  <param name="/rl/agent_name" value="$(arg agent_name)" />
+  <param name="/rl/agent_id" value="$(arg agent_id)" />
+  <param name="/rl/agent_prefix" value="$(arg agent_prefix)" />
+  <param name="/rl/odom_topic" value="$(arg odom_topic)" />
+  <param name="/rl/cmd_vel_topic" value="$(arg cmd_vel_topic)" />
+  <param name="/rl/setpoint_pose_topic" value="$(arg setpoint_pose_topic)" />
+  <param name="/rl/goal_topic" value="$(arg goal_topic)" />
 
   <rosparam file="$(arg map_config)" ns="/occupancy_map" />
   <param name="/occupancy_map/odom_topic" value="$(arg odom_topic)" />
@@ -52,7 +60,8 @@
     <param name="setpoint_pose_topic" value="$(arg setpoint_pose_topic)" />
     <param name="goal_topic" value="$(arg goal_topic)" />
     <param name="odom_topic" value="$(arg odom_topic)" />
-    <param name="output_topic" value="$(arg ugv_cmd_vel_topic)" />
+    <param name="output_topic" value="$(arg ugv_control_cmd_topic)" />
+    <param name="frame_id" value="$(arg frame_id)" />
     <param name="queue_size" value="$(arg queue_size)" />
     <param name="max_linear_x" value="$(arg max_linear_x)" />
     <param name="max_linear_y" value="$(arg max_linear_y)" />

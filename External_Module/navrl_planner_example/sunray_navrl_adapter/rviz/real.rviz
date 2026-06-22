@@ -173,7 +173,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /CERLAB/quadcopter/pose
+      Topic: /uav1/sunray/uav_odom
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
@@ -269,7 +269,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /mavros/local_position/pose
+      Topic: /uav1/sunray/uav_odom
       Unreliable: false
       Value: true
     - Alpha: 1

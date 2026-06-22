@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   navigation_runner
   nav_msgs
   roscpp
-  sunray_common
   sunray_msgs
 )
 
@@ -18,7 +17,6 @@ catkin_package(
     navigation_runner
     nav_msgs
     roscpp
-    sunray_common
     sunray_msgs
 )
 

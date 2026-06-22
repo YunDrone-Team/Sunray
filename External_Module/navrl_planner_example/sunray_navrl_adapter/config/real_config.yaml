@@ -20,8 +20,8 @@ lidar_point_cloud_topic: /uav1/livox/lidar
 # 位姿话题。当前 odom 模式下不使用，保留为 NAVRL 默认兼容项。
 pose_topic: /CERLAB/quadcopter/pose
 
-# 里程计话题。真机默认使用 Sunray 定位模块输出的 local_odom。
-odom_topic: /uav1/sunray/localization/local_odom
+# 里程计话题。真机默认使用 Sunray无人机控制框架 external_fusion_node 发布的 uav_odom。
+odom_topic: /uav1/sunray/uav_odom
 
 # 无人机碰撞体尺寸，单位 m，分别对应 x/y/z 方向。
 robot_size: [0.2, 0.2, 0.1]

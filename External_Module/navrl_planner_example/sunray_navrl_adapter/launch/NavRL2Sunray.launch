@@ -3,8 +3,8 @@
     <arg name="agent_id" default="1" />
     <arg name="agent_prefix" default="/$(arg agent_name)$(arg agent_id)" />
     
-    <!-- 里程计话题 -->
-    <arg name="odom_topic" default="$(arg agent_prefix)/sunray/localization/local_odom" />
+    <!-- 里程计话题：使用 Sunray无人机控制框架 external_fusion_node 发布的 nav_msgs/Odometry。 -->
+    <arg name="odom_topic" default="$(arg agent_prefix)/sunray/uav_odom" />
     
     <!-- 雷达点云：用于 map_manager 的 lidar pointcloud 模式。 -->
     <arg name="point_cloud_topic" default="/uav1/livox/lidar" />
@@ -25,7 +25,14 @@
     <arg name="desired_yaw" default="0.0" />
     <arg name="frame_id" default="map" />
     <arg name="status_print_hz" default="1.0" />
-    <param name="rl/use_px4" value="false" />
+    <param name="/rl/use_px4" value="false" />
+    <param name="/rl/agent_name" value="$(arg agent_name)" />
+    <param name="/rl/agent_id" value="$(arg agent_id)" />
+    <param name="/rl/agent_prefix" value="$(arg agent_prefix)" />
+    <param name="/rl/odom_topic" value="$(arg odom_topic)" />
+    <param name="/rl/cmd_vel_topic" value="$(arg cmd_vel_topic)" />
+    <param name="/rl/setpoint_pose_topic" value="$(arg setpoint_pose_topic)" />
+    <param name="/rl/goal_topic" value="$(arg goal_topic)" />
     
     <arg name="publish_world_map_tf" default="true" />
     <!-- 发布一个tf变换，将map系与world系重合，map系为nav_rl自带的map_manager输出话题的坐标系，world为sunray调试/可视化数据输出的坐标系 -->
