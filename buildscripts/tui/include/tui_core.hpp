@@ -180,8 +180,20 @@ struct UIState {
   int module_hover_index = -1;
   
   // ==================== 滚动状态 ====================
-  
-  /** 
+
+  /**
+   * @brief 左栏模块组列表滚动偏移量
+   * 用于当模块组/标签数量超过可显示区域时的滚动显示
+   */
+  int group_scroll_offset = 0;
+
+  /**
+   * @brief 左栏可显示的模块组行数
+   * 动态计算，和右栏保持同一可见高度
+   */
+  int group_visible_count = 10;
+
+  /**
    * @brief 右栏模块列表滚动偏移量
    * 用于当模块数量超过可显示区域时的滚动显示
    * 表示跳过的顶部条目数量
@@ -274,7 +286,7 @@ struct UIState {
    * false时隐藏对话框，显示正常的双栏界面
    */
   bool show_build_dialog = false;
-  
+
   /** 
    * @brief 构建请求标志
    * 用户确认构建后设为true，触发TUI退出和CLI启动
@@ -458,6 +470,16 @@ struct UIState {
    * - 搜索条件变化时
    */
   void update_group_render_items();
+
+  /**
+   * @brief 判断左栏指定索引是否是可选择的组行
+   */
+  bool is_selectable_group_index(int index) const;
+
+  /**
+   * @brief 查找下一个可选择组行
+   */
+  int find_next_selectable_group_index(int start_index, int direction) const;
   
   /**
    * @brief 更新右栏渲染项目列表（模块显示器）
@@ -475,6 +497,16 @@ struct UIState {
    * - 冲突状态更新时
    */
   void update_module_render_items();
+
+  /**
+   * @brief 判断右栏指定索引是否是可选择的模块行
+   */
+  bool is_selectable_module_index(int index) const;
+
+  /**
+   * @brief 查找下一个可选择模块行
+   */
+  int find_next_selectable_module_index(int start_index, int direction) const;
   
   /**
    * @brief 确保未分组模块的处理
@@ -592,7 +624,8 @@ struct UIState {
    * 显示构建确认对话框，列出选中的模块
    */
   void handle_build_button();
-  
+
+  /**
   /**
    * @brief 关闭构建确认对话框
    * 隐藏模态对话框，返回正常的双栏界面
@@ -630,7 +663,12 @@ struct UIState {
    * 基于当前终端尺寸动态计算
    */
   void calculate_module_visible_count();
-  
+
+  /**
+   * @brief 确保当前组选择项可见（滚动到可视区域内）
+   */
+  void ensure_group_selection_visible();
+
   /**
    * @brief 确保当前选择项可见（滚动到可视区域内）
    * 当键盘导航超出可视范围时自动调整滚动偏移
@@ -642,6 +680,12 @@ struct UIState {
    * @param direction 滚动方向（正数向下滚动，负数向上滚动）
    */
   void scroll_module_list(int direction);
+
+  /**
+   * @brief 调整模块组列表滚动位置
+   * @param direction 滚动方向（正数向下滚动，负数向上滚动）
+   */
+  void scroll_group_list(int direction);
   
   // ==================== 窗口尺寸管理 ====================
   

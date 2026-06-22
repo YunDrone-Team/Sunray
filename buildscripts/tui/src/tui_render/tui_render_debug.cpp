@@ -45,15 +45,10 @@ int UIRenderer::calculate_debug_content_lines() const {
 
 /**
  * @brief 计算按键指南的实际内容行数
- * 当前按键指南是四列布局，统一为2行
+ * 当前按键指南统一压缩为单行显示
  */
 int UIRenderer::calculate_key_guide_content_lines() const {
-  // 四列布局，每列统一2行：
-  // 第1列: ↑↓←→, Tab
-  // 第2列: Enter, Space/C
-  // 第3列: 鼠标, 滚轮/点击
-  // 第4列: q/Esc, Shift+Tab
-  return 2;
+  return 1;
 }
 
 // ==================== 调试窗口渲染 ====================
@@ -173,31 +168,21 @@ ftxui::Element UIRenderer::render_debug_window() {
 // ==================== 按键指南渲染 ====================
 
 ftxui::Element UIRenderer::render_key_guide() {
-  // 按键提示 - 3列布局（每列2行）
   return hbox({
-    // 第一列 - 导航
-    vbox({text("↑↓←→") | color(Color::Cyan),
-          text("Tab") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("导航") | color(Color::GrayLight),
-          text("焦点") | color(Color::GrayLight)}) | flex,
-    text("   ") | color(Color::Default),
-    
-    // 第二列 - 操作
-    vbox({text("Enter") | color(Color::Cyan),
-          text("Space/C") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("选择") | color(Color::GrayLight),
-          text("批量/清空") | color(Color::GrayLight)}) | flex,
-    text("   ") | color(Color::Default),
-    
-    // 第三列 - 退出和其他
-    vbox({text("q/Esc") | color(Color::Cyan),
-          text("鼠标") | color(Color::Cyan)}) | flex,
-    text("  ") | color(Color::Default),
-    vbox({text("退出") | color(Color::GrayLight),
-          text("交互") | color(Color::GrayLight)}) | flex
-  }) | border | bgcolor(Color::RGB(30, 30, 30));
+             text("↑↓") | color(Color::Cyan) | bold,
+             text(" 选择  ") | color(Color::GrayLight),
+             text("←→") | color(Color::Cyan) | bold,
+             text(" 切换栏  ") | color(Color::GrayLight),
+             text("Tab") | color(Color::Cyan) | bold,
+             text(" 切换  ") | color(Color::GrayLight),
+             text("Enter") | color(Color::Cyan) | bold,
+             text(" 勾选  ") | color(Color::GrayLight),
+             text("C") | color(Color::Cyan) | bold,
+             text(" 取消勾选  ") | color(Color::GrayLight),
+             text("q/Esc") | color(Color::Cyan) | bold,
+             text(" 退出") | color(Color::GrayLight),
+         }) |
+         center | bgcolor(Color::RGB(30, 30, 30));
 }
 
 } // namespace sunray_tui

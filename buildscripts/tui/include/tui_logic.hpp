@@ -24,11 +24,6 @@ public:
      */
     int run();
     
-    /**
-     * @brief 执行构建流程（TUI→CLI移交）
-     */
-    void execute_build();
-
 private:
     UIState& state_;
     UIRenderer renderer_;
@@ -58,6 +53,11 @@ private:
      * @return 项目根目录绝对路径
      */
     std::string get_project_root_dir() const;
+
+    /**
+     * @brief 执行构建流程（TUI→CLI移交）
+     */
+    void execute_build();
     
     /**
      * @brief 保存当前选择到隐藏文件

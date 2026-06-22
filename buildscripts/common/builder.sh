@@ -96,6 +96,19 @@ build_catkin_module() {
     
     local source_path=$(get_module_config "$module" "source_path")
     local build_path=$(get_module_config "$module" "build_path")
+    local abs_source_path
+    abs_source_path="$(cd "$source_path" && pwd)"
+    local cache_file="$build_path/CMakeCache.txt"
+
+    if [[ -f "$cache_file" ]]; then
+        local cached_source_path
+        cached_source_path="$(grep '^CMAKE_HOME_DIRECTORY:INTERNAL=' "$cache_file" 2>/dev/null | cut -d= -f2-)"
+        if [[ -n "$cached_source_path" && "$cached_source_path" != "$abs_source_path" ]]; then
+            print_warning "检测到模块 $module 的旧CMake缓存路径: $cached_source_path"
+            print_status "当前源码路径已变更为: $abs_source_path，清理 $build_path 后重新配置"
+            rm -rf "$build_path"
+        fi
+    fi
     
     # 分两步：1) catkin_make初始化 2) 直接调用make
     echo "执行构建命令: catkin_make -j$build_jobs --source $source_path --build $build_path"
@@ -187,6 +200,7 @@ cleanup_build_environment() {
     print_debug "清理构建环境..."
     unset BUILD_JOBS ROS_WORKSPACE BUILD_START_TIME
     print_debug "构建环境清理完成"
+    return 0
 }
 
 # 显示构建结果表格 - 重定向到新模块
@@ -194,4 +208,3 @@ show_build_results_table() {
     # 调用build_results.sh中的函数
     display_build_results_table
 }
-

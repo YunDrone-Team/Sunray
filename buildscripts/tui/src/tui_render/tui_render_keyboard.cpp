@@ -98,7 +98,14 @@ bool UIRenderer::handle_dual_column_keyboard_event(const Event &event) {
   if (event == Event::ArrowLeft || event == Event::ArrowRight) {
     if (state_.build_button_focused) {
       // 在按钮行内左右移动焦点，但不设置 hover；仅用于回车触发目标
-      state_.button_focus_index = (event == Event::ArrowLeft) ? 0 : 1;
+      const int button_count = 2;
+      if (event == Event::ArrowLeft) {
+        state_.button_focus_index =
+            (state_.button_focus_index + button_count - 1) % button_count;
+      } else {
+        state_.button_focus_index =
+            (state_.button_focus_index + 1) % button_count;
+      }
       start_button_hovered_ = false;
       clear_button_hovered_ = false;
       animation::RequestAnimationFrame();
@@ -148,6 +155,8 @@ bool UIRenderer::handle_dual_column_keyboard_event(const Event &event) {
 
     // 🔥 同步清空传统状态
     state_.view.selected_modules.clear();
+    state_.view.selected_groups.clear();
+    state_.view.active_group.clear();
 
     // 更新双栏显示
     state_.update_group_render_items();
@@ -178,10 +187,11 @@ void UIRenderer::move_group_hover_up() {
 
   if (state_.group_hover_index <= 0) {
     // 已经在顶部，循环到底部
-    state_.group_hover_index =
-        static_cast<int>(state_.group_render_items.size()) - 1;
+    state_.group_hover_index = state_.find_next_selectable_group_index(
+        static_cast<int>(state_.group_render_items.size()) - 1, -1);
   } else {
-    state_.group_hover_index--;
+    state_.group_hover_index =
+        state_.find_next_selectable_group_index(state_.group_hover_index - 1, -1);
   }
   // 同步选择索引到hover位置
   state_.group_selection_index = state_.group_hover_index;
@@ -196,9 +206,11 @@ void UIRenderer::move_group_hover_down() {
   if (state_.group_hover_index >=
       static_cast<int>(state_.group_render_items.size()) - 1) {
     // 已经在底部，循环到顶部
-    state_.group_hover_index = 0;
+    state_.group_hover_index =
+        state_.find_next_selectable_group_index(0, 1);
   } else {
-    state_.group_hover_index++;
+    state_.group_hover_index =
+        state_.find_next_selectable_group_index(state_.group_hover_index + 1, 1);
   }
   // 同步选择索引到hover位置
   state_.group_selection_index = state_.group_hover_index;
@@ -212,10 +224,11 @@ void UIRenderer::move_module_hover_up() {
 
   if (state_.module_hover_index <= 0) {
     // 已经在顶部，循环到底部
-    state_.module_hover_index =
-        static_cast<int>(state_.module_render_items.size()) - 1;
+    state_.module_hover_index = state_.find_next_selectable_module_index(
+        static_cast<int>(state_.module_render_items.size()) - 1, -1);
   } else {
-    state_.module_hover_index--;
+    state_.module_hover_index =
+        state_.find_next_selectable_module_index(state_.module_hover_index - 1, -1);
   }
   // 同步选择索引到hover位置
   state_.module_selection_index = state_.module_hover_index;
@@ -232,9 +245,11 @@ void UIRenderer::move_module_hover_down() {
   if (state_.module_hover_index >=
       static_cast<int>(state_.module_render_items.size()) - 1) {
     // 已经在底部，循环到顶部
-    state_.module_hover_index = 0;
+    state_.module_hover_index =
+        state_.find_next_selectable_module_index(0, 1);
   } else {
-    state_.module_hover_index++;
+    state_.module_hover_index =
+        state_.find_next_selectable_module_index(state_.module_hover_index + 1, 1);
   }
   // 同步选择索引到hover位置
   state_.module_selection_index = state_.module_hover_index;
@@ -255,9 +270,11 @@ void UIRenderer::sync_hover_to_active_pane() {
     // 如果hover位置超出范围，调整到有效范围
     if (state_.group_hover_index < 0 ||
         state_.group_hover_index >=
-            static_cast<int>(state_.group_render_items.size())) {
-      state_.group_hover_index = 0;
-      state_.group_selection_index = 0;
+            static_cast<int>(state_.group_render_items.size()) ||
+        !state_.is_selectable_group_index(state_.group_hover_index)) {
+      state_.group_hover_index =
+          state_.find_next_selectable_group_index(0, 1);
+      state_.group_selection_index = state_.group_hover_index;
     }
   } else {
     // 右栏有焦点，设置模块hover到当前选择位置
@@ -265,9 +282,11 @@ void UIRenderer::sync_hover_to_active_pane() {
     // 如果hover位置超出范围，调整到有效范围
     if (state_.module_hover_index < 0 ||
         state_.module_hover_index >=
-            static_cast<int>(state_.module_render_items.size())) {
-      state_.module_hover_index = 0;
-      state_.module_selection_index = 0;
+            static_cast<int>(state_.module_render_items.size()) ||
+        !state_.is_selectable_module_index(state_.module_hover_index)) {
+      state_.module_hover_index =
+          state_.find_next_selectable_module_index(0, 1);
+      state_.module_selection_index = state_.module_hover_index;
     }
   }
   // 立即更新详情信息

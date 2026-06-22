@@ -66,8 +66,11 @@ HAD_CONFLICTS=false
 BUILD_JOBS=0
 SELECTED_MODULES=()
 
+# Buildscripts 根目录（优先使用外部注入的绝对路径）
+BUILDSCRIPTS_ROOT="${BUILDSCRIPTS_DIR:-tools/build_scripts}"
+
 # 隐藏文件路径
-LAST_SELECTION_FILE="buildscripts/tui/build/.sunray_last_build_selection"
+LAST_SELECTION_FILE="${BUILDSCRIPTS_ROOT}/tui/build/.sunray_last_build_selection"
 
 # 保存模块选择到隐藏文件
 save_module_selection() {
@@ -565,33 +568,49 @@ clean_build_dirs() {
 clean_buildscripts_dirs() {
     echo "${CYAN}=== Buildscripts Cleanup Tool ===${NC}"
     echo
-    
-    local bs_dirs=("buildscripts/tui/build" "buildscripts/bin" "buildscripts/tui/.cache")
+
+    local bs_roots=("${BUILDSCRIPTS_ROOT}")
+    if [[ "${BUILDSCRIPTS_ROOT}" != "tools/buildscripts" ]]; then
+        bs_roots+=("tools/buildscripts")
+    fi
+    if [[ "${BUILDSCRIPTS_ROOT}" != "buildscripts" ]]; then
+        bs_roots+=("buildscripts")
+    fi
+
+    local bs_dirs=()
+    local bs_root
+    for bs_root in "${bs_roots[@]}"; do
+        bs_dirs+=("$bs_root/tui/build" "$bs_root/bin" "$bs_root/tui/.cache")
+    done
+
     local total_cleaned=0
-    
+
     for dir in "${bs_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             local size=$(du -sh "$dir" 2>/dev/null | cut -f1 || echo "unknown")
             echo "Found buildscripts directory: $dir (size: $size)"
-            rm -rf "$dir" && { 
-                print_success "✓ Removed $dir"; 
-                ((total_cleaned++)); 
+            rm -rf "$dir" && {
+                print_success "✓ Removed $dir";
+                ((total_cleaned++));
             } || print_error "✗ Failed to remove $dir"
         fi
     done
-    
+
     # Clean buildscripts compilation artifacts
-    local patterns=("buildscripts/**/*.o" "buildscripts/**/CMakeCache.txt" "buildscripts/**/cmake_install.cmake" "buildscripts/**/Makefile")
-    for pattern in "${patterns[@]}"; do
-        local files=$(find buildscripts -name "$(basename "$pattern")" -type f 2>/dev/null | head -10)
-        if [[ -n "$files" ]]; then
-            echo "Found $(basename "$pattern") files in buildscripts"
-            find buildscripts -name "$(basename "$pattern")" -type f -delete 2>/dev/null
-            print_success "✓ Removed $(basename "$pattern") files from buildscripts"
-            ((total_cleaned++))
-        fi
+    local artifact_names=("*.o" "CMakeCache.txt" "cmake_install.cmake" "Makefile")
+    for bs_root in "${bs_roots[@]}"; do
+        [[ ! -d "$bs_root" ]] && continue
+        for artifact in "${artifact_names[@]}"; do
+            local files=$(find "$bs_root" -name "$artifact" -type f 2>/dev/null | head -10)
+            if [[ -n "$files" ]]; then
+                echo "Found $artifact files in $bs_root"
+                find "$bs_root" -name "$artifact" -type f -delete 2>/dev/null
+                print_success "✓ Removed $artifact files from $bs_root"
+                ((total_cleaned++))
+            fi
+        done
     done
-    
+
     echo -e "\\n${GREEN}Buildscripts cleanup completed, processed $total_cleaned items${NC}"
 }
 

@@ -43,7 +43,7 @@ public:
    */
   /**
    * @brief 运行渲染器（TUI→CLI 移交）
-   * @param build_callback 触发“开始编译构建”后的回调（TUI退出后执行）
+   * @param build_callback 触发主操作后的回调（TUI退出后执行）
    * @return 退出码
    */
   int run_with_build_callback(std::function<void()> build_callback);
@@ -57,7 +57,7 @@ private:
   ftxui::Component start_button_;
   /// 清除构建按钮组件（点击后绿色闪烁三次，仅视觉）
   ftxui::Component clear_button_;
-  /// 水平容器，承载两个按钮
+  /// 水平容器，承载底部按钮
   ftxui::Component buttons_row_;
   /// 清除构建按钮闪烁计数（>0时闪烁），单位：帧；3次闪烁≈6帧
   int clear_button_flash_remaining_ = 0;

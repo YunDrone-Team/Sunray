@@ -25,6 +25,8 @@ void UIRenderer::rebuild_dual_column_coordinate_mapping() {
       right_content_start_y,       // 右栏内容起始Y坐标
       left_width,                  // 动态计算的左栏宽度边界
       right_start,                 // 动态计算的右栏起始X坐标
+      state_.group_scroll_offset,  // 左栏滚动偏移
+      state_.group_visible_count,  // 左栏可见数量
       state_.module_scroll_offset, // 右栏滚动偏移
       state_.module_visible_count  // 右栏可见数量
   );

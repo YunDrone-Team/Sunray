@@ -24,6 +24,8 @@
 #include "ftxui/screen/terminal.hpp"
 #include <algorithm>
 #include <cctype>
+#include <map>
+#include <set>
 
 
 namespace sunray_tui {
@@ -121,14 +123,11 @@ void UIState::build_indices() {
 void UIState::toggle_module_selection_with_conflicts(
     const std::string &module_name) {
   if (interaction_manager) {
-    // 1. 使用新的交互管理器处理选择逻辑
     interaction_manager->toggle_module_selection(module_name);
-
-    // 2. 同步更新传统的视图状态 - 保持两套系统一致性
-    if (interaction_manager->is_module_selected(module_name)) {
-      view.selected_modules.insert(module_name);
-    } else {
-      view.selected_modules.erase(module_name);
+    view.selected_modules.clear();
+    for (const auto &selected_module :
+         interaction_manager->get_selected_modules()) {
+      view.selected_modules.insert(selected_module);
     }
   }
 }
@@ -212,16 +211,46 @@ void UIState::update_group_render_items() {
   }
   int max_digits = std::to_string(max_group_size).length();
 
-  // 3. 遍历所有组，生成左栏渲染项目
+  std::map<std::string, std::vector<const ModuleGroup *>> groups_by_label;
   for (const auto &group : core_data.groups) {
     // 3.1 搜索过滤逻辑 - 检查组名是否匹配搜索条件
     if (!view.search_filter.empty()) {
       if (!matches_filter(group.name, view.search_filter) &&
-          !matches_filter(group.description, view.search_filter)) {
+          !matches_filter(group.description, view.search_filter) &&
+          !matches_filter(group.label, view.search_filter)) {
         continue; // 不匹配搜索条件，跳过
       }
     }
+    groups_by_label[group.label.empty() ? "Other" : group.label].push_back(&group);
+  }
 
+  const std::vector<std::string> label_order = {"Product", "Simulation", "Test"};
+  std::unordered_set<std::string> emitted_labels;
+  auto emit_label_group = [&](const std::string &label) {
+    auto it = groups_by_label.find(label);
+    if (it == groups_by_label.end() || it->second.empty()) {
+      return;
+    }
+    emitted_labels.insert(label);
+
+    const auto &groups = it->second;
+    size_t selected_groups = 0;
+    for (const ModuleGroup *group : groups) {
+      if (view.is_group_selected(group->name)) {
+        selected_groups++;
+      }
+    }
+
+    RenderItem label_item = RenderItem::label_header(
+        label, "[" + label + "]",
+        "(" + std::to_string(selected_groups) + "/" +
+            std::to_string(groups.size()) + ")");
+    label_item.has_selected_items =
+        (selected_groups > 0);
+    group_render_items.emplace_back(label_item);
+
+    for (const ModuleGroup *group_ptr : groups) {
+    const ModuleGroup &group = *group_ptr;
     // 3.2 计算组内选择统计
     size_t selected_in_group = 0;
     for (const auto &module_name : group.modules) {
@@ -246,10 +275,19 @@ void UIState::update_group_render_items() {
     // 3.6 创建组渲染项目
     RenderItem group_item =
         RenderItem::group_header(group.name, group_name_part, counter_part);
-    // 🔥 修复黄色圆点逻辑：只有当组内所有模块都被选中时才显示黄色圆点
-    group_item.has_selected_items =
-        (selected_in_group == total_in_group && total_in_group > 0);
+    // 黄色圆点只表示用户显式选中的组，模块覆盖全选仅通过计数体现。
+    group_item.has_selected_items = view.is_group_selected(group.name);
     group_render_items.emplace_back(group_item);
+    }
+  };
+
+  for (const auto &label : label_order) {
+    emit_label_group(label);
+  }
+  for (const auto &[label, groups] : groups_by_label) {
+    if (!emitted_labels.count(label)) {
+      emit_label_group(label);
+    }
   }
 
   // 4. 确保组选择索引有效
@@ -260,6 +298,43 @@ void UIState::update_group_render_items() {
   if (group_selection_index < 0 && !group_render_items.empty()) {
     group_selection_index = 0;
   }
+  if (!group_render_items.empty() &&
+      group_render_items[group_selection_index].type != RenderItem::GROUP_HEADER) {
+    group_selection_index =
+        find_next_selectable_group_index(group_selection_index, 1);
+  }
+}
+
+bool UIState::is_selectable_group_index(int index) const {
+  return index >= 0 && index < static_cast<int>(group_render_items.size()) &&
+         group_render_items[index].type == RenderItem::GROUP_HEADER &&
+         group_render_items[index].is_selectable &&
+         !group_render_items[index].is_disabled;
+}
+
+int UIState::find_next_selectable_group_index(int start_index,
+                                              int direction) const {
+  if (group_render_items.empty()) {
+    return -1;
+  }
+
+  const int size = static_cast<int>(group_render_items.size());
+  const int step = direction >= 0 ? 1 : -1;
+  int index = start_index;
+
+  for (int checked = 0; checked < size; ++checked) {
+    if (index < 0) {
+      index = size - 1;
+    } else if (index >= size) {
+      index = 0;
+    }
+    if (is_selectable_group_index(index)) {
+      return index;
+    }
+    index += step;
+  }
+
+  return -1;
 }
 
 /**
@@ -282,41 +357,92 @@ void UIState::update_module_render_items() {
   // 1. 清空现有右栏渲染列表
   module_render_items.clear();
 
-  // 2. 获取当前激活组的模块列表（用于高亮）
-  std::unordered_set<std::string> active_group_modules;
-  if (!view.active_group.empty()) {
-    const ModuleGroup *active_group = find_group(view.active_group);
-    if (active_group) {
-      for (const auto &module_name : active_group->modules) {
-        active_group_modules.insert(module_name);
-      }
-    }
+  // 2. 按 label_order 分组；未写入 label_order 的 label 统一归入 other。
+  std::set<std::string> allowed_labels(core_data.label_order.begin(),
+                                       core_data.label_order.end());
+  std::vector<const Module *> sorted_modules;
+  sorted_modules.reserve(core_data.modules.size());
+  for (const auto &module : core_data.modules) {
+    sorted_modules.push_back(&module);
   }
 
-  // 3. 遍历所有模块，生成右栏渲染项目
-  for (const auto &module : core_data.modules) {
-    // 3.1 搜索过滤逻辑 - 检查模块是否匹配搜索条件
+  auto normalized_text = [](const std::string &text) {
+    std::string normalized = text;
+    std::transform(
+        normalized.begin(), normalized.end(), normalized.begin(),
+        [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return normalized;
+  };
+
+  std::stable_sort(
+      sorted_modules.begin(), sorted_modules.end(),
+      [&](const Module *lhs, const Module *rhs) {
+        std::string lhs_label =
+            allowed_labels.count(lhs->label) ? lhs->label : "other";
+        std::string rhs_label =
+            allowed_labels.count(rhs->label) ? rhs->label : "other";
+        if (normalized_text(lhs_label) != normalized_text(rhs_label)) {
+          return normalized_text(lhs_label) < normalized_text(rhs_label);
+        }
+        return normalized_text(lhs->name) < normalized_text(rhs->name);
+      });
+
+  std::map<std::string, std::vector<const Module *>> modules_by_label;
+  for (const Module *module_ptr : sorted_modules) {
+    const Module &module = *module_ptr;
     if (!view.search_filter.empty()) {
       if (!matches_filter(module.name, view.search_filter) &&
-          !matches_filter(module.description, view.search_filter)) {
-        continue; // 不匹配搜索条件，跳过
+          !matches_filter(module.description, view.search_filter) &&
+          !matches_filter(module.label, view.search_filter)) {
+        continue;
+      }
+    }
+    const std::string label =
+        allowed_labels.count(module.label) ? module.label : "other";
+    modules_by_label[label].push_back(module_ptr);
+  }
+
+  // 3. 生成 label 标题 + 模块项。标题行不可选择，仅用于分段和统计。
+  std::vector<std::string> render_label_order = core_data.label_order;
+  if (modules_by_label.count("other") && !allowed_labels.count("other")) {
+    render_label_order.emplace_back("other");
+  }
+
+  for (const auto &label : render_label_order) {
+    auto modules_it = modules_by_label.find(label);
+    if (modules_it == modules_by_label.end() || modules_it->second.empty()) {
+      continue;
+    }
+    const auto &modules = modules_it->second;
+    size_t selected_in_label = 0;
+    for (const Module *module_ptr : modules) {
+      if (view.selected_modules.count(module_ptr->name)) {
+        selected_in_label++;
       }
     }
 
-    // 3.2 获取模块的当前状态
-    bool is_selected = is_module_selected_new(module.name);
-    bool is_disabled = is_module_disabled(module.name);
+    const std::string counter =
+        "(" + std::to_string(selected_in_label) + "/" +
+        std::to_string(modules.size()) + ")";
+    RenderItem label_item =
+        RenderItem::label_header(label, "[" + label + "]", counter);
+    label_item.has_selected_items =
+        (selected_in_label == modules.size() && !modules.empty());
+    module_render_items.emplace_back(label_item);
 
-    // 3.3 创建模块渲染项目
-    RenderItem module_item =
-        RenderItem::module_item(module.name, module.name, is_selected, 0);
-    module_item.is_disabled = is_disabled;
+    for (const Module *module_ptr : modules) {
+      const Module &module = *module_ptr;
+      bool is_selected = is_module_selected_new(module.name);
+      bool is_disabled = is_module_disabled(module.name);
 
-    // 注意：不再需要设置has_selected_items，因为模块列表不使用激活组高亮
+      RenderItem module_item =
+          RenderItem::module_item(module.name, module.name, is_selected, 1);
+      module_item.is_disabled = is_disabled;
     module_render_items.emplace_back(module_item);
+    }
   }
 
-  // 4. 确保模块选择索引有效
+  // 4. 确保模块选择索引落在可选择模块行上，避免停在 label 标题。
   if (module_selection_index >= static_cast<int>(module_render_items.size())) {
     module_selection_index =
         std::max(0, static_cast<int>(module_render_items.size()) - 1);
@@ -324,6 +450,43 @@ void UIState::update_module_render_items() {
   if (module_selection_index < 0 && !module_render_items.empty()) {
     module_selection_index = 0;
   }
+  if (!module_render_items.empty() &&
+      !is_selectable_module_index(module_selection_index)) {
+    module_selection_index = find_next_selectable_module_index(
+        module_selection_index, 1);
+  }
+}
+
+bool UIState::is_selectable_module_index(int index) const {
+  return index >= 0 && index < static_cast<int>(module_render_items.size()) &&
+         module_render_items[index].type == RenderItem::MODULE_ITEM &&
+         module_render_items[index].is_selectable &&
+         !module_render_items[index].is_disabled;
+}
+
+int UIState::find_next_selectable_module_index(int start_index,
+                                               int direction) const {
+  if (module_render_items.empty()) {
+    return -1;
+  }
+
+  const int size = static_cast<int>(module_render_items.size());
+  const int step = direction >= 0 ? 1 : -1;
+  int index = start_index;
+
+  for (int checked = 0; checked < size; ++checked) {
+    if (index < 0) {
+      index = size - 1;
+    } else if (index >= size) {
+      index = 0;
+    }
+    if (is_selectable_module_index(index)) {
+      return index;
+    }
+    index += step;
+  }
+
+  return -1;
 }
 
 /**
@@ -390,13 +553,12 @@ void UIState::move_group_selection_up() {
     return;
   }
 
-  group_selection_index--;
-  if (group_selection_index < 0) {
-    group_selection_index = static_cast<int>(group_render_items.size()) - 1;
-  }
+  group_selection_index =
+      find_next_selectable_group_index(group_selection_index - 1, -1);
 
   // 更新详细信息显示
   update_current_item_info();
+  ensure_group_selection_visible();
 }
 
 /**
@@ -408,13 +570,12 @@ void UIState::move_group_selection_down() {
     return;
   }
 
-  group_selection_index++;
-  if (group_selection_index >= static_cast<int>(group_render_items.size())) {
-    group_selection_index = 0;
-  }
+  group_selection_index =
+      find_next_selectable_group_index(group_selection_index + 1, 1);
 
   // 更新详细信息显示
   update_current_item_info();
+  ensure_group_selection_visible();
 }
 
 /**
@@ -426,10 +587,8 @@ void UIState::move_module_selection_up() {
     return;
   }
 
-  module_selection_index--;
-  if (module_selection_index < 0) {
-    module_selection_index = static_cast<int>(module_render_items.size()) - 1;
-  }
+  module_selection_index =
+      find_next_selectable_module_index(module_selection_index - 1, -1);
 
   // 更新详细信息显示
   update_current_item_info();
@@ -447,10 +606,8 @@ void UIState::move_module_selection_down() {
     return;
   }
 
-  module_selection_index++;
-  if (module_selection_index >= static_cast<int>(module_render_items.size())) {
-    module_selection_index = 0;
-  }
+  module_selection_index =
+      find_next_selectable_module_index(module_selection_index + 1, 1);
 
   // 更新详细信息显示
   update_current_item_info();
@@ -521,57 +678,52 @@ const RenderItem *UIState::get_current_module_item() const {
  */
 bool UIState::handle_group_activation() {
   RenderItem *group_item = get_current_group_item();
-  if (!group_item) {
+  if (!group_item || group_item->type != RenderItem::GROUP_HEADER ||
+      group_item->identifier.empty()) {
     return false;
   }
 
-  // 使用InteractionManager批量切换组内模块
+  const std::string group_name = group_item->identifier;
+  const ModuleGroup *group = find_group(group_name);
+  if (!group || group_name == "ungrouped") {
+    return false;
+  }
+
+  // 显式 group 选择独立于模块覆盖关系：只有再次点击同一个已选 group 才取消。
+  if (view.is_group_selected(group_name)) {
+    view.selected_groups.erase(group_name);
+  } else {
+    view.selected_groups.insert(group_name);
+  }
+  view.set_active_group(group_name);
+
   if (interaction_manager) {
-    bool handled =
-        interaction_manager->toggle_group_selection(group_item->identifier);
+    interaction_manager->clear_all_selections();
+    view.selected_modules.clear();
 
-    if (handled) {
-      // 同步更新ViewState（保持两套系统一致）
-      view.selected_modules.clear();
-      auto selected_modules = interaction_manager->get_selected_modules();
-      for (const auto &module_name : selected_modules) {
-        view.selected_modules.insert(module_name);
+    for (const auto &selected_group_name : view.selected_groups) {
+      const ModuleGroup *selected_group = find_group(selected_group_name);
+      if (!selected_group) {
+        continue;
       }
-
-      // 检查组内模块的当前选择状态，决定是否设置为激活组
-      const ModuleGroup *group = find_group(group_item->identifier);
-      if (group) {
-        bool any_selected = false;
-        for (const auto &module_name : group->modules) {
-          if (view.selected_modules.count(module_name)) {
-            any_selected = true;
-            break;
-          }
+      for (const auto &module_name : selected_group->modules) {
+        if (!interaction_manager->is_module_selected(module_name)) {
+          interaction_manager->toggle_module_selection(module_name);
         }
-
-        // 只有当组内有模块被选中时，才设置为激活组
-        if (any_selected) {
-          view.set_active_group(group_item->identifier);
-        } else {
-          // 如果组内没有任何模块被选中，清除激活组状态
-          view.active_group.clear();
+        if (interaction_manager->is_module_selected(module_name)) {
+          view.selected_modules.insert(module_name);
         }
       }
+    }
 
-      // 更新双栏显示
-      update_group_render_items();
-      update_module_render_items();
-
-      // 更新详细信息显示
-      update_current_item_info();
-
-      return true;
+    view.selected_modules.clear();
+    for (const auto &module_name : interaction_manager->get_selected_modules()) {
+      view.selected_modules.insert(module_name);
     }
   }
 
-  // 如果InteractionManager无法处理（如ungrouped组），仅设置激活状态
-  view.set_active_group(group_item->identifier);
-  update_module_render_items(); // 更新视觉高亮
+  update_group_render_items();
+  update_module_render_items();
   update_current_item_info();
 
   return true;
@@ -589,12 +741,15 @@ bool UIState::handle_group_activation() {
  */
 bool UIState::handle_module_selection() {
   RenderItem *module_item = get_current_module_item();
-  if (!module_item) {
+  if (!module_item || module_item->type != RenderItem::MODULE_ITEM ||
+      module_item->identifier.empty() || module_item->is_disabled) {
     return false;
   }
 
   // 切换模块的选择状态（带冲突检测）
   toggle_module_selection_with_conflicts(module_item->identifier);
+  // 手动调整单个模块后，group 显式选择状态不再可靠，清空以避免误导。
+  view.selected_groups.clear();
 
   // 检查是否需要更新激活组状态
   // 如果当前激活组内没有任何模块被选中，清除激活组状态
@@ -677,6 +832,14 @@ void UIState::update_current_item_info() {
     // 显示当前选中组的信息
     const RenderItem *group_item = get_current_group_item();
     if (group_item) {
+      if (group_item->type == RenderItem::LABEL_HEADER) {
+        current_item_description = "模块组标签: " + group_item->identifier;
+        current_item_details =
+            "包含 " + group_item->counter_text + " 个预设组\n"
+            "操作: 标签行仅用于分类显示\n"
+            "路径: groups.label";
+        return;
+      }
       const ModuleGroup *group = find_group(group_item->identifier);
       if (group) {
         current_item_description =
@@ -689,6 +852,26 @@ void UIState::update_current_item_info() {
     // 显示当前选中模块的信息
     const RenderItem *module_item = get_current_module_item();
     if (module_item) {
+      if (module_item->type == RenderItem::LABEL_HEADER) {
+        size_t selected_in_label = 0;
+        size_t total_in_label = 0;
+        for (const auto &module : core_data.modules) {
+          const std::string label = module.label.empty() ? "other" : module.label;
+          if (label == module_item->identifier) {
+            total_in_label++;
+            if (view.selected_modules.count(module.name)) {
+              selected_in_label++;
+            }
+          }
+        }
+        current_item_description = "模块标签: " + module_item->identifier;
+        current_item_details =
+            "包含 " + std::to_string(total_in_label) + " 个模块\n" +
+            "已勾选: " + std::to_string(selected_in_label) + "\n" +
+            "路径: 按 source_path 所在大目录分类";
+        return;
+      }
+
       const Module *module = find_module(module_item->identifier);
       if (module) {
         // 设置模块描述
@@ -880,6 +1063,7 @@ UIState ConfigDataSimplified::create_ui_state(const ConfigData &config_data) {
   // 复制配置数据到状态对象
   state.core_data.modules = config_data.modules;
   state.core_data.groups = config_data.groups;
+  state.core_data.label_order = config_data.label_order;
 
   // 执行完整初始化流程
   state.initialize(state.core_data);
@@ -923,47 +1107,11 @@ bool matches_filter(const std::string &text, const std::string &filter) {
  */
 void UIState::calculate_module_visible_count() {
   auto [width, height] = get_terminal_size();
+  (void)width;
 
-  // 🔥 动态计算固定UI元素占用的高度
-  // 标题(1) + 分隔符(1) + 分隔符(1) + 描述(1) + 详细信息(3) + 分隔符(1) +
-  // 构建按钮(1) + 分隔符(1) + 按键指南(3) + 边框(2) = 17行
-  const int basic_ui_height = 1 + 1 + 1 + 1 + 3 + 1 + 1 + 1 + 3 + 2; // = 15行
-
-  // 计算调试窗口占用的高度（动态）
-  int debug_window_height = 0;
-  // 统计启用的调试元素数量
-  int enabled_debug_elements = 0;
-  if (debug_info.show_mouse_coords)
-    enabled_debug_elements++;
-  if (debug_info.show_mouse_buttons)
-    enabled_debug_elements++;
-  if (debug_info.show_mouse_scroll)
-    enabled_debug_elements++;
-  if (debug_info.show_keyboard)
-    enabled_debug_elements++;
-  if (debug_info.show_element_info)
-    enabled_debug_elements++;
-  if (debug_info.show_build_coords)
-    enabled_debug_elements++;
-  if (debug_info.show_module_stats)
-    enabled_debug_elements++;
-  if (debug_info.show_terminal_size)
-    enabled_debug_elements++;
-  if (debug_info.show_build_hover)
-    enabled_debug_elements++;
-
-  if (enabled_debug_elements > 0) {
-    // 有调试元素时：边框(2) + 内容行数
-    const int elements_per_row = 3;
-    const int debug_content_lines =
-        (enabled_debug_elements + elements_per_row - 1) / elements_per_row;
-    debug_window_height = 2 + debug_content_lines;
-  }
-  // 否则 debug_window_height = 0（调试窗口完全消失）
-
-  const int total_fixed_ui_height = basic_ui_height + debug_window_height;
-  const int available_height_for_columns =
-      std::max(8, height - total_fixed_ui_height);
+  // 与主渲染器保持一致：标题/分隔符/详情区/按钮区/单行快捷键栏。
+  const int fixed_ui_height = 1 + 1 + 1 + 1 + 3 + 1 + 1 + 1 + 1;
+  const int available_height_for_columns = std::max(8, height - fixed_ui_height);
 
   // 双栏内部结构：栏标题(1) + 分隔符(1) + 内容区域 + 边框(2)
   const int column_header_height = 2;
@@ -981,6 +1129,47 @@ void UIState::calculate_module_visible_count() {
   if (module_visible_count < 3) {
     module_visible_count = 3;
   }
+
+  group_visible_count =
+      std::max(3, std::min(available_content_height,
+                           static_cast<int>(group_render_items.size())));
+
+  if (group_visible_count < 3) {
+    group_visible_count = 3;
+  }
+}
+
+/**
+ * @brief 确保当前组选项可见（滚动到可视区域内）
+ */
+void UIState::ensure_group_selection_visible() {
+  if (group_render_items.empty()) {
+    group_scroll_offset = 0;
+    return;
+  }
+
+  if (!is_selectable_group_index(group_selection_index)) {
+    group_selection_index =
+        find_next_selectable_group_index(group_selection_index, 1);
+  }
+
+  if (group_selection_index < 0) {
+    group_scroll_offset = 0;
+    return;
+  }
+
+  if (group_selection_index < group_scroll_offset) {
+    group_scroll_offset = group_selection_index;
+  }
+
+  if (group_selection_index >= group_scroll_offset + group_visible_count) {
+    group_scroll_offset = group_selection_index - group_visible_count + 1;
+  }
+
+  const int max_offset = std::max(
+      0, static_cast<int>(group_render_items.size()) - group_visible_count);
+  group_scroll_offset =
+      std::max(0, std::min(group_scroll_offset, max_offset));
 }
 
 /**
@@ -993,8 +1182,16 @@ void UIState::ensure_module_selection_visible() {
     return;
   }
 
-  // 重新计算可显示数量（终端可能调整大小）
-  calculate_module_visible_count();
+  // 如果选择项在滚动偏移之上，向上滚动
+  if (!is_selectable_module_index(module_selection_index)) {
+    module_selection_index =
+        find_next_selectable_module_index(module_selection_index, 1);
+  }
+
+  if (module_selection_index < 0) {
+    module_scroll_offset = 0;
+    return;
+  }
 
   // 如果选择项在滚动偏移之上，向上滚动
   if (module_selection_index < module_scroll_offset) {
@@ -1007,8 +1204,8 @@ void UIState::ensure_module_selection_visible() {
   }
 
   // 确保滚动偏移在有效范围内
-  const int max_offset =
-      static_cast<int>(module_render_items.size()) - module_visible_count;
+  const int max_offset = std::max(
+      0, static_cast<int>(module_render_items.size()) - module_visible_count);
   module_scroll_offset =
       std::max(0, std::min(module_scroll_offset, max_offset));
 }
@@ -1023,8 +1220,8 @@ void UIState::scroll_module_list(int direction) {
   }
 
   const int old_offset = module_scroll_offset;
-  const int max_offset =
-      static_cast<int>(module_render_items.size()) - module_visible_count;
+  const int max_offset = std::max(
+      0, static_cast<int>(module_render_items.size()) - module_visible_count);
 
   module_scroll_offset += direction;
   module_scroll_offset =
@@ -1033,6 +1230,28 @@ void UIState::scroll_module_list(int direction) {
   // 如果滚动位置发生变化，触发重新渲染
   if (module_scroll_offset != old_offset) {
     // 触发动画请求（如果需要的话）
+    animation_in_progress = true;
+  }
+}
+
+/**
+ * @brief 调整模块组列表滚动位置
+ * 支持手动滚动控制（如鼠标滚轮事件）
+ */
+void UIState::scroll_group_list(int direction) {
+  if (group_render_items.empty()) {
+    return;
+  }
+
+  const int old_offset = group_scroll_offset;
+  const int max_offset = std::max(
+      0, static_cast<int>(group_render_items.size()) - group_visible_count);
+
+  group_scroll_offset += direction;
+  group_scroll_offset =
+      std::max(0, std::min(group_scroll_offset, max_offset));
+
+  if (group_scroll_offset != old_offset) {
     animation_in_progress = true;
   }
 }

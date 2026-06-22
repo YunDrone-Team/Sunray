@@ -38,6 +38,9 @@ int UILogic::run() {
 }
 
 std::vector<std::string> UILogic::get_selected_modules() const {
+  if (state_.interaction_manager) {
+    return state_.interaction_manager->get_explicitly_selected_modules();
+  }
   return {state_.view.selected_modules.begin(),
           state_.view.selected_modules.end()};
 }
@@ -189,10 +192,18 @@ void UILogic::load_last_selection() {
       return;
     }
 
-    // 应用上次选择到当前状态
     state_.view.selected_modules.clear();
-    for (const auto &module : loaded_modules) {
-      state_.view.selected_modules.insert(module);
+    state_.view.selected_groups.clear();
+    state_.view.active_group.clear();
+    if (state_.interaction_manager) {
+      state_.interaction_manager->set_explicit_selection(loaded_modules);
+      for (const auto &module : state_.interaction_manager->get_selected_modules()) {
+        state_.view.selected_modules.insert(module);
+      }
+    } else {
+      for (const auto &module : loaded_modules) {
+        state_.view.selected_modules.insert(module);
+      }
     }
 
     std::cout << "已加载上次选择的 " << loaded_modules.size()

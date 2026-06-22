@@ -1,11 +1,24 @@
 # Sunray 构建模块配置文件 - 简化版本
 # 直接基于 build_deprecated 目录的构建脚本
 
+label_order:
+  - common
+  - uav_control
+  - ugv_control
+  - communication
+  - localization
+  - swarm
+  - planning
+  - drivers
+  - simulation
+  - tools
+
 # ========== 模块定义 ==========
 modules:
   # 基础通用模块
   sunray_common:
     description: "通用库模块，包括通用头文件、自定义ROS消息"
+    label: common
     source_path: "General_Module/sunray_common"
     build_path: "build/sunray_common"
     dependencies: []
@@ -13,6 +26,7 @@ modules:
   # UAV 与 FMT 控制模块
   sunray_uav_control:
     description: "无人机控制模块，包含外部定位、无人机控制等"
+    label: uav_control
     source_path: "General_Module/sunray_uav_control"
     build_path: "build/sunray_uav_control"
     dependencies: ["sunray_common"]
@@ -20,18 +34,21 @@ modules:
   
   sunray_fmt_control:
     description: "FMT无人机控制模块，包含FMT无人机控制节点"
+    label: uav_control
     source_path: "General_Module/sunray_fmt_control"
     build_path: "build/sunray_fmt_control"
     dependencies: ["sunray_common"]
 
   sunray_tutorial:
     description: "无人机控制接口示例代码模块，包括起飞降落、航点追踪、方形轨迹、圆形轨迹、六边形轨迹等示例代码"
+    label: uav_control
     source_path: "General_Module/sunray_tutorial"
     build_path: "build/sunray_tutorial"
     dependencies: ["sunray_common"]
     
   sunray_media:
     description: "视频推流模块"
+    label: communication
     source_path: "General_Module/sunray_media"
     build_path: "build/sunray_media"
     dependencies: ["sunray_common"]
@@ -39,18 +56,21 @@ modules:
   # 通信模块
   sunray_communication_bridge:
     description: "通信桥接模块，包括机载电脑与Sunray地面站通信、无人机/车间通信"
+    label: communication
     source_path: "Comunication_Module/sunray_communication_bridge"
     build_path: "build/sunray_communication_bridge"
     dependencies: ["sunray_common"]
     
   vrpn_client_ros:
     description: "VRPN客户端，获取动捕数据"
+    label: drivers
     source_path: "External_Module/vrpn_client_ros"
     build_path: "build/vrpn_client_ros"
     dependencies: []
     
   sunray_planner_utils:
     description: "路径规划工具，包含点云转换"
+    label: planning
     source_path: "General_Module/sunray_planner_utils"
     build_path: "build/sunray_planner_utils"
     dependencies: ["sunray_common"]
@@ -58,6 +78,7 @@ modules:
   #云台控制模块
   sunray_gimbal:
     description: "云台控制模块"
+    label: drivers
     source_path: "General_Module/sunray_gimbal"
     build_path: "build/sunray_gimbal"
     dependencies: ["sunray_common", "sunray_tutorial"]
@@ -65,18 +86,21 @@ modules:
   # UGV 控制模块
   sunray_ugv_control:
     description: "地面车辆控制模块，包含底层控制驱动，车辆外部定位，车辆控制节点"
+    label: ugv_control
     source_path: "General_Module/sunray_ugv_control"
     build_path: "build/sunray_ugv_control"
     dependencies: ["sunray_common"]
     
   turn_on_wheeltec_robot:
     description: "轮趣无人车驱动包"
+    label: drivers
     source_path: "External_Module/turn_on_wheeltec_robot"
     build_path: "build/turn_on_wheeltec_robot"
     dependencies: []
 
   oradar_lidar:
     description: "ms200激光雷达驱动包"
+    label: drivers
     source_path: "External_Module/oradar_lidar"
     build_path: "build/oradar_lidar"
     dependencies: []
@@ -84,30 +108,35 @@ modules:
   # 仿真模块
   sunray_simulator:
     description: "Gazebo仿真模块，包含仿真环境、仿真工具、仿真插件、仿真启动文件等"
+    label: simulation
     source_path: "Simulation/sunray_simulator"
     build_path: "build/sunray_simulator"
     dependencies: ["sunray_common"]
     
   simulator_utils:
     description: "仿真工具"
+    label: simulation
     source_path: "Simulation/simulator_utils"
     build_path: "build/simulator_utils"
     dependencies: ["sunray_common"]
     
   gazebo_plugin:
     description: "Gazebo仿真插件"
+    label: simulation
     source_path: "Simulation/gazebo_plugin"
     build_path: "build/gazebo_plugin"
     dependencies: []
 
   wind_zone_plugin:
     description: "风场仿真插件"
+    label: simulation
     source_path: "Simulation/gazebo_plugin/wind_zone_plugin"
     build_path: "build/wind_zone_plugin"
     dependencies: []
 
   random_cylinder_plugin:
     description: "随机柱子仿真插件"
+    label: simulation
     source_path: "Simulation/gazebo_plugin/random_cylinder_plugin"
     build_path: "build/random_cylinder_plugin"
     dependencies: []
@@ -115,18 +144,21 @@ modules:
   # 比赛模块
   sunray_competition:
     description: "2025FAC比赛模块"
+    label: simulation
     source_path: "Simulation/2025_uav_competition_demo"
     build_path: "build/2025_uav_competition_demo"
     dependencies: ["sunray_common"]
 
   sunray_score:
     description: "2025FAC比赛记分模块"
+    label: simulation
     source_path: "Simulation/future_2025_score"
     build_path: "build/future_2025_score"
     dependencies: ["sunray_common"]
 
   sysu_competition:
     description: "逸仙勇士杯比赛模块"
+    label: simulation
     source_path: "Simulation/sysu_competition"
     build_path: "build/sysu_competition"
     dependencies: ["sunray_common"]
@@ -134,6 +166,7 @@ modules:
   # 规划器模块
   ego_planner:
     description: "EGO-planner路径规划算法"
+    label: planning
     source_path: "External_Module/ego-planner-swarm"
     build_path: "build/ego-planner"
     dependencies: ["sunray_planner_utils", "simulator_utils"]
@@ -141,6 +174,7 @@ modules:
     
   fuel_planner:
     description: "FUEL路径规划算法"
+    label: planning
     source_path: "External_Module/FUEL"
     build_path: "build/FUEL"
     dependencies: ["sunray_planner_utils"]
@@ -149,6 +183,7 @@ modules:
   # 编队模块
   sunray_formation:
     description: "多机编队控制模块"
+    label: swarm
     source_path: "sunray_formation/formation_control"
     build_path: "build/formation_control"
     dependencies: ["sunray_common"]
@@ -156,6 +191,7 @@ modules:
   # 编队RVIZ仿真模块
   formation_sim:
     description: "多机编队RVIZ仿真模块"
+    label: simulation
     source_path: "sunray_formation/formation_sim"
     build_path: "build/formation_sim"
     dependencies: ["sunray_common"]
@@ -163,6 +199,7 @@ modules:
   # ORCA算法ROS实现
   sunray_orca:
     description: "ORCA算法"
+    label: swarm
     source_path: "sunray_formation/sunray_orca"
     build_path: "build/sunray_orca"
     dependencies: ["sunray_common"]
@@ -170,6 +207,7 @@ modules:
   # 图像识别模块
   sunray_detection:
     description: "图像识别模块"
+    label: planning
     source_path: "External_Module/sunray_detection"
     build_path: "build/sunray_detection"
     dependencies: ["sunray_planner_utils"]
@@ -177,6 +215,7 @@ modules:
   # 感知定位模块
   vins_fusion:
     description: "感知定位模块"
+    label: localization
     source_path: "External_Module/VINS-Fusion"
     build_path: "build/vins_fusion"
     dependencies: [""]
@@ -211,15 +250,18 @@ modules:
 groups:
   # 无人机飞行控制系统
   uav:
+    label: Product
     description: "默认使用这个组，包含无人机飞行控制，仿真环境，仿真工具，仿真插件，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流，编队控制"
     modules: ["sunray_common", "vrpn_client_ros", "sunray_simulator", "gazebo_plugin", "simulator_utils", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_gimbal", "sunray_media", "ego_planner", "sunray_formation"]
     
   # FMT无人机飞行控制系统
   fmt:
+    label: Product
     description: "FMT无人机飞行控制系统，包含FMT无人机飞行控制节点，通信桥接，示例代码"
     modules: ["sunray_common", "vrpn_client_ros", "sunray_communication_bridge", "sunray_fmt_control", "sunray_tutorial"]
 
   viobot:
+    label: Product
     description: "VIOBOT无人机飞行控制系统，包含无人机飞行控制，通信桥接，无人机控制节点，示例代码，路径规划工具，视频推流"
     modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_media", "ego_planner", "sunray_detection"]
 
@@ -235,21 +277,25 @@ groups:
 
   # 比赛款无人机飞行控制系统
   uav_competition:
+    label: Product
     description: "Sunray150-抛投器定制款专用编译模块"
     modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_tutorial", "sunray_planner_utils", "sunray_competition"]
     
 
   # 比赛款仿真环境与测试平台
   sim_competition:
+    label: Simulation
     description: "2025未来飞行器大赛仿真环境与测试平台"  
     modules: ["sunray_common", "sunray_uav_control", "sunray_tutorial", "sunray_simulator", "simulator_utils", "gazebo_plugin", "sunray_competition", "sunray_score", "wind_zone_plugin", "random_cylinder_plugin"]
     
   # 地面机器人控制系统
   ugv:
+    label: Product
     description: "地面机器人控制系统，包含地面机器人控制节点，地面机器人外部定位，地面机器人控制驱动"
     modules: ["sunray_common","sunray_communication_bridge","vrpn_client_ros", "sunray_ugv_control", "turn_on_wheeltec_robot", "oradar_lidar", "sunray_tutorial"]
 
   swarm_uav:
+    label: Product
     description: "“智群·Sunray”集群控制代码包，包含无人机飞行控制，通信桥接，无人机控制节点，集群控制，ORCA"
     modules: ["sunray_common", "sunray_communication_bridge", "sunray_uav_control", "sunray_orca", "sunray_formation"]
 

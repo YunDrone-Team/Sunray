@@ -97,9 +97,13 @@ ftxui::Component UIRenderer::create_component() {
     // 按钮 Hover 状态由反射 Box + 鼠标命中负责，不在此同步
     // 键盘焦点同步（仅作为候选，不直接决定高亮）
     if (state_.build_button_focused) {
-      highlight_mgr_.on_keyboard_focus(
-          state_.button_focus_index == 0 ? std::optional{InteractiveId::Start()}
-                                         : std::optional{InteractiveId::Clear()});
+      std::optional<InteractiveId> focus_id;
+      if (state_.button_focus_index == 0) {
+        focus_id = InteractiveId::Start();
+      } else {
+        focus_id = InteractiveId::Clear();
+      }
+      highlight_mgr_.on_keyboard_focus(focus_id);
     } else {
       // 离开按钮区时，不持有按钮键盘焦点
       highlight_mgr_.on_keyboard_focus(std::nullopt);
@@ -112,16 +116,16 @@ ftxui::Component UIRenderer::create_component() {
       animation::RequestAnimationFrame();
     }
 
-    // 动态计算UI区域高度
-    int debug_lines = calculate_debug_content_lines();
-    int key_guide_lines = calculate_key_guide_content_lines();
+    // 动态计算UI区域高度。调试窗口默认不显示，避免占用底部空间。
+    const int debug_lines = 0;
+    const int key_guide_lines = calculate_key_guide_content_lines();
 
     // 构建主要内容区域
     std::vector<Element> main_content;
 
     // 标题
-    main_content.push_back(
-        text("Sunray Build System - TUI") | bold | center);
+    const std::string title = "Sunray Build System - TUI";
+    main_content.push_back(text(title) | bold | center);
 
     main_content.push_back(separator());
 
@@ -133,7 +137,7 @@ ftxui::Component UIRenderer::create_component() {
       terminal_width = terminal_size.dimx;
       terminal_height = terminal_size.dimy;
     } catch (...) {}
-    
+
     // 计算详情区高度：默认4行（描述1 + 详情3），若描述换行，则在此基础上额外增加至多3行
     const int content_width = std::max(20, terminal_width - 4);
     const std::string desc_label_for_calc = "描述: ";
@@ -153,22 +157,50 @@ ftxui::Component UIRenderer::create_component() {
     }
     const int extra_desc_lines = std::min(3, std::max(0, desc_lines - 1));
 
-    // 固定UI高度 = 标题(1) + 分隔符(1) + 栏目标题(1) + 分隔符(1) + 详情区(4+extra) + 分隔符(1) + 按钮(1) + 分隔符(1) + 按键指南(3) + 调试(5) + 边框(2)
-    const int fixed_ui_height = 1 + 1 + 1 + 1 + (4 + extra_desc_lines) + 1 + 1 + 1 + 3 + 5 + 2;
+    // 固定UI高度只统计双栏列表之外的内容，双栏内部标题和边框已经包含在
+    // available_height_for_columns 对应的列表高度里。
+    const int key_guide_height = key_guide_lines > 0 ? 1 + key_guide_lines : 0;
+    const int debug_height = debug_lines > 0 ? 1 + debug_lines + 2 : 0;
+    const int fixed_ui_height =
+        1 + 1 + 1 + (1 + extra_desc_lines) + 3 + 1 + 1 +
+        key_guide_height + debug_height;
     const int available_height_for_columns = std::max(8, terminal_height - fixed_ui_height);
 
     // 创建左栏内容
     std::vector<Element> left_column_elements;
     left_column_elements.push_back(text("模块组") | bold | center);
     left_column_elements.push_back(separator());
-    for (size_t i = 0; i < state_.group_render_items.size(); ++i) {
+
+    // 左右栏共享同一可见高度，窗口缩放后同步更新。
+    const int column_content_height = std::max(3, available_height_for_columns - 4);
+    state_.group_visible_count =
+        std::max(3, std::min(column_content_height,
+                             static_cast<int>(state_.group_render_items.size())));
+    state_.ensure_group_selection_visible();
+
+    if (!state_.group_render_items.empty()) {
+      const int start_index = state_.group_scroll_offset;
+      const int end_index = std::min(
+          static_cast<int>(state_.group_render_items.size()),
+          start_index + state_.group_visible_count);
+
+      for (int i = start_index; i < end_index; ++i) {
       const auto &item = state_.group_render_items[i];
       bool is_selected = (state_.group_selection_index == (int)i);
       bool is_hovered = (state_.group_hover_index == (int)i);
       left_column_elements.push_back(
           render_group_item(item, is_selected, false, is_hovered));
-    }
-    if (state_.group_render_items.empty()) {
+      }
+
+      const int total_groups = static_cast<int>(state_.group_render_items.size());
+      if (total_groups > state_.group_visible_count) {
+        std::string scroll_info = "(" + std::to_string(start_index + 1) + "-" +
+                                  std::to_string(end_index) + "/" +
+                                  std::to_string(total_groups) + ")";
+        left_column_elements.push_back(
+            text(scroll_info) | dim | color(Color::GrayLight) | center);
+      }
+    } else {
       left_column_elements.push_back(text("没有可用的模块组") | dim | center);
     }
 
@@ -176,17 +208,19 @@ ftxui::Component UIRenderer::create_component() {
     std::vector<Element> right_column_elements;
     right_column_elements.push_back(text("所有模块") | bold | center);
     right_column_elements.push_back(separator());
-    
-    // 重新计算可见数量并填充右栏内容
-    state_.calculate_module_visible_count();
+
+    // 按当前真实布局计算右栏可见行数，避免终端缩放后与旧高度公式不一致。
+    state_.module_visible_count =
+        std::max(3, std::min(column_content_height,
+                             static_cast<int>(state_.module_render_items.size())));
     state_.ensure_module_selection_visible();
-    
+
     if (!state_.module_render_items.empty()) {
       const int start_index = state_.module_scroll_offset;
       const int end_index = std::min(
           static_cast<int>(state_.module_render_items.size()),
           start_index + state_.module_visible_count);
-      
+
       for (int i = start_index; i < end_index; ++i) {
         const auto &item = state_.module_render_items[i];
         bool is_selected = (i == state_.module_selection_index);
@@ -195,12 +229,12 @@ ftxui::Component UIRenderer::create_component() {
         right_column_elements.push_back(
             render_module_item(item, is_selected, is_focused, is_hovered));
       }
-      
+
       // 显示滚动指示器（如果需要）
       const int total_modules = static_cast<int>(state_.module_render_items.size());
       if (total_modules > state_.module_visible_count) {
-        std::string scroll_info = "(" + std::to_string(start_index + 1) + "-" + 
-                                  std::to_string(end_index) + "/" + 
+        std::string scroll_info = "(" + std::to_string(start_index + 1) + "-" +
+                                  std::to_string(end_index) + "/" +
                                   std::to_string(total_modules) + ")";
         right_column_elements.push_back(
             text(scroll_info) | dim | color(Color::GrayLight) | center);

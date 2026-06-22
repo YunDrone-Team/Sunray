@@ -64,6 +64,18 @@ public:
      * @return 已选中模块的名称向量
      */
     std::vector<std::string> get_selected_modules() const;
+
+    /**
+     * @brief 获取用户显式选择的模块名称列表
+     * @return 不包含自动补齐依赖的根模块列表
+     */
+    std::vector<std::string> get_explicitly_selected_modules() const;
+
+    /**
+     * @brief 使用给定模块列表重建选择状态
+     * @param module_names 用户显式选择的模块
+     */
+    void set_explicit_selection(const std::vector<std::string>& module_names);
     
     /**
      * @brief 获取已选中模块的数量
@@ -102,6 +114,7 @@ private:
     std::vector<ModuleState> module_states_;
     std::unordered_map<std::string, size_t> module_state_index_;
     std::function<void()> conflict_callback_;
+    std::unordered_set<std::string> explicitly_selected_modules_;
     
     // ==================== 内部方法 ====================
     
@@ -116,6 +129,23 @@ private:
      * @return true如果存在冲突，false否则
      */
     bool has_conflicts_with_selected(const std::string& module_name) const;
+
+    /**
+     * @brief 递归选中模块及其依赖
+     */
+    bool select_module_with_dependencies(
+        const std::string& module_name,
+        std::unordered_set<std::string>& visiting);
+
+    /**
+     * @brief 取消显式选择后，重建当前完整选择集
+     */
+    void rebuild_selection_from_explicit_modules();
+
+    /**
+     * @brief 直接设置模块选中态，不做额外逻辑
+     */
+    void set_module_selected_state(const std::string& module_name, bool selected);
     
     /**
      * @brief 获取已选中模块的集合（用于快速查找）

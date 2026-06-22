@@ -10,6 +10,15 @@ namespace sunray_tui {
 ftxui::Element UIRenderer::render_group_item(const RenderItem &item,
                                              bool is_selected, bool is_focused,
                                              bool is_hovered) {
+  if (item.type == RenderItem::LABEL_HEADER) {
+    Element left = text(item.text) | color(Color::Yellow) | bold;
+    Element right = text(" " + item.counter_text + " ") |
+                    color(item.has_selected_items ? Color::Green
+                                                  : Color::GrayLight) |
+                    bold;
+    return hbox({left | flex, right}) | bgcolor(Color::RGB(35, 35, 35));
+  }
+
   Element left_content;
   bool is_active_group = (state_.view.active_group == item.identifier);
   if (item.identifier == "ungrouped") {
@@ -43,6 +52,15 @@ ftxui::Element UIRenderer::render_group_item(const RenderItem &item,
 ftxui::Element UIRenderer::render_module_item(const RenderItem &item,
                                               bool is_selected, bool is_focused,
                                               bool is_hovered) {
+  if (item.type == RenderItem::LABEL_HEADER) {
+    Element left = text(item.text) | color(Color::Yellow) | bold;
+    Element right = text(" " + item.counter_text + " ") |
+                    color(item.has_selected_items ? Color::Green
+                                                  : Color::GrayLight) |
+                    bold;
+    return hbox({left | flex, right}) | bgcolor(Color::RGB(35, 35, 35));
+  }
+
   Element text_content = text(item.text);
   bool module_selected =
       state_.view.selected_modules.count(item.identifier) > 0;

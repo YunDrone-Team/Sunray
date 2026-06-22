@@ -21,7 +21,7 @@ namespace sunray_tui {
 // 按钮组件创建逻辑（从 create_component 中提取）
 void UIRenderer::create_buttons() {
   // ========== 组件化底部按钮 ==========
-  // 开始编译构建按钮：保持原有行为
+  // 主操作按钮：开始编译构建
   auto start_opt = ButtonOption::Animated();
   // 自定义外观：与清除按钮统一hover逻辑，错误提示改为点击触发
   start_opt.transform = [this](const EntryState &s) {

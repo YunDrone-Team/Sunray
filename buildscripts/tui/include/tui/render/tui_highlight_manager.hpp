@@ -88,4 +88,3 @@ class UIHighlightManager {
 };
 
 } // namespace sunray_tui
-

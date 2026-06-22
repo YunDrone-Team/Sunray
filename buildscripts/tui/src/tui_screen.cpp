@@ -25,6 +25,9 @@ void ScreenCoordinateMapper::rebuild_mapping(
     case RenderItem::GROUP_HEADER:
       element_type = ElementType::GROUP_HEADER;
       break;
+    case RenderItem::LABEL_HEADER:
+      element_type = ElementType::LABEL_HEADER;
+      break;
     case RenderItem::MODULE_ITEM:
       element_type = ElementType::MODULE_ITEM;
       break;
@@ -163,22 +166,44 @@ void ScreenCoordinateMapper::rebuild_dual_column_mapping(
     const std::vector<RenderItem> &left_items,
     const std::vector<RenderItem> &right_items, int left_content_start_y,
     int right_content_start_y, int left_column_width, int right_column_start_x,
+    int left_scroll_offset, int left_visible_count,
     int right_scroll_offset, int right_visible_count) {
 
   coordinate_map.clear();
 
   // 使用传入的动态参数，而不是硬编码偏移量
 
-  // 映射左栏项目（组）- 类型为GROUP_HEADER
-  for (size_t i = 0; i < left_items.size(); ++i) {
+  // 映射左栏项目（组）- 考虑滚动偏移，组 label 标题不可点击
+  int left_count = (left_visible_count > 0)
+                       ? left_visible_count
+                       : static_cast<int>(left_items.size());
+  int left_end_index = std::min(static_cast<int>(left_items.size()),
+                                left_scroll_offset + left_count);
+
+  for (int i = left_scroll_offset; i < left_end_index; ++i) {
+    if (i < 0 || i >= static_cast<int>(left_items.size())) {
+      continue;
+    }
+
     const auto &item = left_items[i];
-    int screen_y = left_content_start_y + static_cast<int>(i);
+    int screen_y = left_content_start_y + (i - left_scroll_offset);
 
-    ElementInfo element_info(ElementType::GROUP_HEADER, static_cast<int>(i),
-                             item.identifier);
+    ElementType element_type = ElementType::UNKNOWN;
+    if (item.type == RenderItem::GROUP_HEADER) {
+      element_type = ElementType::GROUP_HEADER;
+    } else if (item.type == RenderItem::LABEL_HEADER) {
+      element_type = ElementType::LABEL_HEADER;
+    } else if (item.type == RenderItem::SEPARATOR) {
+      element_type = ElementType::SEPARATOR;
+    } else if (item.type == RenderItem::INFO_TEXT) {
+      element_type = ElementType::INFO_TEXT;
+    }
 
-    // 禁用的组不可点击（虽然组一般不会被禁用）
-    if (item.is_disabled) {
+    ElementInfo element_info(element_type, i, item.identifier);
+
+    // label 标题、禁用组和普通说明行不可点击
+    if (!item.is_selectable || item.is_disabled ||
+        element_type != ElementType::GROUP_HEADER) {
       element_info.is_clickable = false;
       element_info.is_hoverable = false;
     }
@@ -199,10 +224,21 @@ void ScreenCoordinateMapper::rebuild_dual_column_mapping(
       // 屏幕Y坐标 = 起始位置 + 相对于可见区域的索引
       int screen_y = right_content_start_y + (i - right_scroll_offset);
 
-      ElementInfo element_info(ElementType::MODULE_ITEM, i, item.identifier);
+      ElementType element_type = ElementType::UNKNOWN;
+      if (item.type == RenderItem::MODULE_ITEM) {
+        element_type = ElementType::MODULE_ITEM;
+      } else if (item.type == RenderItem::LABEL_HEADER) {
+        element_type = ElementType::LABEL_HEADER;
+      } else if (item.type == RenderItem::SEPARATOR) {
+        element_type = ElementType::SEPARATOR;
+      } else if (item.type == RenderItem::INFO_TEXT) {
+        element_type = ElementType::INFO_TEXT;
+      }
+      ElementInfo element_info(element_type, i, item.identifier);
 
-      // 禁用的模块不可点击
-      if (item.is_disabled) {
+      // label 标题、禁用模块和普通说明行不可点击
+      if (!item.is_selectable || item.is_disabled ||
+          element_type != ElementType::MODULE_ITEM) {
         element_info.is_clickable = false;
         element_info.is_hoverable = false;
       }

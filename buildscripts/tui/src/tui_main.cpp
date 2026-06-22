@@ -22,12 +22,6 @@ void show_version() {
 }
 
 int main(int argc, char *argv[]) {
-  // TUI模式不接受任何参数，如果有参数则显示提示
-  if (argc > 1) {
-    std::cout << "注意: TUI模式不接受参数，所有参数将被忽略\n";
-    std::cout << "如需使用参数功能，请使用CLI模式\n\n";
-  }
-
   // 检查帮助请求
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
@@ -37,13 +31,21 @@ int main(int argc, char *argv[]) {
     } else if (arg == "--version" || arg == "-v") {
       show_version();
       return 0;
+    } else {
+      std::cout << "注意: 未识别的TUI参数已忽略: " << arg << "\n";
     }
   }
 
   try {
     std::vector<std::string> possible_paths = {
+        "tools/build_scripts/modules.yaml", // workspace root
+        "tools/buildscripts/modules.yaml",  // legacy layout (tools)
+        "buildscripts/modules.yaml",        // legacy layout
         "../modules.yaml", "../../modules.yaml", "modules.yaml",
-        "buildscripts/modules.yaml", "../../../modules.yaml"};
+        "../../../modules.yaml", "../tools/build_scripts/modules.yaml",
+        "../../tools/build_scripts/modules.yaml",
+        "../tools/buildscripts/modules.yaml",
+        "../../tools/buildscripts/modules.yaml"};
 
     std::string config_path;
     bool config_found = false;
