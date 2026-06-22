@@ -88,7 +88,8 @@ class CameraAliveCase(BaseCase):
         topic = context.resolved_topics[topic_key]
         device_path = self.execution_context.params.get("device_path")
         rospy.loginfo(
-            "[CASE] %s: 检查相机 topic=%s timeout=%.1f sample=%.1f min_messages=%d min_rate=%.1f max_gap=%.1f require_non_uniform_frame=%s",
+            "[CASE] %s: 检查相机 topic=%s timeout=%.1f sample=%.1f "
+            "min_messages=%d min_rate=%.1f max_gap=%.1f require_non_uniform_frame=%s",
             self.execution_context.case_id,
             topic,
             timeout_s,

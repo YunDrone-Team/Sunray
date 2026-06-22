@@ -280,7 +280,7 @@ class EgoGoalCase(BaseCase):
         while not rospy.is_shutdown() and time.time() < hold_deadline:
             remaining = max(0, int(hold_deadline - time.time()))
             if remaining != last_hold_display:
-                print(f"\r[EGO Goal Hold] 倒计时: {remaining:02d}s", end="", flush=True)
+                print(f"\r\033[K[EGO Goal Hold] 倒计时: {remaining:02d}s", end="", flush=True)
                 last_hold_display = remaining
             rospy.sleep(0.1)
         print()
@@ -303,7 +303,10 @@ class EgoGoalCase(BaseCase):
             )
         )
         hold_time_s = float(
-            params.get("hold_time_s", context.defaults.get("ego_goal_hold_time_s", context.defaults["waypoint_hold_time_s"]))
+            params.get(
+                "hold_time_s",
+                context.defaults.get("ego_goal_hold_time_s", context.defaults["waypoint_hold_time_s"]),
+            )
         )
         timeout_s = float(
             params.get("timeout_s", context.defaults.get("ego_goal_timeout_s", context.defaults["waypoint_timeout_s"]))
@@ -365,7 +368,10 @@ class EgoGoalCase(BaseCase):
             post_transition_target_z_m = float(post_transition_target_z_m)
         pos_cmd_topic = str(params.get("pos_cmd_topic", context.resolved_topics.get("ego_pos_cmd", "/uav1/pos_cmd")))
         control_cmd_topic = str(
-            params.get("control_cmd_topic", context.resolved_topics.get("uav_control_cmd", "/uav1/sunray/uav_control_cmd"))
+            params.get(
+                "control_cmd_topic",
+                context.resolved_topics.get("uav_control_cmd", "/uav1/sunray/uav_control_cmd"),
+            )
         )
         goal_source, mission_key, goals = self._resolve_goals(context, z_m)
 

@@ -1,6 +1,6 @@
 <launch>
   <arg name="image_view" default="false" />
-  <arg name="camera_profile" default="sunray150_basic" />
+  <arg name="camera_profile" default="common" />
   <arg name="front_video_device" default="/dev/video2" />
   <arg name="down_video_device" default="/dev/video0" />
   <arg name="front_start_delay_s" default="2.0" />

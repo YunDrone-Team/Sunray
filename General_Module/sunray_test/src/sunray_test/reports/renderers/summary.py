@@ -165,8 +165,9 @@ def build_stage_timeline(payload: Dict[str, Any]) -> List[Dict[str, str]]:
                 }
             )
         else:
-            arm_start_time = _find_event_time(event_log, "arm_start") or escape(format_time_short(takeoff_phase.get("timestamp", "-")))
-            arm_end_time = _find_event_time(event_log, "arm_end") or escape(format_time_short(takeoff_phase.get("timestamp", "-")))
+            phase_time = escape(format_time_short(takeoff_phase.get("timestamp", "-")))
+            arm_start_time = _find_event_time(event_log, "arm_start") or phase_time
+            arm_end_time = _find_event_time(event_log, "arm_end") or phase_time
             stages.append(
                 {
                     "name": "解锁",
@@ -177,8 +178,8 @@ def build_stage_timeline(payload: Dict[str, Any]) -> List[Dict[str, str]]:
             )
             target_z = defaults.get("takeoff_target_z_m")
             target_text = f"{float(target_z):.2f}m" if target_z is not None else "-"
-            takeoff_start_time = _find_event_time(event_log, "takeoff_start") or escape(format_time_short(takeoff_phase.get("timestamp", "-")))
-            takeoff_end_time = _find_event_time(event_log, "takeoff_end") or escape(format_time_short(takeoff_phase.get("timestamp", "-")))
+            takeoff_start_time = _find_event_time(event_log, "takeoff_start") or phase_time
+            takeoff_end_time = _find_event_time(event_log, "takeoff_end") or phase_time
             stages.append(
                 {
                     "name": "起飞",

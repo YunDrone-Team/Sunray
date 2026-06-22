@@ -3,7 +3,7 @@
 
 Default mode is read-only: it actively scans for the lidar IP first, then tries
 cheap optional sources for broadcast code/SN.
-Use --apply with --config to modify MID360_config.json.
+Use --apply with --config to modify MID360_config.json/MID360s_config.json.
 """
 
 from __future__ import annotations
@@ -19,169 +19,48 @@ import shutil
 import socket
 import subprocess
 import sys
-import tempfile
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+
+SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
+PACKAGE_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+SRC_ROOT = os.path.join(PACKAGE_ROOT, "src")
+if SRC_ROOT not in sys.path:
+    sys.path.insert(0, SRC_ROOT)
+
+from sunray_test.tools.livox_config import read_lidar_ip, update_lidar_ip
+from sunray_test.tools.livox_paths import (
+    default_config_path,
+    discover_mid360_config_paths as _discover_mid360_config_paths,
+    resolve_config_paths as _resolve_config_paths,
+)
+from sunray_test.tools.livox_sdk import query_sn_by_sdk as _query_sn_by_sdk
 
 
 DISCOVERY_PORT = 56000
 LIVOX_MAC_PREFIXES = ("8c:58:23",)
 MIN_ACTIVE_SCAN_LIDAR_SCORE = 100
+HIGH_TTL_THRESHOLD = 200
 LIDAR_SEARCH_NETWORK = ipaddress.ip_network("192.168.1.0/24")
 RAW_ARP_PROBE_SOURCE_IPS = ("192.168.1.250", "192.168.1.251")
-SDK_QUERY_CACHE = Path.home() / ".cache/sunray_test/livox_sdk_sn_query"
-
-
-SDK_QUERY_MAIN_CPP = r'''
-#include "livox_lidar_api.h"
-#include "livox_lidar_def.h"
-
-#include <atomic>
-#include <chrono>
-#include <condition_variable>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <mutex>
-#include <string>
-
-namespace {
-std::mutex g_mutex;
-std::condition_variable g_cv;
-std::atomic<bool> g_found(false);
-std::string g_sn;
-std::string g_ip;
-uint8_t g_dev_type = 0;
-
-void LidarInfoChangeCallback(const uint32_t handle, const LivoxLidarInfo* info, void*) {
-  (void)handle;
-  if (info == nullptr) {
-    return;
-  }
-  {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    g_sn = info->sn;
-    g_ip = info->lidar_ip;
-    g_dev_type = info->dev_type;
-    g_found = true;
-  }
-  g_cv.notify_one();
-}
-}  // namespace
-
-int main(int argc, const char* argv[]) {
-  if (argc < 2 || argc > 3) {
-    std::fprintf(stderr, "usage: %s <MID360_config.json> [timeout_sec]\n", argv[0]);
-    return 2;
-  }
-  const char* config_path = argv[1];
-  const double timeout_sec = argc == 3 ? std::atof(argv[2]) : 4.0;
-
-  DisableLivoxSdkConsoleLogger();
-  if (!LivoxLidarSdkInit(config_path)) {
-    std::fprintf(stderr, "SDK_ERROR init_failed config=%s\n", config_path);
-    LivoxLidarSdkUninit();
-    return 2;
-  }
-  SetLivoxLidarInfoChangeCallback(LidarInfoChangeCallback, nullptr);
-
-  std::unique_lock<std::mutex> lock(g_mutex);
-  g_cv.wait_for(lock, std::chrono::milliseconds(static_cast<int>(timeout_sec * 1000.0)), [] {
-    return g_found.load();
-  });
-
-  if (!g_found.load()) {
-    std::printf("SDK_SN N/A\n");
-    LivoxLidarSdkUninit();
-    return 1;
-  }
-
-  std::printf("SDK_SN %s\n", g_sn.c_str());
-  std::printf("SDK_IP %s\n", g_ip.c_str());
-  std::printf("SDK_DEV_TYPE %u\n", static_cast<unsigned>(g_dev_type));
-  LivoxLidarSdkUninit();
-  return 0;
-}
-'''
-
-
-def default_config_path() -> Path:
-    return Path.home() / "sunray_map/src/livox_ros_driver2/config/MID360_config.json"
-
-
-def _config_priority(path: Path) -> tuple[int, float, int, str]:
-    lowered = str(path).lower()
-    low_priority_tokens = ("backup", ".cache", "/build/", "/devel/", "/log/", "/logs/")
-    low_priority = 1 if any(token in lowered for token in low_priority_tokens) else 0
-    try:
-        newest_first = -path.stat().st_mtime
-    except OSError:
-        newest_first = 0.0
-    preferred_tokens = ("sunray_map", "drone3plot", "/sunray/", "ws_loc")
-    preferred_rank = next((idx for idx, token in enumerate(preferred_tokens) if token in lowered), len(preferred_tokens))
-    return low_priority, newest_first, preferred_rank, str(path)
 
 
 def discover_mid360_config_paths(verbose: bool = False) -> list[Path]:
-    found: list[Path] = []
-    seen: set[Path] = set()
-    for root in (Path.cwd(), Path.home()):
-        root = root.expanduser()
-        if not root.is_dir():
-            continue
-        output = run_text(
-            [
-                "find",
-                str(root),
-                "-maxdepth",
-                "8",
-                "-type",
-                "f",
-                "-path",
-                "*/livox_ros_driver2/config/MID360_config.json",
-            ],
-            timeout=8,
-        )
-        for line in output.splitlines():
-            path = Path(line.strip()).expanduser()
-            if path.is_file() and path not in seen:
-                seen.add(path)
-                found.append(path)
-    found.sort(key=_config_priority)
-    verbose_print(
-        verbose,
-        "discovered MID360 configs: "
-        + (
-            str(
-                [
-                    {
-                        "path": str(path),
-                        "mtime": int(path.stat().st_mtime),
-                    }
-                    for path in found
-                ]
-            )
-            if found
-            else "N/A"
-        ),
+    return _discover_mid360_config_paths(
+        verbose=verbose,
+        verbose_print=verbose_print,
     )
-    return found
 
 
 def resolve_config_paths(raw_paths: list[str] | None, verbose: bool = False) -> list[Path]:
-    if raw_paths:
-        return [Path(raw_path).expanduser() for raw_path in raw_paths]
-    default_path = default_config_path()
-    if default_path.is_file():
-        return [default_path]
-    discovered = discover_mid360_config_paths(verbose=verbose)
-    if discovered:
-        progress(f"using discovered MID360 config: {discovered[0]}")
-        if len(discovered) > 1:
-            verbose_print(verbose, f"other MID360 configs ignored: {[str(path) for path in discovered[1:]]}")
-        return [discovered[0]]
-    return [default_path]
+    return _resolve_config_paths(
+        raw_paths,
+        verbose=verbose,
+        progress=progress,
+        verbose_print=verbose_print,
+    )
 
 
 @dataclass
@@ -219,6 +98,92 @@ def run_text(command: list[str], timeout: float | None = None) -> str:
     return proc.stdout + proc.stderr
 
 
+def run_command(command: list[str], timeout: float | None = None) -> tuple[int, str]:
+    try:
+        proc = subprocess.run(
+            command,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or ""
+        stderr = exc.stderr or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode(errors="replace")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode(errors="replace")
+        return 124, stdout + stderr
+    return proc.returncode, proc.stdout + proc.stderr
+
+
+def sudo_command(command: list[str]) -> list[str]:
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        return command
+    sudo = ["sudo"]
+    if not sys.stdin.isatty():
+        sudo.append("-n")
+    return [*sudo, *command]
+
+
+def iface_has_ipv4(iface: str, ip: str) -> bool:
+    output = run_text(["ip", "-4", "-o", "addr", "show", "dev", iface])
+    return bool(re.search(rf"\binet\s+{re.escape(ip)}/", output))
+
+
+def choose_probe_host_ip(iface: str, configured_ips: set[str] | None = None) -> str:
+    configured_ips = configured_ips or set()
+    for ip in RAW_ARP_PROBE_SOURCE_IPS:
+        if ip not in configured_ips and not iface_has_ipv4(iface, ip):
+            return ip
+    return RAW_ARP_PROBE_SOURCE_IPS[0]
+
+
+@contextmanager
+def temporary_lidar_subnet_address(
+    iface: str,
+    sudo: bool,
+    configured_ips: set[str] | None = None,
+    verbose: bool = False,
+):
+    host_ip = iface_ipv4(iface)
+    if host_ip and ip_in_lidar_search_network(host_ip):
+        yield host_ip, False
+        return
+    if not sudo:
+        yield None, False
+        return
+
+    probe_ip = choose_probe_host_ip(iface, configured_ips)
+    if iface_has_ipv4(iface, probe_ip):
+        yield probe_ip, False
+        return
+
+    address = f"{probe_ip}/{LIDAR_SEARCH_NETWORK.prefixlen}"
+    add_command = sudo_command(["ip", "addr", "add", address, "dev", iface])
+    progress(f"temporarily adding {address} to {iface} for {LIDAR_SEARCH_NETWORK} scan")
+    returncode, output = run_command(add_command, timeout=5)
+    verbose_print(verbose, f"temporary addr add rc={returncode}, output={output.strip() or 'N/A'}")
+    if returncode != 0:
+        progress(
+            "temporary 192.168.1.x address setup failed; "
+            "run with sudo or grant CAP_NET_ADMIN, then retry"
+        )
+        yield None, False
+        return
+
+    try:
+        yield probe_ip, True
+    finally:
+        del_command = sudo_command(["ip", "addr", "del", address, "dev", iface])
+        returncode, output = run_command(del_command, timeout=5)
+        verbose_print(verbose, f"temporary addr del rc={returncode}, output={output.strip() or 'N/A'}")
+        if returncode == 0:
+            progress(f"removed temporary {address} from {iface}")
+
+
 def iface_ipv4(iface: str) -> str | None:
     output = run_text(["ip", "-4", "-o", "addr", "show", "dev", iface])
     match = re.search(r"\binet\s+(\d+\.\d+\.\d+\.\d+)/", output)
@@ -239,9 +204,10 @@ def list_ipv4_interfaces() -> list[tuple[str, str, int]]:
     return interfaces
 
 
-def list_ethernet_interfaces() -> list[str]:
+def list_scan_interfaces() -> list[str]:
     output = run_text(["ip", "-br", "link"])
     interfaces: list[str] = []
+    virtual_prefixes = ("docker", "veth", "br-", "virbr", "vmnet", "vboxnet", "tun", "tap")
     for line in output.splitlines():
         parts = line.split()
         if len(parts) < 3:
@@ -250,14 +216,28 @@ def list_ethernet_interfaces() -> list[str]:
         flags = " ".join(parts[3:])
         if "@" in iface:
             iface = iface.split("@", 1)[0]
-        if iface == "lo" or iface.startswith(("docker", "veth", "br-", "virbr")):
-            continue
-        if not iface.startswith(("eth", "en", "eno", "ens", "enp", "enx")):
+        if iface == "lo" or iface.startswith(virtual_prefixes):
             continue
         if state != "UP" and "LOWER_UP" not in flags:
             continue
         interfaces.append(iface)
-    return interfaces
+    return sorted(interfaces, key=scan_interface_priority)
+
+
+def list_ethernet_interfaces() -> list[str]:
+    return [
+        iface
+        for iface in list_scan_interfaces()
+        if iface.startswith(("eth", "en", "eno", "ens", "enp", "enx"))
+    ]
+
+
+def scan_interface_priority(iface: str) -> tuple[int, str]:
+    if iface.startswith(("eth", "en", "eno", "ens", "enp", "enx")):
+        return (0, iface)
+    if iface.startswith(("wl", "wlan")):
+        return (1, iface)
+    return (2, iface)
 
 
 def candidate_ifaces(requested_iface: str, config_paths: list[Path]) -> list[str]:
@@ -267,6 +247,7 @@ def candidate_ifaces(requested_iface: str, config_paths: list[Path]) -> list[str
     configured_ips = [read_config_lidar_ip(path) for path in config_paths]
     configured_ips = [ip for ip in configured_ips if ip]
     interfaces = list_ipv4_interfaces()
+    scan_interfaces = list_scan_interfaces()
     ethernet_interfaces = list_ethernet_interfaces()
     ipv4_iface_names = {iface for iface, _, _ in interfaces}
     candidates: list[str] = []
@@ -284,10 +265,10 @@ def candidate_ifaces(requested_iface: str, config_paths: list[Path]) -> list[str
     for iface, host_ip, _ in interfaces:
         if iface in ethernet_interfaces and ip_in_lidar_search_network(host_ip) and iface not in candidates:
             candidates.append(iface)
-    for iface in [iface for iface in ethernet_interfaces if iface not in ipv4_iface_names]:
+    for iface in [iface for iface in scan_interfaces if iface not in ipv4_iface_names]:
         if iface not in candidates:
             candidates.append(iface)
-    for iface in ethernet_interfaces:
+    for iface in scan_interfaces:
         if iface not in candidates:
             candidates.append(iface)
     for iface, _, _ in interfaces:
@@ -538,7 +519,10 @@ def raw_arp_scan_via_sudo(iface: str, verbose: bool = False) -> list[dict[str, o
             continue
         if isinstance(entries, list):
             return [entry for entry in entries if isinstance(entry, dict)]
-    progress("raw ARP scan skipped: run this script with sudo, or grant CAP_NET_RAW, to scan without changing interface IP")
+    progress(
+        "raw ARP scan skipped: run this script with sudo, or grant CAP_NET_RAW, "
+        "to scan without changing interface IP"
+    )
     return []
 
 
@@ -639,7 +623,13 @@ def _gateway_ips(iface: str) -> set[str]:
     return gateways
 
 
-def _score_candidates(entries: list[dict[str, object]], host_ip: str | None, gateways: set[str]) -> list[dict[str, object]]:
+def _score_candidates(
+    entries: list[dict[str, object]],
+    host_ip: str | None,
+    gateways: set[str],
+    configured_ips: set[str] | None = None,
+) -> list[dict[str, object]]:
+    configured_ips = configured_ips or set()
     candidates: list[dict[str, object]] = []
     for entry in entries:
         ip = entry["ip"]
@@ -650,42 +640,105 @@ def _score_candidates(entries: list[dict[str, object]], host_ip: str | None, gat
         ttl = entry.get("ttl")
         mac = entry["mac"]
         score = 0
+        reasons = []
         if mac.startswith(LIVOX_MAC_PREFIXES):
             score += 100
-        if isinstance(ttl, int) and ttl >= 200:
+            reasons.append("livox_mac")
+        if ip in configured_ips:
+            score += 100
+            reasons.append("config_ip")
+        if isinstance(ttl, int) and ttl >= HIGH_TTL_THRESHOLD:
             score += 40
+            reasons.append("high_ttl")
         score += 5
-        candidates.append({**entry, "ttl": ttl, "score": score})
+        candidates.append({**entry, "ttl": ttl, "score": score, "reasons": reasons})
     candidates.sort(key=lambda item: (item["score"], item["state"] == "REACHABLE"), reverse=True)
     return candidates
 
 
-def active_scan(iface: str, sudo: bool, verbose: bool = False) -> Discovery:
+def _select_active_scan_lidar(candidates: list[dict[str, object]]) -> tuple[dict[str, object] | None, str]:
+    if not candidates:
+        return None, "no_candidates"
+
+    best = candidates[0]
+    if best["score"] >= MIN_ACTIVE_SCAN_LIDAR_SCORE:
+        reasons = best.get("reasons") or []
+        reason = str(reasons[0]) if reasons else "score"
+        return best, reason
+
+    high_ttl_candidates = [
+        item
+        for item in candidates
+        if isinstance(item.get("ttl"), int) and item["ttl"] >= HIGH_TTL_THRESHOLD
+    ]
+    if len(high_ttl_candidates) == 1:
+        return high_ttl_candidates[0], "unique_high_ttl"
+
+    return None, "ambiguous"
+
+
+def _ping_lidar_subnet_hosts(iface: str, host_ip: str, verbose: bool = False) -> None:
+    hosts = [str(ip) for ip in LIDAR_SEARCH_NETWORK.hosts() if str(ip) != host_ip]
+    progress(f"active scan on {iface} network={LIDAR_SEARCH_NETWORK} hosts={len(hosts)}")
+    verbose_print(
+        verbose,
+        f"active scan iface={iface}, host_ip={host_ip}, "
+        f"network={LIDAR_SEARCH_NETWORK}, hosts={len(hosts)}",
+    )
+    if not hosts:
+        return
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
+        futures = [executor.submit(_ping_once, iface, ip) for ip in hosts]
+        completed = 0
+        report_step = max(16, len(futures) // 8)
+        for future in concurrent.futures.as_completed(futures):
+            future.result()
+            completed += 1
+            if completed == len(futures) or completed % report_step == 0:
+                print(f"\r[scan] active scan progress {completed}/{len(futures)}", end="", flush=True)
+        print()
+
+
+def _neighbor_entries_with_ttl(iface: str) -> list[dict[str, object]]:
+    entries: list[dict[str, object]] = []
+    for entry in _neighbor_entries(iface):
+        ttl = _ping_ttl(iface, entry["ip"]) if ip_in_lidar_search_network(entry["ip"]) else None
+        entries.append({**entry, "ttl": ttl})
+    return entries
+
+
+def _active_scan_entries(iface: str, host_ip: str, verbose: bool = False) -> list[dict[str, object]]:
+    _ping_lidar_subnet_hosts(iface, host_ip, verbose=verbose)
+    return _neighbor_entries_with_ttl(iface)
+
+
+def active_scan(
+    iface: str,
+    sudo: bool,
+    configured_ips: set[str] | None = None,
+    verbose: bool = False,
+) -> Discovery:
     host_ip = iface_ipv4(iface)
     result = Discovery(iface_ip=host_ip, method="active_scan")
     gateways = _gateway_ips(iface)
+    active_host_ip = host_ip
 
-    if host_ip and ip_in_lidar_search_network(host_ip):
-        hosts = [str(ip) for ip in LIDAR_SEARCH_NETWORK.hosts() if str(ip) != host_ip]
-        progress(f"active scan on {iface} network={LIDAR_SEARCH_NETWORK} hosts={len(hosts)}")
-        verbose_print(verbose, f"active scan iface={iface}, network={LIDAR_SEARCH_NETWORK}, hosts={len(hosts)}")
-        with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
-            futures = [executor.submit(_ping_once, iface, ip) for ip in hosts]
-            completed = 0
-            report_step = max(16, len(futures) // 8) if futures else 1
-            for future in concurrent.futures.as_completed(futures):
-                future.result()
-                completed += 1
-                if completed == len(futures) or completed % report_step == 0:
-                    print(f"\r[scan] active scan progress {completed}/{len(futures)}", end="", flush=True)
-            if futures:
-                print()
+    entries: list[dict[str, object]] = []
+    with temporary_lidar_subnet_address(
+        iface,
+        sudo=sudo,
+        configured_ips=configured_ips,
+        verbose=verbose,
+    ) as (scan_host_ip, temporary_addr_added):
+        if scan_host_ip:
+            active_host_ip = scan_host_ip
+            if temporary_addr_added:
+                result.method = "temporary_ip_active_scan"
+                result.iface_ip = scan_host_ip
+            entries = _active_scan_entries(iface, scan_host_ip, verbose=verbose)
 
-        entries = []
-        for entry in _neighbor_entries(iface):
-            ttl = _ping_ttl(iface, entry["ip"]) if ip_in_lidar_search_network(entry["ip"]) else None
-            entries.append({**entry, "ttl": ttl})
-    else:
+    if not entries and not (host_ip and ip_in_lidar_search_network(host_ip)):
         if host_ip:
             progress(
                 f"interface {iface} IPv4 {host_ip} is outside {LIDAR_SEARCH_NETWORK}; "
@@ -696,257 +749,58 @@ def active_scan(iface: str, sudo: bool, verbose: bool = False) -> Discovery:
         result.method = "raw_arp_scan"
         entries = raw_arp_scan(iface, sudo=sudo, verbose=verbose)
 
-    candidates = _score_candidates(entries, host_ip, gateways)
+    candidates = _score_candidates(entries, active_host_ip, gateways, configured_ips)
     verbose_print(verbose, f"active scan candidates={candidates}")
     if candidates:
         preview = ", ".join(
-            f"{item['ip']} ttl={item['ttl'] or 'N/A'} mac={item['mac']} score={item['score']}"
+            (
+                f"{item['ip']} ttl={item['ttl'] or 'N/A'} "
+                f"mac={item['mac']} score={item['score']}"
+            )
             for item in candidates[:5]
         )
         progress(f"active scan candidates: {preview}")
     else:
         progress(f"active scan found no candidates on {iface}")
-    if candidates and candidates[0]["score"] >= MIN_ACTIVE_SCAN_LIDAR_SCORE:
-        result.lidar_ip = candidates[0]["ip"]
+
+    selected, reason = _select_active_scan_lidar(candidates)
+    if selected:
+        result.lidar_ip = str(selected["ip"])
+        result.method = append_method(result.method, reason)
+        progress(f"active scan selected {result.lidar_ip} by {reason}")
     elif candidates:
         progress(
-            "active scan found online devices, but none match known MID360/Livox signatures; "
+            "active scan found online devices, but selection is ambiguous; "
             "not treating them as lidar"
         )
     return result
 
 
-def _sdk2_candidates() -> list[Path]:
-    def is_sdk_root(path: Path) -> bool:
-        return (
-            (path / "include/livox_lidar_api.h").is_file()
-            and (path / "include/livox_lidar_def.h").is_file()
-        )
-
-    def add_candidate(path: Path) -> None:
-        resolved = Path(os.path.expandvars(str(path))).expanduser()
-        if is_sdk_root(resolved) and resolved not in candidates:
-            candidates.append(resolved)
-
-    candidates: list[Path] = []
-    for env_name in ("LIVOX_SDK2_ROOT", "LIVOX_SDK_ROOT", "LIVOX_SDK_PATH"):
-        env_value = os.environ.get(env_name)
-        if env_value:
-            add_candidate(Path(env_value))
-
-    quick_paths = [
-        Path.home() / "sunray_map/app/Livox-SDK2",
-        Path.home() / "sunray_map/app/Livox_SDK2",
-        Path.home() / "sunray_map/src/Livox-SDK2",
-        Path.home() / "sunray_map/src/Livox_SDK2",
-        Path.home() / "Sunray_V2/drivers/Livox_SDK2",
-        Path.home() / "Sunray_V2_Internal_Test/drivers/Livox_SDK2",
-        Path.home() / "Documents/Sunray_v2/drivers/Livox_SDK2",
-        Path.home() / "sunray_livox_driver/driver/Livox-SDK2",
-        Path.home() / "sunray_livox_driver/driver/Livox_SDK2",
-        Path.home() / "livox_ws/src/Livox-SDK2",
-        Path.home() / "livox_ws/src/Livox_SDK2",
-    ]
-    for path in quick_paths:
-        add_candidate(path)
-
-    if candidates:
-        return candidates
-
-    search_roots = [Path.cwd(), Path.home()]
-    seen_search_roots: set[Path] = set()
-    for root in search_roots:
-        root = root.expanduser()
-        if not root.is_dir() or root in seen_search_roots:
-            continue
-        seen_search_roots.add(root)
-        output = run_text(
-            [
-                "find",
-                str(root),
-                "-maxdepth",
-                "7",
-                "-type",
-                "f",
-                "-path",
-                "*/include/livox_lidar_api.h",
-            ],
-            timeout=8,
-        )
-        for line in output.splitlines():
-            api_header = Path(line.strip())
-            if api_header.name != "livox_lidar_api.h":
-                continue
-            add_candidate(api_header.parent.parent)
-        if candidates:
-            break
-    return candidates
-
-
-def _sdk_source_files(sdk_root: Path) -> list[str]:
-    sdk_core = sdk_root / "sdk_core"
-    platform = "unix"
-    rel_paths = [
-        "device_manager.cpp",
-        "livox_lidar_sdk.cpp",
-        "params_check.cpp",
-        "parse_cfg_file.cpp",
-        "base/io_loop.cpp",
-        "base/thread_base.cpp",
-        "base/io_thread.cpp",
-        "base/logging.cpp",
-        f"base/network/{platform}/network_util.cpp",
-        "base/multiple_io/multiple_io_base.cpp",
-        "base/multiple_io/multiple_io_epoll.cpp",
-        "base/multiple_io/multiple_io_poll.cpp",
-        "base/multiple_io/multiple_io_select.cpp",
-        "base/multiple_io/multiple_io_kqueue.cpp",
-        f"base/wake_up/{platform}/wake_up_pipe.cpp",
-        "comm/comm_port.cpp",
-        "comm/sdk_protocol.cpp",
-        "comm/generate_seq.cpp",
-        "upgrade_manager.cpp",
-        "upgrade/firmware.cpp",
-        "upgrade/livox_lidar_upgrader.cpp",
-        "logger_handler/logger_manager.cpp",
-        "logger_handler/logger_handler.cpp",
-        "logger_handler/file_manager.cpp",
-        "data_handler/data_handler.cpp",
-        "command_handler/command_impl.cpp",
-        "command_handler/general_command_handler.cpp",
-        "command_handler/hap_command_handler.cpp",
-        "command_handler/mid360_command_handler.cpp",
-        "command_handler/build_request.cpp",
-        "command_handler/parse_lidar_state_info.cpp",
-        "debug_point_cloud_handler/debug_point_cloud_manager.cpp",
-        "debug_point_cloud_handler/debug_point_cloud_handler.cpp",
-    ]
-    files = [str(sdk_root / "3rdparty/FastCRC/FastCRCsw.cpp")]
-    files.extend(str(sdk_core / rel_path) for rel_path in rel_paths)
-    return files
-
-
-def _build_sdk_query_tool(sdk_root: Path, verbose: bool = False) -> Path | None:
-    build_dir = SDK_QUERY_CACHE / re.sub(r"[^A-Za-z0-9_.-]+", "_", str(sdk_root))
-    binary = build_dir / "livox_sdk_sn_query"
-    if binary.is_file():
-        return binary
-    verbose_print(verbose, f"SDK SN query skipped: no cached helper at {binary}")
-    return None
-
-
-def _default_sdk_query_config(lidar_ip: str, iface_ip: str | None) -> dict:
-    host_ip = iface_ip or "0.0.0.0"
-    return {
-        "lidar_summary_info": {
-            "lidar_type": 8,
-        },
-        "MID360": {
-            "lidar_net_info": {
-                "cmd_data_port": 56100,
-                "push_msg_port": 56200,
-                "point_data_port": 56300,
-                "imu_data_port": 56400,
-                "log_data_port": 56500,
-            },
-            "host_net_info": {
-                "cmd_data_ip": host_ip,
-                "cmd_data_port": 56101,
-                "push_msg_ip": host_ip,
-                "push_msg_port": 56201,
-                "point_data_ip": host_ip,
-                "point_data_port": 56301,
-                "imu_data_ip": host_ip,
-                "imu_data_port": 56401,
-                "log_data_ip": "",
-                "log_data_port": 56501,
-            },
-        },
-        "lidar_configs": [
-            {
-                "ip": lidar_ip,
-                "pcl_data_type": 1,
-                "pattern_mode": 0,
-                "extrinsic_parameter": {
-                    "roll": 0.0,
-                    "pitch": 0.0,
-                    "yaw": 0.0,
-                    "x": 0,
-                    "y": 0,
-                    "z": 0,
-                },
-            }
-        ],
-    }
-
-
-def _make_sdk_query_config(base_config: Path | None, lidar_ip: str, iface_ip: str | None) -> Path | None:
-    if base_config and base_config.is_file():
-        data = json.loads(base_config.read_text(encoding="utf-8"))
-    else:
-        data = _default_sdk_query_config(lidar_ip, iface_ip)
-    lidar_configs = data.setdefault("lidar_configs", [{}])
-    if not lidar_configs:
-        lidar_configs.append({})
-    lidar_configs[0]["ip"] = lidar_ip
-    if iface_ip:
-        mid360 = data.get("MID360")
-        if isinstance(mid360, dict):
-            host_net_info = mid360.get("host_net_info")
-            if isinstance(host_net_info, dict):
-                for key in (
-                    "cmd_data_ip",
-                    "push_msg_ip",
-                    "point_data_ip",
-                    "imu_data_ip",
-                    "log_data_ip",
-                ):
-                    if key in host_net_info:
-                        host_net_info[key] = iface_ip
-    tmp = tempfile.NamedTemporaryFile(
-        "w",
-        prefix="sunray_mid360_sdk_query_",
-        suffix=".json",
-        encoding="utf-8",
-        delete=False,
+def query_sn_by_sdk(
+    config_paths: list[Path],
+    lidar_ip: str,
+    iface_ip: str | None,
+    timeout_sec: float,
+    verbose: bool = False,
+) -> str | None:
+    return _query_sn_by_sdk(
+        config_paths,
+        lidar_ip,
+        iface_ip,
+        timeout_sec,
+        verbose=verbose,
+        progress=progress,
+        verbose_print=verbose_print,
     )
-    with tmp:
-        json.dump(data, tmp, indent=2, ensure_ascii=False)
-        tmp.write("\n")
-    return Path(tmp.name)
 
 
-def query_sn_by_sdk(config_paths: list[Path], lidar_ip: str, iface_ip: str | None, timeout_sec: float, verbose: bool = False) -> str | None:
-    sdk_roots = _sdk2_candidates()
-    if not sdk_roots:
-        verbose_print(verbose, "SDK SN query skipped: Livox-SDK2 not found")
-        return None
-    base_config = next((path for path in config_paths if path.is_file()), None)
-    if base_config is None:
-        verbose_print(verbose, "SDK SN query: MID360_config.json not found; using temporary minimal config")
-    for sdk_root in sdk_roots:
-        binary = _build_sdk_query_tool(sdk_root, verbose=verbose)
-        if binary is None:
-            continue
-        query_config = _make_sdk_query_config(base_config, lidar_ip, iface_ip)
-        if query_config is None:
-            continue
-        try:
-            progress(f"querying SN with Livox SDK2 ({sdk_root})")
-            output = run_text([str(binary), str(query_config), str(max(1.0, timeout_sec))], timeout=timeout_sec + 8)
-            verbose_print(verbose, f"SDK SN query output from {sdk_root}: {output.strip() or 'N/A'}")
-            match = re.search(r"^SDK_SN\s+([A-Z0-9]{10,16})\s*$", output, flags=re.MULTILINE)
-            if match:
-                return match.group(1)
-        finally:
-            try:
-                query_config.unlink()
-            except OSError:
-                pass
-    return None
-
-
-def discover(ifaces: list[str], timeout_sec: float, sudo: bool, verbose: bool = False) -> tuple[str, Discovery]:
+def discover(
+    ifaces: list[str],
+    timeout_sec: float,
+    sudo: bool,
+    configured_ips: set[str] | None = None,
+    verbose: bool = False,
+) -> tuple[str, Discovery]:
     if not ifaces:
         ifaces = ["eth0"]
     per_iface_timeout = timeout_sec if len(ifaces) == 1 else max(1.5, min(timeout_sec, 2.0))
@@ -955,7 +809,12 @@ def discover(ifaces: list[str], timeout_sec: float, sudo: bool, verbose: bool = 
     for iface in ifaces:
         progress(f"checking interface {iface} by active scan")
         verbose_print(verbose, f"active scan iface={iface}")
-        result = active_scan(iface, sudo=sudo, verbose=verbose)
+        result = active_scan(
+            iface,
+            sudo=sudo,
+            configured_ips=configured_ips,
+            verbose=verbose,
+        )
         if result.lidar_ip:
             progress(f"found lidar by active scan on {iface}: {result.lidar_ip}")
             return iface, result
@@ -972,13 +831,7 @@ def discover(ifaces: list[str], timeout_sec: float, sudo: bool, verbose: bool = 
 
 
 def update_config(path: Path, lidar_ip: str) -> None:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    lidar_configs = data.setdefault("lidar_configs", [{}])
-    if not lidar_configs:
-        lidar_configs.append({})
-    lidar_configs[0]["ip"] = lidar_ip
-
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    update_lidar_ip(path, lidar_ip)
     print(f"updated: {path}")
 
 
@@ -993,17 +846,7 @@ def confirm_update(path: Path, configured_ip: str | None, lidar_ip: str, assume_
 
 
 def read_config_lidar_ip(path: Path) -> str | None:
-    if not path.is_file():
-        return None
-    data = json.loads(path.read_text(encoding="utf-8"))
-    lidar_configs = data.get("lidar_configs")
-    if not isinstance(lidar_configs, list) or not lidar_configs:
-        return None
-    first_config = lidar_configs[0]
-    if not isinstance(first_config, dict):
-        return None
-    ip = first_config.get("ip")
-    return str(ip) if ip else None
+    return read_lidar_ip(path)
 
 
 def main() -> int:
@@ -1015,7 +858,7 @@ def main() -> int:
         "-i",
         "--iface",
         default="auto",
-        help="Ethernet interface to sniff, or 'auto' to choose by MID360_config.json lidar IP",
+        help="Ethernet interface to sniff, or 'auto' to choose by MID360 config lidar IP",
     )
     parser.add_argument(
         "-t",
@@ -1031,7 +874,11 @@ def main() -> int:
         help="seconds to spend on optional post-scan packet sniffing for SN",
     )
     parser.add_argument("--no-log-sn", action="store_true", help="do not try to fill SN from recent ROS logs")
-    parser.add_argument("--no-sniff-sn", action="store_true", help="do not try optional post-scan packet sniffing for SN")
+    parser.add_argument(
+        "--no-sniff-sn",
+        action="store_true",
+        help="do not try optional post-scan packet sniffing for SN",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="print detailed sniff/parse diagnostics")
     parser.add_argument("--no-sudo", action="store_true", help="do not prefix tcpdump with sudo")
     parser.add_argument(
@@ -1039,12 +886,16 @@ def main() -> int:
         action="append",
         default=None,
         help=(
-            "MID360_config.json path to check/update; can be specified multiple times. "
+            "MID360 config path to check/update; can be specified multiple times. "
             f"Default: {default_config_path()}"
         ),
     )
     parser.add_argument("--apply", action="store_true", help="actually update config files")
-    parser.add_argument("--yes", action="store_true", help="update config without interactive confirmation when used with --apply")
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="update config without interactive confirmation when used with --apply",
+    )
     parser.add_argument(
         "--sdk-sn",
         action="store_true",
@@ -1074,11 +925,22 @@ def main() -> int:
 
     config_paths = resolve_config_paths(args.config, verbose=args.verbose)
     ifaces = candidate_ifaces(args.iface, config_paths)
+    configured_ips = {
+        ip
+        for ip in (read_config_lidar_ip(path) for path in config_paths)
+        if ip and ip_in_lidar_search_network(ip)
+    }
     progress("starting MID360 discovery")
     if args.verbose:
         verbose_print(True, f"candidate ifaces: {ifaces}")
 
-    iface, result = discover(ifaces, args.timeout, sudo=not args.no_sudo, verbose=args.verbose)
+    iface, result = discover(
+        ifaces,
+        args.timeout,
+        sudo=not args.no_sudo,
+        configured_ips=configured_ips,
+        verbose=args.verbose,
+    )
     if result.lidar_ip and not result.broadcast_code and not args.no_log_sn:
         log_sn = recent_log_sn(result.lidar_ip, verbose=args.verbose)
         if log_sn:
@@ -1131,14 +993,17 @@ def main() -> int:
         configured_ip = read_config_lidar_ip(path)
         print(f"config:          {path}")
         print(f"config_lidar_ip: {configured_ip or 'N/A'}")
-        if configured_ip and configured_ip != result.lidar_ip:
+        if not path.is_file():
+            unavailable = True
+            print("config_status:   missing_file")
+        elif configured_ip and configured_ip != result.lidar_ip:
             needs_update = True
             print(f"config_status:   mismatch ({configured_ip} != {result.lidar_ip})")
         elif configured_ip == result.lidar_ip:
             print("config_status:   match")
         else:
             unavailable = True
-            print("config_status:   unavailable")
+            print("config_status:   missing_lidar_ip")
         config_states.append((path, configured_ip))
 
     updated_any = False
@@ -1162,7 +1027,7 @@ def main() -> int:
 
     if args.require_match and (needs_update or unavailable) and not updated_any:
         print(
-            "ERROR: detected lidar IP cannot be verified against MID360_config.json; rerun with --apply to update it",
+            "ERROR: detected lidar IP cannot be verified against MID360 config; rerun with --apply to update it",
             file=sys.stderr,
         )
         return 3

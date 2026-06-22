@@ -32,6 +32,8 @@ class RunnerArgs:
     sn: str = ""
     tester: str = ""
     prompt_metadata: bool = True
+    suite_override: Dict[str, Any] = None
+    suite_source: str = ""
 
 
 class TestRunner:
@@ -46,6 +48,7 @@ class TestRunner:
             suite_name=args.suite,
             uav_id=args.uav_id,
             external_source=args.external_source,
+            suite_override=args.suite_override,
         )
 
         output_root = args.output_dir or os.path.join(
@@ -118,6 +121,7 @@ class TestRunner:
         print(f"\n{line}\n{message}\n{line}", flush=True)
 
     def _build_config_section(self) -> Dict[str, Any]:
+        suite_source = self.args.suite_source or "dashboard-generated-suite"
         return {
             "run": {
                 "platform": self.context.platform_name,
@@ -143,12 +147,7 @@ class TestRunner:
                         "environments",
                         f"{self.args.environment}.yaml",
                     ),
-                    "suite": os.path.join(
-                        self.package_root,
-                        "config",
-                        "suites",
-                        f"{self.args.suite}.yaml",
-                    ),
+                    "suite": suite_source,
                     "missions_dir": os.path.join(self.package_root, "config", "missions"),
                 },
             },

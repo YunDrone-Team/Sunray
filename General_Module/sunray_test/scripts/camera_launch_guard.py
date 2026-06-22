@@ -17,7 +17,11 @@ def _split_guard_and_command(argv: Sequence[str]) -> Tuple[List[str], List[str]]
     return list(argv[:split_index]), list(argv[split_index + 1 :])
 
 
-def _run_quiet(command: Sequence[str], timeout_s: float, ignore_codes: Sequence[int] = ()) -> subprocess.CompletedProcess:
+def _run_quiet(
+    command: Sequence[str],
+    timeout_s: float,
+    ignore_codes: Sequence[int] = (),
+) -> subprocess.CompletedProcess:
     try:
         return subprocess.run(
             list(command),

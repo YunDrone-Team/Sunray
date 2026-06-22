@@ -77,6 +77,6 @@ defaults:
   ego_keepalive_zero_velocity_epsilon: 0.001
   ego_post_transition_enabled: true
   ego_post_transition_target_yaw_rad: 0.0
-  ego_post_transition_yaw_rate_rad_s: 0.25
+  ego_post_transition_yaw_rate_rad_s: 0.65
   ego_post_transition_hold_after_s: 2.0
   ego_post_transition_target_z_m: 1.2

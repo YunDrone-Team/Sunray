@@ -119,11 +119,58 @@ def _ensure_bool(value: Any, path: str) -> bool:
 
 
 def _ensure_number(value: Any, path: str) -> float:
-    _ensure(isinstance(value, (int, float)) and not isinstance(value, bool), f"{path} must be a number")
+    _ensure(
+        isinstance(value, (int, float)) and not isinstance(value, bool),
+        f"{path} must be a number",
+    )
     return float(value)
 
 
-def _ensure_allowed_keys(data: Dict[str, Any], path: str, allowed: Iterable[str], required: Iterable[str] = ()) -> None:
+def _ensure_integer(value: Any, path: str, minimum: int, description: str) -> float:
+    number = _ensure_number(value, path)
+    _ensure(
+        number >= minimum and float(number).is_integer(),
+        f"{path} must be a {description} integer",
+    )
+    return number
+
+
+def _validate_optional_numbers(data: Dict[str, Any], path: str, keys: Iterable[str]) -> None:
+    for key in keys:
+        if key in data:
+            _ensure_number(data[key], f"{path}.{key}")
+
+
+def _validate_optional_strings(data: Dict[str, Any], path: str, keys: Iterable[str]) -> None:
+    for key in keys:
+        if key in data:
+            _ensure_string(data[key], f"{path}.{key}")
+
+
+def _validate_optional_bools(data: Dict[str, Any], path: str, keys: Iterable[str]) -> None:
+    for key in keys:
+        if key in data:
+            _ensure_bool(data[key], f"{path}.{key}")
+
+
+def _validate_string_list(
+    data: Dict[str, Any],
+    path: str,
+    key: str,
+    allow_empty: bool = False,
+) -> None:
+    if key not in data:
+        return
+    for index, item in enumerate(_ensure_list(data[key], f"{path}.{key}")):
+        _ensure_string(item, f"{path}.{key}[{index}]", allow_empty=allow_empty)
+
+
+def _ensure_allowed_keys(
+    data: Dict[str, Any],
+    path: str,
+    allowed: Iterable[str],
+    required: Iterable[str] = (),
+) -> None:
     allowed_set = set(allowed)
     required_set = set(required)
     unknown_keys = sorted(set(data.keys()) - allowed_set)
@@ -167,12 +214,8 @@ def _validate_recording_config(recording: Any, path: str) -> None:
     _ensure_allowed_keys(recording_dict, path, {"bag_prefix", "topic_templates", "exclude_topic_templates"})
     if "bag_prefix" in recording_dict:
         _ensure_string(recording_dict["bag_prefix"], f"{path}.bag_prefix")
-    if "topic_templates" in recording_dict:
-        for index, topic in enumerate(_ensure_list(recording_dict["topic_templates"], f"{path}.topic_templates")):
-            _ensure_string(topic, f"{path}.topic_templates[{index}]")
-    if "exclude_topic_templates" in recording_dict:
-        for index, topic in enumerate(_ensure_list(recording_dict["exclude_topic_templates"], f"{path}.exclude_topic_templates")):
-            _ensure_string(topic, f"{path}.exclude_topic_templates[{index}]")
+    _validate_string_list(recording_dict, path, "topic_templates")
+    _validate_string_list(recording_dict, path, "exclude_topic_templates")
 
 
 def _validate_defaults(defaults: Any, path: str) -> None:
@@ -216,9 +259,7 @@ def _validate_defaults(defaults: Any, path: str) -> None:
         "visual_landing_height_m",
         "visual_landing_target_zone_radius_m",
     }
-    for key in numeric_keys:
-        if key in defaults_dict:
-            _ensure_number(defaults_dict[key], f"{path}.{key}")
+    _validate_optional_numbers(defaults_dict, path, numeric_keys)
     for key in ("takeoff_reach_radius_m", "takeoff_timeout_s", "takeoff_command_rate_hz"):
         if key in defaults_dict:
             value = _ensure_number(defaults_dict[key], f"{path}.{key}")
@@ -227,8 +268,12 @@ def _validate_defaults(defaults: Any, path: str) -> None:
         value = _ensure_number(defaults_dict["takeoff_stable_time_s"], f"{path}.takeoff_stable_time_s")
         _ensure(value >= 0, f"{path}.takeoff_stable_time_s must be non-negative")
     if "ego_goal_publish_burst_count" in defaults_dict:
-        value = _ensure_number(defaults_dict["ego_goal_publish_burst_count"], f"{path}.ego_goal_publish_burst_count")
-        _ensure(value >= 1 and float(value).is_integer(), f"{path}.ego_goal_publish_burst_count must be a positive integer")
+        _ensure_integer(
+            defaults_dict["ego_goal_publish_burst_count"],
+            f"{path}.ego_goal_publish_burst_count",
+            minimum=1,
+            description="positive",
+        )
     if "ego_goal_publish_burst_interval_s" in defaults_dict:
         value = _ensure_number(
             defaults_dict["ego_goal_publish_burst_interval_s"],
@@ -249,29 +294,44 @@ def _validate_defaults(defaults: Any, path: str) -> None:
             f"{path}.visual_landing_target_zone_radius_m",
         )
         _ensure(value > 0, f"{path}.visual_landing_target_zone_radius_m must be positive")
-    if "waypoint_analysis_use_xy_only" in defaults_dict:
-        _ensure_bool(defaults_dict["waypoint_analysis_use_xy_only"], f"{path}.waypoint_analysis_use_xy_only")
-    if "ego_goal_use_xy_only" in defaults_dict:
-        _ensure_bool(defaults_dict["ego_goal_use_xy_only"], f"{path}.ego_goal_use_xy_only")
-    if "ego_keepalive_enabled" in defaults_dict:
-        _ensure_bool(defaults_dict["ego_keepalive_enabled"], f"{path}.ego_keepalive_enabled")
-    if "ego_post_transition_enabled" in defaults_dict:
-        _ensure_bool(defaults_dict["ego_post_transition_enabled"], f"{path}.ego_post_transition_enabled")
+    _validate_optional_bools(
+        defaults_dict,
+        path,
+        (
+            "waypoint_analysis_use_xy_only",
+            "ego_goal_use_xy_only",
+            "ego_keepalive_enabled",
+            "ego_post_transition_enabled",
+        ),
+    )
     if "ego_post_transition_yaw_rate_rad_s" in defaults_dict:
-        value = _ensure_number(defaults_dict["ego_post_transition_yaw_rate_rad_s"], f"{path}.ego_post_transition_yaw_rate_rad_s")
+        value = _ensure_number(
+            defaults_dict["ego_post_transition_yaw_rate_rad_s"],
+            f"{path}.ego_post_transition_yaw_rate_rad_s",
+        )
         _ensure(value > 0, f"{path}.ego_post_transition_yaw_rate_rad_s must be positive")
     if "ego_post_transition_hold_after_s" in defaults_dict:
-        value = _ensure_number(defaults_dict["ego_post_transition_hold_after_s"], f"{path}.ego_post_transition_hold_after_s")
+        value = _ensure_number(
+            defaults_dict["ego_post_transition_hold_after_s"],
+            f"{path}.ego_post_transition_hold_after_s",
+        )
         _ensure(value >= 0, f"{path}.ego_post_transition_hold_after_s must be non-negative")
     if "camera_min_messages" in defaults_dict:
-        value = _ensure_number(defaults_dict["camera_min_messages"], f"{path}.camera_min_messages")
-        _ensure(value >= 1 and float(value).is_integer(), f"{path}.camera_min_messages must be a positive integer")
+        _ensure_integer(
+            defaults_dict["camera_min_messages"],
+            f"{path}.camera_min_messages",
+            minimum=1,
+            description="positive",
+        )
     for positive_key in ("camera_sample_duration_s", "camera_min_rate_hz", "camera_max_gap_s"):
         if positive_key in defaults_dict:
             value = _ensure_number(defaults_dict[positive_key], f"{path}.{positive_key}")
             _ensure(value > 0, f"{path}.{positive_key} must be positive")
     if "camera_max_identical_frame_ratio" in defaults_dict:
-        value = _ensure_number(defaults_dict["camera_max_identical_frame_ratio"], f"{path}.camera_max_identical_frame_ratio")
+        value = _ensure_number(
+            defaults_dict["camera_max_identical_frame_ratio"],
+            f"{path}.camera_max_identical_frame_ratio",
+        )
         _ensure(0.0 <= value <= 1.0, f"{path}.camera_max_identical_frame_ratio must be in [0, 1]")
     if "camera_black_mean_threshold" in defaults_dict:
         value = _ensure_number(defaults_dict["camera_black_mean_threshold"], f"{path}.camera_black_mean_threshold")
@@ -283,11 +343,16 @@ def _validate_defaults(defaults: Any, path: str) -> None:
         )
         _ensure(value >= 0, f"{path}.camera_black_dynamic_range_threshold must be non-negative")
     if "camera_max_black_frame_ratio" in defaults_dict:
-        value = _ensure_number(defaults_dict["camera_max_black_frame_ratio"], f"{path}.camera_max_black_frame_ratio")
+        value = _ensure_number(
+            defaults_dict["camera_max_black_frame_ratio"],
+            f"{path}.camera_max_black_frame_ratio",
+        )
         _ensure(0.0 <= value <= 1.0, f"{path}.camera_max_black_frame_ratio must be in [0, 1]")
-    for bool_key in ("camera_require_timestamp_progress", "camera_require_frame_content_change"):
-        if bool_key in defaults_dict:
-            _ensure_bool(defaults_dict[bool_key], f"{path}.{bool_key}")
+    _validate_optional_bools(
+        defaults_dict,
+        path,
+        ("camera_require_timestamp_progress", "camera_require_frame_content_change"),
+    )
 
 
 def _validate_topics(topics: Any, path: str, allow_empty_values: bool) -> None:
@@ -327,9 +392,7 @@ def _validate_analysis_config(analysis: Any, path: str) -> None:
     _ensure_allowed_keys(analysis_dict, path, {"pose_topic", "pose_topic_fallbacks"})
     if "pose_topic" in analysis_dict:
         _ensure_string(analysis_dict["pose_topic"], f"{path}.pose_topic", allow_empty=False)
-    if "pose_topic_fallbacks" in analysis_dict:
-        for index, topic in enumerate(_ensure_list(analysis_dict["pose_topic_fallbacks"], f"{path}.pose_topic_fallbacks")):
-            _ensure_string(topic, f"{path}.pose_topic_fallbacks[{index}]", allow_empty=False)
+    _validate_string_list(analysis_dict, path, "pose_topic_fallbacks")
 
 
 def _validate_external_sources_config(external_sources: Any, path: str) -> None:
@@ -454,53 +517,60 @@ def _validate_suite_step(
 
     if case_type == "hardware.camera_alive":
         _ensure("topic_key" in params, f"{path}.params.topic_key is required for hardware.camera_alive")
-        for number_key in (
-            "timeout_s",
-            "sample_duration_s",
-            "min_rate_hz",
-            "max_gap_s",
-            "max_identical_frame_ratio",
-            "black_mean_threshold",
-            "black_dynamic_range_threshold",
-            "max_black_frame_ratio",
-        ):
-            if number_key in params:
-                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        _validate_optional_numbers(
+            params,
+            f"{path}.params",
+            (
+                "timeout_s",
+                "sample_duration_s",
+                "min_rate_hz",
+                "max_gap_s",
+                "max_identical_frame_ratio",
+                "black_mean_threshold",
+                "black_dynamic_range_threshold",
+                "max_black_frame_ratio",
+            ),
+        )
         if "min_messages" in params:
-            value = _ensure_number(params["min_messages"], f"{path}.params.min_messages")
-            _ensure(value >= 0 and float(value).is_integer(), f"{path}.params.min_messages must be a non-negative integer")
-        if "require_non_uniform_frame" in params:
-            _ensure_bool(params["require_non_uniform_frame"], f"{path}.params.require_non_uniform_frame")
-        if "require_timestamp_progress" in params:
-            _ensure_bool(params["require_timestamp_progress"], f"{path}.params.require_timestamp_progress")
-        if "require_frame_content_change" in params:
-            _ensure_bool(params["require_frame_content_change"], f"{path}.params.require_frame_content_change")
-        if "device_path" in params:
-            _ensure_string(params["device_path"], f"{path}.params.device_path")
+            _ensure_integer(
+                params["min_messages"],
+                f"{path}.params.min_messages",
+                minimum=0,
+                description="non-negative",
+            )
+        _validate_optional_bools(
+            params,
+            f"{path}.params",
+            (
+                "require_non_uniform_frame",
+                "require_timestamp_progress",
+                "require_frame_content_change",
+            ),
+        )
+        _validate_optional_strings(params, f"{path}.params", ("device_path",))
     elif case_type == "hardware.battery_voltage":
         _ensure("topic_key" in params, f"{path}.params.topic_key is required for hardware.battery_voltage")
-        if "timeout_s" in params:
-            _ensure_number(params["timeout_s"], f"{path}.params.timeout_s")
-        if "pass_threshold_v" in params:
-            _ensure_number(params["pass_threshold_v"], f"{path}.params.pass_threshold_v")
+        _validate_optional_numbers(params, f"{path}.params", ("timeout_s", "pass_threshold_v"))
     elif case_type == "hardware.topic_alive":
         _ensure("topic_key" in params, f"{path}.params.topic_key is required for hardware.topic_alive")
-        if "timeout_s" in params:
-            _ensure_number(params["timeout_s"], f"{path}.params.timeout_s")
+        _validate_optional_numbers(params, f"{path}.params", ("timeout_s",))
     elif case_type == "hardware.lidar_health":
-        for string_key in ("imu_topic_pattern", "lidar_topic_pattern"):
-            if string_key in params:
-                _ensure_string(params[string_key], f"{path}.params.{string_key}")
-        for number_key in ("timeout_s", "sample_duration_s", "min_rate_hz", "max_gap_s"):
-            if number_key in params:
-                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        _validate_optional_strings(params, f"{path}.params", ("imu_topic_pattern", "lidar_topic_pattern"))
+        _validate_optional_numbers(
+            params,
+            f"{path}.params",
+            ("timeout_s", "sample_duration_s", "min_rate_hz", "max_gap_s"),
+        )
         for integer_key in ("min_messages", "min_points_per_cloud", "min_valid_clouds"):
             if integer_key in params:
-                value = _ensure_number(params[integer_key], f"{path}.params.{integer_key}")
-                _ensure(value >= 0 and float(value).is_integer(), f"{path}.params.{integer_key} must be a non-negative integer")
+                _ensure_integer(
+                    params[integer_key],
+                    f"{path}.params.{integer_key}",
+                    minimum=0,
+                    description="non-negative",
+                )
     elif case_type == "flight.hover":
-        if "duration_s" in params:
-            _ensure_number(params["duration_s"], f"{path}.params.duration_s")
+        _validate_optional_numbers(params, f"{path}.params", ("duration_s",))
     elif case_type == "flight.ego_goal":
         _ensure("mission_key" in params, f"{path}.params.mission_key is required for flight.ego_goal")
         mission_key = _ensure_string(params["mission_key"], f"{path}.params.mission_key")
@@ -519,51 +589,62 @@ def _validate_suite_step(
             _ensure_ego_goal_list(mission, f"merged.missions.{mission_key}")
         else:
             raise ConfigValidationError(f"merged.missions.{mission_key} must be a mapping or goal list")
-        for string_key in ("goal_topic", "frame_id", "goal_source", "pos_cmd_topic", "control_cmd_topic"):
-            if string_key in params:
-                _ensure_string(params[string_key], f"{path}.params.{string_key}")
-        for number_key in (
-            "z_m",
-            "reach_radius_m",
-            "stable_time_s",
-            "hold_time_s",
-            "timeout_s",
-            "republish_rate_hz",
-            "publish_burst_count",
-            "publish_burst_interval_s",
-            "keepalive_rate_hz",
-            "keepalive_stale_timeout_s",
-            "keepalive_zero_velocity_epsilon",
-            "post_transition_target_yaw_rad",
-            "post_transition_yaw_rate_rad_s",
-            "post_transition_hold_after_s",
-            "post_transition_target_z_m",
-        ):
-            if number_key in params:
-                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+        _validate_optional_strings(
+            params,
+            f"{path}.params",
+            ("goal_topic", "frame_id", "goal_source", "pos_cmd_topic", "control_cmd_topic"),
+        )
+        _validate_optional_numbers(
+            params,
+            f"{path}.params",
+            (
+                "z_m",
+                "reach_radius_m",
+                "stable_time_s",
+                "hold_time_s",
+                "timeout_s",
+                "republish_rate_hz",
+                "publish_burst_count",
+                "publish_burst_interval_s",
+                "keepalive_rate_hz",
+                "keepalive_stale_timeout_s",
+                "keepalive_zero_velocity_epsilon",
+                "post_transition_target_yaw_rad",
+                "post_transition_yaw_rate_rad_s",
+                "post_transition_hold_after_s",
+                "post_transition_target_z_m",
+            ),
+        )
         if "publish_burst_count" in params:
-            value = _ensure_number(params["publish_burst_count"], f"{path}.params.publish_burst_count")
-            _ensure(value >= 1 and float(value).is_integer(), f"{path}.params.publish_burst_count must be a positive integer")
+            _ensure_integer(
+                params["publish_burst_count"],
+                f"{path}.params.publish_burst_count",
+                minimum=1,
+                description="positive",
+            )
         if "publish_burst_interval_s" in params:
-            value = _ensure_number(params["publish_burst_interval_s"], f"{path}.params.publish_burst_interval_s")
+            value = _ensure_number(
+                params["publish_burst_interval_s"],
+                f"{path}.params.publish_burst_interval_s",
+            )
             _ensure(value >= 0, f"{path}.params.publish_burst_interval_s must be non-negative")
-        if "use_xy_only" in params:
-            _ensure_bool(params["use_xy_only"], f"{path}.params.use_xy_only")
-        for bool_key in ("keepalive_enabled", "post_transition_enabled"):
-            if bool_key in params:
-                _ensure_bool(params[bool_key], f"{path}.params.{bool_key}")
+        _validate_optional_bools(
+            params,
+            f"{path}.params",
+            ("use_xy_only", "keepalive_enabled", "post_transition_enabled"),
+        )
     elif case_type == "flight.visual_landing":
-        if "launch_file" in params:
-            _ensure_string(params["launch_file"], f"{path}.params.launch_file")
-        if "auto_takeoff" in params:
-            _ensure_bool(params["auto_takeoff"], f"{path}.params.auto_takeoff")
-        if "height_m" in params:
-            _ensure_number(params["height_m"], f"{path}.params.height_m")
+        _validate_optional_strings(params, f"{path}.params", ("launch_file",))
+        _validate_optional_bools(params, f"{path}.params", ("auto_takeoff",))
+        _validate_optional_numbers(params, f"{path}.params", ("height_m",))
         if "launch_args" in params:
             launch_args = _ensure_dict(params["launch_args"], f"{path}.params.launch_args")
             for key, value in launch_args.items():
                 _ensure_string(key, f"{path}.params.launch_args.{key}")
-                _ensure(isinstance(value, (str, int, float, bool)), f"{path}.params.launch_args.{key} must be a scalar")
+                _ensure(
+                    isinstance(value, (str, int, float, bool)),
+                    f"{path}.params.launch_args.{key} must be a scalar",
+                )
         if "remaps" in params:
             remaps = _ensure_list(params["remaps"], f"{path}.params.remaps")
             for index, remap in enumerate(remaps):
@@ -573,35 +654,8 @@ def _validate_suite_step(
                 _ensure("to" in remap_dict, f"{remap_path}.to is required")
                 _ensure_string(remap_dict["from"], f"{remap_path}.from")
                 _ensure_string(remap_dict["to"], f"{remap_path}.to")
-        if "failure_patterns" in params:
-            for index, pattern in enumerate(_ensure_list(params["failure_patterns"], f"{path}.params.failure_patterns")):
-                _ensure_string(pattern, f"{path}.params.failure_patterns[{index}]")
-        if "pre_stop_nodes" in params:
-            for index, node_name in enumerate(_ensure_list(params["pre_stop_nodes"], f"{path}.params.pre_stop_nodes")):
-                _ensure_string(node_name, f"{path}.params.pre_stop_nodes[{index}]")
-    elif case_type == "flight.ego_goal":
-        for string_key in ("goal_topic", "frame_id", "goal_source", "pos_cmd_topic", "control_cmd_topic"):
-            if string_key in params:
-                _ensure_string(params[string_key], f"{path}.params.{string_key}")
-        for number_key in (
-            "z_m",
-            "reach_radius_m",
-            "stable_time_s",
-            "hold_time_s",
-            "timeout_s",
-            "publish_burst_interval_s",
-            "keepalive_rate_hz",
-            "keepalive_stale_timeout_s",
-            "keepalive_zero_velocity_epsilon",
-        ):
-            if number_key in params:
-                _ensure_number(params[number_key], f"{path}.params.{number_key}")
-        if "publish_burst_count" in params:
-            value = _ensure_number(params["publish_burst_count"], f"{path}.params.publish_burst_count")
-            _ensure(value >= 1 and float(value).is_integer(), f"{path}.params.publish_burst_count must be a positive integer")
-        for bool_key in ("use_xy_only", "keepalive_enabled"):
-            if bool_key in params:
-                _ensure_bool(params[bool_key], f"{path}.params.{bool_key}")
+        _validate_string_list(params, f"{path}.params", "failure_patterns")
+        _validate_string_list(params, f"{path}.params", "pre_stop_nodes")
     elif case_type == "flight.waypoint":
         waypoint_source = params.get("waypoint_source", merged_defaults.get("waypoint_source", "list"))
         waypoint_source = _ensure_string(waypoint_source, f"{path}.params.waypoint_source")
@@ -610,10 +664,15 @@ def _validate_suite_step(
             mission_key = params.get("mission_key")
             _ensure(mission_key is not None, f"{path}.params.mission_key is required when waypoint_source=list")
             mission_key = _ensure_string(mission_key, f"{path}.params.mission_key")
-            _ensure(mission_key in merged_missions, f"{path}.params.mission_key references unknown mission: {mission_key}")
-        for number_key in ("reach_radius_m", "stable_time_s", "hold_time_s", "timeout_s"):
-            if number_key in params:
-                _ensure_number(params[number_key], f"{path}.params.{number_key}")
+            _ensure(
+                mission_key in merged_missions,
+                f"{path}.params.mission_key references unknown mission: {mission_key}",
+            )
+        _validate_optional_numbers(
+            params,
+            f"{path}.params",
+            ("reach_radius_m", "stable_time_s", "hold_time_s", "timeout_s"),
+        )
 
 
 def _validate_suite_config(
@@ -642,10 +701,15 @@ def _validate_suite_config(
         requirements = _ensure_dict(suite["platform_requirements"], f"{path}.platform_requirements")
         _ensure_allowed_keys(requirements, f"{path}.platform_requirements", {"capabilities", "topics"})
         if "capabilities" in requirements:
-            for index, capability in enumerate(_ensure_list(requirements["capabilities"], f"{path}.platform_requirements.capabilities")):
+            capabilities = _ensure_list(
+                requirements["capabilities"],
+                f"{path}.platform_requirements.capabilities",
+            )
+            for index, capability in enumerate(capabilities):
                 _ensure_string(capability, f"{path}.platform_requirements.capabilities[{index}]")
         if "topics" in requirements:
-            for index, topic_key in enumerate(_ensure_list(requirements["topics"], f"{path}.platform_requirements.topics")):
+            topic_keys = _ensure_list(requirements["topics"], f"{path}.platform_requirements.topics")
+            for index, topic_key in enumerate(topic_keys):
                 _ensure_string(topic_key, f"{path}.platform_requirements.topics[{index}]")
 
     steps = _ensure_list(suite["steps"], f"{path}.steps")
@@ -655,7 +719,12 @@ def _validate_suite_config(
         _validate_suite_step(step_dict, f"{path}.steps[{index}]", merged_topics, merged_missions, merged_defaults)
 
 
-def _validate_platform_requirements(suite: Dict[str, Any], platform: Dict[str, Any], topics: Dict[str, Any], path: str) -> None:
+def _validate_platform_requirements(
+    suite: Dict[str, Any],
+    platform: Dict[str, Any],
+    topics: Dict[str, Any],
+    path: str,
+) -> None:
     requirements = suite.get("platform_requirements")
     if not requirements:
         return
@@ -726,43 +795,6 @@ def validate_config_triplet(
     return loaded
 
 
-def show_effective_config(
-    package_root: str,
-    platform_name: str,
-    environment_name: str,
-    suite_name: str,
-    uav_id: int,
-    external_source: Optional[int] = None,
-) -> Dict[str, Any]:
-    loaded = load_config_triplet(
-        package_root=package_root,
-        platform_name=platform_name,
-        environment_name=environment_name,
-        suite_name=suite_name,
-        uav_id=uav_id,
-        external_source=external_source,
-    )
-    return {
-        "input": {
-            "platform": platform_name,
-            "environment": environment_name,
-            "suite": suite_name,
-            "uav_id": uav_id,
-            "uav_name": f"/uav{uav_id}",
-            "external_source": external_source,
-        },
-        "platform": loaded["platform"],
-        "environment": loaded["environment"],
-        "suite": loaded["suite"],
-        "defaults": loaded["defaults"],
-        "report": loaded["report"],
-        "topics": loaded["topics"],
-        "recording": loaded["recording"],
-        "missions": loaded["missions"],
-        "analysis": loaded["analysis"],
-    }
-
-
 def load_config_triplet(
     package_root: str,
     platform_name: str,
@@ -770,18 +802,18 @@ def load_config_triplet(
     suite_name: str,
     uav_id: int,
     external_source: Optional[int] = None,
+    suite_override: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     config_root = os.path.join(package_root, "config")
     environment_path = os.path.join(config_root, "environments", f"{environment_name}.yaml")
-    suite_path = os.path.join(config_root, "suites", f"{suite_name}.yaml")
     mission_dir = os.path.join(config_root, "missions")
 
     _ensure(os.path.isfile(environment_path), f"environment config not found: {environment_path}")
-    _ensure(os.path.isfile(suite_path), f"suite config not found: {suite_path}")
+    _ensure(suite_override is not None, "runtime suite is required; use the dashboard generated suite")
 
     platform = load_platform_config(config_root, platform_name)
     environment = load_yaml(environment_path)
-    suite = load_yaml(suite_path)
+    suite = copy.deepcopy(suite_override)
     mission_files = load_yaml_dir(mission_dir)
 
     uav_name = f"/uav{uav_id}"

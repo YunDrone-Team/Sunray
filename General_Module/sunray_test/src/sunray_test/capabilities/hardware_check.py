@@ -279,7 +279,13 @@ class HardwareCheck:
         return None
 
     @staticmethod
-    def _sample_topic(topic: str, topic_type: str, fallback_type, timeout_s: float, sample_duration_s: float) -> Dict[str, Any]:
+    def _sample_topic(
+        topic: str,
+        topic_type: str,
+        fallback_type,
+        timeout_s: float,
+        sample_duration_s: float,
+    ) -> Dict[str, Any]:
         samples: List[Tuple[float, Any]] = []
         msg_cls = HardwareCheck._message_class(topic_type, fallback_type)
 
@@ -344,8 +350,20 @@ class HardwareCheck:
         if not lidar_topic:
             return "fail", f"no topic matches pattern: {lidar_pattern}", metrics
 
-        imu_sample = HardwareCheck._sample_topic(imu_topic, imu_type or "", Imu, timeout_s, sample_duration_s)
-        lidar_sample = HardwareCheck._sample_topic(lidar_topic, lidar_type or "", PointCloud2, timeout_s, sample_duration_s)
+        imu_sample = HardwareCheck._sample_topic(
+            imu_topic,
+            imu_type or "",
+            Imu,
+            timeout_s,
+            sample_duration_s,
+        )
+        lidar_sample = HardwareCheck._sample_topic(
+            lidar_topic,
+            lidar_type or "",
+            PointCloud2,
+            timeout_s,
+            sample_duration_s,
+        )
         metrics["imu"] = {key: value for key, value in imu_sample.items() if key != "messages"}
         metrics["lidar"] = {key: value for key, value in lidar_sample.items() if key != "messages"}
 
