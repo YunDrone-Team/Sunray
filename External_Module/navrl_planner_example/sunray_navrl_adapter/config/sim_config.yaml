@@ -1,0 +1,94 @@
+# NAVRL 占据地图配置：仿真环境。
+# 本文件由 NavRL2Sunray_sim.launch 加载到 /occupancy_map 命名空间。
+
+# 传感器输入模式：0 表示深度图，1 表示点云。
+# sunray_sim 已经提供局部点云，所以这里使用点云模式。
+sensor_input_mode: 1
+
+# 定位输入模式：0 表示 PoseStamped，1 表示 Odometry。
+localization_mode: 1
+
+# 深度图话题。当前点云模式下 map_manager 不使用该话题，保留给切换深度图模式时使用。
+depth_image_topic: /camera/depth/image_raw
+
+# 点云话题。仿真中使用 sunray_sim 发布的传感器系局部点云。
+point_cloud_topic: /uav1/sunray_sim/cloud_sensor_frame
+
+# 位姿话题。当前 odom 模式下不使用，保留为 NAVRL 默认兼容项。
+pose_topic: /CERLAB/quadcopter/pose
+
+# 里程计话题。仿真中使用 sunray_sim 的动力学里程计。
+odom_topic: /uav1/sunray_sim/odom
+
+# 无人机碰撞体尺寸，单位 m，分别对应 x/y/z 方向。
+robot_size: [0.2, 0.2, 0.1]
+
+# 深度相机内参 fx、fy、cx、cy。当前点云模式下不参与点云投影。
+depth_intrinsics: [554.254691191187, 554.254691191187, 320.5, 240.5]
+
+# 深度图缩放系数。当前点云模式下不使用。
+depth_scale_factor: 10
+
+# 深度图有效最小/最大距离，单位 m。当前点云模式下不使用。
+depth_min_value: 0.5
+depth_max_value: 5.0
+
+# 深度图边缘过滤像素宽度。当前点云模式下不使用。
+depth_filter_margin: 2
+
+# 深度图跳点采样间隔。当前点云模式下不使用。
+depth_skip_pixel: 2
+
+# 深度图宽高。当前点云模式下不使用。
+image_cols: 640
+image_rows: 480
+
+# 机体系到传感器系的外参矩阵，按行展开。
+# sunray_sim/cloud_sensor_frame 已经是以无人机传感器系表达的局部点云，这里使用单位阵。
+body_to_camera: [1.0, 0.0, 0.0, 0.0,
+                 0.0, 1.0, 0.0, 0.0,
+                 0.0, 0.0, 1.0, 0.0,
+                 0.0, 0.0, 0.0, 1.0]
+
+# 射线投射最大长度，单位 m。
+raycast_max_length: 5.0
+
+# 占据栅格概率更新参数：命中、未命中、最小概率、最大概率、占据阈值。
+p_hit: 0.70
+p_miss: 0.35
+p_min: 0.12
+p_max: 0.97
+p_occ: 0.80
+
+# 地图分辨率，单位 m。
+map_resolution: 0.1
+
+# 地面高度，低于该高度的点会按地图逻辑过滤或处理。
+ground_height: -0.1
+
+# 全局占据地图范围，单位 m，分别对应 x/y/z 方向。
+map_size: [60, 60, 5]
+
+# 每次根据当前传感器数据更新的局部范围，单位 m。
+local_update_range: [5, 5, 5]
+
+# 局部地图边界膨胀距离，单位 m。
+local_bound_inflation: 3.0
+
+# 是否清理局部地图之外的旧占据数据。
+clean_local_map: false
+
+# 可视化用局部地图范围，单位 m。
+local_map_size: [8, 8, 3]
+
+# 可视化时显示的最大高度，单位 m。
+max_height_visualization: 4
+
+# 是否发布/显示全局占据地图。
+visualize_global_map: false
+
+# 是否打印详细调试信息。
+verbose: false
+
+# 预加载地图文件路径。"No" 表示不加载预建 PCD 地图。
+prebuilt_map_directory: "No prebuild Map"

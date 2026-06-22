@@ -1,0 +1,4 @@
+<launch>
+	<rosparam file="$(find map_manager)/cfg/esdf_map_param.yaml" ns="/esdf_map"  />
+	<node pkg="map_manager" type="esdf_map_node" name="esdf_map_node" output="screen" />
+</launch>

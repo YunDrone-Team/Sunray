@@ -1,0 +1,68 @@
+<launch>
+  <!-- 直接对接 sunray_sim 单无人车仿真，不启动定位融合，也不启动 sunray_ugv_control。 -->
+  <arg name="agent_name" default="ugv" />
+  <arg name="agent_id" default="1" />
+  <arg name="agent_prefix" default="/$(arg agent_name)$(arg agent_id)" />
+
+  <arg name="use_safety_shield" default="false" />
+  <arg name="rviz" default="true" />
+  <arg name="rviz_config" default="$(find sunray_navrl_adapter)/rviz/sim.rviz" />
+  <arg name="map_config" default="$(find sunray_navrl_adapter)/config/sim_config.yaml" />
+
+  <!-- sunray_sim UGV 仿真输出。 -->
+  <arg name="odom_topic" default="$(arg agent_prefix)/sunray_sim/odom" />
+  <arg name="point_cloud_topic" default="$(arg agent_prefix)/sunray_sim/cloud_sensor_frame" />
+
+  <!-- navigation_runner/navigation.py 在非 PX4 模式下发布这两个 NavRL 话题。 -->
+  <arg name="cmd_vel_topic" default="/CERLAB/quadcopter/cmd_vel" />
+  <arg name="setpoint_pose_topic" default="/CERLAB/quadcopter/setpoint_pose" />
+  <arg name="goal_topic" default="/move_base_simple/goal" />
+
+  <!-- sunray_sim UgvSimulator 直接订阅这个车体系速度指令。 -->
+  <arg name="ugv_cmd_vel_topic" default="$(arg agent_prefix)/sunray/ugv_control/cmd_vel" />
+
+  <arg name="node_name" default="NavRL2SunrayUGV_sim_$(arg agent_id)" />
+  <arg name="queue_size" default="50" />
+
+  <!-- UGV 适配器限幅，应小于或等于 sunray_sim/config/modules/ugv_simulator.yaml 中的限幅。 -->
+  <arg name="max_linear_x" default="1.5" />
+  <arg name="max_linear_y" default="1.5" />
+  <arg name="max_angular_z" default="1.5" />
+  <arg name="yaw_kp" default="1.5" />
+  <arg name="goal_stop_distance" default="0.4" />
+  <arg name="status_print_hz" default="1.0" />
+
+  <param name="rl/use_px4" value="false" />
+
+  <rosparam file="$(arg map_config)" ns="/occupancy_map" />
+  <param name="/occupancy_map/odom_topic" value="$(arg odom_topic)" />
+  <param name="/occupancy_map/point_cloud_topic" value="$(arg point_cloud_topic)" />
+  <node pkg="map_manager" type="occupancy_map_node" name="occupancy_map_node" output="screen" />
+
+  <group if="$(arg use_safety_shield)">
+    <include file="$(find navigation_runner)/launch/safety_shield.launch" />
+  </group>
+
+  <node pkg="sunray_navrl_adapter"
+        type="NavRL2SunrayUGV_node"
+        name="$(arg node_name)"
+        output="screen">
+    <param name="input_topic" value="$(arg cmd_vel_topic)" />
+    <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)" />
+    <param name="setpoint_pose_topic" value="$(arg setpoint_pose_topic)" />
+    <param name="goal_topic" value="$(arg goal_topic)" />
+    <param name="odom_topic" value="$(arg odom_topic)" />
+    <param name="output_topic" value="$(arg ugv_cmd_vel_topic)" />
+    <param name="queue_size" value="$(arg queue_size)" />
+    <param name="max_linear_x" value="$(arg max_linear_x)" />
+    <param name="max_linear_y" value="$(arg max_linear_y)" />
+    <param name="max_angular_z" value="$(arg max_angular_z)" />
+    <param name="yaw_kp" value="$(arg yaw_kp)" />
+    <param name="goal_stop_distance" value="$(arg goal_stop_distance)" />
+    <param name="status_print_hz" value="$(arg status_print_hz)" />
+  </node>
+
+  <group if="$(arg rviz)">
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" required="true" />
+  </group>
+</launch>

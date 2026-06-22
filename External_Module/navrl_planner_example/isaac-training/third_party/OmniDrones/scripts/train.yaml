@@ -1,0 +1,38 @@
+# hydra.job.chdir: false
+hydra:
+  searchpath:
+  # see https://hydra.cc/docs/advanced/search_path/
+   - file://../cfg
+
+headless: false # 是否显示isaac GUI
+
+sim: ${task.sim} # 需要输入当前的task名：例如python xxxx task=Forest， 会找到cfg/task/Forest.yaml
+env: ${task.env} # 同样在Forest.yaml中有env变量
+
+total_frames: 150_000_000
+max_iters: -1
+eval_interval: -1
+save_interval: -1
+seed: 0
+
+viewer:
+  resolution: [960, 720]
+  eye: [8, 0., 6.]
+  lookat: [0., 0., 1.]
+
+# oc.select: https://omegaconf.readthedocs.io/en/2.1_branch/custom_resolvers.html#oc-decode
+wandb:
+  group: ${oc.select:..task.name}
+  run_name: ${oc.select:..task.name,test}-${oc.select:..algo.name,none}
+  job_type: train
+  entity: marl-drones
+  project: omnidrones
+  mode: online # set to 'disabled' when debugging locally
+  run_id: 
+  monitor_gym: True
+  tags: 
+
+defaults:
+  - task: Hover
+  - algo: ppo
+  - _self_

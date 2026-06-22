@@ -1,0 +1,18 @@
+geometry_msgs/Point agent_position
+geometry_msgs/Vector3 agent_velocity
+float64 agent_size
+
+# dynamic obstacles
+geometry_msgs/Vector3[] dynamic_obs_position
+geometry_msgs/Vector3[] dynamic_obs_velocity
+geometry_msgs/Vector3[] dynamic_obs_size
+
+# static obstacles
+geometry_msgs/Vector3[] static_obs_position
+geometry_msgs/Vector3[] static_obs_size
+float64[] static_obs_angle
+
+float64 max_velocity
+geometry_msgs/Vector3 rl_velocity
+---
+geometry_msgs/Vector3 safe_action

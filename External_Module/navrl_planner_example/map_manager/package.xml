@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>map_manager</name>
+  <version>1.0.0</version>
+  <description>The map manager package containing occupancy, ESDF and dynamic map.</description>
+  <maintainer email="zhefanx@andrew.cmu.edu">Zhefan Xu</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>onboard_detector</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>onboard_detector</exec_depend>
+  <export>
+
+  </export>
+</package>

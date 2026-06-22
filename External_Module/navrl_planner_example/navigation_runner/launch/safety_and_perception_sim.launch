@@ -1,0 +1,60 @@
+<launch>
+    <arg name="use_px4" default="false" />
+    <arg name="use_prebuilt_map" default="false" />
+    <arg name="use_real_detector" default="false" />
+    <arg name="use_safety_shield" default="true" />
+    <arg name="rviz" default="true" />
+    
+    <!-- PX4 -->
+    <param name="rl/use_px4" value="$(arg use_px4)" />
+
+    <!-- mapping -->
+    <group if="$(arg use_prebuilt_map)">
+        <group if="$(arg use_px4)">
+	        <rosparam file="$(find navigation_runner)/cfg/mapping/sim/prebuilt_map_px4.yaml" ns="/occupancy_map"  />
+        </group>
+        <group unless="$(arg use_px4)">
+	        <rosparam file="$(find navigation_runner)/cfg/mapping/sim/prebuilt_map.yaml" ns="/occupancy_map"  />
+        </group>
+    </group>
+    <group unless="$(arg use_prebuilt_map)">
+        <group if="$(arg use_px4)">
+	        <rosparam file="$(find navigation_runner)/cfg/mapping/sim/no_map_px4.yaml" ns="/occupancy_map"  />
+        </group>
+        <group unless="$(arg use_px4)">
+	        <rosparam file="$(find navigation_runner)/cfg/mapping/sim/no_map.yaml" ns="/occupancy_map"  />
+        </group>
+    </group>
+	<node pkg="map_manager" type="occupancy_map_node" name="occupancy_map_node" output="screen" />
+
+    <!-- detection -->
+    <group if="$(arg use_real_detector)">
+        <group if="$(arg use_px4)">
+            <rosparam file="$(find navigation_runner)/cfg/detection/sim/real_detector_px4.yaml" ns="/onboard_detector" />
+	    </group>
+        <group unless="$(arg use_px4)">
+            <rosparam file="$(find navigation_runner)/cfg/detection/sim/real_detector.yaml" ns="/onboard_detector" />
+	    </group>
+        <node pkg="onboard_detector" type="detector_node" name="detector_node" output="screen" />
+	    <node pkg="onboard_detector" type="yolo_detector_node.py" name="yolo_detector_node" output="screen" />
+    </group>
+    <group unless="$(arg use_real_detector)">
+        <group if="$(arg use_px4)">
+            <rosparam file="$(find navigation_runner)/cfg/detection/sim/fake_detector_px4.yaml" />
+	    </group>
+        <group unless="$(arg use_px4)">
+            <rosparam file="$(find navigation_runner)/cfg/detection/sim/fake_detector.yaml" />
+	    </group>
+        <node pkg="onboard_detector" type="fake_detector_node" name="fake_detector_node" output="screen" />
+    </group>
+
+    <!-- safety -->
+    <group if="$(arg use_safety_shield)">
+ 	    <include file="$(find navigation_runner)/launch/safety_shield.launch" />
+    </group>
+	
+    <!-- visualization -->
+    <group if="$(arg rviz)">
+ 	    <include file="$(find navigation_runner)/launch/rviz.launch" />
+    </group>
+</launch>

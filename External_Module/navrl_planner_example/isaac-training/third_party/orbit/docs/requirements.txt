@@ -1,0 +1,15 @@
+# for building the docs
+sphinx-book-theme==1.0.1
+myst-parser
+sphinxcontrib-bibtex==2.5.0
+autodocsumm
+sphinx-copybutton
+sphinx_design
+sphinxemoji
+
+# basic python
+numpy
+matplotlib
+warp-lang
+# learning
+gymnasium

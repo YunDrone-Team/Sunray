@@ -1,0 +1,33 @@
+<launch>
+    <arg name="use_prebuilt_map" default="true" />
+    <arg name="use_safety_shield" default="false" />
+    <arg name="rviz" default="false" />
+
+    <!-- PX4 -->
+    <param name="rl/use_px4" value="true" />
+
+    <!-- mapping -->
+    <group if="$(arg use_prebuilt_map)">
+	    <rosparam file="$(find navigation_runner)/cfg/mapping/real/prebuilt_map_px4.yaml" ns="/occupancy_map"  />
+    </group>
+    <group unless="$(arg use_prebuilt_map)">
+	    <rosparam file="$(find navigation_runner)/cfg/mapping/real/no_map_px4.yaml" ns="/occupancy_map"  />
+    </group>
+	<node pkg="map_manager" type="occupancy_map_node" name="occupancy_map_node" output="screen" />
+
+    <!-- detection -->
+    <rosparam file="$(find navigation_runner)/cfg/detection/real/real_detector_px4.yaml" ns="/onboard_detector" />
+    <node pkg="onboard_detector" type="detector_node" name="detector_node" output="screen" />
+    <node pkg="onboard_detector" type="yolo_detector_node.py" name="yolo_detector_node" output="screen" />
+
+
+    <!-- safety -->
+    <group if="$(arg use_safety_shield)">
+ 	    <include file="$(find navigation_runner)/launch/safety_shield.launch" />
+    </group>
+	
+    <!-- visualization -->
+    <group if="$(arg rviz)">
+ 	    <include file="$(find navigation_runner)/launch/rviz.launch" />
+    </group>
+</launch>

@@ -1,0 +1,49 @@
+[package]
+# Semantic Versioning is used: https://semver.org/
+version = "1.0.1"
+authors = ["NVIDIA"]
+title = "Warp Core"
+description="The core Warp Python module"
+readme  = "docs/README.md"
+repository="https://github.com/nvidia/warp"
+category = "core"
+keywords = ["warp", "simulation"]
+changelog="docs/CHANGELOG.md"
+
+preview_image = "data/preview.png"
+icon = "data/icon.png"
+
+# Watch files for hot reloading (only works for Python files)
+[fswatcher.patterns]
+include = ["*.py"]
+
+# Extension module
+# It must be defined before the module `warp` in order to give
+# the `omni.warp.core` extension a chance to create a symlink towards Warp's
+# core directory, if needed, before Carbonite tries to evaluate `import warp`.
+[[python.module]]
+name = "omni.warp.core"
+
+# Core language module
+[[python.module]]
+name = "warp"
+path = "."
+public = true
+
+# Kit testing flags
+[[test]]
+pyCoverageOmit = [
+    "warp/stubs.py",
+    "warp/jax.py",
+    "warp/torch.py",
+    "warp/build.py",
+    "warp/build_dll.py",
+    "warp/sim/**",
+    "warp/render/**",
+    "warp/optim/**",
+    "warp/fem/**",
+    "warp/thirdparty/**",
+    "warp/tests/**"
+]
+pyCoverageThreshold = 40
+timeout = 900

@@ -1,0 +1,4 @@
+<launch>
+	<rosparam file="$(find navigation_runner)/cfg/safety/safe_action_param.yaml" ns="/safe_action"  />
+	<node pkg="navigation_runner" type="safe_action_node" name="safe_action_node" output="screen" />
+</launch>

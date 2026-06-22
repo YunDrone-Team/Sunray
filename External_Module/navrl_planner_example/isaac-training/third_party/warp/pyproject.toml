@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=61", "build", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "warp-lang"
+requires-python = ">=3.7"
+authors = [{ name = "NVIDIA", email = "mmacklin@nvidia.com" }]
+description = "A Python framework for high-performance simulation and graphics programming"
+license = { text = "NVIDIA Software License" }
+classifiers = [
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+]
+dependencies = ["numpy"]
+dynamic = ["version", "readme"]
+
+[project.urls]
+GitHub = "https://github.com/NVIDIA/warp"
+Documentation = "https://nvidia.github.io/warp"
+Changelog = "https://github.com/NVIDIA/warp/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "black",
+    "isort",
+    "nvtx",
+    "furo",
+    "sphinx-copybutton",
+    "coverage[toml]",
+]
+
+[tool.setuptools.packages.find]
+include = ["warp*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "warp.config.version" }
+readme = { file = ["README.md"], content-type = "text/markdown" }
+
+[tool.black]
+line-length = 120
+extend-exclude = '''
+(
+  warp/native/cutlass/
+  | warp/thirdparty/appdirs.py
+  | warp/thirdparty/dlpack.py
+)
+'''
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+
+[tool.coverage.run]
+source = ["warp", "warp.sim", "warp.render"]
+disable_warnings = [
+    "module-not-measured",
+    "module-not-imported",
+    "no-data-collected",
+    "couldnt-parse",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "@wp",
+    "@warp",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]
+omit = [
+    "*/warp/thirdparty/*",
+    "*/warp/examples/*",
+    "*/warp/tests/*",
+    "*/warp/fem/*",
+    "appdirs.py",
+    "render_opengl.py",
+    "build_dll.py",
+    "config.py",
+    "stubs.py",
+]

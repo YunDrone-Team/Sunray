@@ -1,0 +1,10 @@
+float64[] state
+int32[] state_shape
+float64[] lidar
+int32[] lidar_shape
+float64[] direction
+int32[] direction_shape
+float64[] dynamic_obstacle
+int32[] dynamic_obstacle_shape
+---
+float64[] action

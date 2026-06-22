@@ -1,0 +1,18 @@
+<launch>
+  <arg name="agent_name" default="uav" />
+  <arg name="agent_id" default="1" />
+  <arg name="goal_topic" default="/move_base_simple/goal" />
+  <arg name="control_topic" default="/$(arg agent_name)$(arg agent_id)/sunray/uav_control_cmd" />
+  <arg name="frame_id" default="map" />
+
+  <node pkg="sunray_navrl_adapter"
+        type="NavRLTerminalControl_node"
+        name="navrl_terminal_control"
+        output="screen">
+    <param name="agent_name" value="$(arg agent_name)" />
+    <param name="uav_id" value="$(arg agent_id)" />
+    <param name="goal_topic" value="$(arg goal_topic)" />
+    <param name="control_topic" value="$(arg control_topic)" />
+    <param name="frame_id" value="$(arg frame_id)" />
+  </node>
+</launch>

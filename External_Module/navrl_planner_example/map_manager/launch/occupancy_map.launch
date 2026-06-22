@@ -1,0 +1,4 @@
+<launch>
+	<rosparam file="$(find map_manager)/cfg/occupancy_map_param.yaml" ns="/occupancy_map"  />
+	<node pkg="map_manager" type="occupancy_map_node" name="occupancy_map_node" output="screen" />
+</launch>

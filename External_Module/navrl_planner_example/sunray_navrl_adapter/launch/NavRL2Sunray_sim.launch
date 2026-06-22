@@ -1,0 +1,57 @@
+<launch>
+  <arg name="agent_name" default="uav" />
+  <arg name="agent_id" default="1" />
+  <arg name="agent_prefix" default="/$(arg agent_name)$(arg agent_id)" />
+
+  <arg name="use_px4" default="false" />
+  <arg name="use_safety_shield" default="false" />
+  <arg name="rviz" default="true" />
+  <arg name="rviz_config" default="$(find sunray_navrl_adapter)/rviz/sim.rviz" />
+  <arg name="map_config" default="$(find sunray_navrl_adapter)/config/sim_config.yaml" />
+
+  <arg name="odom_topic" default="$(arg agent_prefix)/sunray_sim/odom" />
+  <arg name="point_cloud_topic" default="$(arg agent_prefix)/sunray_sim/cloud_sensor_frame" />
+  <arg name="cmd_vel_topic" default="/CERLAB/quadcopter/cmd_vel" />
+  <arg name="setpoint_pose_topic" default="/CERLAB/quadcopter/setpoint_pose" />
+  <arg name="goal_topic" default="/move_base_simple/goal" />
+  <arg name="control_cmd_topic" default="$(arg agent_prefix)/sunray/uav_control_cmd" />
+
+  <arg name="node_name" default="NavRL2Sunray_sim_$(arg agent_id)" />
+  <arg name="queue_size" default="50" />
+  <arg name="fixed_height" default="1.0" />
+  <arg name="desired_yaw" default="0.0" />
+  <arg name="frame_id" default="world" />
+  <arg name="status_print_hz" default="1.0" />
+
+  <param name="rl/use_px4" value="$(arg use_px4)" />
+
+  <rosparam file="$(arg map_config)" ns="/occupancy_map" />
+  <param name="/occupancy_map/odom_topic" value="$(arg odom_topic)" />
+  <param name="/occupancy_map/point_cloud_topic" value="$(arg point_cloud_topic)" />
+  <node pkg="map_manager" type="occupancy_map_node" name="occupancy_map_node" output="screen" />
+
+  <group if="$(arg use_safety_shield)">
+    <include file="$(find navigation_runner)/launch/safety_shield.launch" />
+  </group>
+
+  <node pkg="sunray_navrl_adapter"
+        type="NavRL2Sunray_node"
+        name="$(arg node_name)"
+        output="screen">
+    <param name="input_topic" value="$(arg cmd_vel_topic)" />
+    <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)" />
+    <param name="setpoint_pose_topic" value="$(arg setpoint_pose_topic)" />
+    <param name="goal_topic" value="$(arg goal_topic)" />
+    <param name="odom_topic" value="$(arg odom_topic)" />
+    <param name="output_topic" value="$(arg control_cmd_topic)" />
+    <param name="queue_size" value="$(arg queue_size)" />
+    <param name="fixed_height" value="$(arg fixed_height)" />
+    <param name="desired_yaw" value="$(arg desired_yaw)" />
+    <param name="frame_id" value="$(arg frame_id)" />
+    <param name="status_print_hz" value="$(arg status_print_hz)" />
+  </node>
+
+  <group if="$(arg rviz)">
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" required="true" />
+  </group>
+</launch>
