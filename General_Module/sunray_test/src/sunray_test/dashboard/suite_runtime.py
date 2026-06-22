@@ -247,7 +247,7 @@ def validate_dashboard_suite_schema(
     suite: Dict[str, Any],
     uav_id: int,
     external_source: int,
-) -> None:
+) -> str:
     from sunray_test.core.suite_loader import ConfigValidationError, load_config_triplet
 
     try:
@@ -263,24 +263,5 @@ def validate_dashboard_suite_schema(
     except ConfigValidationError as exc:
         raise SystemExit(f"Dashboard 生成的测试计划校验失败: {exc}") from exc
     except ModuleNotFoundError as exc:
-        print(
-            f"[dashboard] 跳过完整 ROS case 校验: 当前 Python 环境缺少模块 {exc.name}",
-            flush=True,
-        )
-
-
-def write_suite_only_and_print(
-    model: DashboardModel,
-    args,
-    plan: DashboardPlan,
-    suite_path: str,
-    output_dir: str,
-) -> None:
-    write_runtime_suite(plan.suite, suite_path)
-    print(f"\n[dashboard] suite written: {suite_path}", flush=True)
-    print(
-        "[dashboard] manual runner command:\n"
-        + build_manual_runner_command(model, args, plan, suite_path, output_dir),
-        flush=True,
-    )
-    print("[dashboard] write-suite-only, not launching bringup or runner", flush=True)
+        return f"当前 Python 环境缺少模块 {exc.name}，已跳过完整 ROS case 校验"
+    return ""

@@ -10,6 +10,15 @@ analysis:
   pose_topic: "/uav{uav_id}/mavros/local_position/pose"
 
 external_sources:
+  "0":
+    analysis:
+      pose_topic: "/Odometry"
+    recording:
+      topic_templates:
+        - "/Odometry"
+      exclude_topic_templates:
+        - "/vrpn_client_node_1/uav{uav_id}/pose"
+        - "/vrpn_client_node_1/uav{uav_id}/twist"
   "3":
     analysis:
       pose_topic: "/vrpn_client_node_1/uav{uav_id}/pose"

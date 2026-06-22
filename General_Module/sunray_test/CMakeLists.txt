@@ -27,6 +27,12 @@ catkin_install_python(PROGRAMS
   scripts/vrpn_server_check.py
   scripts/camera_launch_guard.py
   scripts/camera_watchdog.py
+  scripts/ensure_ros_master.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(PROGRAMS
+  scripts/ensure_runtime_deps.sh
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -45,6 +51,9 @@ install(FILES README.md
 if(CATKIN_ENABLE_TESTING)
   catkin_add_nosetests(test/test_dashboard_model.py)
   catkin_add_nosetests(test/test_dashboard_history.py)
-  catkin_add_nosetests(test/test_dashboard_ui.py)
+  catkin_add_nosetests(test/test_dashboard_console.py)
   catkin_add_nosetests(test/test_dashboard_cli.py)
+  catkin_add_nosetests(test/test_dashboard_tui.py)
+  catkin_add_nosetests(test/test_dashboard_tools.py)
+  catkin_add_nosetests(test/test_livox_mid360_autoconfig.py)
 endif()

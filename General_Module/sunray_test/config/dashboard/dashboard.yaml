@@ -14,6 +14,58 @@ external_sources:
   exp: 3
   sim: 2
 
+external_source_options:
+  exp:
+    - label: ODOM
+      value: 0
+      description: ODOM external_source
+    - label: POSE
+      value: 1
+      description: Pose external_source
+    - label: GAZEBO
+      value: 2
+      description: Gazebo 仿真 external_source
+    - label: MOCAP
+      value: 3
+      description: 动捕 external_source
+    - label: VIOBOT
+      value: 4
+      description: Viobot external_source
+    - label: GPS
+      value: 5
+      description: GPS external_source
+    - label: RTK
+      value: 6
+      description: RTK external_source
+    - label: Mini viobot
+      value: 7
+      description: Mini viobot external_source
+  sim:
+    - label: ODOM
+      value: 0
+      description: ODOM external_source
+    - label: POSE
+      value: 1
+      description: Pose external_source
+    - label: GAZEBO
+      value: 2
+      description: Gazebo 仿真 external_source
+    - label: MOCAP
+      value: 3
+      description: 动捕 external_source
+    - label: VIOBOT
+      value: 4
+      description: Viobot external_source
+    - label: GPS
+      value: 5
+      description: GPS external_source
+    - label: RTK
+      value: 6
+      description: RTK external_source
+    - label: Mini viobot
+      value: 7
+      description: Mini viobot external_source
+
 test_items:
   - id: front_camera
     name: 前视相机
@@ -24,6 +76,107 @@ test_items:
       type: hardware.camera_alive
       params:
         topic_key: front_camera
+    param_schema:
+      - path: topic_key
+        name: 话题配置键
+        type: string
+        description: 从平台和环境配置中读取前视相机图像 topic 的键名。通常不需要修改，除非新增了不同的相机 topic 映射。
+      - path: timeout_s
+        name: 等待超时
+        type: float
+        default: 5.0
+        unit: s
+        step: 0.5
+        min: 0.5
+        max: 30.0
+        description: 等待前视相机首帧图像的最长时间。相机节点启动慢或 USB 初始化慢时可以调大。
+      - path: sample_duration_s
+        name: 采样时长
+        type: float
+        default: 1.5
+        unit: s
+        step: 0.5
+        min: 0.5
+        max: 20.0
+        description: 收到首帧后继续统计图像流质量的时间窗口。窗口越长，帧率和卡顿判断越稳定。
+      - path: min_messages
+        name: 最少图像帧数
+        type: int
+        default: 3
+        step: 1
+        min: 1
+        max: 200
+        description: 采样窗口内要求收到的最少图像帧数量。低于该值说明图像流过慢或中断。
+      - path: min_rate_hz
+        name: 最低帧率
+        type: float
+        default: 2.0
+        unit: Hz
+        step: 0.5
+        min: 0.0
+        max: 120.0
+        description: 前视相机平均发布频率的最低通过阈值。用于判断相机是否持续输出图像。
+      - path: max_gap_s
+        name: 最大帧间隔
+        type: float
+        default: 1.0
+        unit: s
+        step: 0.1
+        min: 0.0
+        max: 10.0
+        description: 相邻两帧图像允许的最大接收间隔。超过该值说明图像流存在明显卡顿。
+      - path: require_non_uniform_frame
+        name: 要求非纯色帧
+        type: bool
+        default: true
+        description: 开启后，如果采样到的图像全部是纯色或几乎无纹理，会判定相机异常。
+      - path: max_identical_frame_ratio
+        name: 最大重复帧比例
+        type: float
+        default: 0.95
+        step: 0.05
+        min: 0.0
+        max: 1.0
+        description: 允许重复图像帧占采样帧数的最大比例。配合“要求画面变化”判断相机冻结。
+      - path: require_timestamp_progress
+        name: 要求时间戳递增
+        type: bool
+        default: true
+        description: 开启后，如果图像消息 header 时间戳不递增，会判定相机流可能卡死。
+      - path: require_frame_content_change
+        name: 要求画面变化
+        type: bool
+        default: false
+        description: 开启后，会要求采样窗口内图像内容发生变化；静态场景容易误判，默认关闭。
+      - path: black_mean_threshold
+        name: 黑屏均值阈值
+        type: float
+        default: 25.0
+        step: 1.0
+        min: 0.0
+        max: 255.0
+        description: 判断黑屏帧时使用的图像平均亮度阈值。均值低于该值且动态范围很小时视为黑屏候选。
+      - path: black_dynamic_range_threshold
+        name: 黑屏动态范围阈值
+        type: int
+        default: 8
+        step: 1
+        min: 0
+        max: 255
+        description: 判断黑屏帧时使用的像素最大最小差值阈值。动态范围越小，画面越接近全黑或纯色。
+      - path: max_black_frame_ratio
+        name: 最大黑屏比例
+        type: float
+        default: 0.8
+        step: 0.05
+        min: 0.0
+        max: 1.0
+        description: 允许黑屏候选帧占采样帧数的最大比例。超过该比例会认为相机画面不可用。
+      - path: device_path
+        name: 设备路径
+        type: string
+        default: ""
+        description: 可选的本机相机设备路径，例如 /dev/video0。填写后会先检查设备文件是否存在。
 
   - id: down_camera
     name: 下视相机
@@ -34,6 +187,107 @@ test_items:
       type: hardware.camera_alive
       params:
         topic_key: down_camera
+    param_schema:
+      - path: topic_key
+        name: 话题配置键
+        type: string
+        description: 从平台和环境配置中读取下视相机图像 topic 的键名。视觉降落依赖该相机，改错会导致图像检测收不到数据。
+      - path: timeout_s
+        name: 等待超时
+        type: float
+        default: 5.0
+        unit: s
+        step: 0.5
+        min: 0.5
+        max: 30.0
+        description: 等待下视相机首帧图像的最长时间。相机节点启动慢或 USB 初始化慢时可以调大。
+      - path: sample_duration_s
+        name: 采样时长
+        type: float
+        default: 1.5
+        unit: s
+        step: 0.5
+        min: 0.5
+        max: 20.0
+        description: 收到首帧后继续统计图像流质量的时间窗口。窗口越长，帧率和卡顿判断越稳定。
+      - path: min_messages
+        name: 最少图像帧数
+        type: int
+        default: 3
+        step: 1
+        min: 1
+        max: 200
+        description: 采样窗口内要求收到的最少图像帧数量。低于该值说明图像流过慢或中断。
+      - path: min_rate_hz
+        name: 最低帧率
+        type: float
+        default: 2.0
+        unit: Hz
+        step: 0.5
+        min: 0.0
+        max: 120.0
+        description: 下视相机平均发布频率的最低通过阈值。用于判断相机是否持续输出图像。
+      - path: max_gap_s
+        name: 最大帧间隔
+        type: float
+        default: 1.0
+        unit: s
+        step: 0.1
+        min: 0.0
+        max: 10.0
+        description: 相邻两帧图像允许的最大接收间隔。超过该值说明图像流存在明显卡顿。
+      - path: require_non_uniform_frame
+        name: 要求非纯色帧
+        type: bool
+        default: true
+        description: 开启后，如果采样到的图像全部是纯色或几乎无纹理，会判定相机异常。
+      - path: max_identical_frame_ratio
+        name: 最大重复帧比例
+        type: float
+        default: 0.95
+        step: 0.05
+        min: 0.0
+        max: 1.0
+        description: 允许重复图像帧占采样帧数的最大比例。配合“要求画面变化”判断相机冻结。
+      - path: require_timestamp_progress
+        name: 要求时间戳递增
+        type: bool
+        default: true
+        description: 开启后，如果图像消息 header 时间戳不递增，会判定相机流可能卡死。
+      - path: require_frame_content_change
+        name: 要求画面变化
+        type: bool
+        default: false
+        description: 开启后，会要求采样窗口内图像内容发生变化；静态场景容易误判，默认关闭。
+      - path: black_mean_threshold
+        name: 黑屏均值阈值
+        type: float
+        default: 25.0
+        step: 1.0
+        min: 0.0
+        max: 255.0
+        description: 判断黑屏帧时使用的图像平均亮度阈值。均值低于该值且动态范围很小时视为黑屏候选。
+      - path: black_dynamic_range_threshold
+        name: 黑屏动态范围阈值
+        type: int
+        default: 8
+        step: 1
+        min: 0
+        max: 255
+        description: 判断黑屏帧时使用的像素最大最小差值阈值。动态范围越小，画面越接近全黑或纯色。
+      - path: max_black_frame_ratio
+        name: 最大黑屏比例
+        type: float
+        default: 0.8
+        step: 0.05
+        min: 0.0
+        max: 1.0
+        description: 允许黑屏候选帧占采样帧数的最大比例。超过该比例会认为相机画面不可用。
+      - path: device_path
+        name: 设备路径
+        type: string
+        default: ""
+        description: 可选的本机相机设备路径，例如 /dev/video0。填写后会先检查设备文件是否存在。
 
   - id: battery
     name: 电池电压
@@ -44,6 +298,29 @@ test_items:
       type: hardware.battery_voltage
       params:
         topic_key: battery
+    param_schema:
+      - path: topic_key
+        name: 电池话题配置键
+        type: string
+        description: 从平台和环境配置中读取电池 topic 的键名。用于检查 mavros 电池消息是否可用。
+      - path: timeout_s
+        name: 等待超时
+        type: float
+        default: 5.0
+        unit: s
+        step: 0.5
+        min: 0.5
+        max: 30.0
+        description: 等待电池 topic 首条有效消息的最长时间。实机链路启动慢时可以适当调大。
+      - path: pass_threshold_v
+        name: 通过电压阈值
+        type: float
+        default: 13.8
+        unit: V
+        step: 0.1
+        min: 0.0
+        max: 30.0
+        description: 电池电压测试的通过阈值。实测电压低于该值时判定失败，用于提前发现低电量风险。
 
   - id: lidar
     name: 激光雷达
@@ -63,6 +340,68 @@ test_items:
         max_gap_s: 1.0
         min_points_per_cloud: 700
         min_valid_clouds: 3
+    param_schema:
+      - path: imu_topic_pattern
+        name: IMU 话题匹配
+        type: string
+        description: 用于匹配 MID360 IMU topic 名称的关键字或模式。只要实际 topic 名里包含该字符串即可匹配。
+      - path: lidar_topic_pattern
+        name: 点云话题匹配
+        type: string
+        description: 用于匹配 MID360 点云 topic 名称的关键字或模式。实机和仿真 topic 不一致时优先改这里。
+      - path: timeout_s
+        name: 等待超时
+        type: float
+        unit: s
+        step: 0.5
+        min: 1.0
+        max: 60.0
+        description: 等待雷达 IMU 和点云 topic 出现的最长时间。驱动启动慢时可适当调大。
+      - path: sample_duration_s
+        name: 采样时长
+        type: float
+        unit: s
+        step: 0.5
+        min: 1.0
+        max: 20.0
+        description: 统计雷达消息频率、间隔和点云数量时使用的采样窗口。时间越长越稳定，但测试越慢。
+      - path: min_messages
+        name: 最少消息数
+        type: int
+        step: 1
+        min: 1
+        max: 200
+        description: 采样窗口内要求收到的最少 IMU 或点云消息数。过高会导致低频链路误判失败。
+      - path: min_rate_hz
+        name: 最低频率
+        type: float
+        unit: Hz
+        step: 0.5
+        min: 0.5
+        max: 50.0
+        description: 雷达消息平均频率的最低通过阈值。用于判断驱动是否持续发布数据。
+      - path: max_gap_s
+        name: 最大消息间隔
+        type: float
+        unit: s
+        step: 0.1
+        min: 0.1
+        max: 10.0
+        description: 相邻消息允许的最大间隔。超过该间隔说明数据流存在卡顿或断流。
+      - path: min_points_per_cloud
+        name: 单帧最少点数
+        type: int
+        step: 50
+        min: 0
+        max: 200000
+        description: 每帧点云要求的最低点数。环境空旷或仿真点云稀疏时可以降低。
+      - path: min_valid_clouds
+        name: 最少有效点云帧
+        type: int
+        step: 1
+        min: 1
+        max: 100
+        description: 采样窗口内达到点数要求的点云帧数量。用于过滤偶发的空点云或异常帧。
 
   - id: hover
     name: 悬停
@@ -73,6 +412,17 @@ test_items:
       case: hover_stability
       name: 悬停
       type: flight.hover
+      params:
+        duration_s: 120.0
+    param_schema:
+      - path: duration_s
+        name: 悬停时长
+        type: float
+        unit: s
+        step: 5.0
+        min: 5.0
+        max: 600.0
+        description: 起飞后保持当前位置的测试时间。时间越长越能暴露定位或控制漂移，但测试耗时也更长。
 
   - id: ego_goal
     name: EGO-Planner自主规划
@@ -88,6 +438,176 @@ test_items:
         goal_topic: /move_base_simple/goal
         frame_id: world
         mission_key: lidar_ego_goals
+    param_schema:
+      - path: goal_topic
+        name: 目标点话题
+        type: string
+        description: 发布 EGO-Planner 目标点的 ROS topic。通常和 rviz 2D Nav Goal 或规划节点订阅 topic 保持一致。
+      - path: frame_id
+        name: 坐标系
+        type: string
+        description: 目标点 PoseStamped 使用的 frame_id。仿真和实机默认使用 world，改错会导致目标点坐标解释错误。
+      - path: mission_key
+        name: 任务点配置
+        type: enum
+        options: [lidar_ego_goals]
+        description: 从 config/missions 中选择 EGO 目标点列表。后续新增任务文件后可以扩展这里的枚举。
+      - path: z_m
+        name: 默认目标高度
+        type: float
+        default: 1.0
+        unit: m
+        step: 0.1
+        min: 0.3
+        max: 5.0
+        description: 当任务点没有给出有效高度时使用的默认飞行高度。只影响缺省高度的目标点。
+      - path: goal_source
+        name: 目标点来源
+        type: enum
+        default: list
+        options: [list, input]
+        description: list 表示读取 mission_key 对应的目标点列表；input 表示运行时从 rviz 目标点输入。
+      - path: timeout_s
+        name: 单目标超时
+        type: float
+        default: 45.0
+        unit: s
+        step: 5.0
+        min: 5.0
+        max: 300.0
+        description: 单个 EGO 目标点允许飞行的最长时间。路径较远或速度较慢时可以调大。
+      - path: stable_time_s
+        name: 到点判稳时间
+        type: float
+        default: 2.0
+        unit: s
+        step: 0.5
+        min: 0.0
+        max: 30.0
+        description: 进入到点半径后必须连续保持在范围内的时间。用于过滤瞬时进入目标圈的情况。
+      - path: hold_time_s
+        name: 到点保持时间
+        type: float
+        default: 1.0
+        unit: s
+        step: 0.5
+        min: 0.0
+        max: 30.0
+        description: 到达目标点后要求保持稳定的时间。用于确认不是瞬时穿过目标点。
+      - path: reach_radius_m
+        name: 到点半径
+        type: float
+        default: 0.13
+        unit: m
+        step: 0.01
+        min: 0.02
+        max: 2.0
+        description: 判断无人机到达目标点的水平距离阈值。数值越小越严格。
+      - path: publish_burst_count
+        name: 目标点连发次数
+        type: int
+        default: 3
+        step: 1
+        min: 1
+        max: 20
+        description: 每个 EGO 目标点开始时连续发布 PoseStamped 的次数。规划节点偶发漏收时可以调大。
+      - path: publish_burst_interval_s
+        name: 目标点连发间隔
+        type: float
+        default: 0.1
+        unit: s
+        step: 0.05
+        min: 0.0
+        max: 5.0
+        description: 连续发布目标点之间的时间间隔。通常保持默认即可。
+      - path: use_xy_only
+        name: 仅按水平距离判定
+        type: bool
+        default: true
+        description: 开启后只用 XY 水平距离判断是否到达目标点，不把高度误差计入到点距离。
+      - path: keepalive_enabled
+        name: 保持控制转发
+        type: bool
+        default: true
+        description: 开启后持续把 EGO pos_cmd 转成控制指令，避免规划控制链路在目标点测试期间断开。
+      - path: keepalive_rate_hz
+        name: 控制转发频率
+        type: float
+        default: 20.0
+        unit: Hz
+        step: 1.0
+        min: 1.0
+        max: 100.0
+        description: EGO keepalive 控制指令的发送频率。过低可能控制不连续，过高会增加消息压力。
+      - path: keepalive_stale_timeout_s
+        name: 控制指令保鲜时间
+        type: float
+        default: 0.5
+        unit: s
+        step: 0.1
+        min: 0.1
+        max: 5.0
+        description: pos_cmd 超过该时间未更新时停止转发旧指令，防止使用过期规划输出。
+      - path: keepalive_zero_velocity_epsilon
+        name: 零速度阈值
+        type: float
+        default: 0.001
+        unit: m/s
+        step: 0.001
+        min: 0.0
+        max: 0.1
+        description: 判断规划输出速度接近 0 的阈值。用于 keepalive 处理静止或到点后的控制输出。
+      - path: post_transition_enabled
+        name: 启用结束姿态过渡
+        type: bool
+        default: true
+        description: EGO 测试结束后是否执行一次偏航和高度过渡，用于把飞机调整到后续测试更稳定的姿态。
+      - path: post_transition_target_yaw_rad
+        name: 结束目标偏航
+        type: float
+        default: 0.0
+        unit: rad
+        step: 0.1
+        min: -3.2
+        max: 3.2
+        description: EGO 测试结束后过渡到的目标偏航角，单位为弧度。
+      - path: post_transition_yaw_rate_rad_s
+        name: 结束偏航角速度
+        type: float
+        default: 0.65
+        unit: rad/s
+        step: 0.05
+        min: 0.05
+        max: 2.0
+        description: 结束姿态过渡时的偏航角速度。该值越大，偏航调整完成越快。
+      - path: post_transition_hold_after_s
+        name: 结束后保持时间
+        type: float
+        default: 2.0
+        unit: s
+        step: 0.5
+        min: 0.0
+        max: 20.0
+        description: 偏航和高度过渡结束后继续保持的时间，用于等待姿态和位置稳定。
+      - path: post_transition_target_z_m
+        name: 结束目标高度
+        type: float
+        default: 1.2
+        unit: m
+        step: 0.1
+        min: 0.3
+        max: 5.0
+        description: EGO 测试结束后希望调整到的高度。为空时保持当前高度；dashboard 默认给出 1.2m。
+      - path: pos_cmd_topic
+        name: EGO 控制输入话题
+        type: string
+        default: /uav1/pos_cmd
+        description: keepalive 订阅的 EGO 位置控制指令 topic。通常来自 EGO Planner 的 pos_cmd 输出。
+      - path: control_cmd_topic
+        name: 无人机控制话题
+        type: string
+        default: /uav1/sunray/uav_control_cmd
+        description: keepalive 转发控制指令时发布到的 Sunray 控制 topic。当前测试入口固定 uav1，通常无需修改。
 
   - id: waypoint
     name: 指点飞行
@@ -100,6 +620,54 @@ test_items:
       type: flight.waypoint
       params:
         mission_key: waypoint_default
+    param_schema:
+      - path: mission_key
+        name: 航点任务配置
+        type: enum
+        options: [waypoint_default]
+        description: 从 config/missions 中选择指点飞行航点列表。后续新增任务文件后可以扩展这里的枚举。
+      - path: waypoint_source
+        name: 航点来源
+        type: enum
+        default: list
+        options: [list, input]
+        description: list 表示读取 mission_key 对应的航点列表；input 表示运行时在终端逐个输入航点。
+      - path: timeout_s
+        name: 单航点超时
+        type: float
+        default: 40.0
+        unit: s
+        step: 5.0
+        min: 5.0
+        max: 300.0
+        description: 单个航点允许飞行的最长时间。航点距离较远或控制速度较低时可以调大。
+      - path: stable_time_s
+        name: 到点判稳时间
+        type: float
+        default: 3.0
+        unit: s
+        step: 0.5
+        min: 0.0
+        max: 30.0
+        description: 进入航点半径后必须连续保持在范围内的时间。用于确认不是瞬时穿过航点。
+      - path: hold_time_s
+        name: 到点保持时间
+        type: float
+        default: 2.0
+        unit: s
+        step: 0.5
+        min: 0.0
+        max: 30.0
+        description: 航点判稳通过后额外保持的时间。用于观察定点控制稳定性。
+      - path: reach_radius_m
+        name: 到点半径
+        type: float
+        default: 0.13
+        unit: m
+        step: 0.01
+        min: 0.02
+        max: 2.0
+        description: 判断无人机到达航点的距离阈值。数值越小越严格。
 
   - id: visual_landing
     name: 视觉降落
@@ -116,88 +684,160 @@ test_items:
           error_z: 0.22
           land_vel: 0.5
           last_land_time: 0.9
-          drop_height: 0.1
+          drop_height: 0.15
+    param_schema:
+      - path: launch_file
+        name: 降落 launch 文件
+        type: string
+        default: auto_land_by_pose.launch
+        description: 视觉降落 case 内部 roslaunch 的文件名，默认从 sunray_tutorial 包启动 auto_land_by_pose.launch。
+      - path: auto_takeoff
+        name: launch 内自动起飞
+        type: bool
+        default: false
+        description: 传给视觉降落 launch 的 auto_takeoff 参数。dashboard 已经统一起飞，通常保持 false。
+      - path: height_m
+        name: 降落起始高度
+        type: float
+        default: 1.0
+        unit: m
+        step: 0.1
+        min: 0.3
+        max: 5.0
+        description: 视觉降落开始前无人机保持或上升到的高度。高度过低可能来不及识别二维码，过高会增加降落时间。
+      - path: launch_args.error_xy
+        name: 水平误差阈值
+        type: float
+        unit: m
+        step: 0.01
+        min: 0.01
+        max: 1.0
+        description: 允许开始最终下降的水平定位误差。数值越小越严格，过小可能导致长时间等待对准。
+      - path: launch_args.error_z
+        name: 高度误差阈值
+        type: float
+        unit: m
+        step: 0.01
+        min: 0.01
+        max: 1.0
+        description: 视觉降落控制中允许的高度误差。用于判断高度是否接近目标下降轨迹。
+      - path: launch_args.land_vel
+        name: 下降速度
+        type: float
+        unit: m/s
+        step: 0.05
+        min: 0.05
+        max: 2.0
+        description: 识别目标后执行最终降落的下降速度。速度越大降落越快，但对定位稳定性要求更高。
+      - path: launch_args.last_land_time
+        name: 最终降落保持时间
+        type: float
+        unit: s
+        step: 0.1
+        min: 0.1
+        max: 10.0
+        description: 进入最终降落阶段后持续发送降落控制的时间。过短可能未完全落地，过长会增加测试时间。
+      - path: launch_args.drop_height
+        name: 直接落地高度
+        type: float
+        unit: m
+        step: 0.01
+        min: 0.0
+        max: 1.0
+        description: 当无人机低于该高度时允许直接进入落地动作。用于避免低高度时反复等待视觉目标。
 
 bringup:
   rules:
     uses_lidar:
       any_items: [lidar, ego_goal]
+      all_conditions: [profile:sunray150_lidar, external_source:0]
     uses_basic_sim_rviz:
-      none_items: [lidar, ego_goal]
+      none_conditions: [uses_lidar]
     uses_camera:
       any_items: [front_camera, down_camera, visual_landing]
     uses_detection:
       any_items: [visual_landing]
+    uses_flight_controller:
+      any_items: [battery]
+      any_groups: [function]
     uses_flight:
       any_groups: [function]
 
   sim:
     tabs:
+      - title: roscore
+        when: always
+        command: rosrun sunray_test ensure_ros_master.py
       - title: simulator
         when: always
-        command: roslaunch sunray_simulator sunray_sim_test_basic.launch vehicle:={sim_vehicle}
+        delay_s: 1.0
+        command: roslaunch --wait sunray_simulator sunray_sim_test_basic.launch vehicle:={sim_vehicle}
       - title: rviz
         when: uses_basic_sim_rviz
         delay_s: 1.0
-        command: roslaunch sunray_simulator sim_rviz.launch
+        command: roslaunch --wait sunray_simulator sim_rviz.launch
       - title: fusion
         when: uses_flight
         delay_s: 2.0
-        command: roslaunch sunray_uav_control external_fusion.launch external_source:={external_source} enable_rviz:=false
+        command: roslaunch --wait sunray_uav_control external_fusion.launch external_source:={external_source} enable_rviz:=false
       - title: control
         when: uses_flight
         delay_s: 3.0
-        command: roslaunch sunray_uav_control sunray_control_node.launch uav_id:={uav_id} Takeoff_height:=1.0
+        command: roslaunch --wait sunray_uav_control sunray_control_node.launch uav_id:={uav_id} Takeoff_height:=1.0
       - title: terminal_control
         when: uses_flight
         delay_s: 2.0
-        command: roslaunch sunray_uav_control terminal_control.launch uav_id:={uav_id}
+        command: roslaunch --wait sunray_uav_control terminal_control.launch uav_id:={uav_id}
       - title: ego
         when: uses_lidar
         delay_s: 1.0
-        command: roslaunch sunray_test sunray_tests_ego.launch rivz_config:=$(rospack find sunray_test)/launch/sunray_tests_sim.rviz
+        command: roslaunch --wait sunray_test sunray_tests_ego.launch rivz_config:=$(rospack find sunray_test)/launch/sunray_tests_sim.rviz
       - title: detection
         when: uses_detection
         delay_s: 2.0
-        command: roslaunch sunray_test detection_dual.launch down_image_topic:=/uav{uav_id}/monocular_down/image_raw down_camera_info_topic:=/uav{uav_id}/monocular_down/camera_info
+        command: roslaunch --wait sunray_test detection_dual.launch down_image_topic:=/uav{uav_id}/monocular_down/image_raw down_camera_info_topic:=/uav{uav_id}/monocular_down/camera_info
 
   exp:
     tabs:
-      - title: mavros
-        when: uses_flight
-        command: roslaunch sunray_uav_control sunray_mavros_exp.launch
-      - title: web_cam
+      - title: roscore
         when: always
+        command: rosrun sunray_test ensure_ros_master.py
+      - title: mavros
+        when: uses_flight_controller
+        delay_s: 1.0
+        command: roslaunch --wait sunray_uav_control sunray_mavros_exp.launch
+      - title: web_cam
+        when: uses_camera
         delay_s: 5.0
-        command: roslaunch sunray_test web_cam_dual.launch camera_profile:={camera_profile}
+        command: roslaunch --wait sunray_test web_cam_dual.launch camera_profile:={camera_profile}
       - title: fusion
         when: uses_flight
         delay_s: 5.0
-        command: roslaunch sunray_uav_control external_fusion.launch external_source:={external_source}
+        command: roslaunch --wait sunray_uav_control external_fusion.launch external_source:={external_source}
       - title: control
         when: uses_flight
         delay_s: 2.0
-        command: roslaunch sunray_uav_control sunray_control_node.launch uav_id:={uav_id} Takeoff_height:=1.0
+        command: roslaunch --wait sunray_uav_control sunray_control_node.launch uav_id:={uav_id} Takeoff_height:=1.0
       - title: terminal_control
         when: uses_flight
         delay_s: 2.0
-        command: roslaunch sunray_uav_control terminal_control.launch uav_id:={uav_id}
+        command: roslaunch --wait sunray_uav_control terminal_control.launch uav_id:={uav_id}
       - title: detection
         when: uses_detection
         delay_s: 10.0
-        command: roslaunch sunray_test detection_dual.launch down_image_topic:=/web_cam/image_raw down_camera_info_topic:=/web_cam/camera_info
+        command: roslaunch --wait sunray_test detection_dual.launch down_image_topic:=/web_cam/image_raw down_camera_info_topic:=/web_cam/camera_info
       - title: mid360_driver
         when: uses_lidar
         delay_s: 4.0
-        command: roslaunch sunray_planner_utils msg_MID360.launch
+        command: roslaunch --wait sunray_planner_utils msg_MID360.launch
       - title: mid360_mapping
         when: uses_lidar
         delay_s: 6.0
-        command: roslaunch sunray_planner_utils mapping_mid360.launch rviz:=false
+        command: roslaunch --wait sunray_planner_utils mapping_mid360.launch rviz:=false
       - title: ego
         when: ego_goal
         delay_s: 8.0
-        command: roslaunch sunray_test sunray_tests_ego.launch odom_topic:=/Odometry global_pointcloud_topic:=/cloud_registered enable_point_cloud_transform:=false enable_rviz:=true rivz_config:=$(rospack find sunray_test)/launch/sunray_tests_exp.rviz
+        command: roslaunch --wait sunray_test sunray_tests_ego.launch odom_topic:=/Odometry global_pointcloud_topic:=/cloud_registered enable_point_cloud_transform:=false enable_rviz:=true rivz_config:=$(rospack find sunray_test)/launch/sunray_tests_exp.rviz
 
 runner:
   sim:
@@ -213,12 +853,9 @@ runner:
 
 variables:
   camera_profile:
-    default: sunray150_basic
-    rules:
-      - when: uses_lidar
-        value: sunray150_lidar
+    default: common
   sim_vehicle:
     default: sunray150
     rules:
-      - when: uses_lidar
+      - when: profile:sunray150_lidar
         value: sunray150_with_mid360

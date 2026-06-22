@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
-import tempfile
 import unittest
 from argparse import Namespace
-from contextlib import redirect_stdout
-from io import StringIO
 from unittest.mock import patch
 
 
@@ -15,15 +12,14 @@ if SRC_ROOT not in sys.path:
     sys.path.insert(0, SRC_ROOT)
 
 from sunray_test.dashboard import parse_args
+from sunray_test.dashboard.cli import build_validated_plan
+from sunray_test.dashboard.console import format_plan_items_table
 from sunray_test.dashboard.model import DashboardModel
 from sunray_test.dashboard.suite_runtime import (
     build_manual_runner_command,
-    write_suite_only_and_print,
 )
 from sunray_test.dashboard.terminal import (
-    format_terminal_status,
     launch_terminal_window,
-    terminal_status,
     write_gnome_terminal_config,
 )
 
@@ -69,15 +65,9 @@ class DashboardCliTest(unittest.TestCase):
         self.assertIn("--tester tester", command)
         self.assertIn("--no-prompt", command)
 
-    def test_write_suite_only_prints_manual_command(self):
-        args = Namespace(
-            uav_id=1,
-            sn="",
-            tester="",
-            no_prompt=True,
-        )
+    def test_format_plan_items_table_uses_chinese_execution_steps(self):
         plan = self.model.build_plan(
-            requested_item_ids=["battery"],
+            requested_item_ids=["hover"],
             environment="exp",
             uav_id=1,
             external_source_override=None,
@@ -85,37 +75,49 @@ class DashboardCliTest(unittest.TestCase):
             continue_on_failure=False,
         )
 
-        with tempfile.TemporaryDirectory() as output_dir:
-            suite_path = os.path.join(output_dir, "generated_suites", "dashboard.yaml")
-            buffer = StringIO()
-            with redirect_stdout(buffer):
-                write_suite_only_and_print(
-                    model=self.model,
-                    args=args,
-                    plan=plan,
-                    suite_path=suite_path,
-                    output_dir=output_dir,
-                )
+        table = format_plan_items_table(self.model, plan)
 
-            self.assertTrue(os.path.isfile(suite_path))
-            output = buffer.getvalue()
-            self.assertIn("[dashboard] suite written:", output)
-            self.assertIn("manual runner command", output)
-            self.assertIn("rosrun sunray_test run_test_dashboard.py", output)
-            self.assertIn("--run-suite", output)
-            self.assertIn("--suite-file " + suite_path, output)
+        self.assertIn("测试项目", table)
+        self.assertIn("电池电压", table)
+        self.assertIn("解锁/起飞", table)
+        self.assertIn("悬停", table)
+        self.assertIn("降落", table)
+        self.assertNotIn("来源", table)
+        self.assertNotIn("自动补齐", table)
+        self.assertNotIn("用户选择", table)
+        self.assertNotIn("battery", table)
+        self.assertNotIn("hover", table)
+        self.assertNotIn("arm_and_takeoff", table)
 
-    def test_terminal_status_is_not_required_for_non_launch_actions(self):
-        for action_name in ("dry_run", "show_suite", "write_suite_only"):
-            args = Namespace(
-                dry_run=False,
-                show_suite=False,
-                write_suite_only=False,
-                no_bringup=False,
-            )
-            setattr(args, action_name, True)
-            self.assertEqual(terminal_status(args), "not required for this action")
-            self.assertEqual(format_terminal_status(args), "not required for this action")
+    def test_build_validated_plan_stores_validation_warning_on_frozen_plan(self):
+        args = Namespace(
+            external_source=None,
+            record_rosbag=True,
+            continue_on_failure=False,
+            profile="",
+            uav_id=1,
+            items="",
+            list=False,
+            check_config=False,
+            history=False,
+            open_latest_report=False,
+            dry_run=False,
+            show_suite=False,
+        )
+        request = Namespace(
+            item_ids=["battery"],
+            external_source_override=None,
+            param_overrides={},
+            profile_override="",
+        )
+
+        with patch(
+            "sunray_test.dashboard.cli.validate_dashboard_suite_schema",
+            return_value="warning",
+        ):
+            plan = build_validated_plan(self.model, args, request, "exp")
+
+        self.assertEqual(plan.validation_warning, "warning")
 
     def test_launch_terminal_window_uses_single_session_config(self):
         tabs = [

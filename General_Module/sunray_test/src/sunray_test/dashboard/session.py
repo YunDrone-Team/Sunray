@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Dict, List
 
 from sunray_test.dashboard.model import DashboardModel
 
@@ -8,6 +8,9 @@ from sunray_test.dashboard.model import DashboardModel
 class DashboardRequest:
     item_ids: List[str]
     source: str
+    param_overrides: Dict[str, Dict[str, Any]] = None
+    external_source_override: int = None
+    profile_override: str = ""
 
 
 @dataclass

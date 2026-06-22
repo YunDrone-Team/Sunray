@@ -58,13 +58,17 @@ class UAVAdapter:
         UAVAdapter._raise_if_shutdown()
 
     @staticmethod
+    def _print_countdown_line(text: str) -> None:
+        print(f"\r\033[K{text}", end="", flush=True)
+
+    @staticmethod
     def _countdown(label: str, duration_s: float) -> None:
         end_time = time.time() + duration_s
         last_display = None
         while not rospy.is_shutdown():
             remaining = max(0, int(end_time - time.time()))
             if remaining != last_display:
-                print(f"\r[{label}] 倒计时: {remaining:02d}s", end="", flush=True)
+                UAVAdapter._print_countdown_line(f"[{label}] 倒计时: {remaining:02d}s")
                 last_display = remaining
             if remaining <= 0:
                 break
@@ -210,7 +214,7 @@ class UAVAdapter:
             self._cmd_pub.publish(cmd)
             remaining = max(0, int(deadline - time.time()))
             if remaining != last_display:
-                print(f"\r[{label}] 倒计时: {remaining:02d}s", end="", flush=True)
+                self._print_countdown_line(f"[{label}] 倒计时: {remaining:02d}s")
                 last_display = remaining
             self._rate_sleep_or_interrupt(rate)
         print()
@@ -276,7 +280,9 @@ class UAVAdapter:
 
             remaining = max(0, int(duration_s - elapsed_s))
             if remaining != last_display:
-                print(f"\r[Yaw Transition] 倒计时: {remaining:02d}s yaw={desired_yaw:.2f}", end="", flush=True)
+                self._print_countdown_line(
+                    f"[Yaw Transition] 倒计时: {remaining:02d}s yaw={desired_yaw:.2f}"
+                )
                 last_display = remaining
             if ratio >= 1.0:
                 break
@@ -368,7 +374,7 @@ class UAVAdapter:
             self._cmd_pub.publish(cmd)
             remaining = max(0, int(hold_deadline - time.time()))
             if remaining != last_hold_display:
-                print(f"\r[Waypoint Hold] 倒计时: {remaining:02d}s", end="", flush=True)
+                self._print_countdown_line(f"[Waypoint Hold] 倒计时: {remaining:02d}s")
                 last_hold_display = remaining
             self._rate_sleep_or_interrupt(rate)
         print()
@@ -409,9 +415,9 @@ class UAVAdapter:
         try:
             if normalized_remaps:
                 wrapper_path = self._write_visual_land_wrapper(launch_file, normalized_remaps)
-                launch_command = ["roslaunch", wrapper_path]
+                launch_command = ["roslaunch", "--wait", wrapper_path]
             else:
-                launch_command = ["roslaunch", "sunray_tutorial", launch_file]
+                launch_command = ["roslaunch", "--wait", "sunray_tutorial", launch_file]
             launch_command.extend(
                 [
                     f"auto_takeoff:={'true' if auto_takeoff else 'false'}",

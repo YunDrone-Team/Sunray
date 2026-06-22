@@ -21,7 +21,11 @@
   <exec_depend>quadrotor_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>sunray_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-rosbag</exec_depend>
+  <exec_depend>python3-roslib</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>tcpdump</exec_depend>
 
   <export>
   </export>

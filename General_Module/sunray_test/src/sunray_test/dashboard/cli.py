@@ -1,12 +1,19 @@
 import argparse
 import time
+from dataclasses import replace
 
+from sunray_test.dashboard.console import (
+    format_plan_items_table,
+    print_config_check,
+    print_items,
+    print_plan_preview,
+    print_suite_yaml,
+)
 from sunray_test.dashboard.history import open_latest_report, print_history
 from sunray_test.dashboard.model import DashboardModel
 from sunray_test.dashboard.session import DashboardRequest, DashboardSession
 from sunray_test.dashboard.suite_runtime import (
     build_bringup_tabs,
-    build_manual_runner_command,
     build_runner_tabs,
     resolve_output_dir,
     run_generated_suite,
@@ -14,23 +21,23 @@ from sunray_test.dashboard.suite_runtime import (
     validate_dashboard_resources,
     validate_dashboard_suite_schema,
     write_runtime_suite,
-    write_suite_only_and_print,
 )
 from sunray_test.dashboard.terminal import (
     ensure_terminal_available,
-    format_terminal_status,
     launch_terminal_window,
 )
+from sunray_test.dashboard.tui_app import run_dashboard_tui
+from sunray_test.dashboard.tui_state import ACTION_CANCEL, ACTION_START
 from sunray_test.dashboard.types import DASHBOARD_UAV_ID, DashboardPlan
-from sunray_test.dashboard.ui import (
-    print_config_check,
-    print_items,
-    print_suite_preview,
-    print_suite_yaml,
-    prompt_main_menu,
-    prompt_plan_action,
-    select_dashboard_interactively,
-)
+
+
+LOG_PREFIX = "[sunray_test_dashboard]"
+
+
+def print_runner_started(model: DashboardModel, plan: DashboardPlan) -> None:
+    print(f"\n{LOG_PREFIX} 测试执行已在新的 Sunray Test Runner 终端启动。", flush=True)
+    print(f"{LOG_PREFIX} 测试项目:", flush=True)
+    print(format_plan_items_table(model, plan), flush=True)
 
 
 def parse_args():
@@ -42,6 +49,12 @@ def parse_args():
     )
     parser.add_argument("--run-suite", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sim", action="store_true", help="Use simulation environment and launch sim bringup")
+    parser.add_argument(
+        "--profile",
+        choices=("sunray150_basic", "sunray150_lidar"),
+        default="",
+        help="Override vehicle profile; default is inferred from selected test items",
+    )
     parser.add_argument("--platform", default="", help=argparse.SUPPRESS)
     parser.add_argument("--environment", default="", help=argparse.SUPPRESS)
     parser.add_argument("--suite", default="", help=argparse.SUPPRESS)
@@ -66,22 +79,20 @@ def parse_args():
         help="Open the latest dashboard report under the output directory",
     )
     action_group = parser.add_mutually_exclusive_group()
-    action_group.add_argument("--dry-run", action="store_true", help="Print generated suite without running ROS tests")
+    action_group.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print generated suite without running ROS tests",
+    )
     action_group.add_argument(
         "--show-suite",
         action="store_true",
         help="Print the generated runtime suite YAML and exit",
     )
-    action_group.add_argument(
-        "--write-suite-only",
-        action="store_true",
-        help="Write the generated runtime suite YAML and exit without launching ROS tests",
-    )
     parser.add_argument("--no-bringup", action="store_true", help="Do not launch sim/exp bringup terminals")
     parser.add_argument("--record-rosbag", action="store_true", default=True)
     parser.add_argument("--no-record-rosbag", action="store_false", dest="record_rosbag")
     parser.add_argument("--continue-on-failure", action="store_true")
-    parser.add_argument("--yes", action="store_true", help="Skip dashboard launch confirmation")
     return parser.parse_args()
 
 
@@ -94,41 +105,16 @@ def has_direct_action(args) -> bool:
         or args.open_latest_report
         or args.dry_run
         or args.show_suite
-        or args.write_suite_only
     )
 
 
-def build_request(model: DashboardModel, args, session: DashboardSession) -> DashboardRequest:
-    if args.items:
-        return DashboardRequest(item_ids=model.parse_item_ids(args.items), source="items")
-    return select_dashboard_interactively(session, no_bringup=args.no_bringup)
-
-
-def print_plan_preview(
-    model: DashboardModel,
-    args,
-    plan: DashboardPlan,
-    request: DashboardRequest,
-    suite_path: str,
-    output_dir: str,
-) -> None:
-    runner_command = build_manual_runner_command(model, args, plan, suite_path, output_dir)
-    print_suite_preview(
-        model=model,
-        plan=plan,
-        request=request,
-        uav_id=args.uav_id,
-        no_bringup=args.no_bringup,
-        output_dir=output_dir,
-        suite_path=suite_path,
-        suite_will_be_written=not (args.dry_run or args.show_suite),
-        suite_write_mode="before exit" if args.write_suite_only else "before launch",
-        record_rosbag=args.record_rosbag,
-        continue_on_failure=args.continue_on_failure,
-        terminal_status=format_terminal_status(args),
-        runner_command=runner_command,
-        bringup_tabs=build_bringup_tabs(model, plan),
-        runner_tabs=build_runner_tabs(model, args, plan, suite_path, output_dir),
+def build_items_request(model: DashboardModel, args) -> DashboardRequest:
+    if not args.items:
+        raise SystemExit("当前不是交互 TUI，请使用 --items 指定测试项目")
+    return DashboardRequest(
+        item_ids=model.parse_item_ids(args.items),
+        source="items",
+        profile_override=args.profile,
     )
 
 
@@ -138,13 +124,20 @@ def build_validated_plan(
     request: DashboardRequest,
     environment: str,
 ) -> DashboardPlan:
+    external_source_override = (
+        request.external_source_override
+        if request.external_source_override is not None
+        else args.external_source
+    )
     plan = model.build_plan(
         requested_item_ids=request.item_ids,
         environment=environment,
         uav_id=args.uav_id,
-        external_source_override=args.external_source,
+        external_source_override=external_source_override,
         record_rosbag=args.record_rosbag,
         continue_on_failure=args.continue_on_failure,
+        param_overrides=request.param_overrides or {},
+        profile_override=request.profile_override or args.profile,
     )
     validate_dashboard_resources(
         plan.profile,
@@ -153,31 +146,17 @@ def build_validated_plan(
         args.uav_id,
         plan.external_source,
     )
-    validate_dashboard_suite_schema(
+    validation_warning = validate_dashboard_suite_schema(
         plan.profile,
         plan.environment,
         plan.suite,
         args.uav_id,
         plan.external_source,
     )
+    plan = replace(plan, validation_warning=validation_warning)
+    if validation_warning and has_direct_action(args):
+        print(f"[sunray_test_dashboard] {validation_warning}", flush=True)
     return plan
-
-
-def prompt_for_plan_action(args, interactive: bool, preview_callback) -> str:
-    while True:
-        action = prompt_plan_action(
-            interactive=interactive,
-            dry_run=args.dry_run,
-            yes=args.yes,
-            no_prompt=args.no_prompt,
-        )
-        if action == "show_suite":
-            preview_callback(show_suite=True)
-            continue
-        if action == "preview":
-            preview_callback(show_suite=False)
-            continue
-        return action
 
 
 def maybe_launch_bringup(model: DashboardModel, args, plan: DashboardPlan) -> None:
@@ -211,35 +190,22 @@ def handle_plan_actions(
     request: DashboardRequest,
     suite_path: str,
     output_dir: str,
-    interactive: bool,
 ) -> str:
-    def preview_callback(show_suite: bool) -> None:
-        if show_suite:
-            print_suite_yaml(plan.suite)
-        else:
-            print_plan_preview(model, args, plan, request, suite_path, output_dir)
-
-    print_plan_preview(model, args, plan, request, suite_path, output_dir)
     if args.show_suite:
         print_suite_yaml(plan.suite)
-        print("\n[dashboard] show-suite only, not launching bringup or runner", flush=True)
-        return "done"
-    if args.write_suite_only:
-        write_suite_only_and_print(model, args, plan, suite_path, output_dir)
+        print(f"\n{LOG_PREFIX} show-suite only, not launching bringup or runner", flush=True)
         return "done"
     if args.dry_run:
-        print("\n[dashboard] dry-run only, not launching bringup or runner", flush=True)
-        return "done"
-
-    action = prompt_for_plan_action(args, interactive, preview_callback)
-    if action == "write_suite":
-        write_suite_only_and_print(model, args, plan, suite_path, output_dir)
-        return "done"
-    if action == "reselect":
-        print("\n[dashboard] 返回测试项目选择。", flush=True)
-        return "reselect"
-    if action == "cancel":
-        print("\n[dashboard] 已取消，未生成 suite，未启动测试。", flush=True)
+        print_plan_preview(
+            model=model,
+            plan=plan,
+            request=request,
+            output_dir=output_dir,
+            suite_path=suite_path,
+            bringup_tabs=build_bringup_tabs(model, plan),
+            runner_tabs=build_runner_tabs(model, args, plan, suite_path, output_dir),
+        )
+        print(f"\n{LOG_PREFIX} dry-run only, not launching bringup or runner", flush=True)
         return "done"
     return "start"
 
@@ -282,36 +248,48 @@ def main():
     if model is None or session is None:
         return 0
 
-    if not has_direct_action(args):
-        menu_action = prompt_main_menu(session, args.history_limit)
-        if menu_action == "exit":
-            print("[dashboard] 已退出。", flush=True)
-            return 0
-
     environment = session.environment
-    interactive = not bool(args.items)
-    while True:
-        request = build_request(model, args, session)
-        plan = build_validated_plan(model, args, request, environment)
-        suite_path = runtime_suite_path(plan.suite, output_dir)
-        result = handle_plan_actions(
-            model,
-            args,
-            plan,
-            request,
-            suite_path,
-            output_dir,
-            interactive,
+    if not has_direct_action(args):
+        tui_result = run_dashboard_tui(
+            session=session,
+            args=args,
+            build_plan_callback=lambda request: build_validated_plan(model, args, request, environment),
+            build_suite_path_callback=lambda plan: runtime_suite_path(plan.suite, output_dir),
         )
-        if result == "reselect":
-            continue
-        if result == "done":
-            return 0
-        break
+        if tui_result is not None:
+            if tui_result.action == ACTION_CANCEL:
+                print(f"{LOG_PREFIX} 已退出。", flush=True)
+                return 0
+            plan = tui_result.plan
+            request = tui_result.request
+            suite_path = tui_result.suite_path
+            if tui_result.action == ACTION_START:
+                ensure_terminal_available()
+                write_runtime_suite(plan.suite, suite_path)
+                maybe_launch_bringup(model, args, plan)
+                launch_runner(model, args, plan, suite_path, output_dir)
+                print_runner_started(model, plan)
+                return 0
+
+        raise SystemExit("当前终端不支持全屏 TUI，请使用 --items 指定测试项目")
+
+    request = build_items_request(model, args)
+    plan = build_validated_plan(model, args, request, environment)
+    suite_path = runtime_suite_path(plan.suite, output_dir)
+    result = handle_plan_actions(
+        model,
+        args,
+        plan,
+        request,
+        suite_path,
+        output_dir,
+    )
+    if result == "done":
+        return 0
 
     ensure_terminal_available()
     write_runtime_suite(plan.suite, suite_path)
     maybe_launch_bringup(model, args, plan)
     launch_runner(model, args, plan, suite_path, output_dir)
-    print("\n[dashboard] 测试执行已在新的 Sunray Test Runner 终端启动。", flush=True)
+    print_runner_started(model, plan)
     return 0

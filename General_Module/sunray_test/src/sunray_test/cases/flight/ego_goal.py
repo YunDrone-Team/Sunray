@@ -280,7 +280,7 @@ class EgoGoalCase(BaseCase):
         while not rospy.is_shutdown() and time.time() < hold_deadline:
             remaining = max(0, int(hold_deadline - time.time()))
             if remaining != last_hold_display:
-                print(f"\r[EGO Goal Hold] 倒计时: {remaining:02d}s", end="", flush=True)
+                print(f"\r\033[K[EGO Goal Hold] 倒计时: {remaining:02d}s", end="", flush=True)
                 last_hold_display = remaining
             rospy.sleep(0.1)
         print()

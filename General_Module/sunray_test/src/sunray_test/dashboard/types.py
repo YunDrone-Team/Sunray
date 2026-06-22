@@ -15,6 +15,7 @@ class TestItem:
     name: str
     group: str
     step: Dict[str, Any]
+    param_schema: Sequence[Dict[str, Any]] = ()
     requires_airborne: bool = False
     required_hardware: Sequence[str] = ()
     sim_only: bool = False
@@ -36,5 +37,7 @@ class DashboardPlan:
     profile: str
     profile_reason: str
     external_source: int
+    external_source_label: str
     runtime_state: Dict[str, Any]
     suite: Dict[str, Any]
+    validation_warning: str = ""

@@ -31,21 +31,6 @@ def terminal_available() -> bool:
     return bool(shutil.which("gnome-terminal"))
 
 
-def terminal_status(args) -> str:
-    if args.dry_run or args.show_suite or args.write_suite_only:
-        return "not required for this action"
-    if args.no_bringup:
-        return "gnome-terminal required for runner only"
-    return "gnome-terminal required for bringup and runner"
-
-
-def format_terminal_status(args) -> str:
-    status = terminal_status(args)
-    if status == "not required for this action":
-        return status
-    return f"{status} ({'available' if terminal_available() else 'missing'})"
-
-
 def ensure_terminal_available() -> None:
     if not terminal_available():
         raise SystemExit(TERMINAL_MISSING_MESSAGE)

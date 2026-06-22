@@ -45,10 +45,19 @@ def validate_dashboard_config(config: Dict[str, Any]) -> None:
     _validate_hardware_dependencies(errors, raw_items, hardware_ids)
 
     rules = _validate_bringup_rules(errors, config, known_item_ids)
-    known_conditions = known_item_ids | set(str(name) for name in rules.keys()) | {"always"}
+    profile_conditions = _runtime_profile_conditions(config)
+    external_source_conditions = _external_source_conditions(config)
+    known_conditions = (
+        known_item_ids
+        | set(str(name) for name in rules.keys())
+        | profile_conditions
+        | external_source_conditions
+        | {"always"}
+    )
     _validate_tab_sections(errors, config, known_item_ids, known_conditions)
     _validate_variables(errors, config, known_conditions)
     _validate_runtime_profiles(errors, config, known_item_ids)
+    _validate_external_source_options(errors, config)
 
     if errors:
         raise SystemExit("dashboard config validation failed:\n  - " + "\n  - ".join(errors))
@@ -84,11 +93,30 @@ def _validate_test_item(
         errors.append(f"{path}.step must be a mapping")
     elif "case" not in step or "type" not in step:
         errors.append(f"{path}.step must contain case and type")
+    _validate_param_schema(errors, raw_item, path)
 
     item_ids.append(item_id)
     item_groups[item_id] = group
     if group == "hardware":
         hardware_ids.add(item_id)
+
+
+def _validate_param_schema(errors: List[str], raw_item: Dict[str, Any], path: str) -> None:
+    schema = raw_item.get("param_schema", [])
+    if not isinstance(schema, list):
+        errors.append(f"{path}.param_schema must be a list")
+        return
+    for index, spec in enumerate(schema):
+        spec_path = f"{path}.param_schema[{index}]"
+        if not isinstance(spec, dict):
+            errors.append(f"{spec_path} must be a mapping")
+            continue
+        if not str(spec.get("path", "")).strip():
+            errors.append(f"{spec_path}.path is required")
+        if str(spec.get("type", "string")) not in {"float", "int", "bool", "string", "enum"}:
+            errors.append(f"{spec_path}.type must be float/int/bool/string/enum")
+        if str(spec.get("type", "")) == "enum" and not isinstance(spec.get("options", []), list):
+            errors.append(f"{spec_path}.options must be a list")
 
 
 def _validate_default_items(errors: List[str], config: Dict[str, Any], known_item_ids: set) -> None:
@@ -143,6 +171,9 @@ def _validate_rule_items(
         for item_id in rule.get(key, []):
             if str(item_id) not in known_item_ids:
                 errors.append(f"{path}.{key} references unknown item: {item_id}")
+    for key in ("any_conditions", "all_conditions", "none_conditions"):
+        if key in rule and not isinstance(rule.get(key), list):
+            errors.append(f"{path}.{key} must be a list")
 
 
 def _validate_rule_groups(errors: List[str], rule: Dict[str, Any], path: str) -> None:
@@ -244,6 +275,37 @@ def _validate_runtime_profiles(
         _validate_runtime_profile_rule(errors, rule, index, known_item_ids)
 
 
+def _runtime_profile_conditions(config: Dict[str, Any]) -> set:
+    profiles = config.get("runtime_profiles", {})
+    if not isinstance(profiles, dict):
+        return set()
+    names = [str(profiles.get("default", "")).strip()]
+    for rule in profiles.get("rules", []) or []:
+        if isinstance(rule, dict):
+            names.append(str(rule.get("profile", "")).strip())
+    return {"profile:" + name for name in names if name}
+
+
+def _external_source_conditions(config: Dict[str, Any]) -> set:
+    values = set()
+    for value in (config.get("external_sources", {}) or {}).values():
+        try:
+            values.add(int(value))
+        except (TypeError, ValueError):
+            continue
+    for options in (config.get("external_source_options", {}) or {}).values():
+        if not isinstance(options, list):
+            continue
+        for option in options:
+            if not isinstance(option, dict):
+                continue
+            try:
+                values.add(int(option.get("value")))
+            except (TypeError, ValueError):
+                continue
+    return {"external_source:" + str(value) for value in values}
+
+
 def _validate_runtime_profile_rule(
     errors: List[str],
     rule: Dict[str, Any],
@@ -254,3 +316,50 @@ def _validate_runtime_profile_rule(
         for item_id in rule.get(key, []):
             if str(item_id) not in known_item_ids:
                 errors.append(f"runtime_profiles.rules[{index}].{key} references unknown item: {item_id}")
+
+
+def _validate_external_source_options(errors: List[str], config: Dict[str, Any]) -> None:
+    source_defaults = config.get("external_sources", {})
+    if source_defaults and not isinstance(source_defaults, dict):
+        errors.append("external_sources must be a mapping")
+    for environment, value in (source_defaults or {}).items():
+        if str(environment) not in VALID_ENVIRONMENTS:
+            allowed = ", ".join(sorted(VALID_ENVIRONMENTS))
+            errors.append(f"external_sources.{environment} must be one of: {allowed}")
+        try:
+            int(value)
+        except (TypeError, ValueError):
+            errors.append(f"external_sources.{environment} must be an integer")
+
+    options_by_env = config.get("external_source_options", {})
+    if not options_by_env:
+        return
+    if not isinstance(options_by_env, dict):
+        errors.append("external_source_options must be a mapping")
+        return
+
+    for environment, options in options_by_env.items():
+        env_path = f"external_source_options.{environment}"
+        if str(environment) not in VALID_ENVIRONMENTS:
+            allowed = ", ".join(sorted(VALID_ENVIRONMENTS))
+            errors.append(f"{env_path} must be one of: {allowed}")
+            continue
+        if not isinstance(options, list) or not options:
+            errors.append(f"{env_path} must be a non-empty list")
+            continue
+        seen_values = set()
+        for index, option in enumerate(options):
+            option_path = f"{env_path}[{index}]"
+            if not isinstance(option, dict):
+                errors.append(f"{option_path} must be a mapping")
+                continue
+            if not str(option.get("label", "")).strip():
+                errors.append(f"{option_path}.label is required")
+            try:
+                value = int(option.get("value"))
+            except (TypeError, ValueError):
+                errors.append(f"{option_path}.value must be an integer")
+                continue
+            if value in seen_values:
+                errors.append(f"{option_path}.value duplicates external source: {value}")
+            seen_values.add(value)

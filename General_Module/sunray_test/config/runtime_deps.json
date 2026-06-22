@@ -1,0 +1,40 @@
+{
+  "ros": {
+    "default_distro": "noetic"
+  },
+  "python": {
+    "pip_bootstrap_apt": "python3-pip",
+    "modules": [
+      {
+        "module": "yaml",
+        "apt": "python3-yaml",
+        "pip": "PyYAML"
+      },
+      {
+        "module": "numpy",
+        "apt": "python3-numpy",
+        "pip": "numpy"
+      },
+      {
+        "module": "rosbag",
+        "apt": "python3-rosbag"
+      },
+      {
+        "module": "rospy",
+        "apt": "python3-rospy"
+      },
+      {
+        "module": "roslib",
+        "apt": "python3-roslib"
+      }
+    ]
+  },
+  "system": {
+    "commands": [
+      {
+        "command": "tcpdump",
+        "apt": "tcpdump"
+      }
+    ]
+  }
+}
