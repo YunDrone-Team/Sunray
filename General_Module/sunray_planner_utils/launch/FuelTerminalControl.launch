@@ -1,0 +1,28 @@
+<launch>
+  <arg name="agent_name" default="uav" />
+  <arg name="agent_id" default="1" />
+  <arg name="start_topic" default="/fuel/start_exploration" />
+  <arg name="pause_topic" default="/fuel/pause_exploration" />
+  <arg name="stop_topic" default="/fuel/stop_exploration" />
+  <arg name="state_topic" default="/fuel/exploration_state" />
+  <arg name="setup_topic" default="/$(arg agent_name)$(arg agent_id)/sunray/setup" />
+  <arg name="control_topic" default="/$(arg agent_name)$(arg agent_id)/sunray/uav_control_cmd" />
+  <arg name="uav_state_topic" default="/$(arg agent_name)$(arg agent_id)/sunray/uav_state" />
+  <arg name="frame_id" default="world" />
+
+  <node pkg="sunray_planner_utils"
+        type="FuelTerminalControl_node"
+        name="fuel_terminal_control"
+        output="screen">
+    <param name="agent_name" value="$(arg agent_name)" />
+    <param name="uav_id" value="$(arg agent_id)" />
+    <param name="start_topic" value="$(arg start_topic)" />
+    <param name="pause_topic" value="$(arg pause_topic)" />
+    <param name="stop_topic" value="$(arg stop_topic)" />
+    <param name="state_topic" value="$(arg state_topic)" />
+    <param name="setup_topic" value="$(arg setup_topic)" />
+    <param name="control_topic" value="$(arg control_topic)" />
+    <param name="uav_state_topic" value="$(arg uav_state_topic)" />
+    <param name="frame_id" value="$(arg frame_id)" />
+  </node>
+</launch>

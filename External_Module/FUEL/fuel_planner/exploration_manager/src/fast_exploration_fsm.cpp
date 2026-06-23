@@ -29,7 +29,7 @@ void FastExplorationFSM::init(ros::NodeHandle& nh) {
   planner_manager_ = expl_manager_->planner_manager_;
   state_ = EXPL_STATE::INIT;
   fd_->have_odom_ = false;
-  fd_->state_str_ = { "INIT", "WAIT_TRIGGER", "PLAN_TRAJ", "PUB_TRAJ", "EXEC_TRAJ", "FINISH" };
+  fd_->state_str_ = { "INIT", "WAIT_TRIGGER", "PLAN_TRAJ", "PUB_TRAJ", "EXEC_TRAJ", "PAUSE", "FINISH" };
   fd_->static_state_ = true;
   fd_->trigger_ = false;
 
@@ -41,10 +41,15 @@ void FastExplorationFSM::init(ros::NodeHandle& nh) {
   trigger_sub_ =
       nh.subscribe("/waypoint_generator/waypoints", 1, &FastExplorationFSM::triggerCallback, this);
   odom_sub_ = nh.subscribe("/odom_world", 1, &FastExplorationFSM::odometryCallback, this);
+  start_sub_ = nh.subscribe("/fuel/start_exploration", 1, &FastExplorationFSM::startCallback, this);
+  stop_sub_ = nh.subscribe("/fuel/stop_exploration", 1, &FastExplorationFSM::stopCallback, this);
+  pause_sub_ = nh.subscribe("/fuel/pause_exploration", 1, &FastExplorationFSM::pauseCallback, this);
 
   replan_pub_ = nh.advertise<std_msgs::Empty>("/planning/replan", 10);
   new_pub_ = nh.advertise<std_msgs::Empty>("/planning/new", 10);
   bspline_pub_ = nh.advertise<bspline::Bspline>("/planning/bspline", 10);
+  state_pub_ = nh.advertise<std_msgs::String>("/fuel/exploration_state", 10, true);
+  publishState();
 }
 
 void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
@@ -70,6 +75,11 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
 
     case FINISH: {
       ROS_INFO_THROTTLE(1.0, "finish exploration.");
+      break;
+    }
+
+    case PAUSE: {
+      ROS_INFO_THROTTLE(1.0, "pause exploration.");
       break;
     }
 
@@ -276,7 +286,7 @@ void FastExplorationFSM::frontierCallback(const ros::TimerEvent& e) {
   static int delay = 0;
   if (++delay < 5) return;
 
-  if (state_ == WAIT_TRIGGER || state_ == FINISH) {
+  if (state_ == WAIT_TRIGGER || state_ == PAUSE || state_ == FINISH) {
     auto ft = expl_manager_->frontier_finder_;
     auto ed = expl_manager_->ed_;
     ft->searchFrontiers();
@@ -328,7 +338,38 @@ void FastExplorationFSM::triggerCallback(const nav_msgs::PathConstPtr& msg) {
   if (state_ != WAIT_TRIGGER) return;
   fd_->trigger_ = true;
   cout << "Triggered!" << endl;
-  transitState(PLAN_TRAJ, "triggerCallback");
+  requestStart("triggerCallback");
+}
+
+void FastExplorationFSM::startCallback(const std_msgs::EmptyConstPtr& msg) {
+  requestStart("startCallback");
+}
+
+void FastExplorationFSM::stopCallback(const std_msgs::EmptyConstPtr& msg) {
+  if (state_ == FINISH) return;
+
+  replan_pub_.publish(std_msgs::Empty());
+  fd_->static_state_ = true;
+  clearVisMarker();
+  transitState(FINISH, "stopCallback");
+  ROS_WARN("Manual stop exploration.");
+}
+
+void FastExplorationFSM::pauseCallback(const std_msgs::BoolConstPtr& msg) {
+  if (msg->data) {
+    if (state_ == PAUSE || state_ == FINISH || state_ == WAIT_TRIGGER) return;
+
+    replan_pub_.publish(std_msgs::Empty());
+    fd_->static_state_ = true;
+    transitState(PAUSE, "pauseCallback");
+    ROS_WARN("Manual pause exploration.");
+    return;
+  }
+
+  if (state_ == PAUSE) {
+    requestStart("pauseCallback");
+    ROS_WARN("Manual resume exploration.");
+  }
 }
 
 void FastExplorationFSM::safetyCallback(const ros::TimerEvent& e) {
@@ -368,5 +409,30 @@ void FastExplorationFSM::transitState(EXPL_STATE new_state, string pos_call) {
   state_ = new_state;
   cout << "[" + pos_call + "]: from " + fd_->state_str_[pre_s] + " to " + fd_->state_str_[int(new_state)]
        << endl;
+  publishState();
+}
+
+void FastExplorationFSM::requestStart(const string& pos_call) {
+  if (state_ == PLAN_TRAJ || state_ == PUB_TRAJ || state_ == EXEC_TRAJ) {
+    ROS_WARN("Exploration is already running.");
+    return;
+  }
+
+  if (!fd_->have_odom_) {
+    ROS_WARN("Cannot start exploration without odom.");
+    return;
+  }
+
+  fd_->trigger_ = true;
+  fd_->static_state_ = true;
+  transitState(PLAN_TRAJ, pos_call);
+}
+
+void FastExplorationFSM::publishState() {
+  if (!state_pub_) return;
+
+  std_msgs::String msg;
+  msg.data = fd_->state_str_[int(state_)];
+  state_pub_.publish(msg);
 }
 }  // namespace fast_planner

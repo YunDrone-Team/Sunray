@@ -15,18 +15,14 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   laser_geometry
   tf2_eigen
-  livox_ros_driver2
 )
 
-# 判断是否有livox_ros_driver2包，如果有则添加
-foreach(pkg livox_ros_driver2)
-  if(NOT ${pkg}_FOUND)
-    message(STATUS "Required ROS package ${pkg} not found")
-  else() 
-    message(STATUS "Found livox_ros_driver2")
-    find_package(livox_ros_driver2)
-  endif()
-endforeach()
+find_package(livox_ros_driver2 QUIET)
+if(livox_ros_driver2_FOUND)
+  message(STATUS "Found livox_ros_driver2, building livox2Point")
+else()
+  message(STATUS "livox_ros_driver2 not found, skipping livox2Point")
+endif()
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
@@ -71,13 +67,15 @@ add_executable(goal2swarm src/goal2swarm.cpp)
 add_dependencies(goal2swarm ${catkin_EXPORTED_TARGETS})
 target_link_libraries(goal2swarm ${catkin_LIBRARIES} yaml-cpp)
 
-foreach(pkg livox_ros_driver2)
-  if(${pkg}_FOUND)
-    add_executable(livox2Point src/livox2Point.cpp)
-    add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(livox2Point ${catkin_LIBRARIES})
-  endif()
-endforeach()
+add_executable(FuelTerminalControl_node src/FuelTerminalControl.cpp)
+add_dependencies(FuelTerminalControl_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(FuelTerminalControl_node ${catkin_LIBRARIES})
+
+if(livox_ros_driver2_FOUND)
+  add_executable(livox2Point src/livox2Point.cpp)
+  add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(livox2Point ${catkin_LIBRARIES})
+endif()
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/

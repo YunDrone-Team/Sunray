@@ -5,7 +5,9 @@
 
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
+#include <std_msgs/String.h>
 #include <nav_msgs/Odometry.h>
 #include <visualization_msgs/Marker.h>
 
@@ -29,7 +31,7 @@ class PlanningVisualization;
 struct FSMParam;
 struct FSMData;
 
-enum EXPL_STATE { INIT, WAIT_TRIGGER, PLAN_TRAJ, PUB_TRAJ, EXEC_TRAJ, FINISH };
+enum EXPL_STATE { INIT, WAIT_TRIGGER, PLAN_TRAJ, PUB_TRAJ, EXEC_TRAJ, PAUSE, FINISH };
 
 class FastExplorationFSM {
 private:
@@ -47,18 +49,23 @@ private:
   /* ROS utils */
   ros::NodeHandle node_;
   ros::Timer exec_timer_, safety_timer_, vis_timer_, frontier_timer_;
-  ros::Subscriber trigger_sub_, odom_sub_;
-  ros::Publisher replan_pub_, new_pub_, bspline_pub_;
+  ros::Subscriber trigger_sub_, odom_sub_, start_sub_, stop_sub_, pause_sub_;
+  ros::Publisher replan_pub_, new_pub_, bspline_pub_, state_pub_;
 
   /* helper functions */
   int callExplorationPlanner();
   void transitState(EXPL_STATE new_state, string pos_call);
+  void requestStart(const string& pos_call);
+  void publishState();
 
   /* ROS functions */
   void FSMCallback(const ros::TimerEvent& e);
   void safetyCallback(const ros::TimerEvent& e);
   void frontierCallback(const ros::TimerEvent& e);
   void triggerCallback(const nav_msgs::PathConstPtr& msg);
+  void startCallback(const std_msgs::EmptyConstPtr& msg);
+  void stopCallback(const std_msgs::EmptyConstPtr& msg);
+  void pauseCallback(const std_msgs::BoolConstPtr& msg);
   void odometryCallback(const nav_msgs::OdometryConstPtr& msg);
   void visualize();
   void clearVisMarker();
