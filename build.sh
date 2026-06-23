@@ -92,6 +92,42 @@ build_tui_if_needed() {
     local tui_binary="$BUILDSCRIPTS_DIR/bin/sunray_tui"
     local tui_src_dir="$BUILDSCRIPTS_DIR/tui"
     local build_dir="$tui_src_dir/build"
+
+    tui_binary_matches_host_arch() {
+        local binary_info host_arch
+        binary_info="$(file -b "$tui_binary" 2>/dev/null || true)"
+        host_arch="$(uname -m)"
+
+        case "$host_arch" in
+            x86_64|amd64)
+                [[ "$binary_info" == *"x86-64"* || "$binary_info" == *"x86_64"* ]]
+                ;;
+            aarch64|arm64)
+                [[ "$binary_info" == *"aarch64"* || "$binary_info" == *"ARM64"* ]]
+                ;;
+            armv7l|armv7*|armhf)
+                [[ "$binary_info" == *"ARM"* && "$binary_info" != *"aarch64"* ]]
+                ;;
+            *)
+                print_warning "无法识别当前架构: $host_arch，跳过TUI架构校验"
+                return 0
+                ;;
+        esac
+    }
+
+    configure_tui_cmake() {
+        local cache_file="$build_dir/CMakeCache.txt"
+        if [[ -f "$cache_file" ]]; then
+            local cached_home
+            cached_home="$(grep '^CMAKE_HOME_DIRECTORY:INTERNAL=' "$cache_file" 2>/dev/null | cut -d= -f2-)"
+            if [[ -n "$cached_home" && "$cached_home" != "$tui_src_dir" ]]; then
+                print_warning "检测到旧CMake缓存路径: $cached_home"
+                print_status "清理TUI构建缓存并重新配置..."
+                rm -rf "$build_dir/CMakeCache.txt" "$build_dir/CMakeFiles"
+            fi
+        fi
+        (cd "$build_dir" && cmake ..)
+    }
     
     # Check dependencies first
     print_status "Checking TUI dependencies..."
@@ -105,6 +141,11 @@ build_tui_if_needed() {
     if [[ ! -f "$tui_binary" ]]; then
         print_status "TUI程序不存在，开始编译..."
         need_build=true
+    elif ! tui_binary_matches_host_arch; then
+        print_warning "检测到TUI程序架构与当前系统不匹配，重新编译..."
+        print_status "当前系统架构: $(uname -m)"
+        print_status "现有TUI程序: $(file -b "$tui_binary" 2>/dev/null || echo unknown)"
+        need_build=true
     else
         local newest_src=$(find "$tui_src_dir" -path "*/third_party" -prune -o \( -name "*.cpp" -o -name "*.hpp" -o -name "CMakeLists.txt" \) -newer "$tui_binary" -print | head -1)
         if [[ -n "$newest_src" ]]; then
@@ -114,10 +155,19 @@ build_tui_if_needed() {
     fi
     
     if [[ "$need_build" == true ]]; then
+        if [[ -f "$tui_binary" ]] && ! tui_binary_matches_host_arch; then
+            print_status "删除架构不匹配的旧TUI程序: $tui_binary"
+            rm -f "$tui_binary"
+        fi
+
         mkdir -p "$build_dir" || { print_error "无法创建构建目录: $build_dir"; exit 1; }
         
         print_status "配置CMake..."
-        (cd "$build_dir" && cmake ..) || { print_error "CMake配置失败"; exit 1; }
+        if ! configure_tui_cmake; then
+            print_warning "CMake配置失败，尝试清理TUI构建目录后重试..."
+            rm -rf "$build_dir/CMakeCache.txt" "$build_dir/CMakeFiles"
+            configure_tui_cmake || { print_error "CMake配置失败"; exit 1; }
+        fi
         
         print_status "编译TUI程序..."
         (cd "$build_dir" && make -j10) || { print_error "编译失败\n请检查源码或依赖项"; exit 1; }
@@ -129,6 +179,11 @@ build_tui_if_needed() {
     
     if [[ ! -f "$tui_binary" ]]; then
         print_error "编译完成但找不到可执行文件: $tui_binary"; exit 1
+    fi
+
+    if ! tui_binary_matches_host_arch; then
+        print_error "TUI程序架构仍与当前系统不匹配: $(file -b "$tui_binary" 2>/dev/null || echo unknown)"
+        exit 1
     fi
 }
 
@@ -178,6 +233,12 @@ main() {
     print_status "解析模块依赖关系..."
     local resolved_modules=($(resolve_dependencies "${SELECTED_MODULES[@]}"))
     [[ ${#resolved_modules[@]} -eq 0 ]] && { print_error "没有找到要构建的模块"; exit 1; }
+
+    print_status "检查互斥模块产物..."
+    prepare_mutex_build_environment "${resolved_modules[@]}" || {
+        print_error "互斥模块清理失败"
+        exit 1
+    }
     
     echo -e "\n${CYAN}=== 开始构建 ===${NC}\n构建模块: ${resolved_modules[*]}\n并行任务: $BUILD_JOBS\n"
     
@@ -198,16 +259,24 @@ main() {
 post_build_actions() {
     print_status "执行构建后处理..."
     
-    [[ -f "devel/setup.bash" ]] && {
+    if [[ -f "devel/setup.bash" ]]; then
         print_status "ROS工作空间设置文件已生成: devel/setup.bash"
-        echo "使用以下命令设置环境: ${CYAN}source devel/setup.bash${NC}"
-    }
+        # 这里会让后处理阶段能直接使用最新 ROS 环境；但如果用户通过 ./build.sh
+        # 启动脚本，子进程无法反向修改当前终端环境。
+        # 需要当前终端后续命令立即识别新包时，shell 机制上仍需在终端中 source 一次。
+        # shellcheck disable=SC1091
+        source "devel/setup.bash"
+        print_success "已在构建脚本进程内执行: source devel/setup.bash"
+        print_warning "如果后续命令在当前终端执行仍找不到新包，请在该终端执行: source devel/setup.bash"
+    fi
     
     local available_gb=$(($(df "$WORKSPACE_ROOT" | awk 'NR==2 {print $4}') / 1024 / 1024))
-    [[ $available_gb -lt 1 ]] && {
+    if [[ $available_gb -lt 1 ]]; then
         print_warning "磁盘空间不足 (剩余 ${available_gb}GB)，建议清理构建缓存"
         print_status "使用以下命令清理: $0 --clean"
-    }
+    fi
+
+    return 0
 }
 
 # 显示版本信息

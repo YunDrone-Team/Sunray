@@ -50,7 +50,10 @@ get_timestamp() {
 
 # 输出函数
 print_debug() {
-    [[ "${DEBUG:-0}" == "1" ]] && printf '%b[调试] %s%b\n' "${DEBUG_COLOR}" "$1" "${NC}" >&2
+    if [[ "${DEBUG:-0}" == "1" ]]; then
+        printf '%b[调试] %s%b\n' "${DEBUG_COLOR}" "$1" "${NC}" >&2
+    fi
+    return 0
 }
 
 print_status() {

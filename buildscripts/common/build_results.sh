@@ -61,9 +61,9 @@ display_build_results_table() {
     
     for i in "${!BUILD_RESULTS_STATUS[@]}"; do
         if [[ "${BUILD_RESULTS_STATUS[i]}" == "SUCCESS" ]]; then
-            ((success_count++))
+            ((success_count += 1))
         else
-            ((failed_count++))
+            ((failed_count += 1))
             failed_modules+=("${BUILD_RESULTS_MODULES[i]}")
         fi
     done
