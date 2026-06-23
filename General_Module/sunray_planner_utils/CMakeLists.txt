@@ -73,8 +73,9 @@ target_link_libraries(FuelTerminalControl_node ${catkin_LIBRARIES})
 
 if(livox_ros_driver2_FOUND)
   add_executable(livox2Point src/livox2Point.cpp)
-  add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS})
-  target_link_libraries(livox2Point ${catkin_LIBRARIES})
+  add_dependencies(livox2Point ${catkin_EXPORTED_TARGETS} ${livox_ros_driver2_EXPORTED_TARGETS})
+  target_include_directories(livox2Point PRIVATE ${livox_ros_driver2_INCLUDE_DIRS})
+  target_link_libraries(livox2Point ${catkin_LIBRARIES} ${livox_ros_driver2_LIBRARIES})
 endif()
 
 ## Mark cpp header files for installation
