@@ -9,6 +9,9 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <sunray_msgs/UAVControlCMD.h>
+#include <sunray_msgs/PX4State.h>
+#include <sunray_msgs/UAVSetup.h>
+#include <sunray_msgs/UAVState.h>
 
 #include <cmath>
 #include <iostream>
@@ -26,6 +29,9 @@ constexpr const char* kGreen = "\033[1;32m";
 constexpr const char* kYellow = "\033[1;33m";
 constexpr const char* kRed = "\033[1;31m";
 constexpr const char* kCyan = "\033[1;36m";
+
+sunray_msgs::UAVState g_uav_state;
+bool g_have_uav_state = false;
 
 void printTitle(const std::string& title) {
     std::cout << "\n"
@@ -87,15 +93,19 @@ std::string commandLabel(const int selection) {
 }
 
 void printMenu(const std::string& goal_topic,
+               const std::string& setup_topic,
                const std::string& control_topic,
+               const std::string& uav_state_topic,
                const std::string& frame_id) {
     printTitle("NavRL 终端控制");
     printInfoLine("坐标系", frame_id);
     printInfoLine("NavRL 目标话题", goal_topic);
+    printInfoLine("Sunray 设置话题", setup_topic);
     printInfoLine("Sunray 控制话题", control_topic);
+    printInfoLine("Sunray 状态话题", uav_state_topic);
     std::cout << kDim << " 说明：位置单位为 m；输入 yaw 使用 deg，发布到控制指令时自动转换为 rad。"
               << kReset << std::endl;
-    std::cout << kDim << " 规则：Takeoff / Land / Hover / XyzPosYaw 都只发布一次。"
+    std::cout << kDim << " 规则：Takeoff 会按 Sunray 原生终端一键起飞流程执行；Land / Hover / XyzPosYaw 发布一次。"
               << kReset << std::endl;
 
     std::cout << kBlue << "------------------------------------------------------------" << kReset << std::endl;
@@ -202,6 +212,127 @@ sunray_msgs::UAVControlCMD makeBaseControlCmd(const uint8_t control_cmd, const s
     return cmd;
 }
 
+void uavStateCallback(const sunray_msgs::UAVStateConstPtr& msg) {
+    g_uav_state = *msg;
+    g_have_uav_state = true;
+}
+
+void publishControlMode(const ros::Publisher& setup_pub,
+                        const std::string& setup_topic,
+                        const std::string& control_mode) {
+    sunray_msgs::UAVSetup setup;
+    setup.header.stamp = ros::Time::now();
+    setup.cmd = sunray_msgs::UAVSetup::SET_CONTROL_MODE;
+    setup.control_mode = control_mode;
+    setup_pub.publish(setup);
+    printSuccessLine("SET_CONTROL_MODE " + control_mode + " -> topic: " + setup_topic);
+}
+
+void publishArm(const ros::Publisher& setup_pub, const std::string& setup_topic) {
+    sunray_msgs::UAVSetup setup;
+    setup.header.stamp = ros::Time::now();
+    setup.cmd = sunray_msgs::UAVSetup::ARM;
+    setup_pub.publish(setup);
+    printSuccessLine("ARM -> topic: " + setup_topic);
+}
+
+void publishControl(const ros::Publisher& control_pub,
+                    const std::string& control_topic,
+                    const std::string& frame_id,
+                    const uint8_t control_cmd,
+                    const std::string& command_name) {
+    const sunray_msgs::UAVControlCMD cmd = makeBaseControlCmd(control_cmd, frame_id);
+    control_pub.publish(cmd);
+    printSuccessLine(command_name + " -> topic: " + control_topic);
+}
+
+void publishMovePoint(const ros::Publisher& control_pub,
+                      const sunray_msgs::UAVControlCMD& cmd,
+                      const std::string& result) {
+    control_pub.publish(cmd);
+    printSuccessLine(result);
+}
+
+bool waitForUAVConnected() {
+    int times = 0;
+    while (ros::ok() && (!g_have_uav_state || !g_uav_state.connected)) {
+        ros::spinOnce();
+        ros::Duration(1.0).sleep();
+        if (times++ > 5) {
+            printWarnLine("Wait for UAV connect...");
+        }
+    }
+
+    if (!ros::ok()) return false;
+    printSuccessLine("UAV connected.");
+    return true;
+}
+
+bool switchToCMDControl(const ros::Publisher& setup_pub, const std::string& setup_topic) {
+    while (ros::ok() && (!g_have_uav_state || g_uav_state.control_mode != sunray_msgs::UAVSetup::CMD_CONTROL)) {
+        publishControlMode(setup_pub, setup_topic, "CMD_CONTROL");
+        ros::Duration(1.0).sleep();
+        ros::spinOnce();
+    }
+
+    if (!ros::ok()) return false;
+    printSuccessLine("UAV control_mode set to [CMD_CONTROL] successfully.");
+    return true;
+}
+
+bool armUAV(const ros::Publisher& setup_pub, const std::string& setup_topic) {
+    printWarnLine("Arm UAV in 3 sec...");
+    ros::Duration(1.0).sleep();
+    printWarnLine("Arm UAV in 2 sec...");
+    ros::Duration(1.0).sleep();
+    printWarnLine("Arm UAV in 1 sec...");
+    ros::Duration(1.0).sleep();
+
+    while (ros::ok() && (!g_have_uav_state || !g_uav_state.armed)) {
+        publishArm(setup_pub, setup_topic);
+        ros::Duration(1.0).sleep();
+        ros::spinOnce();
+    }
+
+    if (!ros::ok()) return false;
+    printSuccessLine("Arm UAV successfully.");
+    return true;
+}
+
+bool takeoffUAV(const ros::Publisher& control_pub,
+                const std::string& control_topic,
+                const std::string& frame_id) {
+    while (ros::ok() &&
+           (!g_have_uav_state || g_uav_state.landed_state != sunray_msgs::PX4State::LANDED_STATE_IN_AIR)) {
+        publishControl(control_pub, control_topic, frame_id, sunray_msgs::UAVControlCMD::Takeoff, "Takeoff");
+        ros::Duration(4.0).sleep();
+        ros::spinOnce();
+    }
+
+    if (!ros::ok()) return false;
+    printSuccessLine("Takeoff UAV successfully.");
+    return true;
+}
+
+void publishAutoTakeoff(const ros::Publisher& setup_pub,
+                        const ros::Publisher& control_pub,
+                        const std::string& setup_topic,
+                        const std::string& control_topic,
+                        const std::string& frame_id) {
+    if (!waitForUAVConnected()) return;
+    if (!switchToCMDControl(setup_pub, setup_topic)) return;
+    if (!armUAV(setup_pub, setup_topic)) return;
+    if (!takeoffUAV(control_pub, control_topic, frame_id)) return;
+
+    sunray_msgs::UAVControlCMD cmd = makeBaseControlCmd(sunray_msgs::UAVControlCMD::XyzPosYaw, frame_id);
+    cmd.desired_vel[0] = 0.0f;
+    cmd.desired_vel[1] = 0.0f;
+    cmd.desired_pos[2] = 1.0f;
+    cmd.desired_yaw = 0.0f;
+    control_pub.publish(cmd);
+    printSuccessLine("move to the specified height -> topic: " + control_topic);
+}
+
 geometry_msgs::PoseStamped makeGoal(const double x,
                                     const double y,
                                     const double z,
@@ -227,7 +358,9 @@ int main(int argc, char** argv) {
     int uav_id = 1;
     std::string agent_name = "uav";
     std::string goal_topic = "/move_base_simple/goal";
+    std::string setup_topic;
     std::string control_topic;
+    std::string uav_state_topic;
     std::string frame_id = "map";
 
     private_nh.param("uav_id", uav_id, uav_id);
@@ -235,22 +368,31 @@ int main(int argc, char** argv) {
     private_nh.param<std::string>("goal_topic", goal_topic, goal_topic);
     private_nh.param<std::string>("frame_id", frame_id, frame_id);
 
+    setup_topic = "/" + agent_name + std::to_string(uav_id) + "/sunray/setup";
     control_topic = "/" + agent_name + std::to_string(uav_id) + "/sunray/uav_control_cmd";
+    uav_state_topic = "/" + agent_name + std::to_string(uav_id) + "/sunray/uav_state";
+    private_nh.param<std::string>("setup_topic", setup_topic, setup_topic);
     private_nh.param<std::string>("control_topic", control_topic, control_topic);
+    private_nh.param<std::string>("uav_state_topic", uav_state_topic, uav_state_topic);
 
     ros::Publisher goal_pub = nh.advertise<geometry_msgs::PoseStamped>(goal_topic, 1, true);
+    ros::Publisher setup_pub = nh.advertise<sunray_msgs::UAVSetup>(setup_topic, 1);
     ros::Publisher control_pub = nh.advertise<sunray_msgs::UAVControlCMD>(control_topic, 1);
+    ros::Subscriber uav_state_sub = nh.subscribe(uav_state_topic, 1, uavStateCallback);
     ros::Duration(0.5).sleep();
 
     std::istream* input = &std::cin;
 
     printTitle("NavRL 终端控制已启动");
     printInfoLine("NavRL 目标话题", goal_topic);
+    printInfoLine("Sunray 设置话题", setup_topic);
     printInfoLine("Sunray 控制话题", control_topic);
+    printInfoLine("Sunray 状态话题", uav_state_topic);
     printInfoLine("坐标系", frame_id);
 
     while (ros::ok()) {
-        printMenu(goal_topic, control_topic, frame_id);
+        ros::spinOnce();
+        printMenu(goal_topic, setup_topic, control_topic, uav_state_topic, frame_id);
 
         int selection = -1;
         if (!readInt(*input, selection)) {
@@ -278,24 +420,12 @@ int main(int argc, char** argv) {
             const geometry_msgs::PoseStamped goal = makeGoal(x, y, 0.0, 0.0, frame_id);
             goal_pub.publish(goal);
             printSuccessLine(formatNavrlGoalResult(goal_topic, frame_id, x, y));
-        } else if (selection == 2 || selection == 3 || selection == 4) {
-            uint8_t control_cmd = sunray_msgs::UAVControlCMD::Hover;
-            std::string command_name;
-
-            if (selection == 2) {
-                control_cmd = sunray_msgs::UAVControlCMD::Takeoff;
-                command_name = "Takeoff";
-            } else if (selection == 3) {
-                control_cmd = sunray_msgs::UAVControlCMD::Land;
-                command_name = "Land";
-            } else {
-                control_cmd = sunray_msgs::UAVControlCMD::Hover;
-                command_name = "Hover";
-            }
-
-            sunray_msgs::UAVControlCMD cmd = makeBaseControlCmd(control_cmd, frame_id);
-            control_pub.publish(cmd);
-            printSuccessLine(commandLabel(selection) + " -> topic: " + control_topic);
+        } else if (selection == 2) {
+            publishAutoTakeoff(setup_pub, control_pub, setup_topic, control_topic, frame_id);
+        } else if (selection == 3) {
+            publishControl(control_pub, control_topic, frame_id, sunray_msgs::UAVControlCMD::Land, "Land");
+        } else if (selection == 4) {
+            publishControl(control_pub, control_topic, frame_id, sunray_msgs::UAVControlCMD::Hover, "Hover");
         } else if (selection == 5) {
             double x = 0.0;
             double y = 0.0;
@@ -314,9 +444,8 @@ int main(int argc, char** argv) {
             cmd.desired_pos[1] = static_cast<float>(y);
             cmd.desired_pos[2] = static_cast<float>(z);
             cmd.desired_yaw = static_cast<float>(yaw_rad);
-            control_pub.publish(cmd);
-
-            printSuccessLine(formatMovePointResult(control_topic, frame_id, x, y, z, yaw_deg, yaw_rad));
+            publishMovePoint(control_pub, cmd, formatMovePointResult(control_topic, frame_id, x, y, z, yaw_deg,
+                                                                     yaw_rad));
         } else {
             printWarnLine("未知功能编号：" + std::to_string(selection));
         }
@@ -324,5 +453,6 @@ int main(int argc, char** argv) {
         ros::spinOnce();
     }
 
+    (void)uav_state_sub;
     return 0;
 }

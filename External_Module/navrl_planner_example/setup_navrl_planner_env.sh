@@ -47,6 +47,15 @@ set -euo pipefail
 #     --jetson-torch-url https://developer.download.nvidia.com/compute/redist/jp/v.../pytorch/torch-...-linux_aarch64.whl
 #
 # 脚本会从 wheel 文件名中的 cp38/cp310 标签推断或校验 Conda Python 版本。
+# JetPack 5.x 官方 PyTorch wheel 通常是 cp38，因此可以让脚本自动切到
+# Python 3.8，或显式传入 --python 3.8：
+#   ./setup_navrl_planner_env.sh \
+#     --env NavRL \
+#     --python 3.8 \
+#     --torch jetson \
+#     --jetson-torch-url "$TORCH_INSTALL" \
+#     --recreate
+#
 # 如果你已经下载了 wheel，也可以传本地路径：
 #   ./setup_navrl_planner_env.sh --torch jetson --jetson-torch-url /path/to/torch-...linux_aarch64.whl
 #
@@ -116,6 +125,7 @@ INSTALL_JETSON_DEPS="${INSTALL_JETSON_DEPS:-1}"
 BUILD_NAVRL="${BUILD_NAVRL:-0}"
 RECREATE_ENV="${RECREATE_ENV:-0}"
 CLEAN_EXISTING_TORCH="${CLEAN_EXISTING_TORCH:-1}"
+DRY_RUN="${DRY_RUN:-0}"
 JETSON_TORCH_URL="${JETSON_TORCH_URL:-${TORCH_INSTALL:-}}"
 JETSON_TORCHVISION_URL="${JETSON_TORCHVISION_URL:-}"
 JETSON_TORCHAUDIO_URL="${JETSON_TORCHAUDIO_URL:-}"
@@ -176,6 +186,189 @@ python_version_from_abi() {
   printf '%s.%s\n' "${digits:0:1}" "${digits:1}"
 }
 
+python_minor_from_version() {
+  local version="$1"
+  if [[ "$version" =~ ^([0-9]+)\.([0-9]+)($|\.) ]]; then
+    printf '%s.%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+    return 0
+  fi
+  return 1
+}
+
+active_python_minor() {
+  python - <<'PY'
+import sys
+print(f"{sys.version_info.major}.{sys.version_info.minor}")
+PY
+}
+
+prepend_path_once() {
+  local var_name="$1"
+  local dir="$2"
+  local current_value
+
+  [[ -d "$dir" ]] || return 0
+  current_value="${!var_name:-}"
+  case ":${current_value}:" in
+    *":${dir}:"*) ;;
+    *)
+      if [[ -n "$current_value" ]]; then
+        export "${var_name}=${dir}:${current_value}"
+      else
+        export "${var_name}=${dir}"
+      fi
+      ;;
+  esac
+}
+
+configure_jetson_cuda_paths() {
+  local dir
+
+  [[ "${TORCH_BACKEND}" == "jetson" ]] || return 0
+
+  if [[ -z "${CUDA_HOME:-}" && -d /usr/local/cuda ]]; then
+    export CUDA_HOME=/usr/local/cuda
+  fi
+
+  for dir in \
+    /usr/local/cuda/bin \
+    /usr/local/cuda-*/bin; do
+    prepend_path_once PATH "$dir"
+  done
+
+  for dir in \
+    /usr/local/cuda/lib64 \
+    /usr/local/cuda/targets/aarch64-linux/lib \
+    /usr/local/cuda-*/lib64 \
+    /usr/local/cuda-*/targets/aarch64-linux/lib \
+    /usr/lib/aarch64-linux-gnu \
+    /usr/lib/aarch64-linux-gnu/tegra; do
+    prepend_path_once LD_LIBRARY_PATH "$dir"
+    prepend_path_once LIBRARY_PATH "$dir"
+  done
+
+  for dir in \
+    /usr/local/cuda/include \
+    /usr/local/cuda/targets/aarch64-linux/include \
+    /usr/local/cuda-*/include \
+    /usr/local/cuda-*/targets/aarch64-linux/include; do
+    prepend_path_once CPATH "$dir"
+  done
+}
+
+check_jetson_cuda_runtime_visible() {
+  [[ "${TORCH_BACKEND}" == "jetson" ]] || return 0
+
+  configure_jetson_cuda_paths
+  python - <<'PY' || die "Jetson CUDA runtime libraries are not visible to Python. For JetPack 5.x, install CUDA runtime packages such as: sudo apt-get install cuda-nvtx-11-4 libcublas-dev-11-4. Then make sure /usr/local/cuda/targets/aarch64-linux/lib is in LD_LIBRARY_PATH."
+import ctypes
+import sys
+
+required_groups = [
+    ("libnvToolsExt", ["libnvToolsExt.so.1", "libnvToolsExt.so"]),
+    ("libcublas", ["libcublas.so.11", "libcublas.so.12", "libcublas.so"]),
+]
+
+missing = []
+for label, candidates in required_groups:
+    loaded = False
+    errors = []
+    for candidate in candidates:
+        try:
+            ctypes.CDLL(candidate)
+            loaded = True
+            break
+        except OSError as exc:
+            errors.append(f"{candidate}: {exc}")
+    if not loaded:
+        missing.append(f"{label}: " + " | ".join(errors))
+
+if missing:
+    print("\n".join(missing), file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+verify_jetson_torch_import() {
+  [[ "${TORCH_BACKEND}" == "jetson" ]] || return 0
+
+  configure_jetson_cuda_paths
+  check_jetson_cuda_runtime_visible
+  log "Verifying Jetson PyTorch import"
+  python - <<'PY'
+import torch
+print("torch:", torch.__version__, "cuda_available:", torch.cuda.is_available())
+PY
+}
+
+write_conda_activation_hook() {
+  local env_hook
+
+  [[ -n "${CONDA_PREFIX:-}" ]] || return 0
+
+  env_hook="${CONDA_PREFIX}/etc/conda/activate.d/navrl_ros_paths.sh"
+  mkdir -p "$(dirname "${env_hook}")"
+  cat > "${env_hook}" <<EOF
+#!/usr/bin/env bash
+if [[ -r /opt/ros/noetic/setup.bash ]]; then
+  source /opt/ros/noetic/setup.bash
+fi
+if [[ -r "${REPO_ROOT}/devel/setup.bash" ]]; then
+  source "${REPO_ROOT}/devel/setup.bash"
+fi
+export NAVRL_PLANNER_EXAMPLE_DIR="${SCRIPT_DIR}"
+EOF
+
+  if [[ "${TORCH_BACKEND}" == "jetson" ]]; then
+    cat >> "${env_hook}" <<'EOF'
+if [[ -z "${CUDA_HOME:-}" && -d /usr/local/cuda ]]; then
+  export CUDA_HOME=/usr/local/cuda
+fi
+for dir in \
+  /usr/local/cuda/bin \
+  /usr/local/cuda-*/bin; do
+  [[ -d "$dir" ]] || continue
+  case ":${PATH:-}:" in
+    *":${dir}:"*) ;;
+    *) export PATH="${dir}:${PATH:-}" ;;
+  esac
+done
+for dir in \
+  /usr/local/cuda/lib64 \
+  /usr/local/cuda/targets/aarch64-linux/lib \
+  /usr/local/cuda-*/lib64 \
+  /usr/local/cuda-*/targets/aarch64-linux/lib \
+  /usr/lib/aarch64-linux-gnu \
+  /usr/lib/aarch64-linux-gnu/tegra; do
+  [[ -d "$dir" ]] || continue
+  case ":${LD_LIBRARY_PATH:-}:" in
+    *":${dir}:"*) ;;
+    *) export LD_LIBRARY_PATH="${dir}:${LD_LIBRARY_PATH:-}" ;;
+  esac
+  case ":${LIBRARY_PATH:-}:" in
+    *":${dir}:"*) ;;
+    *) export LIBRARY_PATH="${dir}:${LIBRARY_PATH:-}" ;;
+  esac
+done
+for dir in \
+  /usr/local/cuda/include \
+  /usr/local/cuda/targets/aarch64-linux/include \
+  /usr/local/cuda-*/include \
+  /usr/local/cuda-*/targets/aarch64-linux/include; do
+  [[ -d "$dir" ]] || continue
+  case ":${CPATH:-}:" in
+    *":${dir}:"*) ;;
+    *) export CPATH="${dir}:${CPATH:-}" ;;
+  esac
+done
+EOF
+  fi
+
+  chmod +x "${env_hook}"
+  # shellcheck source=/dev/null
+  source "${env_hook}"
+}
+
 wheel_abi_tag() {
   local wheel_name="${1##*/}"
   if [[ "$wheel_name" =~ (cp[0-9]+)-cp[0-9]+-linux_aarch64\.whl ]]; then
@@ -190,12 +383,13 @@ validate_jetson_wheel() {
 
   [[ -n "$wheel" ]] || die "${label} wheel URL/path is empty"
   [[ "$wheel" == *.whl ]] || die "${label} must point to a .whl file: $wheel"
+  [[ "$wheel" != *"..."* ]] || die "${label} wheel still contains placeholder '...'; set a real NVIDIA Jetson wheel URL/path"
   if [[ "$wheel" != *linux_aarch64.whl ]]; then
-    log "Warning: ${label} wheel does not look like an aarch64 Jetson wheel: $wheel"
+    die "${label} wheel does not look like an aarch64 Jetson wheel: $wheel"
   fi
 
   wheel_abi="$(wheel_abi_tag "$wheel")"
-  [[ -z "$wheel_abi" ]] && return 0
+  [[ -n "$wheel_abi" ]] || die "${label} wheel filename must include a Python ABI tag like cp38 or cp310: $wheel"
 
   current_abi="$(python_abi_tag)"
   if [[ "$wheel_abi" != "$current_abi" ]]; then
@@ -205,7 +399,7 @@ validate_jetson_wheel() {
 }
 
 prepare_jetson_python_version() {
-  local wheel_abi expected_python
+  local wheel_abi expected_python requested_python
 
   [[ "${TORCH_BACKEND}" == "jetson" ]] || return 0
   [[ -n "${JETSON_TORCH_URL}" ]] || return 0
@@ -215,15 +409,98 @@ prepare_jetson_python_version() {
 
   expected_python="$(python_version_from_abi "$wheel_abi" || true)"
   [[ -z "$expected_python" ]] && return 0
+  requested_python="$(python_minor_from_version "$PYTHON_VERSION" || true)"
+  [[ -z "$requested_python" ]] && die "Invalid --python value: ${PYTHON_VERSION}. Use a version like 3.8 or 3.10."
 
   if [[ "$PYTHON_VERSION_EXPLICIT" == "0" ]]; then
-    if [[ "$PYTHON_VERSION" != "$expected_python" ]]; then
+    if [[ "$requested_python" != "$expected_python" ]]; then
       log "Jetson torch wheel uses ${wheel_abi}; using Conda Python ${expected_python}"
       PYTHON_VERSION="$expected_python"
     fi
-  elif [[ "$PYTHON_VERSION" != "$expected_python" ]]; then
+  elif [[ "$requested_python" != "$expected_python" ]]; then
     die "Jetson torch wheel uses ${wheel_abi}; --python ${PYTHON_VERSION} is incompatible. Use --python ${expected_python}."
   fi
+}
+
+validate_python_request() {
+  local requested_python
+  requested_python="$(python_minor_from_version "$PYTHON_VERSION" || true)"
+  [[ -n "$requested_python" ]] || die "Invalid --python value: ${PYTHON_VERSION}. Use a version like 3.8 or 3.10."
+  PYTHON_VERSION="$requested_python"
+}
+
+ensure_active_python_matches_request() {
+  local active_python requested_python
+  active_python="$(active_python_minor)"
+  requested_python="$(python_minor_from_version "$PYTHON_VERSION" || true)"
+  [[ -n "$requested_python" ]] || die "Invalid --python value: ${PYTHON_VERSION}. Use a version like 3.8 or 3.10."
+
+  if [[ "$active_python" != "$requested_python" ]]; then
+    die "Conda env ${ENV_NAME} uses Python ${active_python}, but this run requested Python ${requested_python}. Use --recreate or choose a matching --python value."
+  fi
+}
+
+python_package_specs() {
+  local python_minor="${1:-$(active_python_minor)}"
+
+  case "$python_minor" in
+    3.8)
+      cat <<'EOF'
+numpy==1.24.4
+pydantic!=1.7,!=1.7.1,!=1.7.2,!=1.7.3,!=1.8,!=1.8.1,<2.0.0,>=1.6.2
+imageio-ffmpeg==0.4.9
+moviepy==1.0.3
+hydra-core
+einops
+cloudpickle
+pyyaml
+rospkg
+matplotlib<3.8
+opencv-python<4.12
+ninja
+EOF
+      ;;
+    *)
+      cat <<'EOF'
+numpy==1.26.4
+pydantic!=1.7,!=1.7.1,!=1.7.2,!=1.7.3,!=1.8,!=1.8.1,<2.0.0,>=1.6.2
+imageio-ffmpeg==0.4.9
+moviepy==1.0.3
+hydra-core
+einops
+cloudpickle
+pyyaml
+rospkg
+matplotlib
+opencv-python
+ninja
+EOF
+      ;;
+  esac
+}
+
+print_dry_run_summary() {
+  log "Dry run only; no apt/conda/pip/build commands will be executed"
+  log "Conda env: ${ENV_NAME}"
+  log "Python version: ${PYTHON_VERSION}"
+  log "Torch backend: ${TORCH_BACKEND}"
+  if [[ "${TORCH_BACKEND}" == "jetson" ]]; then
+    log "Jetson torch wheel: ${JETSON_TORCH_URL}"
+  fi
+  log "Python package pins:"
+  python_package_specs "${PYTHON_VERSION}" | sed 's/^/  - /'
+}
+
+install_python_packages() {
+  local packages=()
+  local package
+
+  while IFS= read -r package; do
+    [[ -n "$package" ]] && packages+=("$package")
+  done < <(python_package_specs)
+
+  log "Installing Python packages for Python $(active_python_minor)"
+  python -m pip install "${packages[@]}"
 }
 
 check_jetson_request() {
@@ -232,7 +509,13 @@ check_jetson_request() {
   [[ "${TORCH_BACKEND}" == "jetson" ]] || return 0
 
   arch="$(uname -m)"
-  [[ "$arch" == "aarch64" ]] || die "--torch jetson requires aarch64, current arch is ${arch}. Use --torch cpu or --torch cu118 on x86_64."
+  if [[ "$arch" != "aarch64" ]]; then
+    if [[ "${DRY_RUN}" == "1" ]]; then
+      log "Dry-run warning: --torch jetson requires aarch64 for real installation; current arch is ${arch}"
+    else
+      die "--torch jetson requires aarch64, current arch is ${arch}. Use --torch cpu or --torch cu118 on x86_64."
+    fi
+  fi
 
   l4t="$(detect_l4t_release)"
   jetpack_hint="$(jetpack_hint_from_l4t "$l4t")"
@@ -244,6 +527,8 @@ check_jetson_request() {
 }
 
 install_jetson_system_deps() {
+  local l4t
+
   [[ "${TORCH_BACKEND}" == "jetson" ]] || return 0
   [[ "${INSTALL_JETSON_DEPS}" == "1" ]] || return 0
 
@@ -252,6 +537,41 @@ install_jetson_system_deps() {
   sudo apt-get install -y \
     python3-pip \
     libopenblas-dev
+
+  l4t="$(detect_l4t_release)"
+  case "$l4t" in
+    35.*|R35*)
+      install_optional_apt_package cuda-nvtx-11-4
+      install_optional_apt_package libcublas-dev-11-4
+      ;;
+  esac
+}
+
+install_optional_apt_package() {
+  local package="$1"
+
+  if apt-cache show "$package" >/dev/null 2>&1; then
+    log "Installing optional Jetson CUDA package: ${package}"
+    sudo apt-get install -y "$package"
+  else
+    log "Optional Jetson CUDA package is not available from apt: ${package}"
+  fi
+}
+
+validate_requested_torch_backend() {
+  case "${TORCH_BACKEND}" in
+    jetson)
+      validate_jetson_wheel "torch" "${JETSON_TORCH_URL}"
+      if [[ -n "${JETSON_TORCHVISION_URL}" ]]; then
+        validate_jetson_wheel "torchvision" "${JETSON_TORCHVISION_URL}"
+      fi
+      if [[ -n "${JETSON_TORCHAUDIO_URL}" ]]; then
+        validate_jetson_wheel "torchaudio" "${JETSON_TORCHAUDIO_URL}"
+      fi
+      ;;
+  esac
+
+  return 0
 }
 
 cleanup_existing_torch_packages() {
@@ -261,6 +581,7 @@ cleanup_existing_torch_packages() {
   }
 
   log "Cleaning existing PyTorch packages before installing ${TORCH_BACKEND} backend"
+  python -m pip uninstall -y tensordict torchrl >/dev/null 2>&1 || true
   python -m pip uninstall -y torch torchvision torchaudio >/dev/null 2>&1 || true
 
   local cuda_packages
@@ -308,18 +629,21 @@ Options:
   --keep-existing-torch
                       Do not uninstall existing torch/torchvision/torchaudio
                       or pip CUDA runtime packages before installing torch
+  --dry-run          Print the resolved environment plan without installing
   --build            Run ./build.sh -y navrl after installing dependencies
   --recreate         Remove the existing Conda env before creating it
   -h, --help         Show this help
 
 Environment variable equivalents:
   ENV_NAME, PYTHON_VERSION, TORCH_BACKEND, INSTALL_ROS_DEPS, BUILD_NAVRL,
-  RECREATE_ENV, CLEAN_EXISTING_TORCH, INSTALL_JETSON_DEPS, JETSON_TORCH_URL,
-  JETSON_TORCHVISION_URL, JETSON_TORCHAUDIO_URL
+  RECREATE_ENV, CLEAN_EXISTING_TORCH, DRY_RUN, INSTALL_JETSON_DEPS,
+  JETSON_TORCH_URL, JETSON_TORCHVISION_URL, JETSON_TORCHAUDIO_URL
 
 Notes:
   - This script targets NavRL deployment/inference, not Isaac Sim training.
   - The upstream deployment script pins Conda Python to 3.10.
+  - Python 3.8 is supported for JetPack 5.x cp38 Jetson PyTorch wheels. In
+    that mode, the script installs Python 3.8-compatible dependency pins.
   - Jetson mode does not use x86 CUDA wheels. It installs the NVIDIA Jetson
     aarch64 torch wheel you provide and checks that its cpXX ABI matches the
     Conda Python version.
@@ -374,6 +698,10 @@ while [[ $# -gt 0 ]]; do
       CLEAN_EXISTING_TORCH=0
       shift
       ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
     --build)
       BUILD_NAVRL=1
       shift
@@ -392,8 +720,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+validate_python_request
 check_jetson_request
 prepare_jetson_python_version
+
+if [[ "${DRY_RUN}" == "1" ]]; then
+  print_dry_run_summary
+  exit 0
+fi
 
 command -v conda >/dev/null 2>&1 || die "conda is not available in PATH"
 [[ -d "${TENSOR_DICT_DIR}" ]] || die "Missing TensorDict source: ${TENSOR_DICT_DIR}"
@@ -432,28 +766,20 @@ fi
 
 if ! conda env list | awk '{print $1}' | grep -Fxq "${ENV_NAME}"; then
   log "Creating Conda env ${ENV_NAME} with Python ${PYTHON_VERSION}"
-  conda create -n "${ENV_NAME}" "python=${PYTHON_VERSION}" -c conda-forge -y
+  conda create -n "${ENV_NAME}" "python=${PYTHON_VERSION}" pip -c conda-forge -y
 else
   log "Reusing existing Conda env: ${ENV_NAME}"
 fi
 
 conda activate "${ENV_NAME}"
+ensure_active_python_matches_request
+configure_jetson_cuda_paths
+write_conda_activation_hook
 python -m pip install --upgrade pip
 python -m pip install "setuptools<70" wheel packaging
 
-log "Installing Python packages"
-python -m pip install \
-  numpy==1.26.4 \
-  "pydantic!=1.7,!=1.7.1,!=1.7.2,!=1.7.3,!=1.8,!=1.8.1,<2.0.0,>=1.6.2" \
-  imageio-ffmpeg==0.4.9 \
-  moviepy==1.0.3 \
-  hydra-core \
-  einops \
-  pyyaml \
-  rospkg \
-  matplotlib \
-  opencv-python \
-  ninja
+validate_requested_torch_backend
+install_python_packages
 
 cleanup_existing_torch_packages
 
@@ -476,12 +802,11 @@ case "${TORCH_BACKEND}" in
     ;;
   jetson)
     log "Installing NVIDIA Jetson PyTorch wheel"
-    validate_jetson_wheel "torch" "${JETSON_TORCH_URL}"
     python -m pip install --no-cache-dir "${JETSON_TORCH_URL}"
+    verify_jetson_torch_import
 
     if [[ -n "${JETSON_TORCHVISION_URL}" ]]; then
       log "Installing Jetson-compatible torchvision wheel"
-      validate_jetson_wheel "torchvision" "${JETSON_TORCHVISION_URL}"
       python -m pip install --no-cache-dir --no-deps "${JETSON_TORCHVISION_URL}"
     else
       log "No Jetson torchvision wheel supplied; skipping torchvision to avoid replacing Jetson torch"
@@ -490,7 +815,6 @@ case "${TORCH_BACKEND}" in
 
     if [[ -n "${JETSON_TORCHAUDIO_URL}" ]]; then
       log "Installing Jetson-compatible torchaudio wheel"
-      validate_jetson_wheel "torchaudio" "${JETSON_TORCHAUDIO_URL}"
       python -m pip install --no-cache-dir --no-deps "${JETSON_TORCHAUDIO_URL}"
     else
       log "No Jetson torchaudio wheel supplied; skipping torchaudio"
@@ -499,28 +823,13 @@ case "${TORCH_BACKEND}" in
 esac
 
 log "Installing local TensorDict and TorchRL sources in editable mode"
+verify_jetson_torch_import
 python -m pip uninstall -y tensordict torchrl >/dev/null 2>&1 || true
 python -m pip install tomli
 python -m pip install --no-build-isolation --no-deps -e "${TENSOR_DICT_DIR}"
 python -m pip install --no-build-isolation --no-deps -e "${TORCHRL_DIR}"
 
-if [[ -r /opt/ros/noetic/setup.bash ]]; then
-  # Keep this env file explicit because Conda activation alone does not expose
-  # ROS Noetic Python modules or generated catkin message/service packages.
-  ENV_HOOK="${CONDA_PREFIX}/etc/conda/activate.d/navrl_ros_paths.sh"
-  mkdir -p "$(dirname "${ENV_HOOK}")"
-  cat > "${ENV_HOOK}" <<EOF
-#!/usr/bin/env bash
-source /opt/ros/noetic/setup.bash
-if [[ -r "${REPO_ROOT}/devel/setup.bash" ]]; then
-  source "${REPO_ROOT}/devel/setup.bash"
-fi
-export NAVRL_PLANNER_EXAMPLE_DIR="${SCRIPT_DIR}"
-EOF
-  chmod +x "${ENV_HOOK}"
-  # shellcheck source=/dev/null
-  source "${ENV_HOOK}"
-fi
+write_conda_activation_hook
 
 log "Verifying core Python imports"
 python - <<'PY'
