@@ -572,23 +572,27 @@ def _validate_suite_step(
     elif case_type == "flight.hover":
         _validate_optional_numbers(params, f"{path}.params", ("duration_s",))
     elif case_type == "flight.ego_goal":
-        _ensure("mission_key" in params, f"{path}.params.mission_key is required for flight.ego_goal")
-        mission_key = _ensure_string(params["mission_key"], f"{path}.params.mission_key")
-        _ensure(mission_key in merged_missions, f"{path}.params.mission_key references unknown mission: {mission_key}")
-        mission = merged_missions[mission_key]
-        if isinstance(mission, dict):
-            _ensure(
-                "goals" in mission or "waypoints" in mission,
-                f"merged.missions.{mission_key} must define goals or waypoints",
-            )
-            if "goals" in mission:
-                _ensure_ego_goal_list(mission["goals"], f"merged.missions.{mission_key}.goals")
-            if "waypoints" in mission:
-                _ensure_ego_goal_list(mission["waypoints"], f"merged.missions.{mission_key}.waypoints")
-        elif isinstance(mission, list):
-            _ensure_ego_goal_list(mission, f"merged.missions.{mission_key}")
+        has_param_goals = "goals" in params
+        if has_param_goals:
+            _ensure_ego_goal_list(params["goals"], f"{path}.params.goals")
         else:
-            raise ConfigValidationError(f"merged.missions.{mission_key} must be a mapping or goal list")
+            _ensure("mission_key" in params, f"{path}.params.mission_key is required for flight.ego_goal")
+            mission_key = _ensure_string(params["mission_key"], f"{path}.params.mission_key")
+            _ensure(mission_key in merged_missions, f"{path}.params.mission_key references unknown mission: {mission_key}")
+            mission = merged_missions[mission_key]
+            if isinstance(mission, dict):
+                _ensure(
+                    "goals" in mission or "waypoints" in mission,
+                    f"merged.missions.{mission_key} must define goals or waypoints",
+                )
+                if "goals" in mission:
+                    _ensure_ego_goal_list(mission["goals"], f"merged.missions.{mission_key}.goals")
+                if "waypoints" in mission:
+                    _ensure_ego_goal_list(mission["waypoints"], f"merged.missions.{mission_key}.waypoints")
+            elif isinstance(mission, list):
+                _ensure_ego_goal_list(mission, f"merged.missions.{mission_key}")
+            else:
+                raise ConfigValidationError(f"merged.missions.{mission_key} must be a mapping or goal list")
         _validate_optional_strings(
             params,
             f"{path}.params",
@@ -661,13 +665,16 @@ def _validate_suite_step(
         waypoint_source = _ensure_string(waypoint_source, f"{path}.params.waypoint_source")
         _ensure(waypoint_source in {"list", "input"}, f"{path}.params.waypoint_source must be 'list' or 'input'")
         if waypoint_source == "list":
-            mission_key = params.get("mission_key")
-            _ensure(mission_key is not None, f"{path}.params.mission_key is required when waypoint_source=list")
-            mission_key = _ensure_string(mission_key, f"{path}.params.mission_key")
-            _ensure(
-                mission_key in merged_missions,
-                f"{path}.params.mission_key references unknown mission: {mission_key}",
-            )
+            if "waypoints" in params:
+                _ensure_point_list(params["waypoints"], f"{path}.params.waypoints")
+            else:
+                mission_key = params.get("mission_key")
+                _ensure(mission_key is not None, f"{path}.params.mission_key is required when waypoint_source=list")
+                mission_key = _ensure_string(mission_key, f"{path}.params.mission_key")
+                _ensure(
+                    mission_key in merged_missions,
+                    f"{path}.params.mission_key references unknown mission: {mission_key}",
+                )
         _validate_optional_numbers(
             params,
             f"{path}.params",

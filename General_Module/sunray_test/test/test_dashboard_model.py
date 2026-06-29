@@ -97,8 +97,40 @@ class DashboardModelTest(unittest.TestCase):
 
         tabs = self.model.build_tabs("bringup", "exp", plan.runtime_state)
         ego_tabs = [tab for tab in tabs if tab["title"] == "ego"]
+        self.assertEqual(plan.profile, "sunray150_lidar")
+        self.assertEqual(plan.external_source, 0)
+        self.assertEqual(plan.external_source_label, "ODOM")
         self.assertEqual(len(ego_tabs), 1)
         self.assertIn("sunray_tests_ego.launch", ego_tabs[0]["command"])
+
+    def test_lidar_profile_defaults_to_odom_in_exp(self):
+        plan = self.model.build_plan(
+            requested_item_ids=["hover"],
+            environment="exp",
+            uav_id=1,
+            external_source_override=None,
+            record_rosbag=True,
+            continue_on_failure=False,
+            profile_override="sunray150_lidar",
+        )
+
+        self.assertEqual(plan.profile, "sunray150_lidar")
+        self.assertEqual(plan.external_source, 0)
+        self.assertEqual(plan.external_source_label, "ODOM")
+
+    def test_lidar_profile_keeps_user_external_source_override(self):
+        plan = self.model.build_plan(
+            requested_item_ids=["ego_goal"],
+            environment="exp",
+            uav_id=1,
+            external_source_override=3,
+            record_rosbag=True,
+            continue_on_failure=False,
+        )
+
+        self.assertEqual(plan.profile, "sunray150_lidar")
+        self.assertEqual(plan.external_source, 3)
+        self.assertEqual(plan.external_source_label, "MOCAP")
 
     def test_external_source_override_updates_exp_fusion_command(self):
         plan = self.model.build_plan(
@@ -275,12 +307,13 @@ class DashboardModelTest(unittest.TestCase):
             requested_item_ids=["hover"],
             environment="exp",
             uav_id=1,
-            external_source_override=0,
+            external_source_override=None,
             record_rosbag=True,
             continue_on_failure=False,
             profile_override="sunray150_lidar",
         )
 
+        self.assertEqual(plan.external_source, 0)
         self.assertTrue(plan.runtime_state["condition_context"]["uses_lidar"])
         tabs = self.model.build_tabs("bringup", "exp", plan.runtime_state)
         tab_titles = [tab["title"] for tab in tabs]
@@ -331,6 +364,42 @@ class DashboardModelTest(unittest.TestCase):
 
         self.assertEqual(visual_step["params"]["height_m"], 1.8)
         self.assertEqual(visual_step["params"]["launch_args"]["error_xy"], 0.12)
+
+    def test_goal_and_waypoint_points_can_be_overridden(self):
+        ego_goals = self.model.normalize_param_value(
+            {"path": "goals", "type": "points"},
+            "[[1.0, 0.0, 1.2], [2.0, 0.5, 1.2]]",
+        )
+        waypoints = self.model.normalize_param_value(
+            {"path": "waypoints", "type": "points"},
+            "[[0.5, -1.0, 1.2], [0.5, 1.0, 1.2]]",
+        )
+
+        plan = self.model.build_plan(
+            requested_item_ids=["ego_goal", "waypoint"],
+            environment="sim",
+            uav_id=1,
+            external_source_override=None,
+            record_rosbag=True,
+            continue_on_failure=False,
+            param_overrides={
+                "ego_goal": {"goals": ego_goals},
+                "waypoint": {"waypoints": waypoints},
+            },
+        )
+
+        ego_step = [step for step in plan.suite["steps"] if step.get("case") == "ego_goal_flight"][0]
+        waypoint_step = [step for step in plan.suite["steps"] if step.get("case") == "waypoint_flight"][0]
+
+        self.assertEqual(ego_step["params"]["goals"], [[1.0, 0.0, 1.2], [2.0, 0.5, 1.2]])
+        self.assertEqual(waypoint_step["params"]["waypoints"], [[0.5, -1.0, 1.2], [0.5, 1.0, 1.2]])
+        validate_dashboard_suite_schema(
+            plan.profile,
+            plan.environment,
+            plan.suite,
+            uav_id=1,
+            external_source=plan.external_source,
+        )
 
     def test_param_schema_defaults_build_valid_suites(self):
         for item in self.model.test_items:

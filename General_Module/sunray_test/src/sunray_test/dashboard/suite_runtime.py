@@ -49,10 +49,20 @@ def resolve_output_dir(args) -> str:
     return os.path.abspath(args.output_dir or default_output_dir())
 
 
+def allocate_run_dir(output_dir: str) -> str:
+    os.makedirs(output_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = os.path.join(output_dir, timestamp)
+    suffix = 1
+    while os.path.exists(run_dir):
+        suffix += 1
+        run_dir = os.path.join(output_dir, f"{timestamp}_{suffix:02d}")
+    return run_dir
+
+
 def runtime_suite_path(suite: Dict[str, Any], output_dir: str) -> str:
-    suite_dir = os.path.join(output_dir, "generated_suites")
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    return os.path.join(suite_dir, f"{timestamp}_{suite['name']}.yaml")
+    del suite
+    return os.path.join(allocate_run_dir(output_dir), "suite.yaml")
 
 
 def write_runtime_suite(suite: Dict[str, Any], suite_path: str) -> None:

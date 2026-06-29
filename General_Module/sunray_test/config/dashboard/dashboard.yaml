@@ -413,7 +413,7 @@ test_items:
       name: 悬停
       type: flight.hover
       params:
-        duration_s: 120.0
+        duration_s: 60.0
     param_schema:
       - path: duration_s
         name: 悬停时长
@@ -452,6 +452,11 @@ test_items:
         type: enum
         options: [lidar_ego_goals]
         description: 从 config/missions 中选择 EGO 目标点列表。后续新增任务文件后可以扩展这里的枚举。
+      - path: goals
+        name: EGO目标点列表
+        type: points
+        default: "[[1.5, 0.0, 1.2]]"
+        description: 直接覆盖本次 EGO 测试的目标点列表，格式为 [[x, y, z], [x, y, z]]。填写后优先于任务点配置。
       - path: z_m
         name: 默认目标高度
         type: float
@@ -626,6 +631,11 @@ test_items:
         type: enum
         options: [waypoint_default]
         description: 从 config/missions 中选择指点飞行航点列表。后续新增任务文件后可以扩展这里的枚举。
+      - path: waypoints
+        name: 航点列表
+        type: points
+        default: "[[0.5, -1.0, 1.2], [0.5, 1.0, 1.2], [0.0, 0.0, 1.2]]"
+        description: 直接覆盖本次指点飞行航点列表，格式为 [[x, y, z], [x, y, z]]。填写后优先于航点任务配置。
       - path: waypoint_source
         name: 航点来源
         type: enum

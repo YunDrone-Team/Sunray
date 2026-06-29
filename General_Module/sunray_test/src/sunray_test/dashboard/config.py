@@ -113,8 +113,8 @@ def _validate_param_schema(errors: List[str], raw_item: Dict[str, Any], path: st
             continue
         if not str(spec.get("path", "")).strip():
             errors.append(f"{spec_path}.path is required")
-        if str(spec.get("type", "string")) not in {"float", "int", "bool", "string", "enum"}:
-            errors.append(f"{spec_path}.type must be float/int/bool/string/enum")
+        if str(spec.get("type", "string")) not in {"float", "int", "bool", "string", "enum", "points"}:
+            errors.append(f"{spec_path}.type must be float/int/bool/string/enum/points")
         if str(spec.get("type", "")) == "enum" and not isinstance(spec.get("options", []), list):
             errors.append(f"{spec_path}.options must be a list")
 

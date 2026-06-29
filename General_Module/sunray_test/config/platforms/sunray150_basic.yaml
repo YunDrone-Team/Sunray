@@ -49,5 +49,5 @@ defaults:
   visual_landing_auto_takeoff: false
   visual_landing_height_m: 1.0
   visual_landing_target_zone_radius_m: 0.15
-  hover_duration_s: 120.0
+  hover_duration_s: 60.0
   waypoint_reach_radius_m: 0.13

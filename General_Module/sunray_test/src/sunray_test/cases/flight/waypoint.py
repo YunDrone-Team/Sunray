@@ -63,6 +63,10 @@ class WaypointMissionCase(BaseCase):
         if waypoint_source != "list":
             raise ValueError(f"unsupported waypoint_source: {waypoint_source}")
 
+        param_waypoints = self.execution_context.params.get("waypoints")
+        if param_waypoints:
+            return waypoint_source, "dashboard_params", param_waypoints
+
         mission_key = self.execution_context.params["mission_key"]
         mission = context.missions[mission_key]
         waypoints = mission.get("waypoints", mission)

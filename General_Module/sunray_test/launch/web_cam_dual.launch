@@ -4,7 +4,7 @@
   <arg name="front_video_device" default="/dev/video2" />
   <arg name="down_video_device" default="/dev/video0" />
   <arg name="front_start_delay_s" default="2.0" />
-  <arg name="down_start_delay_s" default="0.0" />
+  <arg name="down_start_delay_s" default="1.0" />
   <arg name="camera_post_clean_delay_s" default="0.5" />
   <arg name="camera_warmup_frames" default="5" />
   <arg name="camera_watchdog" default="true" />

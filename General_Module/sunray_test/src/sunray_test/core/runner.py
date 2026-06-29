@@ -13,7 +13,13 @@ from sunray_test.capabilities.event_logger import EventLogger
 from sunray_test.capabilities.rosbag_recorder import RosbagRecorder
 from sunray_test.cases.base import CaseExecutionContext
 from sunray_test.cases.registry import get_case_class
-from sunray_test.core.context import RunContext, create_run_paths, package_root_from_file, workspace_root_from_package
+from sunray_test.core.context import (
+    RunContext,
+    create_run_paths,
+    create_run_paths_for_dir,
+    package_root_from_file,
+    workspace_root_from_package,
+)
 from sunray_test.core.result_model import CaseResult, ResultStore
 from sunray_test.core.suite_loader import load_config_triplet
 from sunray_test.reports.flight_metrics import enrich_report_payload
@@ -56,7 +62,11 @@ class TestRunner:
             "tests",
             "output",
         )
-        self.run_paths = create_run_paths(self.package_root, self.workspace_root, output_root)
+        suite_dir = os.path.dirname(os.path.abspath(args.suite_source)) if args.suite_source else ""
+        if args.output_dir and suite_dir and os.path.abspath(output_root) == suite_dir:
+            self.run_paths = create_run_paths_for_dir(self.package_root, self.workspace_root, output_root)
+        else:
+            self.run_paths = create_run_paths(self.package_root, self.workspace_root, output_root)
 
         uav_name = f"/uav{args.uav_id}"
         self.context = RunContext(
@@ -225,6 +235,12 @@ class TestRunner:
             },
         }
 
+    @staticmethod
+    def _default_report_title(platform_name: str) -> str:
+        if platform_name == "sunray150_lidar":
+            return "Sunray150 雷达款 测试报告"
+        return "Sunray150 基础款 测试报告"
+
     def _build_effective_steps_snapshot(self):
         steps = []
         for index, step in enumerate(self.context.suite.get("steps", []), 1):
@@ -271,7 +287,10 @@ class TestRunner:
                 "sn": self.context.metadata.get("sn", ""),
                 "tester": self.context.metadata.get("tester", ""),
                 "run_dir": self.context.run_paths.run_dir,
-                "report_title": self.context.report.get("title", f"{self.context.platform_name} 测试报告"),
+                "report_title": self.context.report.get(
+                    "title",
+                    self._default_report_title(self.context.platform_name),
+                ),
                 "interrupted": self.interrupted,
                 "interruption_reason": self.interruption_reason,
             },

@@ -47,14 +47,16 @@ def render_watermark_layer(text: str) -> str:
 
 
 def render_summary_cards(summary: Dict[str, Any], pass_rate: float) -> str:
+    unsupported = max(int(summary.get("unsupported", 0)), 0)
     summary_cards = [
         ("总用例", max(int(summary.get("total", 0)), 0), "neutral"),
         ("通过", summary.get("pass", 0), "pass"),
         ("失败", summary.get("fail", 0), "fail"),
         ("异常", summary.get("error", 0), "error"),
-        ("不支持", summary.get("unsupported", 0), "unsupported"),
-        ("通过率", f"{pass_rate:.1f}%", "accent"),
     ]
+    if unsupported:
+        summary_cards.append(("不支持", unsupported, "unsupported"))
+    summary_cards.append(("通过率", f"{pass_rate:.1f}%", "accent"))
     return "".join(
         "<div class=\"summary-card summary-{tone}\">"
         f"<div class=\"summary-label\">{escape(label)}</div>"
@@ -265,14 +267,12 @@ def render_stage_timeline(payload: Dict[str, Any]) -> str:
 def render_report_meta(run_info: Dict[str, Any], duration: str) -> str:
     report_meta = {
         "机型": run_info.get("platform"),
-        "环境": run_info.get("environment"),
-        "测试方案": run_info.get("suite"),
         "SN": run_info.get("sn") or "unknown",
         "测试人员": run_info.get("tester") or "unknown",
+        "异常中断": "True" if run_info.get("interrupted") else "False",
         "开始时间": run_info.get("started_at"),
         "结束时间": run_info.get("finished_at"),
         "总时长": duration,
-        "异常中断": "True" if run_info.get("interrupted") else "False",
         "中断原因": run_info.get("interruption_reason") or "-",
     }
     return description_list(report_meta)

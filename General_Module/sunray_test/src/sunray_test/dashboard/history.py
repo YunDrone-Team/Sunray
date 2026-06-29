@@ -74,7 +74,7 @@ def collect_history_runs(output_dir: str) -> List[Dict[str, Any]]:
         return runs
     for entry in os.listdir(output_dir):
         run_dir = os.path.join(output_dir, entry)
-        if not os.path.isdir(run_dir) or entry == "generated_suites":
+        if not os.path.isdir(run_dir):
             continue
         result_path = os.path.join(run_dir, "test_result.json")
         if not os.path.isfile(result_path):

@@ -10,7 +10,7 @@
 suite，再通过 `run_test_dashboard.py --run-suite --suite-file ...` 内部模式启动执行器；
 用户不需要直接调用内部模式。
 
-测试产物默认输出到 `tests/output/<timestamp>/`，运行期 suite 写入 `tests/output/generated_suites/`。
+测试产物默认输出到 `tests/output/<timestamp>/`，本次运行生成的 suite 写入同一目录下的 `suite.yaml`。
 
 ## 使用
 
@@ -44,7 +44,7 @@ SUNRAY_TEST_SKIP_DEP_CHECK=1 tests/run_test.sh
 `visual_landing` 补 `battery + down_camera`，`ego_goal` 补 `battery + lidar`。
 用户也可以额外选择某个硬件测试。停在某个测试项目上按 `Tab` 可以进入该项目的参数设置页；
 参数修改只影响本次生成的 suite，不会写回配置文件。
-顶部的 `external_source` 会传给 `external_fusion.launch external_source:=...`，实机默认 `MOCAP(3)`。
+顶部的 `external_source` 会传给 `external_fusion.launch external_source:=...`，实机基础款默认 `MOCAP(3)`，雷达款默认 `ODOM(0)`；如果手动修改过定位源，则以本次手动选择为准。
 短按 `e` 在 `ODOM(0)` 和 `MOCAP(3)` 间切换；长按 `e` 打开完整列表：
 `ODOM(0)`、`POSE(1)`、`GAZEBO(2)`、`MOCAP(3)`、`VIOBOT(4)`、`GPS(5)`、`RTK(6)`、
 `Mini viobot(7)`。

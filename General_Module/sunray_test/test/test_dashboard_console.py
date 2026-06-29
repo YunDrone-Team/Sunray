@@ -98,7 +98,7 @@ class DashboardConsoleTest(unittest.TestCase):
                 plan=plan,
                 request=DashboardRequest(item_ids=["visual_landing"], source="items"),
                 output_dir="/tmp/sunray-output",
-                suite_path="/tmp/sunray-output/generated_suites/dashboard.yaml",
+                suite_path="/tmp/sunray-output/20260617_120000/suite.yaml",
                 bringup_tabs=[{"title": "control", "command": "roslaunch control.launch"}],
                 runner_tabs=[{"title": "runner", "command": "rosrun sunray_test run_test_dashboard.py"}],
             )

@@ -2,11 +2,9 @@ from typing import Any, Dict, Iterable, List
 
 from sunray_test.reports.renderers.common import (
     FLIGHT_SECTION_LABELS,
-    METRIC_DESCRIPTIONS,
     description_list,
     escape,
     pretty_value,
-    render_labeled_value,
     render_metric_blocks,
 )
 
@@ -64,24 +62,36 @@ def _should_show_mission(mission_key: str, platform_name: str) -> bool:
 def _render_point_list(title: str, points: List[Any]) -> str:
     items: List[str] = []
     for index, point in enumerate(points, start=1):
-        point_text = escape(pretty_value(point))
         items.append(
-            '<div style="display:flex; align-items:center; gap:10px; '
-            'background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; '
-            'padding:8px 10px;">'
-            '<span style="display:inline-flex; align-items:center; justify-content:center; '
-            'width:22px; height:22px; border-radius:999px; background:var(--primary); '
-            f'color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">{index}</span>'
-            f'<span style="font-family: var(--mono); font-size: 12px;">{point_text}</span>'
+            '<div class="mission-point-item">'
+            f'<span class="mission-point-index">{index}</span>'
+            f'<span class="mission-point-value">{_render_point_value(point)}</span>'
             "</div>"
         )
     return (
-        '<div style="margin-top: 12px;">'
-        f'<div style="font-size: 12px; font-weight: 700; color: var(--muted); '
-        f'margin-bottom: 8px;">{escape(title)}</div>'
-        f'<div style="display:flex; flex-direction:column; gap:8px;">{"".join(items)}</div>'
+        '<div class="mission-point-section">'
+        f'<div class="mission-point-title">{escape(title)}</div>'
+        f'<div class="mission-point-grid">{"".join(items)}</div>'
         "</div>"
     )
+
+
+def _render_point_value(point: Any) -> str:
+    if isinstance(point, (list, tuple)):
+        axis_labels = ("X", "Y", "Z", "Yaw")
+        chips: List[str] = []
+        for idx, value in enumerate(point):
+            label = axis_labels[idx] if idx < len(axis_labels) else f"P{idx + 1}"
+            axis_class = label.lower()
+            axis_text = label.upper()
+            chips.append(
+                f'<span class="mission-point-chip mission-point-chip--{escape(axis_class)}">'
+                f'<span class="mission-point-axis">{escape(axis_text)}</span>'
+                f'<span class="mission-point-number">{escape(pretty_value(value))}</span>'
+                "</span>"
+            )
+        return '<span class="mission-point-coords">' + "".join(chips) + "</span>"
+    return escape(pretty_value(point))
 
 
 def _render_flight_card_title(title: str) -> str:
@@ -89,6 +99,126 @@ def _render_flight_card_title(title: str) -> str:
         '<div class="flight-card-title" style="margin-bottom: 12px; '
         'color: var(--primary); border-bottom: 1px solid var(--line); '
         f'padding-bottom: 8px;">{escape(title)}</div>'
+    )
+
+
+CONFIG_DEFAULT_GROUPS = (
+    (
+        "硬件与相机",
+        (
+            "hardware_check_timeout_s",
+            "camera_sample_duration_s",
+            "camera_min_messages",
+            "camera_min_rate_hz",
+            "camera_max_gap_s",
+            "camera_max_identical_frame_ratio",
+            "camera_black_mean_threshold",
+            "camera_black_dynamic_range_threshold",
+            "camera_max_black_frame_ratio",
+            "camera_require_timestamp_progress",
+            "camera_require_frame_content_change",
+            "battery_pass_threshold_v",
+        ),
+    ),
+    (
+        "起飞流程",
+        (
+            "takeoff_target_z_m",
+            "takeoff_reach_radius_m",
+            "takeoff_stable_time_s",
+            "takeoff_timeout_s",
+            "takeoff_command_rate_hz",
+            "post_takeoff_settle_time_s",
+        ),
+    ),
+    ("悬停", ("hover_duration_s",)),
+    (
+        "航点飞行",
+        (
+            "waypoint_source",
+            "waypoint_reach_radius_m",
+            "waypoint_stable_time_s",
+            "waypoint_hold_time_s",
+            "waypoint_timeout_s",
+            "waypoint_analysis_use_xy_only",
+        ),
+    ),
+    (
+        "EGO 自主规划",
+        (
+            "ego_goal_source",
+            "ego_goal_z_m",
+            "ego_goal_reach_radius_m",
+            "ego_goal_stable_time_s",
+            "ego_goal_hold_time_s",
+            "ego_goal_timeout_s",
+            "ego_goal_publish_burst_count",
+            "ego_goal_publish_burst_interval_s",
+            "ego_goal_use_xy_only",
+            "ego_keepalive_enabled",
+            "ego_keepalive_rate_hz",
+            "ego_keepalive_stale_timeout_s",
+            "ego_keepalive_zero_velocity_epsilon",
+            "ego_post_transition_enabled",
+            "ego_post_transition_target_yaw_rad",
+            "ego_post_transition_yaw_rate_rad_s",
+            "ego_post_transition_hold_after_s",
+            "ego_post_transition_target_z_m",
+        ),
+    ),
+    (
+        "视觉降落",
+        (
+            "visual_landing_auto_takeoff",
+            "visual_landing_height_m",
+            "visual_landing_target_zone_radius_m",
+        ),
+    ),
+)
+
+
+def _render_config_group(title: str, data: Dict[str, Any], preferred_order: Iterable[str] = ()) -> str:
+    if not data:
+        return ""
+    return (
+        '<div class="config-snapshot-group">'
+        f'<div class="flight-subtitle">{escape(title)}</div>'
+        f"{render_metric_blocks(data, preferred_order)}"
+        "</div>"
+    )
+
+
+def _render_defaults_snapshot(defaults: Dict[str, Any], analysis: Dict[str, Any]) -> str:
+    groups: List[str] = []
+    used_keys = set()
+    for title, keys in CONFIG_DEFAULT_GROUPS:
+        group_data = {key: defaults[key] for key in keys if key in defaults}
+        if group_data:
+            groups.append(_render_config_group(title, group_data, keys))
+            used_keys.update(group_data)
+
+    if analysis:
+        groups.append(_render_config_group("分析输入", analysis))
+
+    other_defaults = {key: value for key, value in defaults.items() if key not in used_keys}
+    if other_defaults:
+        groups.append(_render_config_group("其他参数", other_defaults))
+
+    return "".join(groups) or '<div class="empty-block">暂无数据</div>'
+
+
+def _render_topics_snapshot(topics: Dict[str, Any]) -> str:
+    return _render_config_group("话题映射", topics) or '<div class="empty-block">暂无数据</div>'
+
+
+def _render_config_section(title: str, content_html: str) -> str:
+    return (
+        '<details class="config-snapshot-section">'
+        '<summary class="config-snapshot-summary">'
+        f'<span class="config-snapshot-title">{escape(title)}</span>'
+        "</summary>"
+        f'<div class="config-snapshot-section-body">{content_html}</div>'
+        "</details>"
     )
 
 
@@ -142,45 +272,19 @@ def _render_missions_snapshot(missions: Dict[str, Any], platform_name: str) -> s
 
 def render_config_snapshot(config: Dict[str, Any], platform_name: str = "") -> str:
     defaults = config.get("defaults", {}) if isinstance(config.get("defaults"), dict) else {}
+    analysis = config.get("analysis", {}) if isinstance(config.get("analysis"), dict) else {}
     topics = config.get("topics", {}) if isinstance(config.get("topics"), dict) else {}
     missions = config.get("missions", {}) if isinstance(config.get("missions"), dict) else {}
 
-    defaults_html = (
-        "".join(render_labeled_value(key, value) for key, value in defaults.items())
-        or '<div class="empty-block">暂无数据</div>'
-    )
-    topics_items: List[str] = []
-    for key, value in topics.items():
-        desc = METRIC_DESCRIPTIONS.get(key)
-        info_html = (
-            f'<span class="metric-info">!<span class="metric-tooltip">{escape(desc)}</span></span>'
-            if desc else ""
-        )
-        topics_items.append(
-            '<div style="font-size: 11px; display: flex; justify-content: space-between; gap: 8px; '
-            'background: #f8fafc; padding: 6px 8px; border-radius: 4px;">'
-            f'<span style="font-weight: 700; color: var(--muted);">{escape(key)}{info_html}</span>'
-            f'<span style="font-family: var(--mono);">{escape(pretty_value(value))}</span>'
-            "</div>"
-        )
-    topics_html = "".join(topics_items) or '<div class="empty-block">暂无数据</div>'
-
+    defaults_html = _render_defaults_snapshot(defaults, analysis)
+    topics_html = _render_topics_snapshot(topics)
     missions_html = _render_missions_snapshot(missions, platform_name)
 
     return (
-        '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">'
-        '<div class="flight-card">'
-        f'{_render_flight_card_title("Defaults (基础配置)")}'
-        f'<div style="display: flex; flex-direction: column; gap: 8px;">{defaults_html}</div>'
-        "</div>"
-        '<div class="flight-card">'
-        f'{_render_flight_card_title("Topics (话题映射)")}'
-        f'<div style="display: flex; flex-direction: column; gap: 6px;">{topics_html}</div>'
-        "</div>"
-        '<div class="flight-card">'
-        f'{_render_flight_card_title("Missions (任务详情)")}'
-        f"{missions_html}"
-        "</div>"
+        '<div class="config-snapshot-layout">'
+        f'{_render_config_section("基础配置", defaults_html)}'
+        f'{_render_config_section("话题映射", topics_html)}'
+        f'{_render_config_section("任务详情", missions_html)}'
         "</div>"
     )
 

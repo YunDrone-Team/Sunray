@@ -235,7 +235,7 @@ class DashboardTuiStateTest(unittest.TestCase):
         spec = state.current_param_spec()
         self.assertEqual(spec["path"], "duration_s")
         state.handle_key_name("right")
-        self.assertEqual(state.param_overrides["hover"]["duration_s"], 125.0)
+        self.assertEqual(state.param_overrides["hover"]["duration_s"], 65.0)
         plan = state.build_plan()
         hover_step = [step for step in plan.suite["steps"] if step.get("case") == "hover_stability"]
         self.assertEqual(hover_step, [])
@@ -247,7 +247,7 @@ class DashboardTuiStateTest(unittest.TestCase):
             for step in plan.suite["steps"]
             if step.get("case") == "hover_stability"
         ][0]
-        self.assertEqual(hover_step["params"]["duration_s"], 125.0)
+        self.assertEqual(hover_step["params"]["duration_s"], 65.0)
 
         state.handle_key_name("backspace")
         self.assertNotIn("hover", state.param_overrides)
@@ -311,6 +311,24 @@ class DashboardTuiStateTest(unittest.TestCase):
         plan = state.build_plan()
         self.assertEqual(plan.external_source, 0)
         self.assertEqual(plan.external_source_label, "ODOM")
+
+    def test_lidar_profile_updates_default_external_source_until_user_override(self):
+        state = self.make_state()
+
+        self.assertEqual(state.current_external_source(), 3)
+        state.selected_functions = ["ego_goal"]
+        self.assertEqual(state.current_profile(), "sunray150_lidar")
+        self.assertEqual(state.current_external_source(), 0)
+        self.assertEqual(state.current_external_source_option()["label"], "ODOM")
+
+        state.set_external_source(3)
+        self.assertEqual(state.current_external_source(), 3)
+        self.assertEqual(state.request().external_source_override, 3)
+
+        plan = state.build_plan()
+        self.assertEqual(plan.profile, "sunray150_lidar")
+        self.assertEqual(plan.external_source, 3)
+        self.assertEqual(plan.external_source_label, "MOCAP")
 
     def test_external_source_repeat_e_opens_selector_without_quick_toggle(self):
         state = self.make_state()
@@ -593,7 +611,7 @@ def make_app(screen, state, build_plan_callback=None):
         args=args,
         output_dir="/tmp/sunray-output",
         build_plan_callback=build_plan_callback or (lambda _request: state.build_plan()),
-        build_suite_path_callback=lambda _plan: "/tmp/sunray-output/generated_suites/dashboard.yaml",
+        build_suite_path_callback=lambda _plan: "/tmp/sunray-output/20260617_120000/suite.yaml",
     )
 
 

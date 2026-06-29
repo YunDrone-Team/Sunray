@@ -173,6 +173,13 @@ class EgoGoalCase(BaseCase):
         if goal_source != "list":
             raise ValueError(f"unsupported goal_source: {goal_source}")
 
+        param_goals = self.execution_context.params.get("goals")
+        if param_goals:
+            return goal_source, "dashboard_params", [
+                self._normalise_goal(goal, default_z_m)
+                for goal in param_goals
+            ]
+
         mission_key = self.execution_context.params["mission_key"]
         mission = context.missions[mission_key]
         if isinstance(mission, dict):

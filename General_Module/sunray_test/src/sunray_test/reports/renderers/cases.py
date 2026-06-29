@@ -1,11 +1,13 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from sunray_test.reports.renderers.common import (
+    METRIC_DESCRIPTIONS,
     description_list,
     escape,
     format_display_text,
     format_duration,
     normalize_status,
+    pretty_value_for_key,
     score_display,
     status_badge,
 )
@@ -18,6 +20,32 @@ TITLE_TO_CASE_PREFIX = {
     "EGO自主规划指标": ("ego_goal_flight", "ego_goal"),
     "视觉降落指标": ("visual_landing",),
 }
+
+LONG_CASE_TITLE_PREFIXES = ("EGO-Planner", "EGO自主规划")
+CASE_SUMMARY_FALLBACK_LIMIT = 2
+DETAIL_BLOCK_VALUE_KEYS = {"launch_args"}
+DETAIL_BLOCK_VALUE_LENGTH = 56
+
+SUMMARY_KEYS_BY_CASE_ID = {
+    "battery": ("voltage_v", "pass_threshold_v"),
+    "hover": ("duration_s",),
+    "hover_stability": ("duration_s",),
+    "ego_goal": ("goal_count", "goal_source"),
+    "ego_goal_flight": ("goal_count", "goal_source"),
+    "waypoint": ("waypoint_count", "waypoint_source"),
+    "waypoint_flight": ("waypoint_count", "waypoint_source"),
+    "visual_landing": ("height_m", "return_code"),
+}
+
+SUMMARY_KEY_PREFIXES = (
+    ("battery", ("voltage_v", "pass_threshold_v")),
+    ("front_camera", ("topic", "message_count")),
+    ("down_camera", ("topic", "message_count")),
+    ("lidar_health", ("lidar_rate_hz", "valid_clouds")),
+    ("ego_goal", ("goal_count", "goal_source")),
+    ("waypoint", ("waypoint_count", "waypoint_source")),
+    ("visual_landing", ("height_m", "return_code")),
+)
 
 
 def _fmt_float(value: Any, digits: int = 2) -> str:
@@ -78,8 +106,90 @@ def _case_metrics_for_display(case: Dict[str, Any]) -> Dict[str, Any]:
     metrics = case.get("metrics", {})
     if not isinstance(metrics, dict):
         return {}
-    hidden_keys = {"remaps", "pre_stop_results"}
+    hidden_keys = {"remaps", "pre_stop_results", "goals", "waypoints"}
     return {key: value for key, value in metrics.items() if key not in hidden_keys}
+
+
+def _ordered_metric_keys(metrics: Dict[str, Any]) -> List[str]:
+    return [key for key in metrics if key != "mission_key"]
+
+
+def _summary_keys_for_case(case: Dict[str, Any], metrics: Dict[str, Any]) -> List[str]:
+    case_id = str(case.get("id", ""))
+    preferred = SUMMARY_KEYS_BY_CASE_ID.get(case_id)
+    if not preferred:
+        for prefix, keys in SUMMARY_KEY_PREFIXES:
+            if case_id.startswith(prefix):
+                preferred = keys
+                break
+
+    if preferred:
+        keys = [key for key in preferred if key in metrics]
+        if keys:
+            return keys
+
+    return _ordered_metric_keys(metrics)[:CASE_SUMMARY_FALLBACK_LIMIT]
+
+
+def _subset_metrics(metrics: Dict[str, Any], keys: List[str]) -> Dict[str, Any]:
+    return {key: metrics[key] for key in keys if key in metrics}
+
+
+def _remaining_metrics(metrics: Dict[str, Any], visible_keys: List[str]) -> Dict[str, Any]:
+    visible = set(visible_keys)
+    return {key: value for key, value in metrics.items() if key not in visible and key != "mission_key"}
+
+
+def _metric_info_html(key: str) -> str:
+    desc = METRIC_DESCRIPTIONS.get(key)
+    if not desc:
+        return ""
+    return f'<span class="metric-info">!<span class="metric-tooltip">{escape(desc)}</span></span>'
+
+
+def _should_render_detail_block(key: str, value_text: str) -> bool:
+    return key in DETAIL_BLOCK_VALUE_KEYS or "\n" in value_text or len(value_text) > DETAIL_BLOCK_VALUE_LENGTH
+
+
+def _render_case_detail_metrics(metrics: Dict[str, Any]) -> str:
+    if not metrics:
+        return '<div class="empty-block">暂无数据</div>'
+
+    items: List[str] = []
+    for key, value in metrics.items():
+        value_text = pretty_value_for_key(key, value)
+        info_html = _metric_info_html(key)
+        block_class = " case-param-card--wide" if _should_render_detail_block(key, value_text) else ""
+        items.append(
+            f'<div class="case-param-card{block_class}">'
+            f'<div class="case-param-card-key">{escape(key)}{info_html}</div>'
+            f'<div class="case-param-card-value">{escape(value_text)}</div>'
+            "</div>"
+        )
+    return f'<div class="case-param-card-grid">{"".join(items)}</div>'
+
+
+def _render_case_metrics(case: Dict[str, Any]) -> Tuple[str, str, str]:
+    metrics = _case_metrics_for_display(case)
+    if not metrics:
+        return description_list(metrics, compact=True), "", ""
+
+    summary_keys = _summary_keys_for_case(case, metrics)
+    summary_metrics = _subset_metrics(metrics, summary_keys)
+    detail_metrics = _remaining_metrics(metrics, summary_keys)
+    summary_html = description_list(summary_metrics, compact=True)
+    if not detail_metrics:
+        return summary_html, "", ""
+
+    detail_html = _render_case_detail_metrics(detail_metrics)
+    detail_count = len(detail_metrics)
+    expand_summary_html = (
+        '<details class="case-expand-details case-param-details">'
+        f"<summary>参数详情 {detail_count} 项</summary>"
+        "</details>"
+    )
+    expand_body_html = f'<div class="case-param-detail-body">{detail_html}</div>'
+    return summary_html, expand_summary_html, expand_body_html
 
 
 def _pass_score_threshold(grade_thresholds: List[Dict[str, Any]]) -> float:
@@ -117,10 +227,41 @@ def _build_case_flight_map(
     return case_flight_map
 
 
-def _render_time_and_metrics(case: Dict[str, Any], metrics_html: str) -> str:
+def _render_case_time(case: Dict[str, Any]) -> str:
     started_at = escape(format_display_text(case.get("started_at", "-")))
     finished_at = escape(format_display_text(case.get("finished_at", "-")))
-    return f'<div class="case-time">{started_at} -> {finished_at}</div>{metrics_html}'
+    return f'<div class="case-time">{started_at} -> {finished_at}</div>'
+
+
+def _render_case_status_meta(
+    case: Dict[str, Any],
+    result: str,
+    grade_thresholds: List[Dict[str, Any]],
+) -> str:
+    return (
+        '<div class="case-status-meta">'
+        '<div class="case-status-meta-row">'
+        f'<div class="case-status-meta-item case-status-meta-category">{escape(case.get("category", "-"))}</div>'
+        f'<div class="case-status-meta-item">{status_badge(result)}</div>'
+        f'<div class="case-status-meta-item case-status-meta-score">{score_display(case, grade_thresholds)}</div>'
+        "</div>"
+        f'{_render_case_time(case)}'
+        "</div>"
+    )
+
+
+def _case_title_cell_class(case_name: str) -> str:
+    title = str(case_name or "").strip()
+    if title.startswith(LONG_CASE_TITLE_PREFIXES) or len(title) > 8:
+        return 'case-title-cell case-title-cell--wrap'
+    return 'case-title-cell case-title-cell--nowrap'
+
+
+def _case_title_style(case_name: str) -> str:
+    title = str(case_name or "").strip()
+    if title.startswith(LONG_CASE_TITLE_PREFIXES) or len(title) > 8:
+        return "white-space: normal; word-break: break-word; overflow-wrap: anywhere;"
+    return "white-space: nowrap; word-break: normal; overflow-wrap: normal;"
 
 
 def render_case_rows(
@@ -132,16 +273,19 @@ def render_case_rows(
     rows: List[str] = []
     for index, case in enumerate(cases, start=1):
         result = _display_result(case, grade_thresholds)
-        metrics_html = description_list(_case_metrics_for_display(case), compact=True)
+        metrics_html, param_expand_html, param_detail_html = _render_case_metrics(case)
         case_id = str(case.get("id", ""))
+        case_name = case.get("name", case.get("id", "-"))
+        case_title_class = _case_title_cell_class(case_name)
+        case_title_style = _case_title_style(case_name)
         flight_section = case_flight_map.get(case_id)
-        expand_html = ""
+        expand_parts: List[str] = []
         detail_row = ""
         if flight_section:
             section_title = escape(str(flight_section.get("title", "飞行指标")))
             detail_id = f"flight-detail-{index}"
-            expand_html = (
-                f'<details class="case-expand-details" id="{detail_id}">'
+            expand_parts.append(
+                f'<details class="case-expand-details" id="{detail_id}" data-case-detail-group="case-{index}">'
                 f"<summary>{section_title}</summary>"
                 "</details>"
             )
@@ -150,14 +294,30 @@ def render_case_rows(
                 f'<div class="case-flight-body">{render_flight_section_content(flight_section)}</div>'
                 "</td></tr>"
             )
+        if param_expand_html:
+            detail_id = f"case-param-detail-{index}"
+            param_expand_html = param_expand_html.replace(
+                '<details class="case-expand-details case-param-details">',
+                f'<details class="case-expand-details case-param-details" id="{detail_id}" data-case-detail-group="case-{index}">',
+                1,
+            )
+            detail_row = (
+                f"{detail_row}"
+                f'<tr class="case-detail-row case-param-detail-row" id="{detail_id}-row" style="display:none">'
+                f'<td colspan="7"><div class="case-param-row-body">{param_detail_html}</div></td></tr>'
+            )
+        expand_html = "".join(expand_parts)
+        case_actions_html = f'<div class="case-actions">{expand_html}</div>' if expand_html else ""
+        detail_metrics_html = f'<div class="case-detail-summary">{metrics_html}</div>'
+        if param_expand_html:
+            detail_metrics_html = f'{detail_metrics_html}<div class="case-param-actions">{param_expand_html}</div>'
+        status_meta_html = _render_case_status_meta(case, result, grade_thresholds)
         rows.append(
             f'<tr class="case-row result-{result or "unknown"}">'
-            f"<td>{index}{expand_html}</td>"
-            f"<td><div class=\"case-title\">{escape(case.get('name', case.get('id', '-')))}</div></td>"
-            f"<td>{escape(case.get('category', '-'))}</td>"
-            f"<td>{status_badge(result)}</td>"
-            f"<td>{score_display(case, grade_thresholds)}</td>"
-            f"<td>{_render_time_and_metrics(case, metrics_html)}</td>"
+            f"<td>{index}</td>"
+            f"<td class=\"{case_title_class}\" style=\"{case_title_style}\"><div class=\"case-title\">{escape(case_name)}</div>{case_actions_html}</td>"
+            f'<td colspan="3">{status_meta_html}</td>'
+            f"<td>{detail_metrics_html}</td>"
             f"<td>{escape(format_duration(case.get('started_at'), case.get('finished_at')))}</td>"
             "</tr>"
             f"{detail_row}"

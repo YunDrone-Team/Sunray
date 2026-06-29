@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import tempfile
 import unittest
 from argparse import Namespace
 from unittest.mock import patch
@@ -17,6 +18,7 @@ from sunray_test.dashboard.console import format_plan_items_table
 from sunray_test.dashboard.model import DashboardModel
 from sunray_test.dashboard.suite_runtime import (
     build_manual_runner_command,
+    runtime_suite_path,
 )
 from sunray_test.dashboard.terminal import (
     launch_terminal_window,
@@ -64,6 +66,14 @@ class DashboardCliTest(unittest.TestCase):
         self.assertIn("--sn SN001", command)
         self.assertIn("--tester tester", command)
         self.assertIn("--no-prompt", command)
+
+    def test_runtime_suite_path_uses_run_directory_suite_yaml(self):
+        with tempfile.TemporaryDirectory() as output_dir:
+            suite_path = runtime_suite_path({"name": "dashboard"}, output_dir)
+
+        self.assertEqual(os.path.basename(suite_path), "suite.yaml")
+        self.assertEqual(os.path.dirname(os.path.dirname(suite_path)), output_dir)
+        self.assertNotIn("generated_suites", suite_path)
 
     def test_format_plan_items_table_uses_chinese_execution_steps(self):
         plan = self.model.build_plan(

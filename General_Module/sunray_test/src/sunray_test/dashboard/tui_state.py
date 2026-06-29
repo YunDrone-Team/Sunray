@@ -111,8 +111,18 @@ class TuiState:
             return "雷达款"
         return "自动"
 
+    def current_profile(self) -> str:
+        return self.model.choose_runtime_profile_with_reason(
+            self.requested_item_ids,
+            self.profile_override,
+        )[0]
+
     def current_external_source(self) -> int:
-        return self.model.default_external_source(self.environment, self.external_source_override)
+        return self.model.default_external_source(
+            self.environment,
+            self.external_source_override,
+            self.current_profile(),
+        )
 
     def current_external_source_option(self) -> Dict[str, Any]:
         return self.model.external_source_option(self.environment, self.current_external_source())

@@ -62,3 +62,18 @@ def create_run_paths(package_root: str, workspace_root: str, output_root: str) -
         report_html=os.path.join(run_dir, "report.html"),
         event_log_jsonl=os.path.join(run_dir, "event_log.jsonl"),
     )
+
+
+def create_run_paths_for_dir(package_root: str, workspace_root: str, run_dir: str) -> RunPaths:
+    expanded_run_dir = os.path.expanduser(run_dir)
+    os.makedirs(expanded_run_dir, exist_ok=True)
+    output_root = os.path.dirname(expanded_run_dir)
+    return RunPaths(
+        package_root=package_root,
+        workspace_root=workspace_root,
+        output_root=output_root,
+        run_dir=expanded_run_dir,
+        result_json=os.path.join(expanded_run_dir, "test_result.json"),
+        report_html=os.path.join(expanded_run_dir, "report.html"),
+        event_log_jsonl=os.path.join(expanded_run_dir, "event_log.jsonl"),
+    )
