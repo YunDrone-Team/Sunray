@@ -217,28 +217,20 @@ UGV 目标点建议直接用 RViz 的 `2D Nav Goal`，或用 `rostopic pub` 发�
 
 真机启动前应先确认外部链路已经提供以下数据：
 
-- 里程计：默认 `/uav1/sunray/uav_odom`
-- FAST-LIO body 系点云：默认 `/cloud_registered_body`
-- 雷达 IMU：默认 `/livox/imu`
-- Sunray 控制入口：默认 `/uav1/sunray/uav_control_cmd`
+- 里程计：默认 `/uav1/sunray/localization/local_odom`
+- 雷达点云：默认 `/uav1/livox/lidar`
+- Sunray 控制入口：默认 `/uav1/sunray/uav_control/control_cmd`
 - UAV 控制器、定位、驱动和安全策略已经按真机流程准备好
 
-如果 MID360 相对机体存在固定 roll/pitch 安装倾角，启动 NavRL 适配链路时启用
-独立点云校平节点：
+启动 NavRL 适配链路：
 
 ```bash
 roslaunch sunray_navrl_adapter NavRL2Sunray.launch \
-  enable_body_point_cloud_leveler:=true \
-  point_cloud_topic:=/cloud_registered_body_aligned \
+  odom_topic:=/uav1/sunray/localization/local_odom \
+  point_cloud_topic:=/uav1/livox/lidar \
+  control_cmd_topic:=/uav1/sunray/uav_control/control_cmd \
   rviz:=false
 ```
-
-校平节点会在启动阶段用 `/livox/imu` 的前 200 帧估计固定 roll/pitch，并将
-`/cloud_registered_body` 旋转后发布到 `/cloud_registered_body_aligned`。采样期间
-必须让无人机静止且机体水平；标定完成前不会向 NavRL 地图发布点云。
-
-该重力校平不能估计雷达相对机体的 yaw 安装误差，也不处理雷达原点到机体中心的
-平移。存在这些误差时，仍需通过机械测量或外参标定补齐。
 
 再启动策略节点：
 

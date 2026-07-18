@@ -12,25 +12,19 @@
   <build_depend>navigation_runner</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>pcl_ros</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
   <build_depend>sunray_msgs</build_depend>
 
   <build_export_depend>navigation_runner</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
-  <build_export_depend>pcl_ros</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
-  <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>sunray_msgs</build_export_depend>
 
   <exec_depend>navigation_runner</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>pcl_ros</exec_depend>
   <exec_depend>roscpp</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>sunray_msgs</exec_depend>
 
   <export/>
