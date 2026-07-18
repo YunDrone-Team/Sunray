@@ -8,6 +8,17 @@
     
     <!-- 雷达点云：用于 map_manager 的 lidar pointcloud 模式。 -->
     <arg name="point_cloud_topic" default="/uav1/livox/lidar" />
+    <!--
+      真机斜装 MID360 可启用独立校平节点：它从启动阶段的 IMU 重力估计固定
+      roll/pitch，只旋转 FAST-LIO body 系点云，输出仍是局部点云，之后再由
+      map_manager 使用 odom 转到 map 系。仿真默认关闭。
+    -->
+    <arg name="enable_body_point_cloud_leveler" default="false" />
+    <arg name="body_point_cloud_topic" default="/cloud_registered_body" />
+    <arg name="leveled_point_cloud_topic" default="/cloud_registered_body_aligned" />
+    <arg name="lidar_imu_topic" default="/livox/imu" />
+    <arg name="leveled_point_cloud_frame" default="navrl_lidar_aligned" />
+    <arg name="leveler_calibration_samples" default="200" />
     <!-- 相机深度点云：用于 map_manager 的 camera/depth pointcloud 模式。 -->
     <!-- 注意,这里的相机点云会在nav_rl的map_manager中依据外参配置文件occupancy_map_param.yaml，从相机系转换到map系，也就是z轴超前转换为z轴朝上 -->
     <arg name="camera_depth_point_cloud_topic" default="/cloud_registered_body" />
@@ -33,6 +44,19 @@
     <param name="/rl/cmd_vel_topic" value="$(arg cmd_vel_topic)" />
     <param name="/rl/setpoint_pose_topic" value="$(arg setpoint_pose_topic)" />
     <param name="/rl/goal_topic" value="$(arg goal_topic)" />
+
+    <group if="$(arg enable_body_point_cloud_leveler)">
+        <node pkg="sunray_navrl_adapter"
+          type="NavRLPointCloudLeveler_node"
+          name="navrl_point_cloud_leveler"
+          output="screen">
+            <param name="imu_topic" value="$(arg lidar_imu_topic)" />
+            <param name="input_topic" value="$(arg body_point_cloud_topic)" />
+            <param name="output_topic" value="$(arg leveled_point_cloud_topic)" />
+            <param name="output_frame_id" value="$(arg leveled_point_cloud_frame)" />
+            <param name="calibration_samples" value="$(arg leveler_calibration_samples)" />
+        </node>
+    </group>
     
     <arg name="publish_world_map_tf" default="true" />
     <!-- 发布一个tf变换，将map系与world系重合，map系为nav_rl自带的map_manager输出话题的坐标系，world为sunray调试/可视化数据输出的坐标系 -->

@@ -7,7 +7,9 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   navigation_runner
   nav_msgs
+  pcl_ros
   roscpp
+  sensor_msgs
   sunray_msgs
 )
 
@@ -16,7 +18,9 @@ catkin_package(
     geometry_msgs
     navigation_runner
     nav_msgs
+    pcl_ros
     roscpp
+    sensor_msgs
     sunray_msgs
 )
 
@@ -45,6 +49,18 @@ add_dependencies(NavRL2SunrayUGV_node
 )
 
 target_link_libraries(NavRL2SunrayUGV_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(NavRLPointCloudLeveler_node
+  src/NavRLPointCloudLeveler.cpp
+)
+
+add_dependencies(NavRLPointCloudLeveler_node
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(NavRLPointCloudLeveler_node
   ${catkin_LIBRARIES}
 )
 

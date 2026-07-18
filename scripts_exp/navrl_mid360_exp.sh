@@ -7,13 +7,13 @@
 # sunray_mavros_exp.launch：启动实机 MAVROS 链路。
 # external_fusion.launch：接入实机外部定位并发布 /uav1/sunray/uav_odom。
 # sunray_control_node.launch：启动 Sunray 无人机控制节点，订阅 /uav1/sunray/uav_control_cmd。
-# NavRL2Sunray.launch：使用默认 external_fusion 里程计和默认 Sunray 控制话题，接入 FAST-LIO body 系点云。
+# NavRL2Sunray.launch：校平 FAST-LIO body 系点云后，再接入 NavRL 地图与 Sunray 控制适配链路。
 # NavRLTerminalControl.launch：提供终端菜单，用于起飞、降落、悬停和发布 NavRL 目标点。
 gnome-terminal --window -e 'bash -c "roscore; exec bash"' \
 --tab -e 'bash -c "sleep 2.0; roslaunch sunray_uav_control sunray_mavros_exp.launch uav_id:=1; exec bash"' \
 --tab -e 'bash -c "sleep 4.0; roslaunch sunray_uav_control external_fusion.launch external_source:=0 uav_id:=1; exec bash"' \
 --tab -e 'bash -c "sleep 4.0; roslaunch sunray_uav_control sunray_control_node.launch uav_id:=1; exec bash"' \
---tab -e 'bash -c "sleep 8.0; roslaunch sunray_navrl_adapter NavRL2Sunray.launch agent_id:=1 point_cloud_topic:=/cloud_registered_body rviz:=false; exec bash"' \
+--tab -e 'bash -c "sleep 8.0; roslaunch sunray_navrl_adapter NavRL2Sunray.launch agent_id:=1 enable_body_point_cloud_leveler:=true point_cloud_topic:=/cloud_registered_body_aligned rviz:=false; exec bash"' \
 --tab -e 'bash -c "sleep 10.0; roslaunch sunray_navrl_adapter NavRLTerminalControl.launch agent_id:=1 frame_id:=map; exec bash"'
 
 # msg_MID360.launch：启动 MID360 驱动，发布雷达点云和 IMU 数据。
