@@ -330,7 +330,6 @@ void FastExplorationManager::findGlobalTour(
 
   // Get cost matrix for current state and clusters
   Eigen::MatrixXd cost_mat;
-  frontier_finder_->updateFrontierCostMatrix();
   frontier_finder_->getFullCostMatrix(cur_pos, cur_vel, cur_yaw, cost_mat);
   const int dimension = cost_mat.rows();
 

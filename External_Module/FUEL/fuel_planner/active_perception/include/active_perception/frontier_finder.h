@@ -68,7 +68,6 @@ public:
   void getViewpointsInfo(const Vector3d& cur_pos, const vector<int>& ids, const int& view_num,
                          const double& max_decay, vector<vector<Vector3d>>& points,
                          vector<vector<double>>& yaws);
-  void updateFrontierCostMatrix();
   void getFullCostMatrix(const Vector3d& cur_pos, const Vector3d& cur_vel, const Vector3d cur_yaw,
                          Eigen::MatrixXd& mat);
   void getPathForTour(const Vector3d& pos, const vector<int>& frontier_ids, vector<Vector3d>& path);
@@ -89,6 +88,7 @@ private:
   void computeFrontierInfo(Frontier& frontier);
   void downsample(const vector<Vector3d>& cluster_in, vector<Vector3d>& cluster_out);
   void sampleViewpoints(Frontier& frontier);
+  void updateFrontierCostMatrix();
 
   int countVisibleCells(const Vector3d& pos, const double& yaw, const vector<Vector3d>& cluster);
   bool isNearUnknown(const Vector3d& pos);

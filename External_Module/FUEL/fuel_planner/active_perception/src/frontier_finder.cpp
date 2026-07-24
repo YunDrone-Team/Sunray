@@ -417,6 +417,9 @@ void FrontierFinder::computeFrontiersToVisit() {
     ft.id_ = idx++;
     // std::cout << ft.iLocal tour graph:d_ << ", ";
   }
+  // Keep cached paths and costs synchronized even when global TSP planning is skipped for
+  // zero or one frontier.
+  updateFrontierCostMatrix();
   // std::cout << "\nnew num: " << new_num << ", new dormant: " << new_dormant_num << std::endl;
   // std::cout << "to visit: " << frontiers_.size() << ", dormant: " << dormant_frontiers_.size()
   //           << std::endl;

@@ -291,7 +291,6 @@ void FastExplorationFSM::frontierCallback(const ros::TimerEvent& e) {
     auto ed = expl_manager_->ed_;
     ft->searchFrontiers();
     ft->computeFrontiersToVisit();
-    ft->updateFrontierCostMatrix();
 
     ft->getFrontiers(ed->frontiers_);
     ft->getFrontierBoxes(ed->frontier_boxes_);
