@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_ros
   roscpp
   geometry_msgs
+  nav_msgs
   sensor_msgs
   std_msgs
   gazebo_msgs
@@ -14,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   pcl_ros
   laser_geometry
+  message_filters
   tf2_eigen
 )
 
@@ -70,6 +72,10 @@ target_link_libraries(goal2swarm ${catkin_LIBRARIES} yaml-cpp)
 add_executable(FuelTerminalControl_node src/FuelTerminalControl.cpp)
 add_dependencies(FuelTerminalControl_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(FuelTerminalControl_node ${catkin_LIBRARIES})
+
+add_executable(FuelPointCloudFovFilter_node src/FuelPointCloudFovFilter.cpp)
+add_dependencies(FuelPointCloudFovFilter_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(FuelPointCloudFovFilter_node ${catkin_LIBRARIES})
 
 if(livox_ros_driver2_FOUND)
   add_executable(livox2Point src/livox2Point.cpp)
