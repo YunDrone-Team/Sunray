@@ -9,6 +9,8 @@
     <arg name="agent_num" default="3" />
     <!-- leader_id -->
     <arg name="leader_id" default="1" />
+    <!-- 领从模式相对偏移量 -->
+    <arg name="formation_offset" default="1.0" />
     <!-- agent类型 0：uav 1: ugv -->
     <arg name="agent_type" default="1" />
     <!-- 是否启用yaw控制 -->
@@ -36,6 +38,7 @@
         <param name="agent_name" type="string" value="$(arg agent_name)" />
         <param name="agent_num" type="int" value="$(arg agent_num)" />
         <param name="leader_id" type="int" value="$(arg leader_id)" />--
+        <param name="formation_offset" type="double" value="$(arg formation_offset)" />
         <param name="agent_type" type="int" value="$(arg agent_type)" />
         <param name="file_path" type="string" value="/home/yundrone/Sunray/sunray_formation/formation_control/config/config.yaml" />
         <param name="dynamic_type" type="int" value="$(arg dynamic_type)" />

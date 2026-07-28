@@ -52,6 +52,7 @@ private:
     int now_idx;                                                             // 当前动态阵型目标点索引
     int dynamic_type;                                                        // 动态阵型类型 0:离线读取 1:在线计算
     int leader_id;                                                           // 阵型领导者
+    float formation_offset;                                                  // 领从模式相对偏移量
     float home_pose[3];                                                      // home点
     float leader_pose[3];                                                    // 领导者位置
     std::string agent_name;                                                  // 无人机名称
