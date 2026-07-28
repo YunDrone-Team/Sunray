@@ -29,6 +29,7 @@ void SunrayFormation::init(ros::NodeHandle &nh_)
     nh.param<bool>("enable_yaw", enable_yaw, false); // 是否启用偏航角旋转
     // leader_id 1~100为无人机，101~200为无人车
     nh.param<int>("leader_id", leader_id, 1);
+    nh.param<float>("formation_offset", formation_offset, 1.0);
 
     topic_prefix = "/" + agent_name + std::to_string(agent_id);
     node_name = ros::this_node::getName();
@@ -493,8 +494,8 @@ void SunrayFormation::leader_formation_pub()
                                                                   leader_pose[0],
                                                                   leader_pose[1],
                                                                   leader_yaw,
-                                                                  1.0,
-                                                                  1.0);
+                                                                  formation_offset,
+                                                                  formation_offset);
         orca_setup.header.stamp = ros::Time::now();
         orca_setup.cmd = sunray_msgs::OrcaSetup::GOAL_RUN;
         orca_setup.desired_pos[0] = std::get<0>(goal);
